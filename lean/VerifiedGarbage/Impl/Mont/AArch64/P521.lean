@@ -31,6 +31,8 @@ Modulo `p = 2^521 - 1`, on numbers below `p` of nine 64-bit words, with
   a sum `a + b` is `a - (p - b)`, that is `a + b + 1`, reduced modulo `2^521`
   less 1 where it does not reach it.
 
+* `shlOps`: a multiple by `2^k` is a rotation of the 521 bits.
+
 The only registers written are those of the generic arithmetic for nine
 words; nothing branches, and every address is an operand's pointer plus a
 constant.
@@ -200,6 +202,15 @@ def addTest : List Op := [.movz .x2 512, .subs .x1 (lReg 8) .x2]
 /-- `[a] + [b] mod p`. -/
 def addOps : List Op := addChain ++ addTest ++ decOps
 
+/-! ## Multiples by powers of two -/
+
+/-- `2^k [a] mod p`, `k` at most 8: its 521 bits rotated. The top word's top
+`k` bits come down through `x2`. -/
+def shlOps (k : Nat) : List Op :=
+  ((List.range 9).map fun j => .ld 0 j (lReg j)) ++ [.lsl .x2 (lReg 8) 55] ++
+    ((List.range 8).map fun j => .extr (lReg (8 - j)) (lReg (8 - j)) (lReg (7 - j)) (64 - k)) ++
+    [.extr (lReg 0) (lReg 0) .x2 (64 - k), .movz .x1 511, .low (lReg 8) (lReg 8) .x1 9]
+
 /-! ## Code -/
 
 /-- The instructions, for operands at `(ra, a)` and `(rb, b)`. -/
@@ -219,5 +230,8 @@ def add (o a b : Nat) : List Instr := code .x0 .x0 a b addOps ++ storesR .x0 lin
 
 /-- `[o] = [a] - [b] mod p`. -/
 def sub (o a b : Nat) : List Instr := code .x0 .x0 a b subOps ++ storesR .x0 linOut o
+
+/-- `[o] = 2^k [a] mod p`. -/
+def shl (k o a : Nat) : List Instr := code .x0 .x0 a a (shlOps k) ++ storesR .x0 linOut o
 
 end VG.Impl.Mont.AArch64.P521

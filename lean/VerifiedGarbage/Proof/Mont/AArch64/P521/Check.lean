@@ -581,7 +581,7 @@ def fwd (ib : Nat → Nat → Nat) : Op → Bd → Bd
   | .lsr d n k, B => B.set d 0 (B.u n / 2 ^ k) B.c
   | .extr d n m k, B => B.set d 0 (cap ((B.u n * 2 ^ 64 + B.u m) / 2 ^ k)) B.c
   | .movz d v, B => B.set d (v % 2 ^ 16) (v % 2 ^ 16) B.c
-  | .low d _ m _, B => B.set d 0 (B.u m) B.c
+  | .low d n m _, B => B.set d 0 (min (B.u n) (B.u m)) B.c
 
 theorem agree_set (s : St) (d : Reg) (v : Nat) : Agree d s (s.set d v) := fun r hr => by simp only [St.set, hr, ite_false]
 theorem agree_setc (s : St) (d : Reg) (v : Nat) : Agree d s (s.setc d v) := fun r hr => by simp only [St.setc, hr, ite_false]
@@ -657,7 +657,7 @@ theorem fwd_ok {inp ib : Nat → Nat → Nat} (hi : ∀ k i, inp k i ≤ ib k i)
   | movz d v =>
     exact h.set hw (agree_set _ _ _) (Nat.le_of_eq (g_set _ _ _).symm) (Nat.le_of_eq (g_set _ _ _)) h.c
   | low d n m k =>
-    exact h.set hw (agree_set _ _ _) (Nat.zero_le _) (Nat.le_trans (Nat.le_of_eq (g_set _ _ _)) (Nat.le_trans Nat.and_le_right (u m))) h.c
+    exact h.set hw (agree_set _ _ _) (Nat.zero_le _) (Nat.le_trans (Nat.le_of_eq (g_set _ _ _)) (Nat.le_min.mpr ⟨Nat.le_trans Nat.and_le_left (u n), Nat.le_trans Nat.and_le_right (u m)⟩)) h.c
 
 /-- The bounds after a sequence. -/
 def fwds (ib : Nat → Nat → Nat) : List Op → Bd → Bd
@@ -683,6 +683,127 @@ theorem full_ev {inp : Nat → Nat → Nat} {s : St} (h : Ok s) (r : Reg) (w : N
     (full r w).ev inp s = w * s.g r := by
   simp only [Seg.ev, full, lv_reg, Nat.pow_zero, Nat.div_one, Nat.mod_eq_of_lt (h.g r)]
 
+/-- The fields of `d`, the number at `n` shifted left by `k`, as fields of `n`. -/
+def pullShl (m d n k : Nat) : List Seg → Option (List Seg)
+  | [] => some []
+  | q :: qs =>
+    match pullShl m d n k qs with
+    | none => none
+    | some r =>
+      if Nat.beq q.l d then
+        if Nat.ble k q.lo && Nat.ble q.lo q.hi && Nat.ble q.hi 64 then
+          some (addSeg m ⟨n, q.lo - k, q.hi - k, q.w⟩ r)
+        else if Nat.beq q.lo 0 && Nat.ble k q.hi && Nat.ble q.hi 64 then
+          some (addSeg m ⟨n, 0, q.hi - k, q.w * 2 ^ k⟩ r)
+        else none
+      else some (addSeg m q r)
+
+/-- The fields of `d`, the bits from `k` on of the number at `l` with the
+number at `n` above it, as fields of `n` and `l`. -/
+def pullExtr (m d n l k : Nat) : List Seg → Option (List Seg)
+  | [] => some []
+  | q :: qs =>
+    match pullExtr m d n l k qs with
+    | none => none
+    | some r =>
+      if Nat.beq q.l d then
+        if Nat.beq q.lo 0 && Nat.ble (64 - k) q.hi && Nat.ble q.hi 64 then
+          some (addSeg m ⟨l, k, 64, q.w⟩ (addSeg m ⟨n, 0, q.hi - (64 - k), q.w * 2 ^ (64 - k)⟩ r))
+        else none
+      else some (addSeg m q r)
+
+theorem shl_field {x k l h : Nat} (h1 : k ≤ l) (h2 : l ≤ h) (h3 : h ≤ 64) :
+    x * 2 ^ k % 2 ^ 64 % 2 ^ h / 2 ^ l = x % 2 ^ (h - k) / 2 ^ (l - k) := by
+  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 h3), Nat.mul_comm x,
+    show 2 ^ h = 2 ^ k * 2 ^ (h - k) by rw [← Nat.pow_add]; congr 1; omega_using [h1, h2], Nat.mul_mod_mul_left,
+    show 2 ^ l = 2 ^ k * 2 ^ (l - k) by rw [← Nat.pow_add]; congr 1; omega_using [h1],
+    Nat.mul_div_mul_left _ _ (Nat.two_pow_pos k)]
+
+theorem shl_field0 {x k h : Nat} (h1 : k ≤ h) (h3 : h ≤ 64) :
+    x * 2 ^ k % 2 ^ 64 % 2 ^ h = 2 ^ k * (x % 2 ^ (h - k)) := by
+  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 h3), Nat.mul_comm x,
+    show 2 ^ h = 2 ^ k * 2 ^ (h - k) by rw [← Nat.pow_add]; congr 1; omega_using [h1], Nat.mul_mod_mul_left]
+
+theorem extr_field {x y k h : Nat} (hy : y < 2 ^ 64) (hk : k ≤ 64) (h1 : 64 - k ≤ h) (h3 : h ≤ 64) :
+    (x * 2 ^ 64 + y) / 2 ^ k % 2 ^ 64 % 2 ^ h = y / 2 ^ k + 2 ^ (64 - k) * (x % 2 ^ (h - (64 - k))) := by
+  have e64 : (2 : Nat) ^ 64 = 2 ^ k * 2 ^ (64 - k) := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
+  have hlt : y / 2 ^ k < 2 ^ (64 - k) := Nat.div_lt_of_lt_mul (by rw [← e64]; exact hy)
+  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 h3), e64, show x * (2 ^ k * 2 ^ (64 - k)) + y = y + 2 ^ k * (x * 2 ^ (64 - k)) by
+    rw [Nat.mul_left_comm, Nat.add_comm], Nat.add_mul_div_left _ _ (Nat.two_pow_pos k),
+    show 2 ^ h = 2 ^ (64 - k) * 2 ^ (h - (64 - k)) by rw [← Nat.pow_add]; congr 1; omega_using [h1],
+    Nat.mod_mul, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hlt,
+    Nat.add_mul_div_right _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hlt, Nat.zero_add]
+
+theorem pullShl_ok {m : Nat} {inp : Nat → Nat → Nat} {d n : Reg} {k : Nat} {s t : St} (hA : Agree d s t)
+    (hv : t.g d = s.g n * 2 ^ k % 2 ^ 64) : ∀ {l l' : List Seg}, pullShl m (rn d) (rn n) k l = some l' →
+      Cg m (sumL inp t l) (sumL inp s l')
+  | [], _, h => by simp only [pullShl, Option.some.injEq] at h; subst h; exact Cg.refl _ _
+  | q :: qs, l', h => by
+    rw [pullShl] at h
+    split at h
+    · exact absurd h (by simp)
+    · rename_i r hr
+      have ih := pullShl_ok (inp := inp) hA hv hr
+      rw [sumL]
+      split at h
+      · rename_i hd
+        have hd := Nat.eq_of_beq_eq_true hd
+        split at h
+        · rename_i hc
+          simp only [Bool.and_eq_true, Nat.ble_eq] at hc
+          simp only [Option.some.injEq] at h
+          subst h
+          refine ((Cg.of_eq ?_).add ih).trans (addSeg_ok m inp s _ r).symm
+          rw [Seg.ev, Seg.ev, hd, lv_reg, lv_reg, hv, shl_field hc.1.1 hc.1.2 hc.2]
+        · split at h
+          · rename_i hc
+            simp only [Bool.and_eq_true, Nat.ble_eq, Nat.beq_eq] at hc
+            simp only [Option.some.injEq] at h
+            subst h
+            refine ((Cg.of_eq ?_).add ih).trans (addSeg_ok m inp s _ r).symm
+            rw [Seg.ev, Seg.ev, hd, lv_reg, lv_reg, hv, hc.1.1, shl_field0 hc.1.2 hc.2]
+            simp only [Nat.pow_zero, Nat.div_one]
+            rw [Nat.mul_assoc]
+          · exact absurd h (by simp)
+      · rename_i hd
+        simp only [Option.some.injEq] at h
+        subst h
+        refine ((Cg.of_eq ?_).add ih).trans (addSeg_ok m inp s _ r).symm
+        rw [Seg.ev, Seg.ev, lv_agree hA (Nat.ne_of_beq_eq_false (Bool.eq_false_iff.mpr hd))]
+
+theorem pullExtr_ok {m : Nat} {inp : Nat → Nat → Nat} {d n q : Reg} {k : Nat} {s t : St} (hs : Ok s) (hA : Agree d s t)
+    (hk : k ≤ 64) (hv : t.g d = (s.g n * 2 ^ 64 + s.g q) / 2 ^ k % 2 ^ 64) :
+    ∀ {l l' : List Seg}, pullExtr m (rn d) (rn n) (rn q) k l = some l' → Cg m (sumL inp t l) (sumL inp s l')
+  | [], _, h => by simp only [pullExtr, Option.some.injEq] at h; subst h; exact Cg.refl _ _
+  | g :: gs, l', h => by
+    rw [pullExtr] at h
+    split at h
+    · exact absurd h (by simp)
+    · rename_i r hr
+      have ih := pullExtr_ok (inp := inp) hs hA hk hv hr
+      rw [sumL]
+      split at h
+      · rename_i hd
+        have hd := Nat.eq_of_beq_eq_true hd
+        split at h
+        · rename_i hc
+          simp only [Bool.and_eq_true, Nat.ble_eq, Nat.beq_eq] at hc
+          simp only [Option.some.injEq] at h
+          subst h
+          refine Cg.trans ?_ ((addSeg_ok m inp s _ _).trans ((Cg.refl _ _).add (addSeg_ok m inp s _ r))).symm
+          rw [← Nat.add_assoc]
+          refine (Cg.of_eq ?_).add ih
+          simp only [Seg.ev]
+          rw [hd, lv_reg, lv_reg, lv_reg, hv, hc.1.1, extr_field (hs.g q) hk hc.1.2 hc.2, Nat.mod_eq_of_lt (hs.g q)]
+          simp only [Nat.pow_zero, Nat.div_one]
+          rw [Nat.mul_add, Nat.mul_assoc]
+        · exact absurd h (by simp)
+      · rename_i hd
+        simp only [Option.some.injEq] at h
+        subst h
+        refine ((Cg.of_eq ?_).add ih).trans (addSeg_ok m inp s _ r).symm
+        rw [Seg.ev, Seg.ev, lv_agree hA (Nat.ne_of_beq_eq_false (Bool.eq_false_iff.mpr hd))]
+
 /-- The functional before an operation, from the one after it; `none` where
 this is not enough to tell. -/
 def back (m : Nat) (B : Bd) : Op → Fn → Option Fn
@@ -690,16 +811,12 @@ def back (m : Nat) (B : Bd) : Op → Fn → Option Fn
     if Nat.ble i 15 && Nat.ble k 3 then some ⟨F.k, F.f, subL (rn d) (inpLoc k i) F.l, subP (rn d) (inpLoc k i) F.p⟩
     else none
   | .lsl d n k, F =>
-    match take m (rn d) F.l, (if Nat.beq k 1 then renP (rn d) (1024 + rn n) F.p else if noP (rn d) F.p then some F.p else none) with
-    | some (w, l), some p =>
-      if Nat.ble k 63 then some ⟨F.k, F.f, addSeg m ⟨rn n, 0, 64 - k, w * 2 ^ k⟩ l, p⟩ else none
+    match pullShl m (rn d) (rn n) k F.l, (if Nat.beq k 1 then renP (rn d) (1024 + rn n) F.p else if noP (rn d) F.p then some F.p else none) with
+    | some l, some p => if Nat.ble k 63 then some ⟨F.k, F.f, l, p⟩ else none
     | _, _ => none
   | .extr d n q k, F =>
-    match take m (rn d) F.l, (if Nat.beq k 63 then renP (rn d) (2048 + 1024 * rn n + rn q) F.p else if noP (rn d) F.p then some F.p else none) with
-    | some (w, l), some p =>
-      if Nat.ble k 63 then
-        some ⟨F.k, F.f, addSeg m ⟨rn q, k, 64, w⟩ (addSeg m ⟨rn n, 0, k, w * 2 ^ (64 - k)⟩ l), p⟩
-      else none
+    match pullExtr m (rn d) (rn n) (rn q) k F.l, (if Nat.beq k 63 then renP (rn d) (2048 + 1024 * rn n + rn q) F.p else if noP (rn d) F.p then some F.p else none) with
+    | some l, some p => if Nat.ble k 63 then some ⟨F.k, F.f, l, p⟩ else none
     | _, _ => none
   | o, F =>
     if noP (rn o.dst) F.p then
@@ -814,12 +931,11 @@ theorem back_ok {m : Nat} (hm : 0 < m) {inp : Nat → Nat → Nat} (hi : ∀ k i
   | lsl d n k =>
     rw [back] at h
     split at h
-    · rename_i w l p ht hp
+    · rename_i l p ht hp
       split at h
-      · rename_i hk
-        have hk := Nat.le_of_ble_eq_true hk
-        simp only [Option.some.injEq] at h
+      · simp only [Option.some.injEq] at h
         subst h
+        have hg : (step inp (.lsl d n k) s).g d = s.g n * 2 ^ k % 2 ^ 64 := g_set _ _ _
         have hp' : sumP inp (step inp (.lsl d n k) s) F.p = sumP inp s p := by
           split at hp
           · rename_i h1
@@ -828,37 +944,28 @@ theorem back_ok {m : Nat} (hm : 0 < m) {inp : Nat → Nat → Nat} (hi : ∀ k i
             refine renP_ok (d := d) hA ?_ hp
             rw [ev, ite_eq_right (by omega_using []), ite_eq_left (by have := rn_lt n; omega_using [this]),
               Nat.add_sub_cancel_left, lv_reg]
-            exact g_set _ _ _
+            exact hg
           · split at hp
             · rename_i h2
               simp only [Option.some.injEq] at hp
               subst hp
               exact noP_ok (d := d) hA h2
             · exact absurd hp (by simp)
-        refine (main ht hp').trans ?_
         unfold Fn.ev
-        refine Cg.add ?_ (Cg.refl _ _)
-        refine Cg.trans (Cg.of_eq ?_) ((Cg.refl _ _).add (addSeg_ok m inp s _ _).symm)
-        have hg : (step inp (.lsl d n k) s).g (Op.lsl d n k).dst = s.g n * 2 ^ k % 2 ^ 64 := g_set _ _ _
-        have hc : (step inp (.lsl d n k) s).c = s.c := rfl
-        rw [hg, hc]
-        simp only [Seg.ev, lv_reg, Nat.pow_zero, Nat.div_one]
-        have e : s.g n * 2 ^ k % 2 ^ 64 = 2 ^ k * (s.g n % 2 ^ (64 - k)) := by
-          rw [Nat.mul_comm, show 2 ^ 64 = 2 ^ k * 2 ^ (64 - k) by rw [← Nat.pow_add]; congr 1; omega_using [hk],
-            Nat.mul_mod_mul_left]
-        rw [e, Nat.mul_assoc]
-        omega_using []
+        rw [hp']
+        exact Cg.add (Cg.add (Cg.refl _ _) (pullShl_ok (d := d) hA hg ht)) (Cg.refl _ _)
       · exact absurd h (by simp)
     · exact absurd h (by simp)
   | extr d n q k =>
     rw [back] at h
     split at h
-    · rename_i w l p ht hp
+    · rename_i l p ht hp
       split at h
       · rename_i hk
         have hk := Nat.le_of_ble_eq_true hk
         simp only [Option.some.injEq] at h
         subst h
+        have hg : (step inp (.extr d n q k) s).g d = (s.g n * 2 ^ 64 + s.g q) / 2 ^ k % 2 ^ 64 := g_set _ _ _
         have hp' : sumP inp (step inp (.extr d n q k) s) F.p = sumP inp s p := by
           split at hp
           · rename_i h1
@@ -870,31 +977,16 @@ theorem back_ok {m : Nat} (hm : 0 < m) {inp : Nat → Nat → Nat} (hi : ∀ k i
             have e1 : (2048 + 1024 * rn n + rn q - 2048) / 1024 = rn n := by omega_using [hq]
             have e2 : (2048 + 1024 * rn n + rn q - 2048) % 1024 = rn q := by omega_using [hq]
             rw [ev, ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), e1, e2, lv_reg, lv_reg]
-            exact g_set _ _ _
+            exact hg
           · split at hp
             · rename_i h2
               simp only [Option.some.injEq] at hp
               subst hp
               exact noP_ok (d := d) hA h2
             · exact absurd hp (by simp)
-        refine (main ht hp').trans ?_
         unfold Fn.ev
-        refine Cg.add ?_ (Cg.refl _ _)
-        refine Cg.trans (Cg.of_eq ?_)
-          ((Cg.refl _ _).add ((addSeg_ok m inp s _ _).trans ((Cg.refl _ _).add (addSeg_ok m inp s _ _))).symm)
-        have hg : (step inp (.extr d n q k) s).g (Op.extr d n q k).dst = (s.g n * 2 ^ 64 + s.g q) / 2 ^ k % 2 ^ 64 := g_set _ _ _
-        have hc : (step inp (.extr d n q k) s).c = s.c := rfl
-        rw [hg, hc]
-        simp only [Seg.ev, lv_reg, Nat.pow_zero, Nat.div_one, Nat.mod_eq_of_lt (hs.g q)]
-        have e : (s.g n * 2 ^ 64 + s.g q) / 2 ^ k % 2 ^ 64 = s.g q / 2 ^ k + 2 ^ (64 - k) * (s.g n % 2 ^ k) := by
-          have e64 : (2 : Nat) ^ 64 = 2 ^ k * 2 ^ (64 - k) := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
-          have hlt : s.g q / 2 ^ k < 2 ^ (64 - k) := Nat.div_lt_of_lt_mul (by rw [← e64]; exact hs.g q)
-          rw [e64, show s.g n * (2 ^ k * 2 ^ (64 - k)) + s.g q = s.g q + 2 ^ k * (s.g n * 2 ^ (64 - k)) by
-            rw [Nat.mul_left_comm, Nat.add_comm], Nat.add_mul_div_left _ _ (Nat.two_pow_pos k),
-            Nat.mul_comm (2 ^ k) (2 ^ (64 - k)), Nat.mod_mul, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hlt,
-            Nat.add_mul_div_right _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hlt, Nat.zero_add]
-        rw [e, Nat.mul_add, Nat.mul_assoc]
-        omega_using []
+        rw [hp']
+        exact Cg.add (Cg.add (Cg.refl _ _) (pullExtr_ok (d := d) hs hA (by omega_using [hk]) hg ht)) (Cg.refl _ _)
       · exact absurd h (by simp)
     · exact absurd h (by simp)
   | mul d n q =>

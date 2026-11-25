@@ -429,6 +429,78 @@ private theorem add_run {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs 
   · rw [ite_eq_right fun h => ht (hi.mp h), show A + B + 1 + (2 ^ 521 - 1) + 0 = A + B + 2 ^ 521 by omega_using [ht],
       Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [ht]), Nat.mod_eq_of_lt (by omega_using [ht])]
 
+/-! ## Multiples by powers of two, abstractly -/
+
+private def shlE (k : Nat) : List Seg :=
+  ((List.range 8).flatMap fun j => [⟨inpLoc 0 j, 0, 64 - k, pw j * 2 ^ k⟩, ⟨inpLoc 0 j, 64 - k, 64, pw (j + 1)⟩]) ++
+    [⟨inpLoc 0 8, 0, 9 - k, pw 8 * 2 ^ k⟩, ⟨inpLoc 0 8, 9 - k, 9, 1⟩]
+
+private theorem shlE_ev {inp : Nat → Nat → Nat} (hi : InB inp) (s : St) {k : Nat} (hk : k ≤ 8) :
+    Cg prime (sumL inp s (shlE k)) (2 ^ k * num (inp 0) 9) := by
+  have h : ∀ n ≤ 8, sumL inp s ((List.range n).flatMap fun j =>
+      [⟨inpLoc 0 j, 0, 64 - k, pw j * 2 ^ k⟩, ⟨inpLoc 0 j, 64 - k, 64, pw (j + 1)⟩]) = 2 ^ k * num (inp 0) n := by
+    intro n hn
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [List.range_succ, List.flatMap_append, sumL_append, ih (by omega_using [hn]), num_succ, Nat.mul_add]
+      congr 1
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, sumL, Seg.ev, Nat.add_zero, Nat.pow_zero, Nat.div_one]
+      rw [lv_inp inp s (by omega_using [hn]), Nat.mod_eq_of_lt (hi.w 0 n), pw_succ]
+      have e : (2 : Nat) ^ 64 = 2 ^ k * 2 ^ (64 - k) := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
+      rw [e]
+      generalize 2 ^ (64 - k) = Q
+      generalize 2 ^ k = K
+      rw [show K * Q * pw n * (inp 0 n / Q) = pw n * K * (Q * (inp 0 n / Q)) by ac_rfl, ← Nat.mul_add, Nat.mod_add_div]
+      ac_rfl
+  rw [shlE, sumL_append, h 8 (Nat.le_refl _), num_succ _ 8, Nat.mul_add]
+  refine (Cg.refl _ _).add ?_
+  have h8 := hi.b 0 8
+  rw [show inB 0 8 = 511 from rfl] at h8
+  simp only [sumL, Seg.ev, Nat.add_zero, Nat.pow_zero, Nat.div_one, Nat.one_mul]
+  rw [lv_inp inp s (by decide), Nat.mod_eq_of_lt (a := inp 0 8) (b := 2 ^ 9) (by omega_using [h8])]
+  have e9 : (2 : Nat) ^ 9 = 2 ^ k * 2 ^ (9 - k) := by rw [← Nat.pow_add]; congr 1; omega_using [hk]
+  have hone : Cg prime (pw 8 * 2 ^ k * 2 ^ (9 - k)) 1 := by
+    rw [Nat.mul_assoc, ← e9]; show _ % _ = _ % _; decide +kernel
+  have hone' := (hone.mul (inp 0 8 / 2 ^ (9 - k))).symm
+  rw [Nat.one_mul] at hone'
+  refine ((Cg.refl _ _).add hone').trans (Cg.of_eq ?_)
+  rw [Nat.mul_assoc (pw 8 * 2 ^ k), ← Nat.mul_add, Nat.mod_add_div]
+  ac_rfl
+
+private theorem shl_run {k : Nat} (hk : k ≤ 8)
+    (hc : chkL prime (shlOps k) anyB (outFn prime 0 linOut 9) 0 0 (shlE k) = true)
+    (ht : Nat.ble ((fwds inB (shlOps k) anyB).u (linOut.getD 8 .x8)) 511 = true)
+    (hz : chkZero (zeroB 0) (shlOps k) linOut = true) {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s)
+    (hA : num (inp 0) 9 < prime) (h9 : ∀ i, 9 ≤ i → inp 0 i = 0) :
+    num (fun j => (run inp (shlOps k) s).g (linOut.getD j .x8)) 9 = 2 ^ k * num (inp 0) 9 % prime := by
+  have hO := run_Ok (inp := inp) hi.w (shlOps k) hs
+  have e := ((outFn_ev (m := prime) (sh := 0) (out := linOut) (inp := inp) hO 9).symm.trans
+    (chkL_ok prime_pos hc hi hs (anyB_ok hs))).trans (Cg.trans (Cg.of_eq (by rw [Nat.zero_mul, Nat.zero_add]))
+      (shlE_ev hi s hk))
+  rw [pw_zero, Nat.one_mul] at e
+  have htop : (run inp (shlOps k) s).g (linOut.getD 8 .x8) ≤ 511 :=
+    Nat.le_trans ((fwds_ok hi.w hi.b (shlOps k) anyB_wf hs (anyB_ok hs)).1.ub _) (Nat.le_of_ble_eq_true ht)
+  have hl := num_lt (n := 8) (f := fun j => (run inp (shlOps k) s).g (linOut.getD j .x8)) fun i _ => hO.g _
+  have hle : num (fun j => (run inp (shlOps k) s).g (linOut.getD j .x8)) 9 ≤ prime := by
+    rw [num_succ, show prime = 2 ^ 521 - 1 from rfl]
+    generalize num (fun j => (run inp (shlOps k) s).g (linOut.getD j .x8)) 8 = L at hl ⊢
+    simp only [pw, Nat.reduceMul] at hl ⊢
+    omega_using [hl, htop]
+  have hne : num (fun j => (run inp (shlOps k) s).g (linOut.getD j .x8)) 9 ≠ prime := by
+    intro hp
+    have hz0 : num (inp 0) 9 = 0 := by
+      have hd : prime ∣ 2 ^ k * num (inp 0) 9 := Nat.dvd_of_mod_eq_zero (by rw [← e, hp, Nat.mod_self])
+      rcases (Nat.Prime.dvd_mul prime_prime).mp hd with h | h
+      · have hlt : 2 ^ k < prime := Nat.lt_of_le_of_lt (Nat.pow_le_pow_right (by decide) hk) (by decide +kernel)
+        exact absurd (Nat.eq_zero_of_dvd_of_lt h hlt) (Nat.ne_of_gt (Nat.two_pow_pos k))
+      · exact Nat.eq_zero_of_dvd_of_lt h hA
+    have hr := chkZero_ok hz hi.w (zeroB_le hi fun i => if h : i < 9 then num_zero hz0 i h else h9 i (Nat.le_of_not_lt h)) hs
+    rw [hr] at hp
+    exact absurd hp (by decide +kernel)
+  rw [← Nat.mod_eq_of_lt (Nat.lt_of_le_of_ne hle hne)]
+  exact e
+
 /-! ## On the machine -/
 
 private theorem num_cons (f : Nat → Nat) (n : Nat) : num f (n + 1) = f 0 + 2 ^ 64 * num (fun i => f (i + 1)) n := by
@@ -620,6 +692,21 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o 
     (by decide) ho ha hb ho8 ha8 hb8) fun t ⟨k, v⟩ => ⟨k, ?_⟩
   have h := sub_run (inps_ok hA hB) (ofState_ok s) (by rw [inps_num0]; exact hA) (by rw [inps_num1]; exact hB)
   rw [← v, inps_num0, inps_num1] at h
+  exact h
+
+/-- `[o] = 2^k [a] mod p`. -/
+theorem shl_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {k o a : Nat} (hk : k = 1 ∨ k = 2 ∨ k = 3)
+    (ho : o + 72 ≤ size) (ha : a + 72 ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hA : wordsVal s.mem base a 9 < prime) :
+    WP isa (.block (shl k o a)) s fun t => OpKeepR 9 base o s t ∧
+      wordsVal t.mem base o 9 = 2 ^ k * wordsVal s.mem base a 9 % prime := by
+  have key : encB 1 (shlOps k) = true ∧ chkL prime (shlOps k) anyB (outFn prime 0 linOut 9) 0 0 (shlE k) = true ∧
+      Nat.ble ((fwds inB (shlOps k) anyB).u (linOut.getD 8 .x8)) 511 = true ∧ chkZero (zeroB 0) (shlOps k) linOut = true := by
+    rcases hk with rfl | rfl | rfl <;> decide +kernel
+  refine WP.mono (op_ok (k9 := 1) key.1 (by decide) rfl (by decide) hs.ptr hs.ptr hs.ptrW (by decide) (by decide)
+    (by decide) ho ha ha ho8 ha8 ha8) fun t ⟨kk, v⟩ => ⟨kk, ?_⟩
+  have h := shl_run (by rcases hk with rfl | rfl | rfl <;> decide) key.2.1 key.2.2.1 key.2.2.2 (inps_ok hA hA) (ofState_ok s)
+    (by rw [inps_num0]; exact hA) fun i h => by rw [inps, ite_eq_right (Nat.not_lt_of_le h)]
+  rw [← v, inps_num0] at h
   exact h
 
 end VG.Proof.Mont.AArch64.P521
