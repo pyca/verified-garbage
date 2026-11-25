@@ -39,20 +39,23 @@ def build(body, fixed):
     nodes = {}
     for i in range(len(P)): nodes.setdefault(('g', group[i]) if i in group else ('i', i), []).append(i)
     # SSA
-    last = {}; vreg = 0; defs, uses = {}, {}; memw = []; deps = {k: {} for k in nodes}
+    fl = {}; last = {}; vreg = 0; defs, uses = {}, {}; memw = []; deps = {k: {} for k in nodes}
     owner = {i: k for k, v in nodes.items() for i in v}
     stores, loads = [], []; dv = {}
     for i, (op, d, u, mem, _) in enumerate(P):
         uses[i] = []
         for r in u:
             n = N(r)
-            if n in fixed: uses[i].append(('f', n)); continue
+            if n in fixed:
+                uses[i].append(('f', n))
+                if n in fl and owner[fl[n]] != owner[i]: deps[owner[i]][owner[fl[n]]] = 1
+                continue
             v = last[n]; uses[i].append(v); a = dv[v]
             if owner[a] != owner[i]: deps[owner[i]][owner[a]] = max(deps[owner[i]].get(owner[a], 0), LAT.get(P[a][0], 1))
         defs[i] = []
         for r in d:
             n = N(r)
-            if n in fixed: defs[i].append(('f', n)); continue
+            if n in fixed: defs[i].append(('f', n)); fl[n] = i; continue
             last[n] = vreg; dv[vreg] = i; defs[i].append(vreg); vreg += 1
         if mem and mem[1] is not None:
             kind, off, ln = mem
@@ -64,7 +67,7 @@ def build(body, fixed):
                 stores.append((off, ln, i))
             else: loads.append((off, ln, i))
     return P, nodes, deps, defs, uses
-def schedule(body, fixed, regs, limit, width=5.0, seed=None, wl=1.0):
+def schedule(body, fixed, regs, limit, width=5.0, seed=None, wl=1.0, W=10**9):
     P, nodes, deps, defs, uses = build(body, fixed)
     succ = {k: [] for k in nodes}
     for k, d in deps.items():
@@ -96,7 +99,8 @@ def schedule(body, fixed, regs, limit, width=5.0, seed=None, wl=1.0):
                     if not isinstance(v, tuple): cur += 1
                 peak = max(peak, cur)
             return cur, peak
-        c = [(k,) + effect(k) for k in avail]
+        lo = min(first[k] for k in avail)
+        c = [(k,) + effect(k) for k in avail if first[k] <= lo + W]
         ok = [x for x in c if len(live) + x[2] <= limit]
         ready = [x for x in ok if avail[x[0]] <= t]
         if ready: k = max(ready, key=lambda x: (prio[x[0]] - wl * 10 * max(0, x[1]) * (len(live) > limit - 6) - 0.02 * first[x[0]] + jit[x[0]]))[0]

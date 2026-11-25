@@ -507,11 +507,12 @@ SRC = step_src(ORD['o3'])
 PRE = ['mov w10, #0', 'mov x19, #100', 'mov w26, #19', 'mov w27, #38']
 B['src'] = PRE + SRC
 REGS = [f'x{r}' for r in list(range(1, 10)) + list(range(11, 18)) + [20, 21, 22, 23, 24, 25, 28]]
-for lim in (18, 20, 22):
-  for od in ('o1', 'o3'):
-    for wd in (3.0, 5.0):
-        r = sched.schedule(step_src(ORD[od]), {0, 10, 19, 26, 27}, REGS, lim, wd)
-        if r: B[f'sc_{od}_{lim}_{int(wd)}'] = PRE + r[0]
+for od in ('o1', 'o3'):
+    for lim in (19, 21, 22):
+        for W in (200, 120, 80, 50, 30, 15):
+            for seed in (None, 1, 2):
+                r = sched.schedule(step_src(ORD[od]), {0, 10, 19, 26, 27}, REGS, lim, 4.0, W=W, seed=seed)
+                if r: B[f'sc_{od}_{lim}_{W}_{seed or 0}'] = PRE + r[0]
 if __name__ == '__main__':
     for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
