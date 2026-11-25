@@ -35,7 +35,8 @@ def direct : List (Artifact AArch64.target) := [
     verified := Proof.Ffdh.AArch64.Scrub.derivePublic_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
-    verified := Proof.Ffdh.AArch64.Scrub.parameterInit_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Ffdh.AArch64.Scrub.parameterInit_public },
   Spec.Ffdh.keyInitApi.artifact target {
     code := Impl.Ffdh.AArch64.KeyGeneration.init
     verified := Proof.Ffdh.AArch64.Scrub.keyInit_scrubbed }]
@@ -46,6 +47,7 @@ def artifacts : List (Artifact AArch64.target) :=
     Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm
-      verified := Proof.Ffdh.AArch64.Generation.parameterSearch_scrubbed v }])
+      verified := Proof.Ffdh.AArch64.Generation.parameterSearch_scrubbed v
+      publicOutOk := Proof.Ffdh.AArch64.Generation.parameterSearch_public v }])
 
 end VG.Artifacts.Ffdh.AArch64

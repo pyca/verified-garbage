@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -119,7 +119,7 @@ theorem generationPrecomputeOut (stack : Nat) (cs : List (String × List (BitVec
       exact h
 
 theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts cs) stack)
       (Spec.Ffdh.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ffdh.X86.Fn
@@ -159,7 +159,7 @@ theorem generationPrecomputeOut (stack : Nat) (cs : List (String × List (BitVec
       exact h
 
 theorem sievedParameterSearchOut (stack : Nat) (cs : List (String × List (BitVec 64)) := []) :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts cs) stack)
       (Spec.Ffdh.parameterSearchSig.retBits 32) :=
   postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
@@ -302,21 +302,43 @@ theorem cachedKeySearch_scrubbed :
     (cachedKeySearchOut _ [])
 
 /-- `vg_ffdh_parameter_generation_init` as emitted. -/
-theorem parameterInit_scrubbed :
+theorem parameterInit_asked :
     VerifiedScrubbed target Impl.Ffdh.X86.Fn.parameterInit
-      (Spec.Ffdh.parameterInitContract X86.abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.parameterInitApi)
+      (Proof.Ffdh.parameterInitAskedContract X86.abi) 32 :=
+  verifiedScrubbed (api := Proof.Ffdh.parameterInitAskedApi)
     { code := Impl.Ffdh.X86.ParamInit.code
       verified := Proof.Ffdh.X86.ParamInit.verified }
 
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract X86.abi) 32 :=
+  Proof.Ffdh.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Ffdh.parameterInitOut.Of X86.abi Impl.Ffdh.X86.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract X86.abi) :=
+  Proof.Ffdh.parameterInit_public parameterInit_asked
+
 /-- `vg_ffdh_generate_parameters` as emitted. -/
-theorem sievedParameterSearch_scrubbed :
+theorem sievedParameterSearch_asked :
     VerifiedScrubbed target Impl.Ffdh.X86.Fn.sievedParameterSearch
       Proof.Ffdh.X86.PSearch.contract 32 :=
-  verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi)
+  verifiedScrubbedAll (api := Proof.Ffdh.sievedParameterSearchAskedApi)
     { code := Impl.Ffdh.X86.ParamSearch.code
       verified := Proof.Ffdh.X86.PSearch.verified
       spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe }
     (sievedParameterSearchOut Proof.Ffdh.X86.PSearch.stack Impl.RsaKeyGen.TrialTable32.consts)
+
+theorem sievedParameterSearch_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.sievedParameterSearch
+      (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts)
+        Proof.Ffdh.X86.PSearch.stack) 32 :=
+  Proof.Ffdh.sievedParameterSearch_imp sievedParameterSearch_asked id
+
+theorem sievedParameterSearch_public :
+    Spec.Ffdh.sievedParameterSearchOut.Of X86.abi Impl.Ffdh.X86.Fn.sievedParameterSearch
+      (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts)
+        Proof.Ffdh.X86.PSearch.stack) :=
+  Proof.Ffdh.sievedParameterSearch_public sievedParameterSearch_asked
 
 end VG.Proof.Ffdh.X86.Scrub

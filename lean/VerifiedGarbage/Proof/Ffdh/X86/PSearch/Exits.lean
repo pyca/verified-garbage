@@ -14,7 +14,7 @@ public import VerifiedGarbage.Spec.Ffdh.SievedGeneration
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Framework.Sig
@@ -50,7 +50,7 @@ abbrev stack : Nat := 292
 
 /-- The contract, with RSA's table of primes as the constants. -/
 abbrev contract : Contract isa :=
-  Spec.Ffdh.sievedParameterSearchContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
+  Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
 
 /-- The arguments' regions: `out`, `used`, `rand`, `scratch` and `state`. -/
 abbrev oR (s : State) : Region := ⟨argumentPointer s 0, (arg s 1).toNat⟩
@@ -123,7 +123,7 @@ structure PSearchABI (s : State) : Prop where
   randLen : (arg s 6).toNat ≤ Spec.Ffdh.parameterEntropy (arg s 3).toNat
 
 theorem pSearchABI_of {s : State} (h : contract.pre s) : PSearchABI s := by
-  sig_pre [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
+  sig_pre [contract, Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, VG.Proof.RsaKeyGen.X86.Candidate.packed_length,
     stackBelow] at h
   sig_split h

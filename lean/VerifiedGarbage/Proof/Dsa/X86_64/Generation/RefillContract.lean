@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 
 /-! # The contract of the refillable-tape search for one modulus width
@@ -37,7 +38,7 @@ def contract {M : ISA} (pBytes : Nat) (A : Abi M) (stack : Nat := 0) : Contract 
       ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
         BitVec.ofNat 64 pLen, BitVec.ofNat 64 (parameterEntropy pLen),
         BitVec.ofNat 64 requested] ∧
-        result.Requests (parameterEntropy pLen) requested)
+        Generation.Asked pLen result requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out _outLen _used rand randLen _scratch _scratchLen state m =>
       (wordsAt m state 4).map (·.toNat) ++ (bytesAt m rand randLen.toNat).map (·.toNat))

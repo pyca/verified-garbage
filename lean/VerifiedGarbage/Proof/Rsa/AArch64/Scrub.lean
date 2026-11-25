@@ -56,7 +56,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
     exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
 theorem keyInitOk :
-    ScrubAllOk (Spec.RsaKeyGen.keyInitContract abi) 0 (Spec.RsaKeyGen.keyInitSig.retBits abi.ptrBits) :=
+    ScrubAllOk (Proof.RsaKeyGen.keyInitAskedContract abi) 0 (Spec.RsaKeyGen.keyInitSig.retBits abi.ptrBits) :=
   scrubAllOk_regs0 (sig := Spec.RsaKeyGen.keyInitSig) (Nat.le_of_ble_eq_true rfl) fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨a0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
     replace hlen := Nat.succ.inj hlen

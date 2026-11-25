@@ -161,7 +161,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   rw [e]
   exact (h _ (contains_of (by omega))).symm
 
-theorem keyInitOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
+theorem keyInitOut : PostOut (Proof.RsaKeyGen.keyInitAskedContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun
     | [state, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.RsaKeyGen.keyInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

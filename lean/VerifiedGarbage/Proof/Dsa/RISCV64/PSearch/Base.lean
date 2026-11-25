@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.RISCV64.ParameterSearch
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
@@ -130,11 +130,11 @@ theorem constRegs_kT (s : State) : constRegs kT s = [(mkG s).rTab] := by
   rfl
 
 theorem cin_of_pre {n : Nat} (s : State)
-    (h : (Spec.Dsa.parameterSearchContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
+    (h : (Proof.Dsa.parameterSearchAskedContract (abi.withConsts kT) (n + 1)).pre s) : CIn (n + 1) s := by
   obtain ⟨h₀, hk⟩ := (pre_consts (c₀ := (Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed))
     (cs := []) (sig := Spec.Dsa.parameterSearchSig)).mp h
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h₀
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h₀
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h₀
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, List.append_eq] at h₀
   obtain ⟨sp16, spLo, rd, wr, oU, oR, oC, oT, uR, uC, uT, rC, rT, cT, bO, bU, bR, bC, bT, nO, nU, nR, nC, nT,
     lens, outLen, scrLen, left, budget, randLen, alU, alC, alT⟩ := h₀
   obtain ⟨hd, held, ht, hal⟩ := hk

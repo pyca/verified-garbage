@@ -25,16 +25,25 @@ def parameterInitContract {M : ISA} (A : Abi M) : Contract M :=
         wordsAt m' state 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
         Entropy.RequestValid (parameterEntropy bits.toNat) 0 first)
 
+/-- What the function leaves that is public: the first tape's length, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). -/
+def parameterInitOut : PublicOut parameterInitSig where
+  out _ := fun state _bits _generator _m m' _r => [(m'.readW (state + 24) 64).toNat]
+
 def parameterInitApi : Api where
   module := "ffdh"
   name := "vg_ffdh_parameter_generation_init"
   sig := parameterInitSig
   contracts := some fun A _ => parameterInitContract A
+  publicOut := some parameterInitOut
   summary := "Initialize native finite-field Diffie–Hellman parameter generation. Validates \
     512..=8192 bits and generator 2 or 5. Returns 1 and initializes the controller's \
     attempt limit, output width, entropy budget and first entropy request; returns 0 \
     and clears those four words on invalid parameters. The remaining state words \
-    are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`."
+    are private workspace. Contract: `VG.Spec.Ffdh.parameterInitContract`. Timing, and the \
+    length of the first tape (`VG.Spec.Ffdh.parameterInitOut`), may depend on `bits` and \
+    `generator`."
   safety := []
 
 def parameterSearchSig : Sig where

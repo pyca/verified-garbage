@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Spec.Ffdh.SievedContract
 import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 
@@ -23,6 +25,14 @@ example : Spec.Entropy.RequestValid 100 1 2 ∧ Spec.Entropy.RequestValid 100 1 
 /-- The declarations of the functions whose tapes are secret. -/
 example : keySearchApi.publicOut = some keySearchOut := rfl
 example : Spec.RsaPkcs1Enc.encryptRandomApi.publicOut = some Spec.RsaPkcs1Enc.encryptRandomOut := rfl
+
+/-- And of the others that choose a tape's length: those that start a search, and those
+whose tapes are public. -/
+example : keyInitApi.publicOut = some keyInitOut := rfl
+example : Spec.Dsa.parameterInitApi.publicOut = some Spec.Dsa.parameterInitOut := rfl
+example : Spec.Dsa.parameterSearchApi.publicOut = some Spec.Dsa.parameterSearchOut := rfl
+example : Spec.Ffdh.parameterInitApi.publicOut = some Spec.Ffdh.parameterInitOut := rfl
+example : Spec.Ffdh.sievedParameterSearchApi.publicOut = some Spec.Ffdh.sievedParameterSearchOut := rfl
 
 /-- Two runs that agree on what is public ask for the same length, at `state[3]`. -/
 theorem request_eq {M : ISA} {A : Abi M} {c : Prog M} {k : Contract M} (h : keySearchOut.Of A c k)

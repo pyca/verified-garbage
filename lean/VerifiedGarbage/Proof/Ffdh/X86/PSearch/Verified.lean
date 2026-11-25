@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Exits
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.TCB.Artifact
@@ -244,9 +245,9 @@ theorem correct (s : State) (h : contract.pre s) :
   refine ⟨trace, t, E, ⟨F.saved, F.ret⟩, ?_⟩
   have out := F.output
   unfold Output at out
-  sig_post [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
+  sig_post [contract, Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
-  refine ⟨?_, ?_, F.used, _, F.policy, SievedGeneration.search_requests _ _ _ _⟩
+  refine ⟨?_, ?_, F.used, _, F.policy, SievedGeneration.search_asked _ _ _ _⟩
   · rw [BitVec.setWidth_append_eq_right, F.eax, toNat_ofNat_lt (by have := status_le (searchOf s); omega_using [this])]
     rfl
   · show Spec.Rsa.bytesAt t.mem ((arg s 0).setWidth 64) (arg s 1).toNat = (match searchOf s with
@@ -765,7 +766,7 @@ theorem wordsAt4 (m : Mem) (p : Addr) : Spec.Rsa.wordsAt m p 4 =
 
 /-- Two entry states whose public data agree start at the same loop point. -/
 theorem pub_point {s t : State} (H : contract.pub s t) : entryPt s = entryPt t := by
-  sig_pub [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
+  sig_pub [contract, Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   obtain ⟨SP, sy, L, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := H
   have inj : ∀ {l l' : List Byte}, l.map (fun x => x.toNat) = l'.map (fun x => x.toNat) → l = l' :=
@@ -888,7 +889,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig, abi,
+  sig_pre [contract, Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
     sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),

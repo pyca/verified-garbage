@@ -36,11 +36,21 @@ open VG.RISCV64 VG.RISCV64.Scrub
 open VG.Proof.MillerRabin.RISCV64 (RoundImpl)
 open VG.Proof.Rsa.RISCV64 (InvLaw)
 
-theorem init_scrubbed :
-    VerifiedScrubbed target Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init (Spec.RsaKeyGen.keyInitContract abi) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi) (W := 0)
+theorem init_asked :
+    VerifiedScrubbed target Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init (Proof.RsaKeyGen.keyInitAskedContract abi) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keyInitAskedApi) (W := 0)
     { code := Impl.RsaKeyGen.RISCV64.KeyInit.init, verified := KeyInit.init_verified }
     Proof.Rsa.RISCV64.Scrub.keyInitOut (by lit_decide)
+
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
+      (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp init_asked id
+
+theorem init_public :
+    Spec.RsaKeyGen.keyInitOut.Of abi Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
+      (Spec.RsaKeyGen.keyInitContract abi) :=
+  Proof.RsaKeyGen.keyInit_public init_asked
 
 /-- What the cleanup needs of the key search, with a stub of 96 bytes of
 stack in the place of the round. -/

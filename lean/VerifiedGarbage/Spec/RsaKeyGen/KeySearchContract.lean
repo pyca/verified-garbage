@@ -38,7 +38,8 @@ def keyInitSig : Sig where
   ret := some .u32
 
 /-- `keySearchInit`: 1, its three words, the first tape's length (any that
-`Entropy.RequestValid` allows with no octets available), the phase of `p`,
+`Entropy.RequestValid` allows with no octets available, which one being
+public, `keyInitOut`), the phase of `p`,
 `keyGenerations`, and the exponent's word; or its error and seven zeros. Its
 timing may depend on `bits` and `e`, which are public. -/
 def keyInitContract {M : ISA} (A : Abi M) : Contract M :=
@@ -54,11 +55,18 @@ def keyInitContract {M : ISA} (A : Abi M) : Contract M :=
     (leak := some fun _state bits e eLen m =>
       bits.toNat :: (bytesAt m e eLen.toNat).map (·.toNat))
 
+/-- What the function leaves that is public: the first tape's length, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). -/
+def keyInitOut : PublicOut keyInitSig where
+  out _ := fun state _bits _e _eLen _m m' _r => [(m'.readW (state + 24) 64).toNat]
+
 def keyInitApi : Api where
   module := "rsa_keygen"
   name := "vg_rsa_generate_init"
   sig := keyInitSig
   contracts := some fun A _ => keyInitContract A
+  publicOut := some keyInitOut
   summary := "Start generating an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS \
     186-5 Appendix A.1.3), with a modulus of `bits` bits rounded down to a multiple of \
     128, and the public exponent `e` (`e_len` octets, most significant first, with any \
@@ -69,7 +77,8 @@ def keyInitApi : Api where
     (`nlen / 16`), the entropy budget, the length of the first random tape to give \
     `vg_rsa_generate`, the phase (0), the generations allowed (4), and the exponent's \
     eight octets, most significant first.\n\n\
-    Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing may depend on `bits` and `e`."
+    Contract: `VG.Spec.RsaKeyGen.keyInitContract`. Timing, and the length of the first tape \
+    (`VG.Spec.RsaKeyGen.keyInitOut`), may depend on `bits` and `e`."
   safety := []
 
 /-! ## `vg_rsa_generate` -/

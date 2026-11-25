@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
@@ -210,22 +211,22 @@ theorem widths_depth {u₁ f₁ q₁ u₂ f₂ q₂ u₃ f₃ q₃ n₁ n₂ n�
 /-- `verifiedScrubbedAllFns` for the search's code `c`, whose contract makes
 public the addresses of the functions it calls indirectly (`Abi.withFns`). -/
 theorem scrubbedFns {c : Prog isa} {x : String} {xs : List String} (v : VecLevel)
-    (h : Verified target c (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) 632))
+    (h : Verified target c (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) 632))
     (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 632)
     (hins : c.allInstrs (Ins v.level) = true) (hin : ∀ n ∈ UpperLock.inames c, n ∈ x :: xs) :
-    VerifiedScrubbed target (scrubAll v 32 632 c) (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) 632)
+    VerifiedScrubbed target (scrubAll v 32 632 c) (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) 632)
       32 := by
   obtain ⟨hlv, hmx⟩ := allInstrs_level (Nat.le_refl _) hins
   exact verifiedScrubbedAllFns v h (Proof.Dsa.X86_64.Scrub.parameterSearchOut 632) hsp hd hlv
     (mxSame_of_noLoad hmx) hin
 
-/-- `Spec.Dsa.parameterSearchApi`'s function as emitted over `p` and `v`
+/-- `Proof.Dsa.parameterSearchAskedApi`'s function as emitted over `p` and `v`
 meets its contract in constant time and returns without secret residue. -/
-theorem search_scrubbed (p : Hashes) (v : RoundImpl) :
+theorem search_asked (p : Hashes) (v : RoundImpl) :
     VerifiedScrubbed target
       (Impl.Dsa.X86_64.Fn.parameterSearch (level p v) (addrs p.sha1 v) (addrs p.sha256 v) (addrs p.sha256 v)
         (name 128) (name 256) (name 384) (body p.sha1 v 128) (body p.sha256 v 256) (body p.sha256 v 384))
-      (Spec.Dsa.parameterSearchApi.contract (X86_64.abi.withFns (fns p.sha1 p.sha256 v)) 632) 32 := by
+      (Proof.Dsa.parameterSearchAskedApi.contract (X86_64.abi.withFns (fns p.sha1 p.sha256 v)) 632) 32 := by
   obtain ⟨i₁, n₁⟩ := body_side p.sha1 v 128 (body_eq1 p.sha1 p.mem1 v) (stub_sha1 p.sha1 p.mem1)
   obtain ⟨i₂, n₂⟩ := body_side p.sha256 v 256 (body_eq256 p.sha256 p.mem256 v 256 (.inl rfl))
     (stub_sha256 p.sha256 p.mem256 256 (.inl rfl))
@@ -248,6 +249,20 @@ theorem search_scrubbed (p : Hashes) (v : RoundImpl) :
   · have := n₃ n hn
     simp only [List.mem_cons, List.not_mem_nil, or_false] at this
     rcases this with rfl | rfl | rfl <;> simp
+
+theorem search_scrubbed (p : Hashes) (v : RoundImpl) :
+    VerifiedScrubbed target
+      (Impl.Dsa.X86_64.Fn.parameterSearch (level p v) (addrs p.sha1 v) (addrs p.sha256 v) (addrs p.sha256 v)
+        (name 128) (name 256) (name 384) (body p.sha1 v 128) (body p.sha256 v 256) (body p.sha256 v 384))
+      (Spec.Dsa.parameterSearchContract (X86_64.abi.withFns (fns p.sha1 p.sha256 v)) 632) 32 :=
+  Proof.Dsa.parameterSearch_imp (search_asked p v) id
+
+theorem search_public (p : Hashes) (v : RoundImpl) :
+    Spec.Dsa.parameterSearchOut.Of X86_64.abi
+      (Impl.Dsa.X86_64.Fn.parameterSearch (level p v) (addrs p.sha1 v) (addrs p.sha256 v) (addrs p.sha256 v)
+        (name 128) (name 256) (name 384) (body p.sha1 v 128) (body p.sha256 v 256) (body p.sha256 v 384))
+      (Spec.Dsa.parameterSearchContract (X86_64.abi.withFns (fns p.sha1 p.sha256 v)) 632) :=
+  Proof.Dsa.parameterSearch_public (search_asked p v)
 
 theorem search_spSafe (p : Hashes) (v : RoundImpl) :
     (Impl.Dsa.X86_64.Fn.parameterSearch (level p v) (addrs p.sha1 v) (addrs p.sha256 v) (addrs p.sha256 v)

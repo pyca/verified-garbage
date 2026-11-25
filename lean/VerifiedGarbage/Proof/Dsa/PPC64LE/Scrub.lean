@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Dsa.PPC64LE.PrevalidatedSign.Verified
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -132,7 +132,7 @@ theorem deriveKeyOut (stack : Nat) :
       · exact toNat_sw [] outLen
 
 theorem parameterSearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
-    PostOut (Spec.Dsa.parameterSearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.Dsa.parameterSearchAskedContract (abi.withConsts cs) stack)
       (Spec.Dsa.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
@@ -245,23 +245,45 @@ theorem parameterSearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
 /-- `vg_dsa_parameter_search` as emitted (`Impl.Dsa.PPC64LE.Fn.parameterSearch`),
 with the Miller-Rabin round `v`, meets its contract in constant time and
 returns without secret residue. -/
-theorem parameterSearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+theorem parameterSearch_asked (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     VerifiedScrubbed PPC64LE.target (Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code)
-      (Spec.Dsa.parameterSearchContract (PPC64LE.abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi) {
+      (Proof.Dsa.parameterSearchAskedContract (PPC64LE.abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) 32 :=
+  verifiedScrubbedAll (api := Proof.Dsa.parameterSearchAskedApi) {
       code := Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)
       verified := Gen.search_params v }
     176 Impl.Scrub.PPC64LE.Clear.all
     (parameterSearchOut Impl.RsaKeyGen.TrialTable32.consts 176)
     (parameterSearchSide v hv)
 
+theorem parameterSearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    VerifiedScrubbed PPC64LE.target (Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (PPC64LE.abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) 32 :=
+  Proof.Dsa.parameterSearch_imp (parameterSearch_asked v hv) id
+
+theorem parameterSearch_public (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    Spec.Dsa.parameterSearchOut.Of PPC64LE.abi (Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (PPC64LE.abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) :=
+  Proof.Dsa.parameterSearch_public (parameterSearch_asked v hv)
+
 /-- `vg_dsa_parameter_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
+theorem parameterInit_asked :
+    VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Generation.init
+      (Proof.Dsa.parameterInitAskedContract PPC64LE.abi) 32 :=
+  ⟨Proof.Dsa.PPC64LE.Gen.init_verified, Proof.Dsa.PPC64LE.Gen.init_noResidue _ _,
+    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
+
 theorem parameterInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Dsa.PPC64LE.Generation.init
       (Spec.Dsa.parameterInitContract PPC64LE.abi) 32 :=
-  ⟨Proof.Dsa.PPC64LE.Gen.init_verified, Proof.Dsa.PPC64LE.Gen.init_noResidue _ _,
-    PPC64LE.Scrub.retAbi_of_endsLi (by decide)⟩
+  Proof.Dsa.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Dsa.parameterInitOut.Of PPC64LE.abi Impl.Dsa.PPC64LE.Generation.init
+      (Spec.Dsa.parameterInitContract PPC64LE.abi) :=
+  Proof.Dsa.parameterInit_public parameterInit_asked
 
 end VG.Proof.Dsa.PPC64LE.Scrub

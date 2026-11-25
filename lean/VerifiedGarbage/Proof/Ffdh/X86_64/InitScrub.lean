@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
@@ -37,7 +38,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
     rw [Offset.add_add]
     exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
-theorem parameterInitOut : PostOut (Spec.Ffdh.parameterInitContract abi) (Spec.Ffdh.parameterInitSig.retBits 64) :=
+theorem parameterInitOut : PostOut (Proof.Ffdh.parameterInitAskedContract abi) (Spec.Ffdh.parameterInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨a0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
     replace hlen := Nat.succ.inj hlen
@@ -56,13 +57,23 @@ theorem parameterInitOut : PostOut (Spec.Ffdh.parameterInitContract abi) (Spec.F
 theorem parameterInit_codeSp : Impl.Ffdh.X86_64.Generation.init.all (fun i => !isa.writesSp i) = true := by
   sp_safe
 
-/-- `Spec.Ffdh.parameterInitApi`'s function as emitted (`Impl.Ffdh.X86_64.Fn.parameterInit`) meets its
+/-- `Proof.Ffdh.parameterInitAskedApi`'s function as emitted (`Impl.Ffdh.X86_64.Fn.parameterInit`) meets its
 contract in constant time and returns without secret residue. -/
-theorem parameterInit_scrubbed :
-    VerifiedScrubbed target Impl.Ffdh.X86_64.Fn.parameterInit (Spec.Ffdh.parameterInitApi.contract X86_64.abi 0) 32 :=
-  verifiedScrubbedAll (api := Spec.Ffdh.parameterInitApi)
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Ffdh.X86_64.Fn.parameterInit (Proof.Ffdh.parameterInitAskedApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Proof.Ffdh.parameterInitAskedApi)
     { code := Impl.Ffdh.X86_64.Generation.init, verified := Generation.init_verified, spSafe := parameterInit_codeSp }
     .sse parameterInitOut
+
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86_64.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract X86_64.abi) 32 :=
+  Proof.Ffdh.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Ffdh.parameterInitOut.Of X86_64.abi Impl.Ffdh.X86_64.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract X86_64.abi) :=
+  Proof.Ffdh.parameterInit_public parameterInit_asked
 
 theorem parameterInit_spSafe : Impl.Ffdh.X86_64.Fn.parameterInit.all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe parameterInit_codeSp

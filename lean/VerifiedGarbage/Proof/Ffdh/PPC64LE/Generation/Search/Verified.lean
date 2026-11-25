@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.CTCode
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -114,14 +114,14 @@ private theorem args_nowrap {s : State} (h : s.sp.toNat + 32 + 8 * 10 ≤ 2 ^ 64
   rw [BitVec.toNat_add, BitVec.toNat_ofNat]
   omega_using [h]
 
-theorem search_implies_pre₀ (s : State) (h : (sievedParameterSearchContract abi stackUse).pre s) :
+theorem search_implies_pre₀ (s : State) (h : (sievedParameterSearchAskedContract abi stackUse).pre s) :
     basePre s := by
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
     inReads₀, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq] at h
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
     inReads₀, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq] at h
   sig_split h
-  sig_reduce [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
+  sig_reduce [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, basePre,
     inReads₀, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq]
   simp only [List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.pairwise_cons, List.Pairwise.nil, and_true, false_implies,
@@ -137,18 +137,18 @@ theorem search_implies_pre₀ (s : State) (h : (sievedParameterSearchContract ab
     | with_reducible exact Region.Disjoint.symm ‹_›
     | exact args_nowrap ‹_›
 
-theorem search_implies_post₀ : ∀ s t, True → searchPost s t → (sievedParameterSearchContract abi stackUse).post s t := by
-  sig_implies_post [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, searchPost,
+theorem search_implies_post₀ : ∀ s t, True → searchPost s t → (sievedParameterSearchAskedContract abi stackUse).post s t := by
+  sig_implies_post [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, searchPost,
     searchResult, genRand, genLen, genBits, genGen, genAttempts, stackArgs_two, List.append_eq,
     BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem search_implies_pub₀ (s t : State) (h : (sievedParameterSearchContract abi stackUse).pub s t) :
+theorem search_implies_pub₀ (s t : State) (h : (sievedParameterSearchAskedContract abi stackUse).pub s t) :
     s.sp = t.sp ∧ (genRand s).map (·.toNat) = (genRand t).map (·.toNat) ∧
     Spec.Rsa.wordsAt s.mem (stackArg s 1) 4 = Spec.Rsa.wordsAt t.mem (stackArg t 1) 4 ∧
     s.gpr .r3 = t.gpr .r3 ∧ s.gpr .r4 = t.gpr .r4 ∧ s.gpr .r5 = t.gpr .r5 ∧ s.gpr .r6 = t.gpr .r6 ∧
     (s.gpr .r7).setWidth 32 = (t.gpr .r7).setWidth 32 ∧ s.gpr .r8 = t.gpr .r8 ∧ s.gpr .r9 = t.gpr .r9 ∧
     s.gpr .r10 = t.gpr .r10 ∧ stackArg s 0 = stackArg t 0 ∧ stackArg s 1 = stackArg t 1 := by
-  sig_pub [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackArgs_two, List.append_eq] at h
+  sig_pub [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackArgs_two, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hleak, r3, r4, r5, r6, r7, r8, r9, r10, a0, a1⟩ := h
   have hl1 : (List.map (fun x => BitVec.toNat x) (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)).length =
@@ -209,22 +209,22 @@ theorem pre_of_base (s : State) (hb : basePre (stripConsts tables s)) (hc : Cons
     exact e
 
 theorem search_implies_pre (s : State)
-    (h : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pre s) : searchContract.pre s := by
-  unfold sievedParameterSearchContract at h
+    (h : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pre s) : searchContract.pre s := by
+  unfold sievedParameterSearchAskedContract at h
   rw [tables_eq'] at h
   obtain ⟨h₁, h₂⟩ := pre_consts.mp h
   exact pre_of_base s (search_implies_pre₀ _ h₁) h₂
 
-theorem search_implies_post (s t : State) (_ : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pre s)
-    (h : searchContract.post s t) : (sievedParameterSearchContract (abi.withConsts tables) stackUse).post s t := by
-  unfold sievedParameterSearchContract
+theorem search_implies_post (s t : State) (_ : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pre s)
+    (h : searchContract.post s t) : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).post s t := by
+  unfold sievedParameterSearchAskedContract
   rw [tables_eq']
   exact post_consts.mpr (search_implies_post₀ s t trivial h)
 
-theorem search_implies_pub (s t : State) (_ : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pre s)
-    (_ : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pre t)
-    (h : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pub s t) : searchContract.pub s t := by
-  unfold sievedParameterSearchContract at h
+theorem search_implies_pub (s t : State) (_ : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pre s)
+    (_ : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pre t)
+    (h : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pub s t) : searchContract.pub s t := by
+  unfold sievedParameterSearchAskedContract at h
   rw [tables_eq'] at h
   obtain ⟨hp, hsy⟩ := pub_consts.mp h
   obtain ⟨a, b, c, d, e, f, g, i, j, k, l, m, n⟩ := search_implies_pub₀ s t hp
@@ -296,14 +296,14 @@ theorem sat_w8 : satMem.readW (0x4000 + 8) 64 = 64 := (satMem_small _ (by decide
 theorem sat_w16 : satMem.readW (0x4000 + 16) 64 = BitVec.ofNat 64 (parameterEntropy 512) :=
   (satMem_small _ (by decide)).trans (by decide)
 
-theorem sat_base : (sievedParameterSearchContract abi stackUse).pre (stripConsts tables satState) := by
+theorem sat_base : (sievedParameterSearchAskedContract abi stackUse).pre (stripConsts tables satState) := by
   have a0 : stackArg (stripConsts tables satState) 0 = 0x420 := sat_arg0
   have a1 : stackArg (stripConsts tables satState) 1 = 0x4000 := sat_arg1
   have w0 : (stripConsts tables satState).mem.readW 0x4000 64 = 0 := sat_w0
   have w8 : (stripConsts tables satState).mem.readW (0x4000 + 8) 64 = 64 := sat_w8
   have w16 : (stripConsts tables satState).mem.readW (0x4000 + 16) 64 = BitVec.ofNat 64 (parameterEntropy 512) :=
     sat_w16
-  unfold sievedParameterSearchContract
+  unfold sievedParameterSearchAskedContract
   refine Sig.contract_pre_of_check (by decide +kernel) ?_
   sig_reduce [parameterSearchSig, abi, argRegs, stackArgs_two, List.append_eq, a0, a1, w0, w8, w16,
     parameterAttempts, parameterEntropy]
@@ -342,16 +342,16 @@ theorem sat_consts : ConstsOk tables stackUse satState := by
     subst ht
     decide
 
-theorem sat : (sievedParameterSearchContract (abi.withConsts tables) stackUse).pre satState := by
-  unfold sievedParameterSearchContract
+theorem sat : (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse).pre satState := by
+  unfold sievedParameterSearchAskedContract
   rw [tables_eq']
   have h₁ := sat_base
   have h₂ := sat_consts
-  unfold sievedParameterSearchContract at h₁
+  unfold sievedParameterSearchAskedContract at h₁
   rw [tables_eq'] at h₁ h₂
   exact pre_consts.mpr ⟨h₁, h₂⟩
 
-theorem search_implies : searchContract.Implies (sievedParameterSearchContract (abi.withConsts tables) stackUse) where
+theorem search_implies : searchContract.Implies (sievedParameterSearchAskedContract (abi.withConsts tables) stackUse) where
   pre := search_implies_pre
   post := search_implies_post
   pub := search_implies_pub
@@ -2315,7 +2315,7 @@ open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.Ffdh.PPC64LE.Generation.Search.code c.call)
-      (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts tables) stackUse) :=
+      (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts tables) stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem sdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : sdepth c = 0 := by
@@ -2341,7 +2341,7 @@ def Cand.ofRound (v : RoundImpl) : Cand where
 abbrev searchCode (v : RoundImpl) : Prog isa := Impl.Ffdh.PPC64LE.Generation.Search.code (Cand.ofRound v).call
 
 theorem search_verified (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.Ffdh.sievedParameterSearchContract (abi.withConsts tables) stackUse) :=
+    Verified target (searchCode v) (Proof.Ffdh.sievedParameterSearchAskedContract (abi.withConsts tables) stackUse) :=
   search_verified_of (Cand.ofRound v)
 
 end VG.Proof.Ffdh.PPC64LE.Generation

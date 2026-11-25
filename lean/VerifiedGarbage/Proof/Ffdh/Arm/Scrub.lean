@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubFill
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
@@ -253,7 +254,7 @@ theorem cachedKeySearchOut :
     exact h
 
 theorem sievedParameterSearchOut :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract abi 280) (Spec.Ffdh.parameterSearchSig.retBits 32) :=
+    PostOut (Proof.Ffdh.sievedParameterSearchAskedContract abi 280) (Spec.Ffdh.parameterSearchSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
     replace hlen := Nat.succ.inj hlen
@@ -381,10 +382,20 @@ theorem keyInit : VerifiedScrubbed target Impl.Ffdh.Arm.Fn.keyInit (Spec.Ffdh.ke
     { code := Impl.Ffdh.Arm.KeyGeneration.init, verified := Proof.Ffdh.Arm.keyInit_verified } rfl
 
 /-- `vg_ffdh_parameter_generation_init`. -/
-theorem parameterInit :
-    VerifiedScrubbed target Impl.Ffdh.Arm.Fn.parameterInit (Spec.Ffdh.parameterInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Ffdh.parameterInitApi)
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Ffdh.Arm.Fn.parameterInit (Proof.Ffdh.parameterInitAskedContract abi) 32 :=
+  verifiedScrubbed (api := Proof.Ffdh.parameterInitAskedApi)
     { code := Impl.Ffdh.Arm.Generation.init, verified := Proof.Ffdh.Arm.parameterInit_verified } rfl
+
+theorem parameterInit :
+    VerifiedScrubbed target Impl.Ffdh.Arm.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract abi) 32 :=
+  Proof.Ffdh.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Ffdh.parameterInitOut.Of abi Impl.Ffdh.Arm.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract abi) :=
+  Proof.Ffdh.parameterInit_public parameterInit_asked
 
 open VG.Proof.Bignum.Arm in
 /-- `vg_ffdh_check_domain`, with the Montgomery product `b`. -/
@@ -453,15 +464,31 @@ theorem cachedKeySearch (b : MontBackend) :
 open VG.Proof.MillerRabin.Arm VG.Proof.Bignum.Arm in
 /-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v` and the
 Montgomery product `b`. -/
+theorem sievedParameterSearch_asked (v : RoundImpl) (b : MontBackend) :
+    VerifiedScrubbed target
+      (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
+        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)))
+      (Proof.Ffdh.sievedParameterSearchAskedContract abi 280) 32 :=
+  verifiedScrubbedAll (api := Proof.Ffdh.sievedParameterSearchAskedApi)
+    { code := Impl.Ffdh.Arm.ParameterSearch.code
+        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)
+      verified := ParameterSearch.verified (parameterBackend v b) }
+    Scrub.sievedParameterSearchOut (scrubSideF_of (Scrub.parameterSearchOk v b) Scrub.frameOk_280 _)
+
+open VG.Proof.MillerRabin.Arm VG.Proof.Bignum.Arm in
 theorem sievedParameterSearch (v : RoundImpl) (b : MontBackend) :
     VerifiedScrubbed target
       (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
         (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)))
       (Spec.Ffdh.sievedParameterSearchContract abi 280) 32 :=
-  verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi)
-    { code := Impl.Ffdh.Arm.ParameterSearch.code
-        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)
-      verified := ParameterSearch.verified (parameterBackend v b) }
-    Scrub.sievedParameterSearchOut (scrubSideF_of (Scrub.parameterSearchOk v b) Scrub.frameOk_280 _)
+  Proof.Ffdh.sievedParameterSearch_imp (sievedParameterSearch_asked v b) id
+
+open VG.Proof.MillerRabin.Arm VG.Proof.Bignum.Arm in
+theorem sievedParameterSearch_public (v : RoundImpl) (b : MontBackend) :
+    Spec.Ffdh.sievedParameterSearchOut.Of abi
+      (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
+        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)))
+      (Spec.Ffdh.sievedParameterSearchContract abi 280) :=
+  Proof.Ffdh.sievedParameterSearch_public (sievedParameterSearch_asked v b)
 
 end VG.Proof.Ffdh.Arm.Fn

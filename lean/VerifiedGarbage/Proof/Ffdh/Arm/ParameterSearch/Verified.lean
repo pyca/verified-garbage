@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Algebra.GroupWithZero.Basic
@@ -245,9 +244,9 @@ structure SearchAbi (p : SearchParams) (s : State) : Prop extends
   widthPolicy : s.mem.readW (off (State.addr p.control) 8) 64 = BitVec.ofNat 64 p.c.length
   entropyPolicy : s.mem.readW (off (State.addr p.control) 16) 64 = BitVec.ofNat 64 (Spec.Ffdh.parameterEntropy p.c.bits)
 
-theorem searchPublic (s : State) (pre : (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s) :
+theorem searchPublic (s : State) (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) :
     ∃ p, SearchAbi p s := by
-  sig_pre [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_pre [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨_, _, _, _, outUsed, outTape, outScratch, outControl, _, usedTape, usedScratch, usedControl, _,
     tapeScratch, tapeControl, scratchControl, _, _, _, _, _, _, _, _,
@@ -634,8 +633,8 @@ structure SearchLayout (p : SearchParams) (s : State) : Prop where
   stackSeparate : ∀ r ∈ writeRegions p ++ readRegions p s.sp, (FrameStack.belowA s.sp 280).Disjoint r
 
 theorem searchLayout {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s) (args : SearchAbi p s) : SearchLayout p s := by
-  sig_pre [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) (args : SearchAbi p s) : SearchLayout p s := by
+  sig_pre [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
   obtain ⟨stackFit, argFit, rd, wr, _, _, _, _, _, _, _, _, _, _, _, _, _, controlArgs,
     stackOut, stackUsed, stackTape, stackScratch, stackControl, stackArgs, _⟩ := pre
@@ -791,7 +790,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem searchInput {p : SearchParams} {s : State}
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s) (args : SearchAbi p s) : FunctionInput p s := by
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) (args : SearchAbi p s) : FunctionInput p s := by
   have layout := searchLayout pre args
   have fit := layout.stackFits
   have savedSub : (⟨State.addr (bodyState s).sp, 24⟩ : Region).Sub (FrameStack.belowA s.sp 280) :=
@@ -853,9 +852,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
-    (pre : (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s) :
+    (pre : (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.sievedParameterSearchContract abi 280).post s t := by
+      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).post s t := by
   obtain ⟨p, args⟩ := searchPublic s pre
   obtain ⟨tr, t, run, abiOk, result⟩ := function_ok backend (searchInput pre args)
   have widthNat : (s.gpr .r1).toNat = p.c.length := by
@@ -875,13 +874,13 @@ theorem correct (backend : VG.Proof.Ffdh.Arm.ParameterBackend) (s : State)
   have bytes := args.bytes
   simp only [State.addr] at bytes attemptsNat
   refine ⟨tr, t, run, abiOk, ?_⟩
-  sig_post [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_post [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   simp only [args.out, args.used, args.tape, args.control, widthNat, bitsNat, genNat, tapeNat, bytes, attemptsNat]
   rw [← same]
   refine ⟨?_, result.output, result.used, _, result.policy,
-    by rw [same]; exact SievedGeneration.search_requests _ _ _ _⟩
+    by rw [same]; exact SievedGeneration.search_asked _ _ _ _⟩
   rw [result.status, BitVec.toNat_ofNat, Nat.mod_eq_of_lt statusFits]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
@@ -949,11 +948,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
-    ConstantTime isa (Spec.Ffdh.sievedParameterSearchContract abi 280).pre (Spec.Ffdh.sievedParameterSearchContract abi 280).pub
+    ConstantTime isa (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pre (Proof.Ffdh.sievedParameterSearchAskedContract abi 280).pub
       (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate)) := by
   intro s t traceS traceT u v hs ht pub runS runT
   obtain ⟨p, args⟩ := searchPublic s hs
-  sig_pub [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
+  sig_pub [Proof.Ffdh.sievedParameterSearchAskedContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pub
   obtain ⟨sp, leak, p0, p1, p2, p3, p4, p5, p6, p7, p8, p9⟩ := pub
   obtain ⟨bytes, policy⟩ := List.append_inj leak (by
@@ -991,7 +990,7 @@ theorem constantTime (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
 
 theorem verified (backend : VG.Proof.Ffdh.Arm.ParameterBackend) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterSearch.code (.call backend.candidateName backend.candidate))
-      (Spec.Ffdh.sievedParameterSearchContract abi 280) :=
+      (Proof.Ffdh.sievedParameterSearchAskedContract abi 280) :=
   ⟨correct backend, constantTime backend, search_sat⟩
 
 end VG.Proof.Ffdh.Arm.ParameterSearch

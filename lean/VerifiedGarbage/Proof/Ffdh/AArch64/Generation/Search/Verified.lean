@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -364,7 +364,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (h : SInput p s)
     rw [iteration_depth c]; decide
 
 theorem SReturned.post {s t : State} (h : SReturned (sOfState s) (searchResult s) t) : searchPost s t :=
-  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, SievedGeneration.search_requests _ _ _ _⟩
+  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, SievedGeneration.search_asked _ _ _ _⟩
 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by
@@ -1013,13 +1013,13 @@ private theorem args_nowrap {s : State} (h : s.sp.toNat + 16 ≤ 2 ^ 64) :
   simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
   exact h
 
-theorem search_implies_pre (s : State) (h : (sievedParameterSearchContract abi 32).pre s) : searchContract.pre s := by
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
+theorem search_implies_pre (s : State) (h : (sievedParameterSearchAskedContract abi 32).pre s) : searchContract.pre s := by
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
     inReads, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq] at h
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
     inReads, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq] at h
   sig_split h
-  sig_reduce [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
+  sig_reduce [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
     inReads, inWrites, inOut, inUsed, inRand, inScr, inCtl, inArgs, stackArgs_two, List.append_eq]
   simp only [List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.pairwise_cons, List.Pairwise.nil, and_true, false_implies,
@@ -1035,16 +1035,16 @@ theorem search_implies_pre (s : State) (h : (sievedParameterSearchContract abi 3
     | with_reducible exact Region.Disjoint.symm ‹_›
     | exact args_nowrap ‹_›
 
-theorem search_implies_post : ∀ s t, (sievedParameterSearchContract abi 32).pre s →
-    searchContract.post s t → (sievedParameterSearchContract abi 32).post s t := by
-  sig_implies_post [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, searchContract, searchPost,
+theorem search_implies_post : ∀ s t, (sievedParameterSearchAskedContract abi 32).pre s →
+    searchContract.post s t → (sievedParameterSearchAskedContract abi 32).post s t := by
+  sig_implies_post [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, searchContract, searchPost,
     searchResult, genRand, genLen, genBits, genGen, genAttempts, stackArgs_two, List.append_eq,
     BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem search_implies_pub (s t : State) (_hs : (sievedParameterSearchContract abi 32).pre s)
-    (_ht : (sievedParameterSearchContract abi 32).pre t) (h : (sievedParameterSearchContract abi 32).pub s t) :
+theorem search_implies_pub (s t : State) (_hs : (sievedParameterSearchAskedContract abi 32).pre s)
+    (_ht : (sievedParameterSearchAskedContract abi 32).pre t) (h : (sievedParameterSearchAskedContract abi 32).pub s t) :
     searchContract.pub s t := by
-  sig_pub [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackArgs_two, List.append_eq] at h
+  sig_pub [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackArgs_two, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hleak, r0, r1, r2, r3, r4, r5, r6, r7, a0, a1⟩ := h
   have hl1 : (List.map (fun x => BitVec.toNat x) (Spec.Rsa.bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat)).length =
@@ -1065,14 +1065,14 @@ private def searchSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x6000, 16⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩, ⟨0x4000, 128⟩]
 
-theorem search_implies : searchContract.Implies (sievedParameterSearchContract abi 32) where
+theorem search_implies : searchContract.Implies (sievedParameterSearchAskedContract abi 32) where
   pre := search_implies_pre
   post := search_implies_post
   pub := search_implies_pub
   sat := by
     refine ⟨searchSat, ?_⟩
     sig_iff
-    sig_reduce [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
+    sig_reduce [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow, searchContract, searchPre,
       stackArgs_two, List.append_eq, parameterAttempts, parameterEntropy]
     sig_and_intros
     all_goals first
@@ -1103,7 +1103,7 @@ open VG.Proof.MillerRabin.AArch64 (RoundImpl)
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.Ffdh.AArch64.Generation.Search.code c.call)
-      (Spec.Ffdh.sievedParameterSearchContract abi stackUse) :=
+      (Proof.Ffdh.sievedParameterSearchAskedContract abi stackUse) :=
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFrames = true := by
@@ -1132,6 +1132,6 @@ def Cand.ofRound (v : RoundImpl) : Cand where
 abbrev searchCode (v : RoundImpl) : Prog isa := Impl.Ffdh.AArch64.Generation.Search.code (Cand.ofRound v).call
 
 theorem search_verified (v : RoundImpl) :
-    Verified target (searchCode v) (Spec.Ffdh.sievedParameterSearchContract abi stackUse) :=
+    Verified target (searchCode v) (Proof.Ffdh.sievedParameterSearchAskedContract abi stackUse) :=
   search_verified_of (Cand.ofRound v)
 end VG.Proof.Ffdh.AArch64.Generation

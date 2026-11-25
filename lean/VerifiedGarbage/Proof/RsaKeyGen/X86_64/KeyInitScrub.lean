@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
@@ -34,7 +35,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
     rw [Offset.add_add]
     exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
-theorem initOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
+theorem initOut : PostOut (Proof.RsaKeyGen.keyInitAskedContract abi) (Spec.RsaKeyGen.keyInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨a0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
     replace hlen := Nat.succ.inj hlen
@@ -61,12 +62,22 @@ theorem initOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.k
 
 theorem init_codeSp : Impl.RsaKeyGen.X86_64.KeyInit.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-/-- `Spec.RsaKeyGen.keyInitApi`'s function as emitted (`Impl.RsaKeyGen.X86_64.Fn.keyInit`) meets its
+/-- `Proof.RsaKeyGen.keyInitAskedApi`'s function as emitted (`Impl.RsaKeyGen.X86_64.Fn.keyInit`) meets its
 contract in constant time and returns without secret residue. -/
-theorem init_scrubbed :
-    VerifiedScrubbed target Impl.RsaKeyGen.X86_64.Fn.keyInit (Spec.RsaKeyGen.keyInitApi.contract X86_64.abi 0) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi)
+theorem init_asked :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86_64.Fn.keyInit (Proof.RsaKeyGen.keyInitAskedApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keyInitAskedApi)
     { code := Impl.RsaKeyGen.X86_64.KeyInit.init, verified := init_verified, spSafe := init_codeSp } .sse initOut
+
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86_64.Fn.keyInit
+      (Spec.RsaKeyGen.keyInitContract X86_64.abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp init_asked id
+
+theorem init_public :
+    Spec.RsaKeyGen.keyInitOut.Of X86_64.abi Impl.RsaKeyGen.X86_64.Fn.keyInit
+      (Spec.RsaKeyGen.keyInitContract X86_64.abi) :=
+  Proof.RsaKeyGen.keyInit_public init_asked
 
 theorem init_spSafe : Impl.RsaKeyGen.X86_64.Fn.keyInit.all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe init_codeSp

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Scrub
 
@@ -85,7 +85,7 @@ theorem deriveKeyOut (stack : Nat) :
       · exact toNat_sw [] outLen
 
 theorem parameterSearchOut (stack : Nat) :
-    PostOut (Spec.Dsa.parameterSearchContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 64) :=
+    PostOut (Proof.Dsa.parameterSearchAskedContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 64) :=
   postOut_of_local (leak := some _) ScrubAbi.plain fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

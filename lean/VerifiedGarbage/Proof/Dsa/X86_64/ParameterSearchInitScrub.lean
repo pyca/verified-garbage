@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
@@ -34,7 +35,7 @@ theorem wordsAt_congr {m₁ m₂ : Mem} {q : Addr} {k N : Nat} (hk : 8 * k ≤ N
     rw [Offset.add_add]
     exact (h _ (Offset.contains_base _ (by omega_using [hk, ht, this]) (by omega_using [hk, hN, ht, this]))).symm
 
-theorem initOut : PostOut (Spec.Dsa.parameterInitContract abi) (Spec.Dsa.parameterInitSig.retBits 64) :=
+theorem initOut : PostOut (Proof.Dsa.parameterInitAskedContract abi) (Spec.Dsa.parameterInitSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨a0, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 1) hlen
     replace hlen := Nat.succ.inj hlen
@@ -50,12 +51,22 @@ theorem initOut : PostOut (Spec.Dsa.parameterInitContract abi) (Spec.Dsa.paramet
 
 theorem init_codeSp : Impl.Dsa.X86_64.ParameterSearch.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-/-- `Spec.Dsa.parameterInitApi`'s function as emitted (`Impl.Dsa.X86_64.Fn.parameterInit`) meets its
+/-- `Proof.Dsa.parameterInitAskedApi`'s function as emitted (`Impl.Dsa.X86_64.Fn.parameterInit`) meets its
 contract in constant time and returns without secret residue. -/
-theorem init_scrubbed :
-    VerifiedScrubbed target Impl.Dsa.X86_64.Fn.parameterInit (Spec.Dsa.parameterInitApi.contract X86_64.abi 0) 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterInitApi)
+theorem init_asked :
+    VerifiedScrubbed target Impl.Dsa.X86_64.Fn.parameterInit (Proof.Dsa.parameterInitAskedApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Proof.Dsa.parameterInitAskedApi)
     { code := Impl.Dsa.X86_64.ParameterSearch.init, verified := init_verified, spSafe := init_codeSp } .sse initOut
+
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Dsa.X86_64.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract X86_64.abi) 32 :=
+  Proof.Dsa.parameterInit_imp init_asked id
+
+theorem init_public :
+    Spec.Dsa.parameterInitOut.Of X86_64.abi Impl.Dsa.X86_64.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract X86_64.abi) :=
+  Proof.Dsa.parameterInit_public init_asked
 
 theorem init_spSafe : Impl.Dsa.X86_64.Fn.parameterInit.all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe init_codeSp

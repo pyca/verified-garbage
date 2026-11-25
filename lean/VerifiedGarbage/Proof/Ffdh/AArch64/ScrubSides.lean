@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Instances
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
@@ -96,9 +97,19 @@ theorem derivePublic_scrubbed :
     (derivePublicOk _) (by lit_decide) (by lit_decide) (.inr (.inl rfl))
 
 /-- `vg_ffdh_parameter_init`, whose code leaves nothing to clear. -/
-theorem parameterInit_scrubbed :
-    VerifiedScrubbed target Impl.Ffdh.AArch64.Generation.init (Spec.Ffdh.parameterInitContract abi) 32 :=
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Ffdh.AArch64.Generation.init (Proof.Ffdh.parameterInitAskedContract abi) 32 :=
   ⟨Proof.Ffdh.AArch64.Generation.init_verified, Proof.Ffdh.AArch64.Generation.init_noResidue _ _, fun ty _ h => by cases ty <;> cases h⟩
+
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.AArch64.Generation.init
+      (Spec.Ffdh.parameterInitContract abi) 32 :=
+  Proof.Ffdh.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Ffdh.parameterInitOut.Of abi Impl.Ffdh.AArch64.Generation.init
+      (Spec.Ffdh.parameterInitContract abi) :=
+  Proof.Ffdh.parameterInit_public parameterInit_asked
 
 /-- `vg_ffdh_key_init`, whose code leaves nothing to clear. -/
 theorem keyInit_scrubbed :
@@ -137,9 +148,9 @@ theorem search_side_closed : sideAll (fun i => !i.writesDit)
 
 /-- `vg_ffdh_generate_parameters`'s search, with each implementation of the
 Miller–Rabin round. -/
-theorem parameterSearch_scrubbed (v : RoundImpl) :
+theorem parameterSearch_asked (v : RoundImpl) :
     VerifiedScrubbed target (Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm)
-      (Spec.Ffdh.sievedParameterSearchContract abi stackUse) 32 := by
+      (Proof.Ffdh.sievedParameterSearchAskedContract abi stackUse) 32 := by
   obtain ⟨hs, hd⟩ := side_depth_of_fill2 (d := 2)
     (c := Impl.Ffdh.AArch64.Generation.Search.code
       (.call ("vg_ffdh_parameter_candidate_sieved" ++ v.suffix)
@@ -151,5 +162,15 @@ theorem parameterSearch_scrubbed (v : RoundImpl) :
     (by rfl) (Nat.le_refl _) search_side_closed (Nat.le_of_ble_eq_true (by kernel_rfl))
   exact verifiedScrubbedOf (W := 32) (search_verified v) (Scrub.sievedParameterSearchOk _) (by decide)
     (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (.inr (.inl rfl))
+
+theorem parameterSearch_scrubbed (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.Ffdh.sievedParameterSearchContract abi stackUse) 32 :=
+  Proof.Ffdh.sievedParameterSearch_imp (parameterSearch_asked v) id
+
+theorem parameterSearch_public (v : RoundImpl) :
+    Spec.Ffdh.sievedParameterSearchOut.Of abi (Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.Ffdh.sievedParameterSearchContract abi stackUse) :=
+  Proof.Ffdh.sievedParameterSearch_public (parameterSearch_asked v)
 
 end VG.Proof.Ffdh.AArch64.Generation

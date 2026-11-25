@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Impl.Dsa.Arm.Fn
 public import VerifiedGarbage.Proof.Dsa.Arm.ValidatePrivateVerified
@@ -160,7 +161,7 @@ that to the code with any round: its frames use no more stack than the
 stub's, and it makes no indirect call if the stub's code makes none. -/
 
 theorem parameterSearchOut (stack : Nat) :
-    PostOut (Spec.Dsa.parameterSearchContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 32) :=
+    PostOut (Proof.Dsa.parameterSearchAskedContract abi stack) (Spec.Dsa.parameterSearchSig.retBits 32) :=
   postOut_of_local (leak := some _) ScrubAbi.plain fun
     | [out, outLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Dsa.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -290,10 +291,20 @@ theorem verifyPrevalidated (umaal : Bool) :
     { code := Prevalidated.verify umaal, verified := prevalidated_verified } (Scrub.verify_noFrames umaal)
 
 /-- `vg_dsa_parameter_init`. -/
-theorem parameterInit :
-    VerifiedScrubbed target Impl.Dsa.Arm.Fn.parameterInit (Spec.Dsa.parameterInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.parameterInitApi)
+theorem parameterInit_asked :
+    VerifiedScrubbed target Impl.Dsa.Arm.Fn.parameterInit (Proof.Dsa.parameterInitAskedContract abi) 32 :=
+  verifiedScrubbed (api := Proof.Dsa.parameterInitAskedApi)
     { code := Generation.init, verified := Gen.Init.init_verified } Scrub.parameterInit_noFrames
+
+theorem parameterInit :
+    VerifiedScrubbed target Impl.Dsa.Arm.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) 32 :=
+  Proof.Dsa.parameterInit_imp parameterInit_asked id
+
+theorem parameterInit_public :
+    Spec.Dsa.parameterInitOut.Of abi Impl.Dsa.Arm.Fn.parameterInit
+      (Spec.Dsa.parameterInitContract abi) :=
+  Proof.Dsa.parameterInit_public parameterInit_asked
 
 /-- `vg_dsa_random_sign_prevalidated`. -/
 theorem randomSignPrevalidated (umaal : Bool) :
@@ -314,15 +325,25 @@ theorem generateKey (umaal : Bool) :
     (Scrub.generateKeyOut _) (scrubSideF_of (Scrub.generateKey_codeOk umaal) Scrub.frameOk_144 _)
 
 /-- `vg_dsa_parameter_search`, over the Miller–Rabin round `v`. -/
-theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
+theorem parameterSearch_asked (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
     VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op v.mont.dbl)
-      (Spec.Dsa.parameterSearchContract abi 352) 32 :=
-  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
+      (Proof.Dsa.parameterSearchAskedContract abi 352) 32 :=
+  verifiedScrubbedAll (api := Proof.Dsa.parameterSearchAskedApi)
     { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code v.mont.callOp.op v.mont.dbl, verified := Gen.search_params v }
     (Scrub.parameterSearchOut _)
     (scrubSideF_of ((Scrub.search_fill umaal v.suffix v.mont.name v.mont.dblName ⟨v.stack, v.icallFree⟩ v.mont.mulOk
         v.mont.dblOk).codeOk
         (Scrub.search_stubOk umaal))
       Scrub.frameOk_352 _)
+
+theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
+    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op v.mont.dbl)
+      (Spec.Dsa.parameterSearchContract abi 352) 32 :=
+  Proof.Dsa.parameterSearch_imp (parameterSearch_asked umaal v) id
+
+theorem parameterSearch_public (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
+    Spec.Dsa.parameterSearchOut.Of abi (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op v.mont.dbl)
+      (Spec.Dsa.parameterSearchContract abi 352) :=
+  Proof.Dsa.parameterSearch_public (parameterSearch_asked umaal v)
 
 end VG.Proof.Dsa.Arm.Fn

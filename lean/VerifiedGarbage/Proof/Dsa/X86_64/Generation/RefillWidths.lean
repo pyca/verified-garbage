@@ -2,6 +2,7 @@ module
 
 -- separate module: its proofs (about 5 s) build in parallel with `RefillCorrect`'s, which `RefillBackend` also imports
 
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardCall
@@ -718,32 +719,32 @@ theorem cmp_run (v : BitVec 32) (s : State) :
 
 /-- The search's contract for the two larger widths, with the width in `rax`. -/
 def largeContract (A : Abi isa) (S : Nat) : Contract isa where
-  pre s := (Spec.Dsa.parameterSearchContract A S).pre s ∧ s.gpr .rax = widthWord s ∧
+  pre s := (Proof.Dsa.parameterSearchAskedContract A S).pre s ∧ s.gpr .rax = widthWord s ∧
     (widthWord s).toNat ≠ 128
-  post := (Spec.Dsa.parameterSearchContract A S).post
-  pub := (Spec.Dsa.parameterSearchContract A S).pub
+  post := (Proof.Dsa.parameterSearchAskedContract A S).post
+  pub := (Proof.Dsa.parameterSearchAskedContract A S).pub
 
-theorem refill_of_search {p S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s)
+theorem refill_of_search {p S : Nat} {s : State} (h : (Proof.Dsa.parameterSearchAskedContract abi S).pre s)
     (hw : (widthWord s).toNat = p) : (Refill.contract p abi S).pre s := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
   sig_split h
   sig_pre [Refill.contract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
   sig_pre [Refill.contract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
   sig_and_intros
   all_goals with_reducible assumption
 
-theorem valid_of_search {S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s) :
+theorem valid_of_search {S : Nat} {s : State} (h : (Proof.Dsa.parameterSearchAskedContract abi S).pre s) :
     Spec.Dsa.generationPLenValid (widthWord s).toNat = true := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
   sig_split h
   with_reducible assumption
 
-theorem search_in {S : Nat} {s : State} (h : (Spec.Dsa.parameterSearchContract abi S).pre s) :
+theorem search_in {S : Nat} {s : State} (h : (Proof.Dsa.parameterSearchAskedContract abi S).pre s) :
     InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8 ∧ InRegions (s.rd ++ s.wr) (stackArg s 1 + 8) 8 := by
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
-  sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
   sig_split h
   refine ⟨⟨⟨stackArgAddr s 0, 16⟩, ?_, ?_⟩, ⟨⟨stackArg s 1, 32⟩, ?_, ?_⟩⟩
   · rw [‹s.rd = _›]
@@ -761,9 +762,9 @@ theorem wordsAt_four (m : Mem) (p : Addr) : (wordsAt m p 4).map (·.toNat) =
     [(m.readW (p + BitVec.ofNat 64 0) 64).toNat, (m.readW (p + 8) 64).toNat, (m.readW (p + 16) 64).toNat,
       (m.readW (p + 24) 64).toNat] := rfl
 
-theorem search_pub {S : Nat} {s s' : State} (h : (Spec.Dsa.parameterSearchContract abi S).pub s s') :
+theorem search_pub {S : Nat} {s s' : State} (h : (Proof.Dsa.parameterSearchAskedContract abi S).pub s s') :
     s.gpr .rsp = s'.gpr .rsp ∧ stackArg s 1 = stackArg s' 1 ∧ widthWord s = widthWord s' := by
-  sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
+  sig_pub [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two] at h
   obtain ⟨hsp, hl, -, -, -, -, -, -, -, h₇⟩ := h
   have hst : stackArg s 1 = stackArg s' 1 := h₇
   refine ⟨hsp, hst, ?_⟩
@@ -805,9 +806,9 @@ theorem large_verified (S : Nat) {x : String} {xs : List String} {f₂₅₆ f�
     rw [e₀] at e; rw [e₀'] at e'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
-    have pu : (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
+    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
     obtain ⟨-, -, hw⟩ := search_pub (S := S)
-      (pub_withFns.mp (show (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) S).pub s s' from hq)).1
+      (pub_withFns.mp (show (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s' from hq)).1
     exact ⟨rfl, by simp only [hs.2.1, hs'.2.1, hw], fun _ => pu, fun _ => pu⟩
 
 theorem widths_verified (S : Nat) {x : String} {xs : List String} {f₁₂₈ f₂₅₆ f₃₈₄ : List Instr}
@@ -819,9 +820,9 @@ theorem widths_verified (S : Nat) {x : String} {xs : List String} {f₁₂₈ f�
     (h₃₈₄ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width f₃₈₄ n₃₈₄ c₃₈₄)
       (Refill.contract 384 (abi.withFns (x :: xs)) S))
     (hsatL : ∃ s, (largeContract (abi.withFns (x :: xs)) S).pre s)
-    (hsat : ∃ s, (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) S).pre s) :
+    (hsat : ∃ s, (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pre s) :
     Verified target (Impl.Dsa.X86_64.ParameterSearch.widths f₁₂₈ f₂₅₆ f₃₈₄ n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
-      (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) S) := by
+      (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S) := by
   refine Verified.entryBranch (p := fun s => widthWord s == 128)
     (fun s => [.addr (stackArgAddr s 1), .addr (stackArg s 1 + 8)]) h₁₂₈
     (large_verified S h₂₅₆ h₃₈₄ hsatL) (fun s hs => ?_) ?_ hsat
@@ -843,7 +844,7 @@ theorem widths_verified (S : Nat) {x : String} {xs : List String} {f₁₂₈ f�
     rw [e₀] at e; rw [e₀'] at e'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
-    have pu : (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
+    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
     obtain ⟨hsp, hst, hw⟩ := search_pub (pub_withFns.mp hq).1
     exact ⟨by simp only [stackArgAddr, hsp, hst], by simp only [hw], fun _ => pu, fun _ => pu⟩
 
@@ -887,9 +888,9 @@ theorem below_disjoint {S : Nat} (hS : S ≤ 2 ^ 40) {r : Region}
   · omega_arith
 
 theorem search_sat {p S : Nat} (hp : p = 128 ∨ p = 256 ∨ p = 384) (hS : S ≤ 2 ^ 40) :
-    (Spec.Dsa.parameterSearchContract abi (S + 64)).pre (satState p) := by
+    (Proof.Dsa.parameterSearchAskedContract abi (S + 64)).pre (satState p) := by
   rcases hp with rfl | rfl | rfl
-  all_goals sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
+  all_goals sig_pre [Proof.Dsa.parameterSearchAskedContract, Spec.Dsa.parameterSearchSig, abi, argRegs, stackArgs_two]
   all_goals sig_and_intros
   all_goals first
     | decide +kernel
@@ -924,7 +925,7 @@ theorem large_sat {S : Nat} (hS : S ≤ 2 ^ 40) {x : String} {xs : List String} 
   ⟨satState 256, search_sat (.inr (.inl rfl)) hS, by decide +kernel, by decide +kernel⟩
 
 theorem full_sat {S : Nat} (hS : S ≤ 2 ^ 40) {x : String} {xs : List String} :
-    ∃ s, (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) (S + 64)).pre s :=
+    ∃ s, (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) (S + 64)).pre s :=
   ⟨satState 128, search_sat (.inl rfl) hS⟩
 
 /-! ## The search -/
@@ -949,7 +950,7 @@ theorem refillWidths_verified (S : Nat) (hS : S ≤ 2 ^ 40) {x : String} {xs : L
     Verified target (Impl.Dsa.X86_64.ParameterSearch.widths
       (Impl.Dsa.X86_64.ParameterSearch.fnAddrs u₁₂₈ f₁₂₈ q₁₂₈) (Impl.Dsa.X86_64.ParameterSearch.fnAddrs u₂₅₆ f₂₅₆ q₂₅₆)
       (Impl.Dsa.X86_64.ParameterSearch.fnAddrs u₃₈₄ f₃₈₄ q₃₈₄) n₁₂₈ n₂₅₆ n₃₈₄ c₁₂₈ c₂₅₆ c₃₈₄)
-      (Spec.Dsa.parameterSearchContract (abi.withFns (x :: xs)) (S + 64)) :=
+      (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) (S + 64)) :=
   have hS' : S + 72 ≤ 2 ^ 64 := by omega_arith
   widths_verified (S + 64)
     (forward_refill 128 S hS' h₁₂₈ k₁₂₈ i₁₂₈ s₁₂₈ d₁₂₈ (refill_sat (.inl rfl) hS))

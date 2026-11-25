@@ -39,9 +39,11 @@ def artifacts : List (Artifact X86.target) := [
     verified := Proof.Ffdh.X86.Scrub.cachedKeySearch_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.parameterInit
-    verified := Proof.Ffdh.X86.Scrub.parameterInit_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Ffdh.X86.Scrub.parameterInit_public },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.sievedParameterSearch
-    verified := Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed }]
+    verified := Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed
+    publicOutOk := Proof.Ffdh.X86.Scrub.sievedParameterSearch_public }]
 
 end VG.Artifacts.Ffdh.X86

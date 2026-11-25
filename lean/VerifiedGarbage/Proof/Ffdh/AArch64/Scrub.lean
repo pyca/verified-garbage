@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
@@ -132,7 +132,7 @@ theorem derivePublicOk (stack : Nat) :
 
 
 theorem sievedParameterSearchOk (stack : Nat) :
-    ScrubAllOk (Spec.Ffdh.sievedParameterSearchContract abi stack) stack (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) :=
+    ScrubAllOk (Proof.Ffdh.sievedParameterSearchAskedContract abi stack) stack (Spec.Ffdh.parameterSearchSig.retBits abi.ptrBits) :=
   scrubAllOk_args_any (sig := Spec.Ffdh.parameterSearchSig) fun
     | [out, outLen, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by
       simp only [Spec.Ffdh.parameterSearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

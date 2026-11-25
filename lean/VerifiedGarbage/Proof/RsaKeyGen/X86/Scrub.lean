@@ -43,11 +43,21 @@ namespace VG.Proof.RsaKeyGen.X86.Scrub
 open VG.X86 VG.X86.Scrub VG.Proof.Rsa.X86.Scrub
 
 /-- `vg_rsa_generate_init`, with its cleanup, returns without secret residue. -/
-theorem generateInit_scrubbed :
-    VerifiedScrubbed target Impl.RsaKeyGen.X86.Fn.generateInit (Spec.RsaKeyGen.keyInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi) {
+theorem generateInit_asked :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86.Fn.generateInit (Proof.RsaKeyGen.keyInitAskedContract abi) 32 :=
+  verifiedScrubbed (api := Proof.RsaKeyGen.keyInitAskedApi) {
     code := Impl.RsaKeyGen.X86.KeyInit.init
     verified := Proof.RsaKeyGen.X86.KeyInit.init_verified }
+
+theorem generateInit_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86.Fn.generateInit
+      (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  Proof.RsaKeyGen.keyInit_imp generateInit_asked id
+
+theorem generateInit_public :
+    Spec.RsaKeyGen.keyInitOut.Of abi Impl.RsaKeyGen.X86.Fn.generateInit
+      (Spec.RsaKeyGen.keyInitContract abi) :=
+  Proof.RsaKeyGen.keyInit_public generateInit_asked
 
 /-! ## `vg_rsa_generate` -/
 

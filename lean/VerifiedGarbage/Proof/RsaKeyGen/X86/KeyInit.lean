@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 import VerifiedGarbage.Proof.Framework.Sig
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyInit
-meta import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -56,8 +56,8 @@ structure ABI (s : State) : Prop where
   outBound : (arg s 0).toNat + 56 ≤ 2 ^ 32
   eBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
 
-theorem abi_of {s : State} (h : (Spec.RsaKeyGen.keyInitContract abi).pre s) : ABI s := by
-  sig_pre [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes,
+theorem abi_of {s : State} (h : (Proof.RsaKeyGen.keyInitAskedContract abi).pre s) : ABI s := by
+  sig_pre [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes,
     stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
@@ -590,7 +590,7 @@ theorem result_post {s t : State} (P : InitPost s t) :
     | .ok values => (t.gpr .eax).toNat = 1 ∧ ∃ first,
         Spec.Rsa.wordsAt t.mem (B s) 6 = (values ++ [first, 0, Spec.RsaKeyGen.keyGenerations]).map (BitVec.ofNat 64) ∧
         Spec.Rsa.bytesAt t.mem (B s + 48) 8 = Spec.Rsa.i2osp (Spec.Rsa.os2ip (eB s)) 8 ∧
-        Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first := by
+        Proof.RsaKeyGen.FirstAsked (values.getD 1 0) first := by
   obtain ⟨-, -, o, ho, hax, S⟩ := P
   generalize hx : Spec.Rsa.os2ip (eB s) = x at ho hax S ⊢
   obtain b32 := (arg s 1).isLt
@@ -645,8 +645,7 @@ theorem result_post {s t : State} (P : InitPost s t) :
             (rw [Proof.Ffdh.X86.ParamInit.zero_half (by omega_using [hn])]; congr 1; omega_using []))
       · exact e_bytes _ _ hvE.2.2 S.w12 (by rw [S.w13]; simp only [↓reduceIte, Nat.mod_eq_of_lt hvE.2.2])
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
-        unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega_using [hn]
+        exact Proof.RsaKeyGen.firstAsked (by omega_using [hn])
   · have hv' : Spec.RsaKeyGen.exponentValid x = false := by simpa using hv
     rw [hv'] at hax W
     simp only [Bool.not_false, Bool.or_true, Bool.not_true, ↓reduceIte, Bool.false_eq_true] at hax W
@@ -655,8 +654,8 @@ theorem result_post {s t : State} (P : InitPost s t) :
     rw [W, bswap_zero]
     rfl
 
-theorem correct (s : State) (h : (Spec.RsaKeyGen.keyInitContract abi).pre s) :
-    ∃ trace t, Exec isa init s trace t ∧ abiPreserved s t ∧ (Spec.RsaKeyGen.keyInitContract abi).post s t := by
+theorem correct (s : State) (h : (Proof.RsaKeyGen.keyInitAskedContract abi).pre s) :
+    ∃ trace t, Exec isa init s trace t ∧ abiPreserved s t ∧ (Proof.RsaKeyGen.keyInitAskedContract abi).post s t := by
   obtain A := abi_of h
   obtain ⟨tr, t, E, P⟩ := init_ok A
   obtain R := (Exec.regions E (by rfl)).2.2
@@ -666,7 +665,7 @@ theorem correct (s : State) (h : (Spec.RsaKeyGen.keyInitContract abi).pre s) :
     · exact P.1.gpr (by revert r; decide)
   · exact R.readW (Region.contains_self _ _) (fun r hr => by
       rw [A.wr] at hr; obtain rfl := List.mem_singleton.mp hr; exact A.retOut) (by decide)
-  · sig_post [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes]
+  · sig_post [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right]
     exact result_post P
 
@@ -686,11 +685,11 @@ theorem args_out {s : State} (A : ABI s) : ArgsOut 4 s := by
   · exact A.retOut a (by rw [← he]; exact Offset.contains_base _ (by omega_using [h]) (by omega_using [])) hb
   · exact A.outArgs a hb (by rw [a0, ← he]; exact Offset.contains _ (by omega_using [h]) (by omega_using [hj]) (by decide))
 
-theorem constantTime : ConstantTime isa (Spec.RsaKeyGen.keyInitContract abi).pre
-    (Spec.RsaKeyGen.keyInitContract abi).pub init := by
+theorem constantTime : ConstantTime isa (Proof.RsaKeyGen.keyInitAskedContract abi).pre
+    (Proof.RsaKeyGen.keyInitAskedContract abi).pub init := by
   refine VG.Taint.constantTime (A := VG.X86.taint) (argTaint [] 20) ?_ (by taint_decide)
   intro s t hs ht H
-  sig_pub [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes] at H
+  sig_pub [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal, argBytes] at H
   obtain ⟨SP, -, a0, a1, a2, a3⟩ := H
   refine agree_argTaint (k := 4) (fun _ h => nomatch h) SP (args_out (abi_of hs)) (args_out (abi_of ht)) ?_
   intro i hi
@@ -709,16 +708,16 @@ def satState : State where
   rd := [⟨0x2000, 3⟩, ⟨0x4004, 16⟩]
   wr := [⟨0x1000, 56⟩]
 
-theorem satisfiable : ∃ s, (Spec.RsaKeyGen.keyInitContract abi).pre s := by
+theorem satisfiable : ∃ s, (Proof.RsaKeyGen.keyInitAskedContract abi).pre s := by
   obtain a0 : arg satState 0 = 0x1000 := by decide
   obtain a2 : arg satState 2 = 0x2000 := by decide
   obtain a3 : arg satState 3 = 3 := by decide
   obtain e : argAddr satState 0 = 0x4004 := by decide
   have esp : satState.gpr .esp = 0x4000 := rfl
-  sig_implies_sat [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal,
+  sig_implies_sat [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig, abi, argSlots, argVal,
     argBytes, stackBelow] [a0, a2, a3, e, esp, satState] using satState
 
-theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi) :=
+theorem init_verified : Verified target init (Proof.RsaKeyGen.keyInitAskedContract abi) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyInit

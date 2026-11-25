@@ -17,7 +17,7 @@ namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
 
 def direct : List (Artifact X86_64.target) := [
-  Spec.Ffdh.parameterInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.parameterInit, verified := Proof.Ffdh.X86_64.Scrub.parameterInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.parameterInit_spSafe },
+  Spec.Ffdh.parameterInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.parameterInit, verified := Proof.Ffdh.X86_64.Scrub.parameterInit_scrubbed, publicOutOk := Proof.Ffdh.X86_64.Scrub.parameterInit_public, spSafe := Proof.Ffdh.X86_64.Scrub.parameterInit_spSafe },
   Spec.Ffdh.keyInitApi.artifact target { code := Impl.Ffdh.X86_64.Fn.keyInit, verified := Proof.Ffdh.X86_64.Scrub.keyInit_scrubbed, spSafe := Proof.Ffdh.X86_64.Scrub.keyInit_spSafe }]
 end VG.Artifacts.Ffdh.X86_64
 
@@ -76,6 +76,7 @@ def artifacts : List (Artifact X86_64.target) :=
       suffix := v.suffix
       code := Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code
       verified := Proof.Ffdh.X86_64.RoundScrub.search_scrubbed v
+      publicOutOk := Proof.Ffdh.X86_64.RoundScrub.search_public v
       spSafe := Proof.Ffdh.X86_64.RoundScrub.search_spSafe v }])
 
 end VG.Artifacts.Ffdh.X86_64

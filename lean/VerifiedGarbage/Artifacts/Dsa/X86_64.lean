@@ -17,7 +17,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 namespace VG.Artifacts.Dsa.X86_64
 
 def direct : List (Artifact X86_64.target) := [
-  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
+  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, publicOutOk := Proof.Dsa.X86_64.ParameterSearchInit.init_public, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
 
 end VG.Artifacts.Dsa.X86_64
 
@@ -70,6 +70,7 @@ def artifacts : List (Artifact X86_64.target) :=
         (Generation.RefillBackend.name 256) (Generation.RefillBackend.name 384) (Generation.RefillBackend.body p.sha1 v 128)
         (Generation.RefillBackend.body p.sha256 v 256) (Generation.RefillBackend.body p.sha256 v 384)
       verified := Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v
+      publicOutOk := Proof.Dsa.X86_64.Generation.SearchScrub.search_public p v
       spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })
 
 end VG.Artifacts.Dsa.X86_64

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
@@ -80,7 +80,7 @@ theorem verifyPrevalidatedOut :
     | [_, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 theorem parameterInitOut :
-    PostOut (Spec.Dsa.parameterInitContract (RISCV64.abi.withConsts cs))
+    PostOut (Proof.Dsa.parameterInitAskedContract (RISCV64.abi.withConsts cs))
       (Spec.Dsa.parameterInitSig.retBits 64) :=
   postOut_of_local (ScrubAbi.consts cs) fun
     | [state, _], m, m₁, m₂, r, _, hb, h => by
@@ -93,7 +93,7 @@ theorem parameterInitOut :
       exact h
 
 theorem parameterSearchOut :
-    PostOut (Spec.Dsa.parameterSearchContract (RISCV64.abi.withConsts cs) stack)
+    PostOut (Proof.Dsa.parameterSearchAskedContract (RISCV64.abi.withConsts cs) stack)
       (Spec.Dsa.parameterSearchSig.retBits 64) :=
   postOut_of_local (ScrubAbi.consts cs) fun
     | [out, outLen, _, _, _, _, _, _], m, m₁, m₂, r, _, hb, h => by

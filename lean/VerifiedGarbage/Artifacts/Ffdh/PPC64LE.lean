@@ -15,7 +15,8 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 def direct : List (Artifact PPC64LE.target) := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
-    verified := Proof.Ffdh.PPC64LE.Scrub.parameterInit_scrubbed },
+    verified := Proof.Ffdh.PPC64LE.Scrub.parameterInit_scrubbed
+    publicOutOk := Proof.Ffdh.PPC64LE.Scrub.parameterInit_public },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
     verified := Proof.Ffdh.PPC64LE.Scrub.keyInit_scrubbed },
@@ -48,6 +49,7 @@ def artifacts : List (Artifact PPC64LE.target) :=
     Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target {
       suffix := vh.1.suffix
       code := Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch vh.1.suffix vh.1.code
-      verified := Proof.Ffdh.PPC64LE.Scrub.search_scrubbed vh.1 vh.2 })
+      verified := Proof.Ffdh.PPC64LE.Scrub.search_scrubbed vh.1 vh.2
+      publicOutOk := Proof.Ffdh.PPC64LE.Scrub.search_public vh.1 vh.2 })
 
 end VG.Artifacts.Ffdh.PPC64LE

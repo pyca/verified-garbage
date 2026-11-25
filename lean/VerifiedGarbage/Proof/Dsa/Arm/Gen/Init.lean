@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Generation
-public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Impl.Dsa.Arm.Generation
-meta import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
@@ -136,7 +136,7 @@ def initPost (s t : State) : Prop :=
   | some values => ((t.gpr .r1 ++ t.gpr .r0).setWidth 32).toNat = 1 ∧
       ∃ first, Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 4 =
         (values ++ [first]).map (BitVec.ofNat 64) ∧
-        Spec.Entropy.RequestValid (Spec.Dsa.parameterEntropy (s.gpr .r1).toNat) 0 first
+        Proof.Dsa.Generation.FirstAsked (s.gpr .r1).toNat first
 
 def initPub (s t : State) : Prop := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1
 
@@ -167,7 +167,7 @@ private theorem result_post {s t : State} (h : InitPost (s.gpr .r1).toNat s.mem 
     rw [ite_eq_left_of_eq_true _ _ (eq_true hv)]
     refine ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, 512 * (s.gpr .r1).toNat, ?_, ?_⟩
     · rw [h.2, words_words _ _ _ hb]; rfl
-    · unfold Spec.Entropy.RequestValid Spec.Dsa.parameterEntropy; omega_using [hp]
+    · exact Proof.Dsa.Generation.firstAsked hp
   · rename_i hv
     rw [ite_eq_right_of_eq_false _ _ (eq_false hv)]
     exact ⟨by rw [BitVec.setWidth_append_eq_right, h.1]; rfl, by rw [h.2, zeros_words]⟩
@@ -206,11 +206,11 @@ private def initSat : State where
   rd := []
   wr := [⟨0x1000, 32⟩]
 
-theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi) := by
+theorem init_verified : Verified target init (Proof.Dsa.parameterInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.Dsa.parameterInitContract, Spec.Dsa.parameterInitSig,
+  · sig_implies [Proof.Dsa.parameterInitAskedContract, Spec.Dsa.parameterInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs, reduceClassify, Loc.val, State.addr]
       [initSat] using initSat
 

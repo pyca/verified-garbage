@@ -32,11 +32,13 @@ def artifacts : List (Artifact RISCV64.target) := [
     verified := Proof.Dsa.RISCV64.Fn.verifyPrevalidated },
   Spec.Dsa.parameterInitApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Fn.parameterInit
-    verified := Proof.Dsa.RISCV64.Fn.parameterInit }] ++
+    verified := Proof.Dsa.RISCV64.Fn.parameterInit
+    publicOutOk := Proof.Dsa.RISCV64.Fn.parameterInit_public }] ++
   Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact RISCV64.target {
       suffix := v.suffix
       code := Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code
-      verified := Proof.Dsa.RISCV64.Fn.parameterSearch v }
+      verified := Proof.Dsa.RISCV64.Fn.parameterSearch v
+      publicOutOk := Proof.Dsa.RISCV64.Fn.parameterSearch_public v }
 
 end VG.Artifacts.Dsa.RISCV64

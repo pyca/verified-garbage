@@ -41,12 +41,22 @@ def sievedParameterSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Con
     (leak := some fun _out _outLen _used _bits _generator rand randLen _scratch _scratchLen state m =>
       (bytesAt m rand randLen.toNat).map (·.toNat) ++ (wordsAt m state 4).map (·.toNat))
 
+/-- What the function leaves that is public: the next tape's length, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). The tape is public, but the contract says nothing of
+what else the function may read: its working space, and the caller's
+registers. -/
+def sievedParameterSearchOut : PublicOut parameterSearchSig where
+  out _ := fun _out _outLen _used _bits _generator _rand _randLen _scratch _scratchLen state _m m' _r =>
+    [(m'.readW (state + 24) 64).toNat]
+
 def sievedParameterSearchApi : Api where
   module := "ffdh"
   name := "vg_ffdh_generate_parameters"
   sig := parameterSearchSig
   writeArgs := true
   contracts := some fun A stack => sievedParameterSearchContract A stack
+  publicOut := some sievedParameterSearchOut
   summary := "Run native finite-field Diffie–Hellman parameter generation, with RSA's \
     trial-division sieve. The routine owns candidate retries, attempt limits, witness \
     selection, primality rounds and entropy budgets. Initialize with \
@@ -56,8 +66,9 @@ def sievedParameterSearchApi : Api where
     least `state[3]` bytes before calling again. `state[1]` is the output width and \
     `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q \
     pass the full 64/128 independent witness counts. Contract: \
-    `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape \
-    and the first four controller words."
+    `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing, and the length of the next tape \
+    (`VG.Spec.Ffdh.sievedParameterSearchOut`), may depend on the public tape and the first \
+    four controller words, not on the rest of `state` or on what `scratch` holds."
   safety := ["`state` must be initialized by `vg_ffdh_parameter_generation_init` for the \
       supplied `bits` and `generator`, or be the state returned by this routine.",
     "`out_len` must equal `state[1]`, and `rand_len` must not exceed `state[2]`.",

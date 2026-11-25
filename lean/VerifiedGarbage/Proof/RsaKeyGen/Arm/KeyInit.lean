@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.CountedLoop
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.KeyInit
-meta import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
@@ -611,7 +611,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (State.addr (s.gpr .r0)) 6 =
         (values ++ [first, 0, Spec.RsaKeyGen.keyGenerations]).map (BitVec.ofNat 64) ∧
       Spec.Rsa.bytesAt t.mem (State.addr (s.gpr .r0) + 48) 8 = Spec.Rsa.i2osp (Spec.Rsa.os2ip eB) 8 ∧
-      Spec.Entropy.RequestValid (Spec.RsaKeyGen.primeEntropy (values.getD 1 0)) 0 first
+      Proof.RsaKeyGen.FirstAsked (values.getD 1 0) first
 
 theorem initStatus_lt (bits E : Nat) : initStatus bits E < 2 ^ 32 := by
   rw [initStatus_val]; split <;> (try split) <;> omega_using []
@@ -681,8 +681,7 @@ theorem result_post {s t : State} {E : Nat} {a b : BitVec 32}
         · rw [final_vals _ _ _ _ _ _ _ (by decide)]
           simp only [finalVals, List.getD_cons_zero, List.getD_cons_succ, mask_one]
       · simp only [List.getD_cons_zero, List.getD_cons_succ, hP]
-        unfold Spec.Entropy.RequestValid Spec.RsaKeyGen.primeEntropy
-        omega_using [hn]
+        exact Proof.RsaKeyGen.firstAsked (by omega_using [hn])
   · have hv' : Spec.RsaKeyGen.exponentValid E = false := by simpa using hv
     rw [ite_eq_left (by rw [hv']; rfl)]
     obtain h0 : initStatus bits E = 0 := by
@@ -815,11 +814,11 @@ private def initSat : State where
   rd := [⟨0x2000, 3⟩]
   wr := [⟨0x1000, 56⟩]
 
-theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi) := by
+theorem init_verified : Verified target init (Proof.RsaKeyGen.keyInitAskedContract abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp h₁ h₂
     exact init_constantTime s₁ s₂ tr₁ tr₂ t₁ t₂ trivial trivial hp h₁ h₂
-  · sig_implies [Spec.RsaKeyGen.keyInitContract, Spec.RsaKeyGen.keyInitSig,
+  · sig_implies [Proof.RsaKeyGen.keyInitAskedContract, Spec.RsaKeyGen.keyInitSig,
       initContract, initPre, initPost, initPub, abi, argRegs, reduceClassify, Loc.val, State.addr]
       [initSat] using initSat
 

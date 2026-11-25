@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EntropyRequest
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
@@ -1232,15 +1232,15 @@ private theorem candidate_arg (s : State) (j : Nat) : stackArg (candidateState s
 private theorem candidate_argAddr (s : State) (j : Nat) :
     stackArgAddr (candidateState s) j = stackArgAddr s j := rfl
 
-theorem search_implies_pre (s : State) (h : (sievedParameterSearchContract abi 160).pre s) : searchContract.pre s := by
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow,
+theorem search_implies_pre (s : State) (h : (sievedParameterSearchAskedContract abi 160).pre s) : searchContract.pre s := by
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow,
     searchContract, searchPre, pcPre, inputRand, inputArgs, inputBuffers,
     inputControl, candidate_gpr, candidate_rd, candidate_wr, candidate_arg, candidate_argAddr, stackArgs_four, List.append_eq] at h
-  sig_pre [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow,
+  sig_pre [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow,
     searchContract, searchPre, pcPre, inputRand, inputArgs, inputBuffers,
     inputControl, candidate_gpr, candidate_rd, candidate_wr, candidate_arg, candidate_argAddr, stackArgs_four, List.append_eq] at h
   sig_split h
-  sig_reduce [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow,
+  sig_reduce [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow,
     searchContract, searchPre, pcPre, inputRand, inputArgs, inputBuffers,
     inputControl, candidate_gpr, candidate_rd, candidate_wr, candidate_arg, candidate_argAddr, stackArgs_four, List.append_eq]
   simp only [candidate_arg, candidate_argAddr, List.forall_mem_cons,
@@ -1274,15 +1274,15 @@ theorem search_implies_pre (s : State) (h : (sievedParameterSearchContract abi 1
         (r₂ := below (s.gpr .rsp) 160)
         (by first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›) hbSub).sub_left haSub).symm
 
-theorem search_implies_post : ∀ s t, (sievedParameterSearchContract abi 160).pre s →
-    searchContract.post s t → (sievedParameterSearchContract abi 160).post s t := by
-  sig_implies_post [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, searchContract,
+theorem search_implies_post : ∀ s t, (sievedParameterSearchAskedContract abi 160).pre s →
+    searchContract.post s t → (sievedParameterSearchAskedContract abi 160).post s t := by
+  sig_implies_post [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, searchContract,
     searchPost, searchResult, pcRand, stackArgs_four, List.append_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem search_implies_pub (s t : State) (_hs : (sievedParameterSearchContract abi 160).pre s)
-    (_ht : (sievedParameterSearchContract abi 160).pre t) (h : (sievedParameterSearchContract abi 160).pub s t) :
+theorem search_implies_pub (s t : State) (_hs : (sievedParameterSearchAskedContract abi 160).pre s)
+    (_ht : (sievedParameterSearchAskedContract abi 160).pre t) (h : (sievedParameterSearchAskedContract abi 160).pub s t) :
     searchContract.pub s t := by
-  sig_pub [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackArgs_four,
+  sig_pub [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackArgs_four,
     List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hleak, rdi, rsi, rdx, rcx, r8, r9, a0, a1, a2, ast⟩ := h
@@ -1307,12 +1307,12 @@ private def searchSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x6008, 32⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩, ⟨0x4000, 128⟩]
 
-theorem search_implies : searchContract.Implies (sievedParameterSearchContract abi 160) where
+theorem search_implies : searchContract.Implies (sievedParameterSearchAskedContract abi 160) where
   pre := search_implies_pre
   post := search_implies_post
   pub := search_implies_pub
   sat := by
-    sig_implies_sat [sievedParameterSearchContract, parameterSearchSig, abi, argRegs, stackBelow,
+    sig_implies_sat [sievedParameterSearchAskedContract, parameterSearchSig, abi, argRegs, stackBelow,
       searchContract, searchPre, stackArgs_four, List.append_eq, searchSat]
       [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using searchSat
 
@@ -1407,9 +1407,9 @@ theorem initial_search_result {p : SearchPublic} {s : State} (h : SearchInput p 
 
 theorem returned_post {p : SearchPublic} {s t : State} (h : SearchInput p s)
     (hr : SearchReturned p (searchResult s) t) : searchPost s t := by
-  have hreq : (searchResult s).Requests (Spec.Ffdh.parameterEntropy (s.gpr .rcx).toNat)
+  have hreq : Proof.Ffdh.Asked (s.gpr .rcx).toNat (searchResult s)
       (Proof.Ffdh.requested (s.gpr .rcx).toNat (searchResult s)) :=
-    SievedGeneration.search_requests _ _ _ _
+    SievedGeneration.search_asked _ _ _ _
   cases h.2
   simp only [SearchReturned, SearchOutput, searchPost, searchOfState, SearchPublic.c,
     candidateOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq] at hr ⊢
@@ -1483,7 +1483,7 @@ namespace VG.Proof.Ffdh.X86_64.Generation
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem search_verified (v : RoundImpl) : Verified target (searchCode v)
-    (Spec.Ffdh.sievedParameterSearchContract abi 160) := by
+    (Proof.Ffdh.sievedParameterSearchAskedContract abi 160) := by
   exact Verified.of_correct (search_correct v) (search_constantTime v) search_implies
 
 end VG.Proof.Ffdh.X86_64.Generation
