@@ -587,14 +587,6 @@ pub(crate) mod vg_mlkem768_encaps_h_body_x2_sha3;
 pub(crate) mod vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3;
 
 #[rustfmt::skip]
-#[path = "internal/vg_mlkem768_encaps_h_core.rs"]
-pub(crate) mod vg_mlkem768_encaps_h_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem768_encaps_h_core_x2_sha3.rs"]
-pub(crate) mod vg_mlkem768_encaps_h_core_x2_sha3;
-
-#[rustfmt::skip]
 #[path = "internal/vg_mlkem768_keygen_body.rs"]
 pub(crate) mod vg_mlkem768_keygen_body;
 

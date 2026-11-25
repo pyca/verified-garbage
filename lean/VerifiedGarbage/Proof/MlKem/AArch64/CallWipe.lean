@@ -723,6 +723,186 @@ theorem hArgs_run (s : State) : execBlock isa hArgs s = some (shiftH s, []) := b
   funext r
   cases r <;> rfl
 
+/-! The argument shuffle can precede the existing d8 frame, so the two
+encapsulation entry points can call the same core without another frame. -/
+
+private theorem shiftH_callEntry (s : State) :
+    shiftH s.callEntry = (shiftH s).callEntry := by
+  simp only [shiftH, State.callEntry, State.mk.injEq, and_true]
+  funext r
+  cases r <;> rfl
+
+private theorem shiftH_eSave (n : String) (s : State) :
+    shiftH (Proof.Sha3.AArch64.eSave n s) = Proof.Sha3.AArch64.eSave n (shiftH s) := by
+  simp only [Proof.Sha3.AArch64.eSave, Proof.Sha3.AArch64.eSave₁, allocated, shiftH,
+    State.write, State.setV, State.mk.injEq, and_true]
+  funext r
+  cases r <;> rfl
+
+private theorem ret_shiftH (s t : State) : isa.ret (shiftH s) t = isa.ret s t := rfl
+
+private theorem prefix_exec_iff {c : Prog isa} {s u : State} {tr : List Leak} :
+    Exec isa (.seq (.block hArgs) c) s tr u ↔ Exec isa c (shiftH s) tr u := by
+  constructor
+  · intro h
+    cases h with
+    | seq hp he =>
+      rw [Exec.block_iff, hArgs_run] at hp
+      cases hp
+      simpa only [List.nil_append] using he
+  · exact prefix_exec hArgs_run
+
+private theorem call_prefix_exec_iff (oldName name : String) (c : Prog isa)
+    (s u : State) (tr : List Leak) :
+    Exec isa (.call oldName (.seq (.block hArgs) c)) s tr u ↔
+      Exec isa (.call name c) (shiftH s) tr u := by
+  constructor
+  · intro h
+    cases h with
+    | call hc hb hr =>
+      rw [call_callEntry] at hc
+      cases hc
+      rw [prefix_exec_iff, shiftH_callEntry] at hb
+      have hr' := hr
+      rw [← ret_shiftH, shiftH_callEntry] at hr'
+      simpa only [isa, List.nil_append, List.append_nil] using
+        (Exec.call (call_callEntry (shiftH s)) hb hr' : Exec isa (.call name c) _ _ _)
+  · intro h
+    cases h with
+    | call hc hb hr =>
+      rw [call_callEntry] at hc
+      cases hc
+      rw [← shiftH_callEntry] at hb
+      have hr' := hr
+      rw [← shiftH_callEntry, ret_shiftH] at hr'
+      simpa only [isa, List.nil_append, List.append_nil] using
+        (Exec.call (call_callEntry s) (prefix_exec hArgs_run hb) hr' :
+          Exec isa (.call oldName (.seq (.block hArgs) c)) _ _ _)
+
+private theorem entry_exec_iff (n name : String) (body : Prog isa)
+    (s t : State) (tr : List Leak) :
+    Exec isa (Impl.Sha3.AArch64.entryD8 n name body) s tr t ↔
+      16 ≤ s.sp.toNat ∧ ∃ u v tc tl,
+        Exec isa (.call name body) (Proof.Sha3.AArch64.eSave n s) tc u ∧
+        execBlock isa Impl.Sha3.AArch64.leaveD8 u = some (v, tl) ∧
+        isa.pop (.free 16) (allocated 16 s) v = some t ∧
+        tr = [.addr (Proof.Sha3.AArch64.eslot s 0), .addr (Proof.Sha3.AArch64.eslot s 8)] ++ tc ++ tl := by
+  constructor
+  · intro h
+    unfold Impl.Sha3.AArch64.entryD8 at h
+    cases h with
+    | frame hp hb hq =>
+      simp only [isa, push, show 0 < 16 from by decide, show 16 < 4096 from by decide,
+        show 16 % 16 = 0 from rfl, true_and] at hp
+      change (if 16 ≤ s.sp.toNat then some (allocated 16 s) else none) = _ at hp
+      split at hp
+      · rename_i hs
+        cases hp
+        cases hb with
+        | seq he hb =>
+          rw [Exec.block_iff, Proof.Sha3.AArch64.enter_run] at he
+          cases he
+          cases hb with
+          | seq hc hl =>
+            exact ⟨hs, _, _, _, _, hc, Exec.block_iff.mp hl, hq, by
+              simp only [addrs, List.map_nil, List.nil_append, List.append_nil, List.append_assoc]⟩
+      · cases hp
+  · rintro ⟨hs, u, v, tc, tl, hc, hl, hq, rfl⟩
+    have hp : isa.push (.alloc 16) s = some (allocated 16 s) := by
+      simp only [isa, push, show 0 < 16 from by decide, show 16 < 4096 from by decide,
+        show 16 % 16 = 0 from rfl, hs, and_self, ite_true]
+      rfl
+    have he := Exec.frame hp (Exec.seq (Exec.block (Proof.Sha3.AArch64.enter_run n s))
+      (Exec.seq hc (Exec.block hl))) hq
+    simpa only [Impl.Sha3.AArch64.entryD8, isa, addrs, List.map_nil, List.nil_append, List.append_nil, List.append_assoc] using he
+
+private theorem entry_hArgs_exec_iff (n oldName name : String) (body : Prog isa)
+    (s t : State) (tr : List Leak) :
+    Exec isa (Impl.Sha3.AArch64.entryD8 n oldName (.seq (.block hArgs) body)) s tr t ↔
+      Exec isa (.seq (.block hArgs) (Impl.Sha3.AArch64.entryD8 n name body)) s tr t := by
+  rw [prefix_exec_iff, entry_exec_iff, entry_exec_iff]
+  simp only [call_prefix_exec_iff oldName name, shiftH_eSave]
+  rfl
+
+private def SameExec (a b : Prog isa) : Prop :=
+  ∀ s tr t, Exec isa a s tr t ↔ Exec isa b s tr t
+
+private theorem same_refl (a : Prog isa) : SameExec a a := fun _ _ _ => Iff.rfl
+
+private theorem same_seq {a a' b b' : Prog isa} (ha : SameExec a a') (hb : SameExec b b') :
+    SameExec (.seq a b) (.seq a' b') := by
+  intro s tr t
+  constructor
+  · intro h
+    cases h with
+    | seq h₁ h₂ => exact Exec.seq ((ha ..).mp h₁) ((hb ..).mp h₂)
+  · intro h
+    cases h with
+    | seq h₁ h₂ => exact Exec.seq ((ha ..).mpr h₁) ((hb ..).mpr h₂)
+
+private theorem same_call {a b : Prog isa} (h : SameExec a b) (name : String) :
+    SameExec (.call name a) (.call name b) := by
+  intro s tr t
+  constructor
+  · intro e
+    cases e with
+    | call hc hb hr => exact Exec.call hc ((h ..).mp hb) hr
+  · intro e
+    cases e with
+    | call hc hb hr => exact Exec.call hc ((h ..).mpr hb) hr
+
+private theorem same_frame {a b : Prog isa} (h : SameExec a b) (i j : Instr) :
+    SameExec (.frame i a j) (.frame i b j) := by
+  intro s tr t
+  constructor
+  · intro e
+    cases e with
+    | frame hp hb hq => exact Exec.frame hp ((h ..).mp hb) hq
+  · intro e
+    cases e with
+    | frame hp hb hq => exact Exec.frame hp ((h ..).mpr hb) hq
+
+private theorem same_callWipe {a b : Prog isa} (h : SameExec a b)
+    (r : Reg) (n : Nat) (name zname : String) (zcode : Prog isa) :
+    SameExec (Impl.CallWipe.AArch64.callWipe r n name a zname zcode)
+      (Impl.CallWipe.AArch64.callWipe r n name b zname zcode) := by
+  unfold Impl.CallWipe.AArch64.callWipe
+  exact same_frame (same_seq (same_refl _) (same_seq (same_call h _) (same_refl _))) _ _
+
+private theorem wipedH_same (n : Nat) (fn sfx xsfx p : String) (body : Prog isa) :
+    SameExec (Impl.MlKem.AArch64.Wipe.wiped .x5 n (fn ++ "_h") sfx xsfx p body)
+      (Impl.MlKem.AArch64.Wipe.wipedH n fn sfx xsfx p body) := by
+  cases body with
+  | seq head tail =>
+    cases head with
+    | block is =>
+      by_cases h : is = hArgs
+      · subst is
+        simp only [Impl.MlKem.AArch64.Wipe.wipedH, ite_true]
+        unfold Impl.MlKem.AArch64.Wipe.wiped
+        apply same_callWipe
+        intro s tr t
+        exact entry_hArgs_exec_iff _ _ _ _ s t tr
+      · simp only [Impl.MlKem.AArch64.Wipe.wipedH, h, ite_false]
+        exact same_refl _
+    | _ => exact same_refl _
+  | _ => exact same_refl _
+
+private theorem verified_same {a b : Prog isa} {k : Contract isa}
+    (he : SameExec a b) (h : Verified target a k) : Verified target b k := by
+  obtain ⟨hok, hct, hsat⟩ := h
+  refine ⟨?_, ?_, hsat⟩
+  · intro s hs
+    obtain ⟨tr, t, hex, habi, hp⟩ := hok s hs
+    exact ⟨tr, t, (he ..).mp hex, habi, hp⟩
+  · intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp e₁ e₂
+    exact hct _ _ _ _ _ _ h₁ h₂ hp ((he ..).mpr e₁) ((he ..).mpr e₂)
+
+private theorem verified_wipedH (n : Nat) (fn sfx xsfx p : String) {body : Prog isa} {k : Contract isa}
+    (h : Verified target (Impl.MlKem.AArch64.Wipe.wiped .x5 n (fn ++ "_h") sfx xsfx p body) k) :
+    Verified target (Impl.MlKem.AArch64.Wipe.wipedH n fn sfx xsfx p body) k :=
+  verified_same (wipedH_same n fn sfx xsfx p body) h
+
 theorem shiftH_abi {s s' : State} (h : abiPreserved (shiftH s) s') : abiPreserved s s' := by
   obtain ⟨g, sp, v⟩ := h
   refine ⟨fun r hr => (g r hr).trans ?_, sp, v⟩
@@ -1201,6 +1381,7 @@ theorem encapsH_wipe {A : Abi isa} {p : String} (hA : CallWipeD8Ok A p) (sfx xsf
     (hsatE : ∃ s, (Proof.MlKem.Scrubbed.encapsHBodyContract (A.withFns [p]) (st + 16)).pre s)
     (hsat : ∃ s, (Proof.MlKem.Scrubbed.encapsHBodyContract (A.withFns [p]) (st + 16 + 32)).pre s) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx xsfx p body) (Scrubbed.encapsHContract (A.withFns [p]) (st + 16 + 32)) :=
+  EncapsH.verified_wipedH 32768 "vg_mlkem768_encaps" sfx xsfx p <|
   hA (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by
@@ -1396,6 +1577,7 @@ theorem encapsH1024_wipe {A : Abi isa} {p : String} (hA : CallWipeD8Ok A p) (sfx
     (hsatE : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract (A.withFns [p]) (st + 16)).pre s)
     (hsat : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract (A.withFns [p]) (st + 16 + 32)).pre s) :
     Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx xsfx p body) (Scrubbed.encapsH1024Contract (A.withFns [p]) (st + 16 + 32)) :=
+  EncapsH.verified_wipedH 49152 "vg_mlkem1024_encaps" sfx xsfx p <|
   hA (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd
     (by

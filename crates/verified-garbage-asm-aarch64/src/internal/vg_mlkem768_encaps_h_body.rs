@@ -11,14 +11,14 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps_h_body() {
     core::arch::naked_asm!(
-        r".inst 0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
+        r".inst 0x91000041,0x91000062,0x91000083,0x910000a4,0xd10043ff,0x4e083d10,0xf90003fe,0xf90007f0",
         concat!("adrp x16, ", vg_sym_page!("{vg_keccak_f1600}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{vg_keccak_f1600}")),
         r".inst 0x4e081e08
-bl {vg_mlkem768_encaps_h_core}
+bl {vg_mlkem768_encaps_core}
 .inst 0xf94007f0,0x4e081e08,0xf94003fe,0x910043ff,0xd65f03c0
 .p2align 6",
-        vg_mlkem768_encaps_h_core = sym crate::mlkem768::vg_mlkem768_encaps_h_core::vg_mlkem768_encaps_h_core,
+        vg_mlkem768_encaps_core = sym crate::mlkem768::vg_mlkem768_encaps_core::vg_mlkem768_encaps_core,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
