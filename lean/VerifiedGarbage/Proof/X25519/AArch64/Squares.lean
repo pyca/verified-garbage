@@ -589,7 +589,7 @@ theorem columns_ok (s : State) : WP isa (.block columns) s fun t => VK cregs s t
 
 theorem carry1_ok {s : State} {base : Addr} (hs : Scr s base large) (hc : Consts s.mem base) :
     WP isa (.block carry1) s fun t =>
-      VK ([.v0, .v1, .v2, .v3, .v4] ++ cregs) s t ∧ ∀ e < 2, (∀ r, D (s.v r) e < 2 ^ 62 ∨ r ∉ cregs) →
+      VK (([.v0, .v1, .v2, .v3, .v4] : List VReg) ++ cregs) s t ∧ ∀ e < 2, (∀ r, D (s.v r) e < 2 ^ 62 ∨ r ∉ cregs) →
         (D (t.v .v20) e = D (s.v .v20) e % 2 ^ 26 + 19 * (D (s.v .v29) e / 2 ^ 25) ∧
           D (t.v .v21) e = D (s.v .v21) e % 2 ^ 26 + D (s.v .v25) e / 2 ^ 25 ∧
           D (t.v .v22) e = D (s.v .v22) e % 2 ^ 26 + D (s.v .v26) e / 2 ^ 25 ∧
@@ -656,7 +656,7 @@ theorem join_ok (s : State) : WP isa (.block join) s fun t => VK cregs s t ∧ �
 
 theorem carry2_ok {s : State} {base : Addr} (hs : Scr s base large) (hc : Consts s.mem base) :
     WP isa (.block carry2) s fun t =>
-      VK ([.v0, .v2, .v5] ++ cregs) s t ∧ ∀ e < 2,
+      VK (([.v0, .v2, .v5] : List VReg) ++ cregs) s t ∧ ∀ e < 2,
         D (t.v .v20) e = D (s.v .v20) e % 2 ^ 51 + 19 * (D (s.v .v24) e / 2 ^ 51) ∧
         D (t.v .v21) e = D (s.v .v21) e % 2 ^ 51 + D (s.v .v20) e / 2 ^ 51 ∧
         D (t.v .v22) e = D (s.v .v22) e % 2 ^ 51 + D (s.v .v21) e / 2 ^ 51 ∧
