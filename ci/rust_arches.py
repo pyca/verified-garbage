@@ -86,6 +86,7 @@ NOT_RUST_FILES = {
     ".github/workflows/bench.yml",
     ".github/workflows/conflicts.yml",
     ".github/workflows/lean-cache.yml",
+    ".github/workflows/release.yml",
 }
 
 # The scripts under ci/ that the Rust jobs run (or build their images from);

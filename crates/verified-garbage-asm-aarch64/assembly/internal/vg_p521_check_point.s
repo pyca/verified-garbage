@@ -3308,8 +3308,6 @@ vg_p521_check_point:
 	str x12, [x0, #3064]
 	str x13, [x0, #3072]
 	str x14, [x0, #3080]
-	movz x7, #0, lsl #0
-	subs x7, x7, x7
 	ldr x8, [x0, #3088]
 	ldr x9, [x0, #3096]
 	ldr x10, [x0, #3104]
@@ -3319,8 +3317,9 @@ vg_p521_check_point:
 	ldr x14, [x0, #3136]
 	ldr x15, [x0, #3144]
 	ldr x21, [x0, #3152]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #3016]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #3024]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3032]
@@ -3337,31 +3336,38 @@ vg_p521_check_point:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3080]
 	adcs x21, x21, x2
-	movz x3, #512, lsl #0
-	and x2, x21, x3
-	subs x2, x2, x3
-	movz x3, #511, lsl #0
-	and x21, x21, x3
-	sbcs x8, x8, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
+	movz x2, #511, lsl #0
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #2800]
-	sbcs x9, x9, x7
 	str x9, [x0, #2808]
-	sbcs x10, x10, x7
 	str x10, [x0, #2816]
-	sbcs x11, x11, x7
 	str x11, [x0, #2824]
-	sbcs x12, x12, x7
 	str x12, [x0, #2832]
-	sbcs x13, x13, x7
 	str x13, [x0, #2840]
-	sbcs x14, x14, x7
 	str x14, [x0, #2848]
-	sbcs x15, x15, x7
 	str x15, [x0, #2856]
-	sbcs x21, x21, x7
 	str x21, [x0, #2864]
-	movz x7, #0, lsl #0
-	subs x7, x7, x7
 	ldr x8, [x0, #2800]
 	ldr x9, [x0, #2808]
 	ldr x10, [x0, #2816]
@@ -3371,8 +3377,9 @@ vg_p521_check_point:
 	ldr x14, [x0, #2848]
 	ldr x15, [x0, #2856]
 	ldr x21, [x0, #2864]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2944]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #2952]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2960]
@@ -3389,30 +3396,38 @@ vg_p521_check_point:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3008]
 	adcs x21, x21, x2
-	movz x3, #512, lsl #0
-	and x2, x21, x3
-	subs x2, x2, x3
-	movz x3, #511, lsl #0
-	and x21, x21, x3
-	sbcs x8, x8, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
+	movz x2, #511, lsl #0
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #3088]
-	sbcs x9, x9, x7
 	str x9, [x0, #3096]
-	sbcs x10, x10, x7
 	str x10, [x0, #3104]
-	sbcs x11, x11, x7
 	str x11, [x0, #3112]
-	sbcs x12, x12, x7
 	str x12, [x0, #3120]
-	sbcs x13, x13, x7
 	str x13, [x0, #3128]
-	sbcs x14, x14, x7
 	str x14, [x0, #3136]
-	sbcs x15, x15, x7
 	str x15, [x0, #3144]
-	sbcs x21, x21, x7
 	str x21, [x0, #3152]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2728]
 	ldr x9, [x0, #2736]
 	ldr x10, [x0, #2744]
@@ -3422,6 +3437,7 @@ vg_p521_check_point:
 	ldr x14, [x0, #2776]
 	ldr x15, [x0, #2784]
 	ldr x21, [x0, #2792]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #3088]
 	subs x8, x8, x2
 	ldr x2, [x0, #3096]
@@ -3441,24 +3457,24 @@ vg_p521_check_point:
 	ldr x2, [x0, #3152]
 	sbcs x21, x21, x2
 	sbcs x8, x8, x7
-	str x8, [x0, #3016]
 	sbcs x9, x9, x7
-	str x9, [x0, #3024]
 	sbcs x10, x10, x7
-	str x10, [x0, #3032]
 	sbcs x11, x11, x7
-	str x11, [x0, #3040]
 	sbcs x12, x12, x7
-	str x12, [x0, #3048]
 	sbcs x13, x13, x7
-	str x13, [x0, #3056]
 	sbcs x14, x14, x7
-	str x14, [x0, #3064]
 	sbcs x15, x15, x7
-	str x15, [x0, #3072]
 	sbcs x21, x21, x7
-	movz x3, #511, lsl #0
-	and x21, x21, x3
+	movz x2, #511, lsl #0
+	and x21, x21, x2
+	str x8, [x0, #3016]
+	str x9, [x0, #3024]
+	str x10, [x0, #3032]
+	str x11, [x0, #3040]
+	str x12, [x0, #3048]
+	str x13, [x0, #3056]
+	str x14, [x0, #3064]
+	str x15, [x0, #3072]
 	str x21, [x0, #3080]
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #3016]

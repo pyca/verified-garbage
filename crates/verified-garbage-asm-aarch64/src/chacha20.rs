@@ -278,6 +278,18 @@ b 21f
 pub(crate) mod vg_chacha20_block;
 
 #[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_core_neon.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_core_neon;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_core_sve2.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_core_sve2;
+
+#[rustfmt::skip]
 #[path = "internal/vg_chacha20_xor.rs"]
 pub(crate) mod vg_chacha20_xor;
 

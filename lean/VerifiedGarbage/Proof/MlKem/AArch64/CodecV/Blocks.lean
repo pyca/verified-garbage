@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.Contract

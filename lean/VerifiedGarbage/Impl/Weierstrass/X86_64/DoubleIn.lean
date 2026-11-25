@@ -22,4 +22,7 @@ open VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass
 /-- `p = 2 p` in place, through the temporaries `t0`–`t3`. -/
 def doubleIn (M : Mod) (S : RcbSlots) (p : Pt) : Prog isa := ForwardField.programB M (dblJMul S p p)
 
+/-- `doubleIn`, in the order of `dblJMulT`. -/
+def doubleInT (M : Mod) (S : RcbSlots) (p : Pt) : Prog isa := ForwardField.programB M (dblJMulT S p)
+
 end VG.Impl.Weierstrass.X86_64

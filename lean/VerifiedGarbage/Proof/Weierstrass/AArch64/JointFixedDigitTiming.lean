@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit

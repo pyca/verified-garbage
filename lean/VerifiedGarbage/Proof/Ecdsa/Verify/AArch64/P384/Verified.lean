@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 public import VerifiedGarbage.Spec.Ecdsa.P384
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.P384.EcdhDouble
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
 import VerifiedGarbage.Proof.P384.GTable9Shape
@@ -565,7 +566,7 @@ section
 /-! # The joint loop's shared doubling, by a given doubling
 
 `jointDoubleD_ok`: `jointDouble_ok` with a doubling that does what the field program's does
-(`DblSpec`, such as P-384's register-allocated doubling). -/
+(`DblSpec`, such as P-384's doubling). -/
 
 section
 namespace VG.Proof.Weierstrass.AArch64.PubNaf
@@ -670,7 +671,7 @@ theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v 
  rw [jointPoint_step hC hG hP u v j 9] at ht
  exact ht
 
-/-- The public NAF's iteration with the allocated doubling also works on a joint accumulator. -/
+/-- The public NAF's iteration with the straight-line doubling also works on a joint accumulator. -/
 theorem peerStepD_ok {C : Curve} {base : Addr} {P A : Point C} {s₀ s : State} {v j : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
  (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hA : onCurve C A=true)
@@ -1516,7 +1517,7 @@ end
 P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and
 `Law` for its group law, which the registration file supplies: `Proof.P384.law` and
 `invSound_of_toM`), so the joint loop (`Joint.verify_ok`) gives the contract's postcondition, its
-doublings the register-allocated ones of ECDH (`P384.EcdhDouble.dblsOk`, `ctRD`), its generator's
+doublings those of ECDH (`P384.EcdhDouble.dblsOk`), its generator's
 multiples those of `VG_P384_GTAB` (`Proof.P384.gtabOk9`); `x19`–`x25` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register (`abiPreserved_of`).
 Constant time relative to the contract's public inputs (`Joint.verify_public_ct`): the loop
@@ -2333,7 +2334,7 @@ namespace VG.Proof.Ecdsa.Verify.AArch64.P384
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P384
 
-/-- The allocated doubling does what the loop's must. -/
+/-- The straight-line doubling does what the loop's must. -/
 theorem dbl_spec (hI : Weierstrass.AArch64.InvSounds) (base : Addr) :
     Weierstrass.AArch64.DblSpec P384Joint.K p384.C base 8192 P384Joint.double P384Joint.K.R
       P384Joint.K.D (Weierstrass.AArch64.dblVR P384Joint.K) :=

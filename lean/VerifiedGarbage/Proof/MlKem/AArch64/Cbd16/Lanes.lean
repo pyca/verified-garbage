@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.Contract

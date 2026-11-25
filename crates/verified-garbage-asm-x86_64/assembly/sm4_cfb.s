@@ -488,7 +488,7 @@ vg_sm4_cfb128_encrypt:
 	je 21f
 23:
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	mov rax, QWORD PTR [rdx]
 	xor rax, QWORD PTR [r9+768]
@@ -1280,7 +1280,7 @@ vg_sm4_cfb128_decrypt:
 	mov rbp, QWORD PTR [rbx+8]
 	mov QWORD PTR [r9+3192], rbp
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	movabs rcx, 16
 	cmp r8, 16
@@ -2036,7 +2036,7 @@ vg_sm4_cfb128_encrypt_final:
 	je 21f
 23:
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	cmp r8, 16
 	jb 24f
@@ -2801,7 +2801,7 @@ vg_sm4_cfb128_decrypt_final:
 	je 21f
 23:
 	mov rdi, r9
-	movabs rsi, 392
+	movabs rsi, 390
 	call {vg_sm4_crypt_prepared}
 	cmp r8, 16
 	jb 24f

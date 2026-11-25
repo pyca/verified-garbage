@@ -285,7 +285,7 @@ def stage3 : List Instr := carryT id 15 5 6 ++ stage3b
 def vmask : List Instr := [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))]
 
 /-- One iteration, for the bit `t = rbx - 1`: `swap ^= k_t` into the mask
-`ymm15 = -swap` (as `step`), then the three stages, the first of which swaps. -/
+`ymm15 = -swap`, then the three stages, the first of which swaps. -/
 def vstep : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
     .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,

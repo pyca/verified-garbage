@@ -1901,16 +1901,14 @@ vg_ec_p521_decompress_public_key:
 	movz x1, #3088, lsl #0
 	movz x2, #3016, lsl #0
 	movz x3, #2512, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #3016, lsl #0
 	movz x2, #496, lsl #0
 	movz x3, #2512, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
-	subs x7, x7, x7
 	ldr x8, [x0, #3088]
 	ldr x9, [x0, #3096]
 	ldr x10, [x0, #3104]
@@ -1920,8 +1918,9 @@ vg_ec_p521_decompress_public_key:
 	ldr x14, [x0, #3136]
 	ldr x15, [x0, #3144]
 	ldr x21, [x0, #3152]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #3016]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #3024]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3032]
@@ -1938,31 +1937,38 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3080]
 	adcs x21, x21, x2
-	movz x3, #512, lsl #0
-	and x2, x21, x3
-	subs x2, x2, x3
-	movz x3, #511, lsl #0
-	and x21, x21, x3
-	sbcs x8, x8, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
+	movz x2, #511, lsl #0
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #2800]
-	sbcs x9, x9, x7
 	str x9, [x0, #2808]
-	sbcs x10, x10, x7
 	str x10, [x0, #2816]
-	sbcs x11, x11, x7
 	str x11, [x0, #2824]
-	sbcs x12, x12, x7
 	str x12, [x0, #2832]
-	sbcs x13, x13, x7
 	str x13, [x0, #2840]
-	sbcs x14, x14, x7
 	str x14, [x0, #2848]
-	sbcs x15, x15, x7
 	str x15, [x0, #2856]
-	sbcs x21, x21, x7
 	str x21, [x0, #2864]
-	movz x7, #0, lsl #0
-	subs x7, x7, x7
 	ldr x8, [x0, #2800]
 	ldr x9, [x0, #2808]
 	ldr x10, [x0, #2816]
@@ -1972,8 +1978,9 @@ vg_ec_p521_decompress_public_key:
 	ldr x14, [x0, #2848]
 	ldr x15, [x0, #2856]
 	ldr x21, [x0, #2864]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2944]
-	adcs x8, x8, x2
+	adds x8, x8, x2
 	ldr x2, [x0, #2952]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2960]
@@ -1990,28 +1997,37 @@ vg_ec_p521_decompress_public_key:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3008]
 	adcs x21, x21, x2
-	movz x3, #512, lsl #0
-	and x2, x21, x3
-	subs x2, x2, x3
-	movz x3, #511, lsl #0
-	and x21, x21, x3
-	sbcs x8, x8, x7
+	movz x2, #1, lsl #0
+	subs x1, x7, x2
+	movz x2, #511, lsl #0
+	subs x8, x8, x1
+	sbcs x9, x9, x1
+	sbcs x10, x10, x1
+	sbcs x11, x11, x1
+	sbcs x12, x12, x1
+	sbcs x13, x13, x1
+	sbcs x14, x14, x1
+	sbcs x15, x15, x1
+	sbcs x21, x21, x2
+	sbcs x1, x7, x7
+	and x2, x1, x2
+	adds x8, x8, x1
+	adcs x9, x9, x1
+	adcs x10, x10, x1
+	adcs x11, x11, x1
+	adcs x12, x12, x1
+	adcs x13, x13, x1
+	adcs x14, x14, x1
+	adcs x15, x15, x1
+	adcs x21, x21, x2
 	str x8, [x0, #3088]
-	sbcs x9, x9, x7
 	str x9, [x0, #3096]
-	sbcs x10, x10, x7
 	str x10, [x0, #3104]
-	sbcs x11, x11, x7
 	str x11, [x0, #3112]
-	sbcs x12, x12, x7
 	str x12, [x0, #3120]
-	sbcs x13, x13, x7
 	str x13, [x0, #3128]
-	sbcs x14, x14, x7
 	str x14, [x0, #3136]
-	sbcs x15, x15, x7
 	str x15, [x0, #3144]
-	sbcs x21, x21, x7
 	str x21, [x0, #3152]
 	ldr x1, [x0, #3088]
 	str x1, [x0, #1072]
@@ -2113,7 +2129,6 @@ vg_ec_p521_decompress_public_key:
 	movz x3, #352, lsl #0
 	bl {vg_p521_mul_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #280]
 	ldr x9, [x0, #288]
 	ldr x10, [x0, #296]
@@ -2123,6 +2138,7 @@ vg_ec_p521_decompress_public_key:
 	ldr x14, [x0, #328]
 	ldr x15, [x0, #336]
 	ldr x21, [x0, #344]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2656]
 	subs x8, x8, x2
 	ldr x2, [x0, #2664]
@@ -2142,24 +2158,24 @@ vg_ec_p521_decompress_public_key:
 	ldr x2, [x0, #2720]
 	sbcs x21, x21, x2
 	sbcs x8, x8, x7
-	str x8, [x0, #2728]
 	sbcs x9, x9, x7
-	str x9, [x0, #2736]
 	sbcs x10, x10, x7
-	str x10, [x0, #2744]
 	sbcs x11, x11, x7
-	str x11, [x0, #2752]
 	sbcs x12, x12, x7
-	str x12, [x0, #2760]
 	sbcs x13, x13, x7
-	str x13, [x0, #2768]
 	sbcs x14, x14, x7
-	str x14, [x0, #2776]
 	sbcs x15, x15, x7
-	str x15, [x0, #2784]
 	sbcs x21, x21, x7
-	movz x3, #511, lsl #0
-	and x21, x21, x3
+	movz x2, #511, lsl #0
+	and x21, x21, x2
+	str x8, [x0, #2728]
+	str x9, [x0, #2736]
+	str x10, [x0, #2744]
+	str x11, [x0, #2752]
+	str x12, [x0, #2760]
+	str x13, [x0, #2768]
+	str x14, [x0, #2776]
+	str x15, [x0, #2784]
 	str x21, [x0, #2792]
 	ldr x1, [x0, #2656]
 	ldr x2, [x0, #2368]
@@ -2226,7 +2242,7 @@ vg_ec_p521_decompress_public_key:
 	movz x1, #2584, lsl #0
 	movz x2, #2656, lsl #0
 	movz x3, #2872, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #3016, lsl #0
@@ -2234,7 +2250,6 @@ vg_ec_p521_decompress_public_key:
 	movz x3, #2584, lsl #0
 	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #3016]
 	ldr x9, [x0, #3024]
 	ldr x10, [x0, #3032]
@@ -2244,6 +2259,7 @@ vg_ec_p521_decompress_public_key:
 	ldr x14, [x0, #3064]
 	ldr x15, [x0, #3072]
 	ldr x21, [x0, #3080]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #3088]
 	subs x8, x8, x2
 	ldr x2, [x0, #3096]
@@ -2263,24 +2279,24 @@ vg_ec_p521_decompress_public_key:
 	ldr x2, [x0, #3152]
 	sbcs x21, x21, x2
 	sbcs x8, x8, x7
-	str x8, [x0, #2800]
 	sbcs x9, x9, x7
-	str x9, [x0, #2808]
 	sbcs x10, x10, x7
-	str x10, [x0, #2816]
 	sbcs x11, x11, x7
-	str x11, [x0, #2824]
 	sbcs x12, x12, x7
-	str x12, [x0, #2832]
 	sbcs x13, x13, x7
-	str x13, [x0, #2840]
 	sbcs x14, x14, x7
-	str x14, [x0, #2848]
 	sbcs x15, x15, x7
-	str x15, [x0, #2856]
 	sbcs x21, x21, x7
-	movz x3, #511, lsl #0
-	and x21, x21, x3
+	movz x2, #511, lsl #0
+	and x21, x21, x2
+	str x8, [x0, #2800]
+	str x9, [x0, #2808]
+	str x10, [x0, #2816]
+	str x11, [x0, #2824]
+	str x12, [x0, #2832]
+	str x13, [x0, #2840]
+	str x14, [x0, #2848]
+	str x15, [x0, #2856]
 	str x21, [x0, #2864]
 	movz x7, #0, lsl #0
 	ldr x1, [x0, #2800]

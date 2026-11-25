@@ -17,7 +17,7 @@ import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.TCB.AArch64.Simd
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.Lit

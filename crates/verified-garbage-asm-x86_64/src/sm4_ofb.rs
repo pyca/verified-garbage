@@ -26,7 +26,7 @@ jne 20b
 .base64 "TInPSIHHAAwAAGZMD374SIsoSYmpAAMAAEiLaAhJiakIAwAATYXA"
 je 21f
 23:
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SIsCSTOBAAMAAEiJAkiLQghJM4EIAwAASIlCCEiDwhBJg+gB"
 jne 23b
@@ -62,7 +62,7 @@ jne 20b
 .base64 "TInPSIHHAAwAAGZMD374SIsoSYmpAAMAAEiLaAhJiakIAwAATYXA"
 je 21f
 23:
-.base64 "TInPSL6IAQAAAAAAAA=="
+.base64 "TInPSL6GAQAAAAAAAA=="
 call {vg_sm4_crypt_prepared}
 .base64 "SYP4EA=="
 jb 24f

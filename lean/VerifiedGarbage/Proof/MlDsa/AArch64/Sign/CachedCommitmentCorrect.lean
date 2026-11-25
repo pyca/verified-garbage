@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

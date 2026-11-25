@@ -38,7 +38,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x10, 20b
 	movz x0, #20632, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	add x0, x26, #352
 	movz x1, #352, lsl #0
@@ -62,7 +61,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x10, 21b
 	movz x0, #21656, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	add x0, x26, #704
 	movz x1, #352, lsl #0
@@ -86,7 +84,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x10, 22b
 	movz x0, #22680, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	add x0, x26, #1056
 	movz x1, #352, lsl #0
@@ -110,7 +107,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x10, 23b
 	movz x0, #23704, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	add x0, x25, #0
 	movz x1, #4248, lsl #0
@@ -409,7 +405,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 28b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -1764,7 +1759,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -2894,7 +2889,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -4024,7 +4019,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -5146,7 +5141,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -5572,7 +5567,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -5902,7 +5897,7 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -6259,7 +6254,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #20632, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #25920, lsl #0
 	add x0, x28, x0
@@ -6268,7 +6262,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #21656, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26088, lsl #0
 	add x0, x28, x0
@@ -6277,7 +6270,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #22680, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26256, lsl #0
 	add x0, x28, x0
@@ -6286,7 +6278,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #23704, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_ntt}
 	movz x0, #26424, lsl #0
 	add x0, x28, x0
@@ -6458,7 +6449,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 2306b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -6647,7 +6637,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 2309b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -6836,7 +6825,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 2312b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -7025,7 +7013,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 2315b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
@@ -7366,7 +7353,6 @@ vg_mlkem1024_decaps_core_x2_sha3:
 	cbnz x11, 2322b
 	movz x0, #25752, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3224
 	bl {vg_mlkem16_inv_ntt}
 	movz x0, #25752, lsl #0
 	add x0, x28, x0

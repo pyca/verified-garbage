@@ -90,6 +90,7 @@ def scalar : XorImpl where
   features := []
   scrub := by lit_decide
   sealSide := by lit_decide
+  openNoV15 := by lit_decide
   openSide := by lit_decide
   openToSide := by lit_decide
   ok := Xor.xor_correct BlockImpl.scalar
@@ -105,6 +106,7 @@ def neon : XorImpl where
   features := []
   scrub := by lit_decide
   sealSide := by lit_decide
+  openNoV15 := by lit_decide
   openSide := by lit_decide
   openToSide := by lit_decide
   ok := Mixed8.xor_correct
@@ -121,6 +123,7 @@ def sve2 : XorImpl where
   features := ["sve2"]
   scrub := by lit_decide
   sealSide := by lit_decide
+  openNoV15 := by lit_decide
   openSide := by lit_decide
   openToSide := by lit_decide
   ok := Mixed8.xor_correct

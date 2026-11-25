@@ -17,12 +17,11 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitMemory
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
 

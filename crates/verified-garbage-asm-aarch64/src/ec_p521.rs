@@ -178,3 +178,7 @@ pub(crate) mod vg_p521_inv_mod_p;
 #[rustfmt::skip]
 #[path = "internal/vg_p521_mul_mod_p.rs"]
 pub(crate) mod vg_p521_mul_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_prod_mod_p.rs"]
+pub(crate) mod vg_p521_prod_mod_p;

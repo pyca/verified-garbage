@@ -936,7 +936,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -2114,7 +2114,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -2471,7 +2471,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #13344, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #17608, lsl #0
 	add x0, x28, x0
@@ -2480,7 +2479,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #14368, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #17776, lsl #0
 	add x0, x28, x0
@@ -2489,7 +2487,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #15392, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #17944, lsl #0
 	add x0, x28, x0
@@ -2498,7 +2495,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #29696, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #18112, lsl #0
 	add x0, x28, x0
@@ -2507,7 +2503,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #30720, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #18280, lsl #0
 	add x0, x28, x0
@@ -2516,7 +2511,6 @@ vg_mlkem768_keygen_core_x2_sha3:
 	bl {vg_mlkem16_cbd2}
 	movz x0, #31744, lsl #0
 	add x0, x28, x0
-	add x1, x28, #3104
 	bl {vg_mlkem16_ntt}
 	movz x0, #13344, lsl #0
 	add x0, x28, x0
@@ -3229,7 +3223,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -3557,7 +3551,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -4891,7 +4885,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -5306,7 +5300,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	ldr x7, [x19, #8]
 	str x6, [x20, #0]
@@ -5673,7 +5667,7 @@ vg_mlkem768_keygen_core_x2_sha3:
 	str x30, [x1, #128]
 	add x0, x19, #0
 	bl {vg_keccak_f1600_x2_sha3}
-	ldr x30, [x1, #128]
+	ldr x30, [x19, #1664]
 	ldr x6, [x19, #0]
 	str x6, [x20, #0]
 	ldr x6, [x19, #16]
