@@ -144,7 +144,12 @@ def artifact : EmitArtifact := artifactOf "vg_test_tbl" 42
 through the register, as any memory operand (`pop ecx`, `movdqu xmm0,
 XMMWORD PTR [eax+8]`, `movq xmm1, QWORD PTR [eax+16]`, `ret`). -/
 def expected : String := "/// Loads words of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_tbl() {
     core::arch::naked_asm!(

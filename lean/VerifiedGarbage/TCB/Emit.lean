@@ -114,7 +114,7 @@ def driverBody (mods : List String) : Except String String := do
     "#assert_no_compiler_overrides all run\n" ++
     "#assert_spec_origin\n" ++
     "#assert_spec_apis" ++
-    String.join (mods.map fun m => s!"\n  (_root_.{listOf m}.map _root_.VG.Artifact.api)") ++ "\n\n" ++
+    String.join (mods.map fun m => s!"\n  _root_.{listOf m}") ++ "\n\n" ++
     "end VG.Emit\n\n" ++
     "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all args\n\nend\n"
 

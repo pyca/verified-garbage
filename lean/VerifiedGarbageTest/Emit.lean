@@ -85,8 +85,8 @@ open VG.Emit
   #assert_no_compiler_overrides all run\n\
   #assert_spec_origin\n\
   #assert_spec_apis\n  \
-    (_root_.VG.Artifacts.Sha3.X86_64.artifacts.map _root_.VG.Artifact.api)\n  \
-    (_root_.VG.Artifacts.Sha3.AArch64.artifacts.map _root_.VG.Artifact.api)\n\
+    _root_.VG.Artifacts.Sha3.X86_64.artifacts\n  \
+    _root_.VG.Artifacts.Sha3.AArch64.artifacts\n\
   \n\
   end VG.Emit\n\
   \n\
@@ -315,10 +315,18 @@ structure Variant where
 def variants : List Variant := [⟨VG.Spec.Hmac.sha256I⟩, ⟨VG.Spec.Hmac.sha512I⟩]
 
 -- Constants of `Spec/`, and functions of `Spec/` of one, however they are reached.
-/-- info: the `Api`s of the 4 artifacts are ones `Spec/` declares -/
+/-- info: every artifact's `Api` is one `Spec/` declares -/
 #guard_msgs in
-#assert_spec_apis [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api] []
+#assert_spec_apis [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api]
   (variants.map fun v => v.I.pbkdf2Api)
+
+-- Both branches of a decision that need not be made.
+#guard_msgs (drop info) in
+#assert_spec_apis (if 2 ^ 400 % 7 = 2 then [VG.Spec.Selftest.addApi] else
+  variants.flatMap fun v => [v.I.pbkdf2Api] ++ if v.I.scratch = 0 then [] else [v.I.finalizeApi])
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis (if 0 = 1 then [VG.Test.Emit.fakeInstance.pbkdf2Api] else [])")
+    "not ones `Spec/` declares"
 
 -- A function of `Spec/` of something that is not `Spec/`'s.
 run_cmd do

@@ -112,7 +112,12 @@ def artifact : EmitArtifact := artifactOf "vg_test_ldrqtbl" 42
 /-- The rendering: the table's address formed with `adrSym`, then read
 through the register as by any `ldr q`. -/
 def expected : String := "/// Returns word 3 of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
     core::arch::naked_asm!(

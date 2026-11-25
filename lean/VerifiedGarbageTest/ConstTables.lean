@@ -108,7 +108,12 @@ def artifact : EmitArtifact where
 /-- The rendering: the static's page and offset in the syntax of the object
 format (`vg_sym_page!`, `vg_sym_pageoff!`), and its symbol. -/
 def expected : String := "/// Returns word 1 of its table.
-#[allow(clippy::missing_safety_doc)]
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+///
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
