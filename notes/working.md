@@ -67,3 +67,11 @@ slower on base, no better on adx. Short folds (fin2.py): at most 0.7% on base, 0
 Reusing registers for E or s: nothing. Not worth their proofs; left out. 3 not tried.
 Slots for this order: P in D, BB in DV, AA in DU, E in A, Q in C, w in B, d and dd in Z3 (z3's old
 value is dead after D and C), s in D. Slots 2-12.
+
+## Erratum, 2026-11-25, after the audit (nothing above is rewritten)
+* Short folds gave up to 0.8% (base) alone, and up to 1.8% with E's operand kept in registers.
+* One block for A, B, U, V beat the chosen order in 3 of 4 ADX rounds (fin.py); it was dropped
+  because it was slower on base.
+* The climbed order's gain on base was 1.5-2.6%, not 2.0-2.6%.
+* The climbed order was put in the code in the same command that wrote its notes, just before them.
+* That three final doublings are a known technique was recognised too; the notes did not say so.
