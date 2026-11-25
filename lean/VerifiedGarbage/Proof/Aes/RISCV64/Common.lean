@@ -26,7 +26,7 @@ section
 /-!
 # Encrypting four blocks, bitsliced, on RISC-V
 
-As on x86-64 (`Proof/Aes/X86_64/Encrypt.lean`): `encrypt4_ok`, from four
+`encrypt4_ok`, from four
 blocks in the registers (`InRel`), with the bitsliced round keys and the
 masks in the scratch buffer (`EncPre`), `encrypt4` leaves the four
 ciphertexts, having written only the first 320 bytes of the scratch buffer.
@@ -645,12 +645,11 @@ end
 /-!
 # Bitslicing the round keys, on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Keys.lean`): the key loop of
+The key loop of
 `vg_aes_ctr32` and of the block functions bitslices each round key (loaded
-as four identical blocks, a byte at a time, `Bytes.loadLE64_ok`) with
-`toBs` and stores it in the scratch buffer, from the last round key down.
+as four identical blocks; those of `encrypt4`, `fkLoop_ok`, a byte at a time) and stores it in the scratch buffer, from the last round key down.
 The stores are checked by evaluation over the naming domain
-(`Bitslice.names`), `toBs` by its proof (`Layers.lean`).
+(`Bitslice.names`), the layers by their proofs (`Layers.lean`).
 -/
 
 @[expose] public section
@@ -1467,7 +1466,7 @@ theorem shr2_wp {s : State} {k : Nat} (hk : k < 2 ^ 64) (h7 : s.gpr .a4 = BitVec
 
 /-! ## What a group keeps -/
 
-/-- The masks' slots: 52–57 and 64–67. -/
+/-- The masks' slots: 52–57 and 64–75. -/
 theorem allKs_in : ∀ p ∈ allKs, (52 ≤ p.1 ∧ p.1 < 58) ∨ (64 ≤ p.1 ∧ p.1 < 76) := by decide
 
 /-- Memory outside both areas of masks keeps them. -/

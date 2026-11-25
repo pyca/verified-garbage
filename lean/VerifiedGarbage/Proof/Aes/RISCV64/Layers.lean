@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.RISCV64.Fixed
+public import VerifiedGarbage.Impl.Aes.RISCV64.Ctr32
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Framework.RISCV64.Linear
 public import VerifiedGarbage.Proof.Aes.Sbox0
@@ -436,6 +436,39 @@ theorem add63_ok {s : State} (hok : Ok sboxCfg s) :
   tab_ok (g := (· ^^^ 0x63)) (fun c j hc hj => by
     rw [← getLsbD_row _ _ hj, row_xorT (by decide) (by decide), row_sbIns hc, row_k63 hc]) add63_check
     (by decide +kernel) hok
+
+/-! ## Form 0 to form 1 -/
+
+theorem bs_toForm1 {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
+    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (invSrT j p)) (hS : BsRel W S) :
+    Proof.Aes.BsRel 4 true W' S := fun j hj n hn k hk => by
+  have e : ∀ n < 16, invSrFrom (byteAt 4 false (posAt 4 true n 0)) = n := by decide
+  rw [h j hj _ (posAt_lt true hn hk)]
+  simp only [invSrT, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, posAt_mod true n hk]
+  rw [show byteAt 4 false (posAt 4 true n k) = byteAt 4 false (posAt 4 true n 0) by
+    simp only [byteAt, posAt_div true n hk, posAt_div true n (show 0 < 4 by decide)], e n hn]
+  exact hS j hj n hn k hk
+
+def bsLoadT (j p : Nat) : List Nat := [64 * j + p]
+
+def bsLoadCfg : Cfg := { base := sb, slots := 0, ext := .a0, exts := 8 }
+
+theorem bsLoad_check :
+    check (lanes 64 9) bsLoadCfg (linExt 0) bsLoad (linEnv []) (linPost 9 (qOuts bsLoadT)) = true := by
+  decide +kernel
+
+/-- The eight words at `a0`. -/
+theorem bsLoad_ok {s : State} (hok : Ok bsLoadCfg s) :
+    ∃ s', runBlock isa bsLoad s = some s' ∧
+      (∀ j < 8, Q s' j = s.mem.readW (wordAddr (s.gpr .a0) j) 64) ∧ Rest bsLoadCfg s s' := by
+  obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok bsLoad_check hok
+    (fun i => s.mem.readW (wordAddr (s.gpr .a0) i) 64) (fun r i hi => by cases hi) (linExt_rel fun j hj => by
+      have hj : j < 8 := hj
+      exact ⟨by omega, by rw [Nat.zero_add]; rfl⟩)
+  refine ⟨s', hs', fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => ?_, hrd, hwr, hsp,
+    fun r hr => hoth r (keepsRest_ok (by decide +kernel) r hr), hfr⟩
+  rw [hout (q j) (bsLoadT j) (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩) p hp, bsLoadT, xorBits_cons,
+    xorBits_nil, Bool.xor_false, bitOf_word _ _ _ hp]
 
 /-! ## One block to slices -/
 

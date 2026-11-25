@@ -12,8 +12,8 @@ scratch = a5)`, and its forms that write elsewhere (`_to`, the source in
 `a6`) and take the round keys bitsliced (`_bs`).
 
 The scratch buffer is used from `a5` rounded up to a multiple of 8, in 8-byte
-slots: the S-box's spills (0–39, of which it needs four), our caller's
-`s0`–`s11` (40–51), the masks (52–57, 64–67), the counter block's first 8
+slots: the S-box's spills (0–39), our caller's
+`s0`–`s11` (40–51), the masks (52–57, 64–75), the counter block's first 8
 bytes, its next 4 and the counter (59–61), our return address (62) and, from
 byte 1024 to byte 1984, the bitsliced round keys, 64 bytes each, the last at
 byte `lastKey`.
@@ -208,9 +208,33 @@ def bsSrc (o : Bool) : List Instr := if o then [movR .a2 .a6] else []
 /-- `ra`: the last round key is at byte `lastKey` from it. -/
 def bsKb : List Instr := [shlI t0 .a1 6, .add .ra .a0 t0, .addi .ra .ra (-((lastKey : Nat) : Int))]
 
+/-! For eight blocks or more, the round keys are first made those of
+`encrypt4`, in the scratch buffer, from the last: `a0` is the one read, `a2`
+where it goes and `a1` how many are left. The source is in `ra` until then. -/
+
+def bsMove (o : Bool) : List Instr := if o then [movR .ra .a6] else []
+def bsConvSetup : List Instr :=
+  [shlI t0 .a1 6, .add .a0 .a0 t0, .addi .a2 sb lastKey, .addi .a1 .a1 1]
+
+def bsLoad : List Instr := (List.range 8).map fun j => .load .d (q j) .a0 (8 * j)
+def bsStep : List Instr := [.addi .a0 .a0 (-64), .addi .a2 .a2 (-64), .addi .a1 .a1 (-1)]
+
+/-- One round key: the odd ones to form 1, which is where InvShiftRows takes
+the bytes, and `{63}` added to all but the first. -/
+def bsConvBody : Prog isa :=
+  .seq (.block (bsLoad ++ [.logicImm .and t0 .a1 1]))
+    (.seq (.ite (.nonzero t0) (.block []) (.block invShiftRows))
+      (.seq (.block [.addi t0 .a1 (-1)])
+        (.seq (.ite (.nonzero t0) (.block add63) (.block []))
+          (.block (keyStore ++ bsStep)))))
+
 def ctr32BsWith (o : Bool) : Prog isa :=
-  .seq (.block (roundSb ++ bsSave ++ saveRegs ++ maskInit ++ ctrSetup ++ bsSrc o ++ bsKb))
-    (.seq (.ite (.zero .a4) (.block []) (ctrGroups (encrypt4K .ra) o))
+  .seq (.block (roundSb ++ bsSave ++ saveRegs ++ maskInit ++ ctrSetup ++ [shrI t0 .a4 3]))
+    (.seq (.ite (.nonzero t0)
+        (.seq (.block (bsMove o ++ bsConvSetup))
+          (.seq (.loop bsConvBody (.nonzero .a1))
+            (.seq (.block (keyDone ++ srcLoad o)) (ctrGroups encrypt4 o))))
+        (.seq (.block (bsSrc o ++ bsKb)) (.ite (.zero .a4) (.block []) (ctrGroups (encrypt4K .ra) o))))
       (.block (restoreRegs ++ srcRestore true)))
 
 def ctr32Bs : Prog isa := ctr32BsWith false
