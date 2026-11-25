@@ -41,15 +41,10 @@ def vecIota (r : Nat) : List Instr :=
   [.ldrq .v31 .x30 32, .vop (.perm (if r = 0 then .trn1 else .trn2) .d2 .v31 .v31 .v31), .vop (.logic .eor .v0 .v0 .v31)]
 
 /-- Two vector rounds, in the order written. -/
-def vecPlain : List Instr := Sha3.Vector.round 2 8 0 ++ vecIota 0 ++ Sha3.Vector.round 2 8 1 ++ vecIota 1
+def vecPlain : List Instr := Sha3.Vector.round 0 0 0 ++ vecIota 0 ++ Sha3.Vector.round 0 0 1 ++ vecIota 1
 
 /-- The order their instructions run in. -/
-def order : List Nat :=
-  [4, 11, 0, 8, 3, 5, 0, 6, 2, 4, 0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 14, 13, 13, 15, 2, 12, 2, 12, 4, 10, 0, 0,
-    8, 5, 7, 3, 6, 1, 4, 4, 1, 3, 5, 1, 2, 2, 6, 1, 3, 0, 0, 3, 1, 1, 1, 0, 0, 27, 0, 1, 0, 0, 0, 0, 21, 1,
-    0, 0, 0, 1, 0, 0, 14, 0, 0, 1, 0, 0, 0, 8, 0, 0, 10, 8, 6, 0, 6, 6, 0, 4, 4, 0, 3, 6, 6, 0, 5, 9, 0, 4,
-    8, 0, 3, 4, 0, 0, 0, 7, 6, 6, 8, 6, 3, 7, 4, 5, 1, 4, 1, 3, 1, 1, 0, 0, 0, 2, 0, 0, 0, 3, 1, 3, 0, 0, 0,
-    0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]
+def order : List Nat := []
 
 def vecBody : List Instr := schedule order vecPlain
 

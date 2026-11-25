@@ -41,7 +41,7 @@ def x2K : Contract isa where
 
 /-! ## With FEAT_SHA3 -/
 
-theorem mixed_ok : ∀ r < 2, Vec.ok (Impl.Sha3.AArch64.Sha3.Vector.round 2 8 r) r = true := by decide +kernel
+theorem mixed_ok : ∀ r < 2, Vec.ok (Impl.Sha3.AArch64.Sha3.Vector.round 0 0 r) r = true := by decide +kernel
 
 theorem order_ok : Schedule.ok .x16 order plain = true := by decide +kernel
 

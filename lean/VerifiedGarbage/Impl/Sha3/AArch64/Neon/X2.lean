@@ -31,15 +31,10 @@ open VG.Impl.AArch64Schedule (schedule)
 
 /-- Two rounds, in the order written. -/
 def plain : List Instr :=
-  Sha3.Vector.round 2 8 0 ++ Sha3.Vector.iota 0 ++ Sha3.Vector.round 2 8 1 ++ Sha3.Vector.iota 1
+  Sha3.Vector.round 0 0 0 ++ Sha3.Vector.iota 0 ++ Sha3.Vector.round 0 0 1 ++ Sha3.Vector.iota 1
 
 /-- The order the instructions run in (`schedule`). -/
-def order : List Nat :=
-  [4, 9, 0, 9, 3, 5, 0, 6, 2, 4, 0, 2, 1, 0, 0, 0, 0, 2, 0, 0, 14, 13, 13, 15, 3, 12, 2, 12, 1, 10, 0, 9, 2,
-    5, 7, 3, 6, 5, 1, 4, 1, 3, 5, 1, 2, 2, 6, 0, 3, 0, 0, 3, 1, 1, 0, 0, 0, 26, 0, 1, 0, 1, 0, 0, 1, 19, 0,
-    0, 0, 1, 0, 0, 13, 1, 0, 0, 0, 1, 8, 0, 0, 0, 9, 7, 5, 0, 6, 5, 0, 4, 3, 0, 2, 5, 5, 0, 4, 4, 0, 3, 5,
-    0, 0, 0, 9, 8, 8, 10, 8, 5, 9, 3, 7, 5, 6, 1, 5, 2, 3, 1, 2, 0, 1, 3, 0, 0, 0, 4, 0, 1, 3, 0, 0, 0, 0,
-    1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0]
+def order : List Nat := []
 
 /-- Two rounds. -/
 def body : List Instr := schedule order plain
