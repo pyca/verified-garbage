@@ -236,3 +236,11 @@ their XOR), key classes of `all` (1), y's classes (1), y (1), X Y Z W (4),
 saved registers (1), pointer and count (1): 15.
 Reversal of the bytes without pshufb: bytes of words by shifts of quadwords
 and the mask 00ff, then pshuflw, pshufhw, pshufd: 9.
+
+Measured (the prototype, intrinsics on i686, without the byte reversal): right
+on a test against a bit loop, 51 to 54 ns a block; main 59 to 63; scalar 90 to
+97. So this is the one to write. Word layout of scratch: keys 0-23 (vectors lo,
+hi of U0, U1, U2), classes of `all` 24-27, y's classes 28-31, y 32-35, X 36,
+Y 40, Z (first U1) 44, U2 48, saved 52-55, pointer 56, count 57, V 58-59, W 60.
+Registers in a product of vectors: w xmm0, s xmm1, h xmm2, l xmm3, k xmm4,
+xmm5, mask xmm6, 00ff xmm7.
