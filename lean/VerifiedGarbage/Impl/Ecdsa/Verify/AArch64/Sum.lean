@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.P192
 
 /-! General complete addition for the public joint verification loops. The
 five-word curve shares this large kernel across table setup and both doublings. -/
@@ -25,6 +26,7 @@ def sharedName (c : Ecdsa.AArch64.Cfg) : Option String :=
   if c.n = 5 then some "vg_brainpoolp320r1_verify_add"
   else if c.C.p = Spec.Secp256k1.p then some "vg_secp256k1_verify_add"
   else if c.C.p = Spec.BrainpoolP256r1.p then some "vg_brainpoolp256r1_verify_add"
+  else if c.C.p = Spec.P192.p then some "vg_p192_verify_add"
   else none
 
 /-- Share the selected kernels across table setup and the joint loop. -/
