@@ -82,3 +82,6 @@ Trial A: the same raw doubling, 3000 tries of the search. Trial B: 3x before the
 (the 3x runs beside X+d's addition but the add is 18 and 3x is 26: the path is X-d, 3x, mul instead of X-d, mul, 3x: no gain in length). Not tried.
 Trial C: S2 = S + S once, then X3 = M^2 - S2 (add 18 + sub 12 = 30 against 24, but only one subtraction follows M^2 on the path: 7 cycles less, as S is ready
 earlier). Measured by mca only: if it is 5 cycles or more better, it goes in.
+
+Results: A 260 cycles (996 instructions), C 259 (997): neither 5 cycles better; not kept. The P-256 shift reduction in the update would save about
+60 of 414 instructions per batch, ~600 in an ECDH of ~130k cycles (0.1%), for a new proof of the update's arithmetic: not done.
