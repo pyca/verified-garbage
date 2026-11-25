@@ -368,9 +368,9 @@ vg_camellia_expand_key:
 	std %r22, 3112(%r8)
 	b 23f
 22:
-	li %r24, 0
-	addi %r24, %r24, -1
-	xor %r22, %r22, %r24
+	li %r25, 0
+	addi %r25, %r25, -1
+	xor %r22, %r22, %r25
 	std %r22, 3112(%r8)
 23:
 	b 21f
@@ -403,199 +403,199 @@ vg_camellia_expand_key:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 576(%r8)
 	std %r15, 584(%r8)
 	std %r16, 592(%r8)
@@ -612,199 +612,199 @@ vg_camellia_expand_key:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 512(%r8)
 	std %r15, 520(%r8)
 	std %r16, 528(%r8)
@@ -829,31 +829,31 @@ vg_camellia_expand_key:
 	xor %r20, %r20, %r22
 	ld %r22, 56(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -1048,179 +1048,179 @@ vg_camellia_expand_key:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 576(%r8)
 	xor %r14, %r14, %r22
@@ -1262,31 +1262,31 @@ vg_camellia_expand_key:
 	xor %r20, %r20, %r22
 	ld %r22, 120(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -1481,179 +1481,179 @@ vg_camellia_expand_key:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 512(%r8)
 	xor %r14, %r14, %r22
@@ -1679,196 +1679,196 @@ vg_camellia_expand_key:
 	ld %r22, 568(%r8)
 	xor %r21, %r21, %r22
 	std %r21, 568(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
@@ -1881,196 +1881,196 @@ vg_camellia_expand_key:
 	ld %r19, 616(%r8)
 	ld %r20, 624(%r8)
 	ld %r21, 632(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
@@ -2619,199 +2619,199 @@ vg_camellia_ecb_encrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -2858,199 +2858,199 @@ vg_camellia_ecb_encrypt:
 	ld %r19, 3176(%r8)
 	ld %r20, 3192(%r8)
 	ld %r21, 3208(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 576(%r8)
 	std %r15, 584(%r8)
 	std %r16, 592(%r8)
@@ -3067,199 +3067,199 @@ vg_camellia_ecb_encrypt:
 	ld %r19, 3168(%r8)
 	ld %r20, 3184(%r8)
 	ld %r21, 3200(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	ld %r22, 0(%r4)
 	xor %r14, %r14, %r22
 	ld %r22, 8(%r4)
@@ -3285,36 +3285,36 @@ vg_camellia_ecb_encrypt:
 	std %r20, 560(%r8)
 	std %r21, 568(%r8)
 	ld %r22, 576(%r8)
-	ld %r24, 64(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 64(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 576(%r8)
 	ld %r22, 584(%r8)
-	ld %r24, 72(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 72(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 584(%r8)
 	ld %r22, 592(%r8)
-	ld %r24, 80(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 80(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 592(%r8)
 	ld %r22, 600(%r8)
-	ld %r24, 88(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 88(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 600(%r8)
 	ld %r22, 608(%r8)
-	ld %r24, 96(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 96(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 608(%r8)
 	ld %r22, 616(%r8)
-	ld %r24, 104(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 104(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 616(%r8)
 	ld %r22, 624(%r8)
-	ld %r24, 112(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 112(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 624(%r8)
 	ld %r22, 632(%r8)
-	ld %r24, 120(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 120(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 632(%r8)
 	addi %r4, %r4, 128
 29:
@@ -3336,31 +3336,31 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 56(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -3555,179 +3555,179 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 576(%r8)
 	xor %r14, %r14, %r22
@@ -3769,31 +3769,31 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 120(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -3988,179 +3988,179 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 512(%r8)
 	xor %r14, %r14, %r22
@@ -4203,88 +4203,88 @@ vg_camellia_ecb_encrypt:
 	ld %r19, 616(%r8)
 	ld %r20, 624(%r8)
 	ld %r21, 632(%r8)
-	ld %r30, 384(%r8)
-	ld %r24, 120(%r4)
-	or %r22, %r21, %r24
+	ld %r24, 384(%r8)
+	ld %r25, 120(%r4)
+	or %r22, %r21, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 112(%r4)
-	or %r22, %r20, %r24
+	ld %r25, 112(%r4)
+	or %r22, %r20, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 104(%r4)
-	or %r22, %r19, %r24
+	ld %r25, 104(%r4)
+	or %r22, %r19, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 96(%r4)
-	or %r22, %r18, %r24
+	ld %r25, 96(%r4)
+	or %r22, %r18, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 88(%r4)
-	or %r22, %r17, %r24
+	ld %r25, 88(%r4)
+	or %r22, %r17, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 80(%r4)
-	or %r22, %r16, %r24
+	ld %r25, 80(%r4)
+	or %r22, %r16, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 72(%r4)
-	or %r22, %r15, %r24
+	ld %r25, 72(%r4)
+	or %r22, %r15, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 64(%r4)
-	or %r22, %r14, %r24
+	ld %r25, 64(%r4)
+	or %r22, %r14, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 392(%r8)
+	ld %r24, 392(%r8)
 	or %r23, %r21, %r21
-	ld %r24, 112(%r4)
-	and %r22, %r20, %r24
+	ld %r25, 112(%r4)
+	and %r22, %r20, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 104(%r4)
-	and %r22, %r19, %r24
+	ld %r25, 104(%r4)
+	and %r22, %r19, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 96(%r4)
-	and %r22, %r18, %r24
+	ld %r25, 96(%r4)
+	and %r22, %r18, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 88(%r4)
-	and %r22, %r17, %r24
+	ld %r25, 88(%r4)
+	and %r22, %r17, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 80(%r4)
-	and %r22, %r16, %r24
+	ld %r25, 80(%r4)
+	and %r22, %r16, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 72(%r4)
-	and %r22, %r15, %r24
+	ld %r25, 72(%r4)
+	and %r22, %r15, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 64(%r4)
-	and %r22, %r14, %r24
+	ld %r25, 64(%r4)
+	and %r22, %r14, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 120(%r4)
-	and %r22, %r23, %r24
+	ld %r25, 120(%r4)
+	and %r22, %r23, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	std %r14, 576(%r8)
 	std %r15, 584(%r8)
@@ -4302,88 +4302,88 @@ vg_camellia_ecb_encrypt:
 	ld %r19, 552(%r8)
 	ld %r20, 560(%r8)
 	ld %r21, 568(%r8)
-	ld %r30, 392(%r8)
+	ld %r24, 392(%r8)
 	or %r23, %r21, %r21
-	ld %r24, 48(%r4)
-	and %r22, %r20, %r24
+	ld %r25, 48(%r4)
+	and %r22, %r20, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 40(%r4)
-	and %r22, %r19, %r24
+	ld %r25, 40(%r4)
+	and %r22, %r19, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 32(%r4)
-	and %r22, %r18, %r24
+	ld %r25, 32(%r4)
+	and %r22, %r18, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 24(%r4)
-	and %r22, %r17, %r24
+	ld %r25, 24(%r4)
+	and %r22, %r17, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 16(%r4)
-	and %r22, %r16, %r24
+	ld %r25, 16(%r4)
+	and %r22, %r16, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 8(%r4)
-	and %r22, %r15, %r24
+	ld %r25, 8(%r4)
+	and %r22, %r15, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 0(%r4)
-	and %r22, %r14, %r24
+	ld %r25, 0(%r4)
+	and %r22, %r14, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 56(%r4)
-	and %r22, %r23, %r24
+	ld %r25, 56(%r4)
+	and %r22, %r23, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 56(%r4)
-	or %r22, %r21, %r24
+	ld %r24, 384(%r8)
+	ld %r25, 56(%r4)
+	or %r22, %r21, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 48(%r4)
-	or %r22, %r20, %r24
+	ld %r25, 48(%r4)
+	or %r22, %r20, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 40(%r4)
-	or %r22, %r19, %r24
+	ld %r25, 40(%r4)
+	or %r22, %r19, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 32(%r4)
-	or %r22, %r18, %r24
+	ld %r25, 32(%r4)
+	or %r22, %r18, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 24(%r4)
-	or %r22, %r17, %r24
+	ld %r25, 24(%r4)
+	or %r22, %r17, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 16(%r4)
-	or %r22, %r16, %r24
+	ld %r25, 16(%r4)
+	or %r22, %r16, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 8(%r4)
-	or %r22, %r15, %r24
+	ld %r25, 8(%r4)
+	or %r22, %r15, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 0(%r4)
-	or %r22, %r14, %r24
+	ld %r25, 0(%r4)
+	or %r22, %r14, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	std %r14, 512(%r8)
 	std %r15, 520(%r8)
@@ -4414,196 +4414,196 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 120(%r4)
 	xor %r21, %r21, %r22
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
@@ -4639,196 +4639,196 @@ vg_camellia_ecb_encrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 56(%r4)
 	xor %r21, %r21, %r22
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
@@ -5069,199 +5069,199 @@ vg_camellia_ecb_decrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -5279,199 +5279,199 @@ vg_camellia_ecb_decrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -5491,199 +5491,199 @@ vg_camellia_ecb_decrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -5706,199 +5706,199 @@ vg_camellia_ecb_decrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -5916,199 +5916,199 @@ vg_camellia_ecb_decrypt:
 	or %r19, %r14, %r14
 	or %r20, %r14, %r14
 	or %r21, %r14, %r14
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 0(%r4)
 	std %r15, 8(%r4)
 	std %r16, 16(%r4)
@@ -6151,199 +6151,199 @@ vg_camellia_ecb_decrypt:
 	ld %r19, 3176(%r8)
 	ld %r20, 3192(%r8)
 	ld %r21, 3208(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	std %r14, 576(%r8)
 	std %r15, 584(%r8)
 	std %r16, 592(%r8)
@@ -6360,199 +6360,199 @@ vg_camellia_ecb_decrypt:
 	ld %r19, 3168(%r8)
 	ld %r20, 3184(%r8)
 	ld %r21, 3200(%r8)
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 48, 16
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
-	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
-	xor %r18, %r18, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 8, 0
-	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 63, 1
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
 	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
+	rldicl %r22, %r22, 8, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	rldicl %r22, %r22, 8, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r27
+	xor %r18, %r18, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 56, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r27
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r20, 56, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r27
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r21, 56, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r27
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 8, 0
+	xor %r21, %r21, %r22
+	rldicl %r22, %r14, 60, 0
+	xor %r22, %r22, %r18
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r31
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r16, 60, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r31
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r17, 60, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r31
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 4, 0
+	xor %r17, %r17, %r22
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
 	xor %r22, %r22, %r19
 	and %r22, %r22, %r29
 	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
 	xor %r22, %r22, %r21
 	and %r22, %r22, %r29
 	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 4, 0
-	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
 	ld %r22, 0(%r4)
 	xor %r14, %r14, %r22
 	ld %r22, 8(%r4)
@@ -6578,36 +6578,36 @@ vg_camellia_ecb_decrypt:
 	std %r20, 560(%r8)
 	std %r21, 568(%r8)
 	ld %r22, 576(%r8)
-	ld %r24, 64(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 64(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 576(%r8)
 	ld %r22, 584(%r8)
-	ld %r24, 72(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 72(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 584(%r8)
 	ld %r22, 592(%r8)
-	ld %r24, 80(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 80(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 592(%r8)
 	ld %r22, 600(%r8)
-	ld %r24, 88(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 88(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 600(%r8)
 	ld %r22, 608(%r8)
-	ld %r24, 96(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 96(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 608(%r8)
 	ld %r22, 616(%r8)
-	ld %r24, 104(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 104(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 616(%r8)
 	ld %r22, 624(%r8)
-	ld %r24, 112(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 112(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 624(%r8)
 	ld %r22, 632(%r8)
-	ld %r24, 120(%r4)
-	xor %r22, %r22, %r24
+	ld %r25, 120(%r4)
+	xor %r22, %r22, %r25
 	std %r22, 632(%r8)
 	addi %r4, %r4, 128
 29:
@@ -6629,31 +6629,31 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 56(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -6848,179 +6848,179 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 576(%r8)
 	xor %r14, %r14, %r22
@@ -7062,31 +7062,31 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 120(%r4)
 	xor %r21, %r21, %r22
-	ld %r30, 400(%r8)
+	ld %r24, 400(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	li %r31, 0
 	addi %r31, %r31, -1
@@ -7281,179 +7281,179 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r23, %r31
 	or %r21, %r27, %r27
 	or %r14, %r0, %r0
-	ld %r30, 408(%r8)
+	ld %r24, 408(%r8)
 	or %r23, %r21, %r21
 	xor %r22, %r21, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	xor %r22, %r20, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r19, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r18, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r17, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r16, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r15, %r14
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r14, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 416(%r8)
+	ld %r24, 416(%r8)
 	or %r23, %r14, %r14
 	xor %r22, %r14, %r15
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	xor %r22, %r15, %r16
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	xor %r22, %r16, %r17
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	xor %r22, %r17, %r18
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	xor %r22, %r18, %r19
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	xor %r22, %r19, %r20
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	xor %r22, %r20, %r21
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	xor %r22, %r21, %r23
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 392(%r8)
+	ld %r24, 384(%r8)
+	ld %r25, 392(%r8)
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r14, %r14, %r22
 	rldicl %r22, %r14, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r15, %r15, %r22
 	rldicl %r22, %r15, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r16, %r16, %r22
 	rldicl %r22, %r16, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r17, %r17, %r22
 	rldicl %r22, %r17, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r18, %r18, %r22
 	rldicl %r22, %r18, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r19, %r19, %r22
 	rldicl %r22, %r19, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r20, %r20, %r22
 	rldicl %r22, %r20, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 8, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 56, 0
-	and %r22, %r22, %r24
+	and %r22, %r22, %r25
 	xor %r21, %r21, %r22
 	rldicl %r22, %r21, 24, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
 	ld %r22, 512(%r8)
 	xor %r14, %r14, %r22
@@ -7496,88 +7496,88 @@ vg_camellia_ecb_decrypt:
 	ld %r19, 616(%r8)
 	ld %r20, 624(%r8)
 	ld %r21, 632(%r8)
-	ld %r30, 384(%r8)
-	ld %r24, 120(%r4)
-	or %r22, %r21, %r24
+	ld %r24, 384(%r8)
+	ld %r25, 120(%r4)
+	or %r22, %r21, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 112(%r4)
-	or %r22, %r20, %r24
+	ld %r25, 112(%r4)
+	or %r22, %r20, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 104(%r4)
-	or %r22, %r19, %r24
+	ld %r25, 104(%r4)
+	or %r22, %r19, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 96(%r4)
-	or %r22, %r18, %r24
+	ld %r25, 96(%r4)
+	or %r22, %r18, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 88(%r4)
-	or %r22, %r17, %r24
+	ld %r25, 88(%r4)
+	or %r22, %r17, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 80(%r4)
-	or %r22, %r16, %r24
+	ld %r25, 80(%r4)
+	or %r22, %r16, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 72(%r4)
-	or %r22, %r15, %r24
+	ld %r25, 72(%r4)
+	or %r22, %r15, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 64(%r4)
-	or %r22, %r14, %r24
+	ld %r25, 64(%r4)
+	or %r22, %r14, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 392(%r8)
+	ld %r24, 392(%r8)
 	or %r23, %r21, %r21
-	ld %r24, 112(%r4)
-	and %r22, %r20, %r24
+	ld %r25, 112(%r4)
+	and %r22, %r20, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 104(%r4)
-	and %r22, %r19, %r24
+	ld %r25, 104(%r4)
+	and %r22, %r19, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 96(%r4)
-	and %r22, %r18, %r24
+	ld %r25, 96(%r4)
+	and %r22, %r18, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 88(%r4)
-	and %r22, %r17, %r24
+	ld %r25, 88(%r4)
+	and %r22, %r17, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 80(%r4)
-	and %r22, %r16, %r24
+	ld %r25, 80(%r4)
+	and %r22, %r16, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 72(%r4)
-	and %r22, %r15, %r24
+	ld %r25, 72(%r4)
+	and %r22, %r15, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 64(%r4)
-	and %r22, %r14, %r24
+	ld %r25, 64(%r4)
+	and %r22, %r14, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 120(%r4)
-	and %r22, %r23, %r24
+	ld %r25, 120(%r4)
+	and %r22, %r23, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	std %r14, 576(%r8)
 	std %r15, 584(%r8)
@@ -7595,88 +7595,88 @@ vg_camellia_ecb_decrypt:
 	ld %r19, 552(%r8)
 	ld %r20, 560(%r8)
 	ld %r21, 568(%r8)
-	ld %r30, 392(%r8)
+	ld %r24, 392(%r8)
 	or %r23, %r21, %r21
-	ld %r24, 48(%r4)
-	and %r22, %r20, %r24
+	ld %r25, 48(%r4)
+	and %r22, %r20, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 40(%r4)
-	and %r22, %r19, %r24
+	ld %r25, 40(%r4)
+	and %r22, %r19, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 32(%r4)
-	and %r22, %r18, %r24
+	ld %r25, 32(%r4)
+	and %r22, %r18, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 24(%r4)
-	and %r22, %r17, %r24
+	ld %r25, 24(%r4)
+	and %r22, %r17, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 16(%r4)
-	and %r22, %r16, %r24
+	ld %r25, 16(%r4)
+	and %r22, %r16, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 8(%r4)
-	and %r22, %r15, %r24
+	ld %r25, 8(%r4)
+	and %r22, %r15, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 0(%r4)
-	and %r22, %r14, %r24
+	ld %r25, 0(%r4)
+	and %r22, %r14, %r25
 	rldicl %r22, %r22, 8, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 56(%r4)
-	and %r22, %r23, %r24
+	ld %r25, 56(%r4)
+	and %r22, %r23, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
-	ld %r30, 384(%r8)
-	ld %r24, 56(%r4)
-	or %r22, %r21, %r24
+	ld %r24, 384(%r8)
+	ld %r25, 56(%r4)
+	or %r22, %r21, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r21, %r21, %r22
-	ld %r24, 48(%r4)
-	or %r22, %r20, %r24
+	ld %r25, 48(%r4)
+	or %r22, %r20, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r20, %r20, %r22
-	ld %r24, 40(%r4)
-	or %r22, %r19, %r24
+	ld %r25, 40(%r4)
+	or %r22, %r19, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r19, %r19, %r22
-	ld %r24, 32(%r4)
-	or %r22, %r18, %r24
+	ld %r25, 32(%r4)
+	or %r22, %r18, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r18, %r18, %r22
-	ld %r24, 24(%r4)
-	or %r22, %r17, %r24
+	ld %r25, 24(%r4)
+	or %r22, %r17, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r17, %r17, %r22
-	ld %r24, 16(%r4)
-	or %r22, %r16, %r24
+	ld %r25, 16(%r4)
+	or %r22, %r16, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r16, %r16, %r22
-	ld %r24, 8(%r4)
-	or %r22, %r15, %r24
+	ld %r25, 8(%r4)
+	or %r22, %r15, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r15, %r15, %r22
-	ld %r24, 0(%r4)
-	or %r22, %r14, %r24
+	ld %r25, 0(%r4)
+	or %r22, %r14, %r25
 	rldicl %r22, %r22, 56, 0
-	and %r22, %r22, %r30
+	and %r22, %r22, %r24
 	xor %r14, %r14, %r22
 	std %r14, 512(%r8)
 	std %r15, 520(%r8)
@@ -7707,196 +7707,196 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 120(%r4)
 	xor %r21, %r21, %r22
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22
@@ -7932,196 +7932,196 @@ vg_camellia_ecb_decrypt:
 	xor %r20, %r20, %r22
 	ld %r22, 56(%r4)
 	xor %r21, %r21, %r22
-	lis %r24, 0
-	ori %r24, %r24, 0
-	rldicr %r24, %r24, 32, 31
-	oris %r24, %r24, 65535
-	ori %r24, %r24, 0
-	lis %r25, 0
-	ori %r25, %r25, 65280
-	rldicr %r25, %r25, 32, 31
-	oris %r25, %r25, 0
-	ori %r25, %r25, 65280
-	lis %r27, 21845
-	ori %r27, %r27, 21845
+	lis %r26, 0
+	ori %r26, %r26, 0
+	rldicr %r26, %r26, 32, 31
+	oris %r26, %r26, 65535
+	ori %r26, %r26, 0
+	lis %r27, 0
+	ori %r27, %r27, 65280
 	rldicr %r27, %r27, 32, 31
-	oris %r27, %r27, 21845
-	ori %r27, %r27, 21845
-	lis %r28, 13107
-	ori %r28, %r28, 13107
-	rldicr %r28, %r28, 32, 31
-	oris %r28, %r28, 13107
-	ori %r28, %r28, 13107
-	lis %r29, 3855
-	ori %r29, %r29, 3855
+	oris %r27, %r27, 0
+	ori %r27, %r27, 65280
+	lis %r29, 21845
+	ori %r29, %r29, 21845
 	rldicr %r29, %r29, 32, 31
-	oris %r29, %r29, 3855
-	ori %r29, %r29, 3855
-	rldicl %r22, %r14, 63, 1
-	xor %r22, %r22, %r15
-	and %r22, %r22, %r27
-	xor %r15, %r15, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r16, 63, 1
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r27
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r16, %r16, %r22
-	rldicl %r22, %r18, 63, 1
-	xor %r22, %r22, %r19
-	and %r22, %r22, %r27
-	xor %r19, %r19, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r20, 63, 1
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r27
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 1, 0
-	xor %r20, %r20, %r22
-	rldicl %r22, %r14, 62, 2
-	xor %r22, %r22, %r16
-	and %r22, %r22, %r28
-	xor %r16, %r16, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 62, 2
-	xor %r22, %r22, %r17
-	and %r22, %r22, %r28
-	xor %r17, %r17, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r15, %r15, %r22
-	rldicl %r22, %r18, 62, 2
-	xor %r22, %r22, %r20
-	and %r22, %r22, %r28
-	xor %r20, %r20, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 62, 2
-	xor %r22, %r22, %r21
-	and %r22, %r22, %r28
-	xor %r21, %r21, %r22
-	rldicl %r22, %r22, 2, 0
-	xor %r19, %r19, %r22
-	rldicl %r22, %r14, 60, 4
+	oris %r29, %r29, 21845
+	ori %r29, %r29, 21845
+	lis %r30, 13107
+	ori %r30, %r30, 13107
+	rldicr %r30, %r30, 32, 31
+	oris %r30, %r30, 13107
+	ori %r30, %r30, 13107
+	lis %r31, 3855
+	ori %r31, %r31, 3855
+	rldicr %r31, %r31, 32, 31
+	oris %r31, %r31, 3855
+	ori %r31, %r31, 3855
+	rldicl %r22, %r14, 60, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 60, 4
+	rldicl %r22, %r15, 60, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 60, 4
+	rldicl %r22, %r16, 60, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 60, 4
+	rldicl %r22, %r17, 60, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r29
+	and %r22, %r22, %r31
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 4, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r14, 56, 8
+	rldicl %r22, %r14, 62, 0
+	xor %r22, %r22, %r16
+	and %r22, %r22, %r30
+	xor %r16, %r16, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r15, 62, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r30
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r15, %r15, %r22
+	rldicl %r22, %r18, 62, 0
+	xor %r22, %r22, %r20
+	and %r22, %r22, %r30
+	xor %r20, %r20, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r19, 62, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r30
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 2, 0
+	xor %r19, %r19, %r22
+	rldicl %r22, %r14, 63, 0
+	xor %r22, %r22, %r15
+	and %r22, %r22, %r29
+	xor %r15, %r15, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r14, %r14, %r22
+	rldicl %r22, %r16, 63, 0
+	xor %r22, %r22, %r17
+	and %r22, %r22, %r29
+	xor %r17, %r17, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r16, %r16, %r22
+	rldicl %r22, %r18, 63, 0
+	xor %r22, %r22, %r19
+	and %r22, %r22, %r29
+	xor %r19, %r19, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r18, %r18, %r22
+	rldicl %r22, %r20, 63, 0
+	xor %r22, %r22, %r21
+	and %r22, %r22, %r29
+	xor %r21, %r21, %r22
+	rldicl %r22, %r22, 1, 0
+	xor %r20, %r20, %r22
+	rldicl %r22, %r14, 56, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 56, 8
+	rldicl %r22, %r15, 56, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 56, 8
+	rldicl %r22, %r16, 56, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 56, 8
+	rldicl %r22, %r17, 56, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 56, 8
+	rldicl %r22, %r18, 56, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 56, 8
+	rldicl %r22, %r19, 56, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 56, 8
+	rldicl %r22, %r20, 56, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 56, 8
+	rldicl %r22, %r21, 56, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r25
+	and %r22, %r22, %r27
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 8, 0
 	xor %r21, %r21, %r22
-	rldicl %r22, %r14, 48, 16
+	rldicl %r22, %r14, 48, 0
 	xor %r22, %r22, %r14
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r14, %r14, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r14, %r14, %r22
-	rldicl %r22, %r15, 48, 16
+	rldicl %r22, %r15, 48, 0
 	xor %r22, %r22, %r15
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r15, %r15, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r15, %r15, %r22
-	rldicl %r22, %r16, 48, 16
+	rldicl %r22, %r16, 48, 0
 	xor %r22, %r22, %r16
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r16, %r16, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r16, %r16, %r22
-	rldicl %r22, %r17, 48, 16
+	rldicl %r22, %r17, 48, 0
 	xor %r22, %r22, %r17
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r17, %r17, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r17, %r17, %r22
-	rldicl %r22, %r18, 48, 16
+	rldicl %r22, %r18, 48, 0
 	xor %r22, %r22, %r18
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r18, %r18, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r18, %r18, %r22
-	rldicl %r22, %r19, 48, 16
+	rldicl %r22, %r19, 48, 0
 	xor %r22, %r22, %r19
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r19, %r19, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r19, %r19, %r22
-	rldicl %r22, %r20, 48, 16
+	rldicl %r22, %r20, 48, 0
 	xor %r22, %r22, %r20
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r20, %r20, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r20, %r20, %r22
-	rldicl %r22, %r21, 48, 16
+	rldicl %r22, %r21, 48, 0
 	xor %r22, %r22, %r21
-	and %r22, %r22, %r24
+	and %r22, %r22, %r26
 	xor %r21, %r21, %r22
 	rldicl %r22, %r22, 16, 0
 	xor %r21, %r21, %r22

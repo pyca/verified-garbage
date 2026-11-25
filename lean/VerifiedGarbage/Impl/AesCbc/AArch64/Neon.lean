@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Neon.Blocks
 the arguments of `vg_aes_cbc_decrypt` (`Impl/AesCbc/AArch64.lean`), for
 CPUs without the Cryptographic Extension: eight blocks at a time, deciphered
 as `vg_aes_decrypt_blocks_neon` deciphers them (`Impl/Aes/AArch64/Neon/Blocks.lean`:
-`keySetup`, `keyBody`, `loadFrom`, `decrypt8`, `advance`), with the round
+`keys`, `loadFrom`, `decrypt8`, `advance`), with the round
 keys bitsliced once for the whole call.
 
 Each group of eight blocks, or the last one to seven: the `Cⱼ` are loaded and
@@ -55,8 +55,7 @@ def decGroup : Prog isa :=
 each group of (up to) eight blocks. -/
 def whole (group : Prog isa) : Prog isa :=
   .ite (.zero .x .x4) (.block [])
-    (.seq (.block keySetup)
-      (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop group (.nonzero .x .x4))))
+    (.seq keys (.loop group (.nonzero .x .x4)))
 
 /-- One block: deciphered by vector permutations (`Vperm.Dec.core`), XORed
 with the block at `iv` into the data, and its ciphertext stored to `iv`. -/

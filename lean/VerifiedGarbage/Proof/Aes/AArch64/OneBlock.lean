@@ -513,7 +513,7 @@ theorem decryptBlocksN_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.i
 theorem st_ctr (m : Mem) (p : Addr) :
     st (m.readW (p + BitVec.ofNat 64 0) 128) = ctrState (Spec.Gcm.blockAt m p) 0 := by
   apply st_ext; intro j hj
-  rw [getD_st _ hj, ctrState, getD_ofFn hj, vbyte_readW _ _ hj, BitVec.add_zero]
+  rw [getD_st _ hj, ctrState, Vector.getD_ofFn hj, vbyte_readW _ _ hj, BitVec.add_zero]
   exact (toBytes_blockAt m p hj).symm
 
 /-- `ctrOneLoad`: the counter block in `v0`, and its last four bytes, as a

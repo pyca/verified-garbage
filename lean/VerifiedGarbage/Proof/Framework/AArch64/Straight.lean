@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # AArch64: straight-line bitwise code, by evaluation
 
 As `Framework/X86_64/Straight.lean`, for AArch64: a block of 64-bit `and`,
-`orr`, `eor`, `ror`, `lsr`, `movz`, `movk`, `add`/`sub` of an immediate,
+`orr`, `eor`, the same with the second operand rotated, `ror`, `lsr`, `movz`, `movk`, `add`/`sub` of an immediate,
 `ldr` and `str` instructions on registers and on two memory areas
 (read-write *slots* `[base, #8k]`, `k < slots`, and read-only *external
 words* `[ext, #8k]`, `k < exts`) is evaluated over an abstract domain
@@ -96,6 +96,11 @@ def step (e : Env α) : Instr → Option (Env α)
     if d = c.base ∨ d = c.ext then none else
     match e.reg n, e.reg m with
     | some a, some b => (binop D op a b).map fun r => e.set d (some r) none
+    | _, _ => none
+  | .logicRor op .x d n m sh =>
+    if d = c.base ∨ d = c.ext ∨ ¬ sh < 64 then none else
+    match e.reg n, e.reg m with
+    | some a, some b => ((D.ror sh b).bind (binop D op a)).map fun r => e.set d (some r) none
     | _, _ => none
   | .ror .x d n sh =>
     if d = c.base ∨ d = c.ext ∨ ¬ sh < 64 then none else
@@ -307,6 +312,29 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       refine ⟨_, rfl, ?_⟩
       refine (post_set hok hrel (a := some r) (cv := none) (fun x hx => ?_) (fun _ h => by cases h)
         hd.1 hd.2).writes fun r h => by simp [dstOf, h]
+      cases hx
+      cases op <;> simp only [binop, read_x] at hr ⊢
+      · exact hD.and hRa hRb hr
+      · exact hD.or hRa hRb hr
+      · exact hD.xor hRa hRb hr
+    · cases h
+  | logicRor op sz d n m sh =>
+    cases sz <;> simp only [step] at h
+    · cases h
+    split at h
+    · cases h
+    rename_i hd
+    simp only [not_or, Classical.not_not] at hd
+    obtain ⟨hdb, hde, hsh⟩ := hd
+    split at h
+    · rename_i a b ha hb
+      obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
+      obtain ⟨t, ht, hr⟩ := Option.bind_eq_some_iff.mp hr
+      have hRa := hrel.reg n a ha
+      have hRb := hD.ror (hrel.reg m b hb) ht
+      refine ⟨_, exec_logicRor hsh, ?_⟩
+      refine (post_set hok hrel (a := some r) (cv := none) (fun x hx => ?_) (fun _ h => by cases h)
+        hdb hde).writes fun r h => by simp [dstOf, h]
       cases hx
       cases op <;> simp only [binop, read_x] at hr ⊢
       · exact hD.and hRa hRb hr

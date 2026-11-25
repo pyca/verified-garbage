@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
-public import VerifiedGarbage.Proof.Aes.InvBitsliced
+public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.AesCbc.Spec
