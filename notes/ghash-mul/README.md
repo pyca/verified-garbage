@@ -279,3 +279,14 @@ instructions a block, 81 fewer for the M pipes; the sum's 9 shifted `eor`s stay.
 x86, J measured as emitted: 54 to 66 ns a block where main takes 51 to 66 on a
 noisy host (the runs of both cluster at the same two frequencies); the alignment
 of `scratch` changes 3%. The Benchmarks run decides.
+
+# After the audit
+
+x86 (32 bits) is main's code, which has no multiplication and was not to be
+replaced: restored, unopened; everything above about x86 is moot.
+
+riscv64, the registers of the key's preparation, from this code's own allocation
+(they followed a list printed from the old proofs): masks in s0-s3 as in the
+product; `H` in t1 and t2, its key in t4, t2 and t3, carries and halves in t5, t6,
+t0 (the registers of the product's classes, all free before it); the temporary
+is the product's first, a6.
