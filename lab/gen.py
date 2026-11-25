@@ -113,13 +113,65 @@ def seqpair(o1, a1, b1, o2, a2, b2):
 B['seqpair'] = ['mov w10, #0'] + seqpair(448, 320, 224, 480, 256, 288)
 B['seqpair_dep'] = ['mov w10, #0'] + seqpair(224, 224, 224, 256, 256, 256)
 ALL = dict(B)
+
+for N in (10, 20, 30, 40, 50, 60):
+    for op in ('adds', 'add'):
+        B[f'win_{op}{N}'] = ['umulh x2, x2, x3'] * 12 + [f'{op} x{12+k%4}, x3, x3' for k in range(N)] + ['umulh x4, x4, x3'] * 12 + [f'{op} x{12+k%4}, x3, x3' for k in range(N)]
+BR = ['x12','x13','x14','x15']
+def ldb(ob): return [f'ldp x12, x13, [x0, #{ob}]', f'ldp x14, x15, [x0, #{ob+16}]']
+def foldR(l, h, o):
+    """l + 38 h into [o], words in registers; temporaries x2 x8 x9 x11 x16 x17."""
+    m = ['x2','x8','x9','x16']
+    r = ['mov w11, #38'] + [f'mul {m[k]}, x11, {h[k]}' for k in range(4)] + [f'umulh {h[k]}, x11, {h[k]}' for k in range(4)]
+    r += [f'adds {l[0]}, {l[0]}, {m[0]}', f'adcs {l[1]}, {l[1]}, {m[1]}', f'adcs {l[2]}, {l[2]}, {m[2]}', f'adcs {l[3]}, {l[3]}, {m[3]}', f'adc {h[3]}, {h[3]}, x10']
+    r += [f'adds {l[3]}, {l[3]}, {h[2]}', f'adc {h[3]}, {h[3]}, x10', 'mov w11, #19', f'extr x17, {h[3]}, {l[3]}, #63', f'and {l[3]}, {l[3]}, #0x7fffffffffffffff', 'mul x17, x17, x11',
+          f'adds {l[0]}, {l[0]}, x17', f'adcs {l[1]}, {l[1]}, {h[0]}', f'adcs {l[2]}, {l[2]}, {h[1]}', f'adc {l[3]}, {l[3]}, x10', f'stp {l[0]}, {l[1]}, [x0, #{o}]', f'stp {l[2]}, {l[3]}, [x0, #{o+16}]']
+    return r
+def mulA(o, a, b, fold=True):
+    W = ['x4','x5','x6','x7','x21','x22','x23','x24']
+    L = ['x2','x8','x9','x16']
+    r = ldb(b) + [f'ldr x3, [x0, #{a}]'] + [f'mul {W[k]}, x3, {BR[k]}' for k in range(4)] + [f'umulh {L[k]}, x3, {BR[k]}' for k in range(4)]
+    r += [f'adds {W[1]}, {W[1]}, {L[0]}', f'adcs {W[2]}, {W[2]}, {L[1]}', f'adcs {W[3]}, {W[3]}, {L[2]}', f'adc {W[4]}, {L[3]}, x10']
+    for i in range(1, 4):
+        t = W[i:i+5]
+        r += [f'ldr x3, [x0, #{a+8*i}]'] + [f'mul {L[k]}, x3, {BR[k]}' for k in range(4)]
+        r += [f'adds {t[0]}, {t[0]}, {L[0]}', f'adcs {t[1]}, {t[1]}, {L[1]}', f'adcs {t[2]}, {t[2]}, {L[2]}', f'adcs {t[3]}, {t[3]}, {L[3]}', f'adc {t[4]}, x10, x10']
+        r += [f'umulh {L[k]}, x3, {BR[k]}' for k in range(4)]
+        r += [f'adds {t[1]}, {t[1]}, {L[0]}', f'adcs {t[2]}, {t[2]}, {L[1]}', f'adcs {t[3]}, {t[3]}, {L[2]}', f'adc {t[4]}, {t[4]}, {L[3]}']
+    return r + (foldR(W[:4], W[4:], o) if fold else [])
+def rowP(a, w, t):
+    """a * x12..x15 into w0..w4, with t0..t2 temporary."""
+    return [f'ldr x3, [x0, #{a}]'] + [f'mul {w[k]}, x3, {BR[k]}' for k in range(4)] + [f'umulh {t[k]}, x3, {BR[k]}' for k in range(3)] + [f'umulh {w[4]}, x3, x15',
+        f'adds {w[1]}, {w[1]}, {t[0]}', f'adcs {w[2]}, {w[2]}, {t[1]}', f'adcs {w[3]}, {w[3]}, {t[2]}', f'adc {w[4]}, {w[4]}, x10']
+def mulT(o, a, b):
+    T = ['x2','x8','x9']
+    A, C = ['x4','x5','x6','x7','x21'], ['x16','x17','x20','x22','x23']
+    r = ldb(b) + rowP(a, A, T) + rowP(a+8, C, T)
+    # A + C << 64: words x4, x5, x6, x7, x21, x23
+    r += ['adds x5, x5, x16', 'adcs x6, x6, x17', 'adcs x7, x7, x20', 'adcs x21, x21, x22', 'adc x23, x23, x10']
+    # the second pair in x1 x11 x16 x17 x20 ; x22 x24 x2 x8 x9
+    D = ['x1','x11','x16','x17','x20']
+    r += ['ldr x3, [x0, #%d]' % (a+16)] + [f'mul {D[k]}, x3, {BR[k]}' for k in range(4)] + [f'umulh {k2}, x3, {BR[k]}' for k, k2 in enumerate(['x2','x8','x9'])] + ['umulh x20, x3, x15',
+        'adds x11, x11, x2', 'adcs x16, x16, x8', 'adcs x17, x17, x9', 'adc x20, x20, x10']
+    # S += D << 128 early: x6 x7 x21 x23 + new
+    r += ['adds x6, x6, x1', 'adcs x7, x7, x11', 'adcs x21, x21, x16', 'adcs x23, x23, x17', 'adc x20, x20, x10']
+    E = ['x1','x11','x16','x17','x24']
+    r += ['ldr x3, [x0, #%d]' % (a+24)] + [f'mul {E[k]}, x3, {BR[k]}' for k in range(4)] + [f'umulh {k2}, x3, {BR[k]}' for k, k2 in enumerate(['x2','x8','x9'])] + ['umulh x24, x3, x15',
+        'adds x11, x11, x2', 'adcs x16, x16, x8', 'adcs x17, x17, x9', 'adc x24, x24, x10',
+        'adds x7, x7, x1', 'adcs x21, x21, x11', 'adcs x23, x23, x16', 'adcs x20, x20, x17', 'adc x24, x24, x10']
+    return r + foldR(['x4','x5','x6','x7'], ['x21','x23','x20','x24'], o)
+B['mulA'] = ['mov w10, #0'] + mulA(448, 320, 224)
+B['mulA_dep'] = ['mov w10, #0'] + mulA(224, 224, 224)
+B['mulT'] = ['mov w10, #0'] + mulT(448, 320, 224)
+B['mulT_dep'] = ['mov w10, #0'] + mulT(224, 224, 224)
+ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
 out = ['//! Lab.', 'use criterion::{BenchmarkId, Criterion};', 'use crate::{BenchDyn, VG};', 'pub const USES: &[&str] = &["x25519"];']
 asm = []
 for n, body in B.items():
     asm.append(f'.p2align 6\n.globl lab_{n}\nlab_{n}:\nstp x19, x20, [sp, #-96]!\nstp x21, x22, [sp, #16]\nstp x23, x24, [sp, #32]\nstp x25, x26, [sp, #48]\nstp d8, d9, [sp, #64]\n'
-      'mov x25, x1\nmov x2, #12345\nmovk x2, #54321, lsl #48\nmov x3, #777\nmovk x3, #999, lsl #32\n2:\n' + '\n'.join(body) +
+      'mov x25, x1\nmov x26, x1\nmov x2, #12345\nmovk x2, #54321, lsl #48\nmov x3, #777\nmovk x3, #999, lsl #32\n2:\n' + '\n'.join(body) +
       '\nsub x25, x25, #1\ncbnz x25, 2b\nldp d8, d9, [sp, #64]\nldp x25, x26, [sp, #48]\nldp x23, x24, [sp, #32]\nldp x21, x22, [sp, #16]\nldp x19, x20, [sp], #96\nret\n')
 out.append('core::arch::global_asm!(r"' + '\n'.join(asm) + '");')
 out.append('unsafe extern "C" {\n' + ''.join(f'fn lab_{n}(p: *mut u64, n: u64);' for n in B) + '}')
