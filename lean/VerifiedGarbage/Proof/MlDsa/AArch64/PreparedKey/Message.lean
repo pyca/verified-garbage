@@ -565,7 +565,7 @@ theorem message_sign_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (
         sig_post [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
           abi,VG.AArch64.argRegs,Abi.withConsts]
         rw [formatMessage_none (by rw [VG.Proof.MlKem.bytesAt_length]; omega_using [h8]),e2]
-        rfl
+        exact ⟨rfl,by rw [o2.mem,o1.mem]⟩
 
 def MessageSignOK (p : Params) (prepared : Bool) (L : Message.Lay) (m : Mem) (t : State) : Prop :=
   ∃ s, (messageSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s ∧
