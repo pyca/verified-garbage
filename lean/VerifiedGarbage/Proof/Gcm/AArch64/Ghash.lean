@@ -142,6 +142,8 @@ theorem Pre.nb_lt {s₀ : State} (h : Pre s₀) : 16 * nb s₀ < 2 ^ 64 := by
 /-! ## Blocks as two words -/
 
 /-- Two loads and byte reversals read a block. -/
+theorem rev64_rev64 (a : BitVec 64) : rev64 (rev64 a) = a := byteRev64_byteRev64 a
+
 theorem blockAt_rev (m : Mem) (p : Addr) :
     rev64 (m.readW (p + BitVec.ofNat 64 0) 64) ++ rev64 (m.readW (p + BitVec.ofNat 64 8) 64) = blockAt m p := by
   have h : Spec.Aes.bytesAt m p 16 =
