@@ -9,69 +9,10 @@ vg_aes_ctr32_keyed:
 	test r8, r8
 	je 20f
 22:
-	movdqu xmm0, XMMWORD PTR [rdx]
-	mov eax, DWORD PTR [rdx+12]
-	bswap eax
-	movdqu XMMWORD PTR [r9+288], xmm0
-	mov r10d, eax
-	add r10d, 0
-	bswap r10d
-	mov DWORD PTR [r9+300], r10d
-	movdqu XMMWORD PTR [r9+304], xmm0
-	mov r10d, eax
-	add r10d, 1
-	bswap r10d
-	mov DWORD PTR [r9+316], r10d
-	movdqu XMMWORD PTR [r9+320], xmm0
-	mov r10d, eax
-	add r10d, 2
-	bswap r10d
-	mov DWORD PTR [r9+332], r10d
-	movdqu XMMWORD PTR [r9+336], xmm0
-	mov r10d, eax
-	add r10d, 3
-	bswap r10d
-	mov DWORD PTR [r9+348], r10d
-	movdqu XMMWORD PTR [r9+352], xmm0
-	mov r10d, eax
-	add r10d, 4
-	bswap r10d
-	mov DWORD PTR [r9+364], r10d
-	movdqu XMMWORD PTR [r9+368], xmm0
-	mov r10d, eax
-	add r10d, 5
-	bswap r10d
-	mov DWORD PTR [r9+380], r10d
-	movdqu XMMWORD PTR [r9+384], xmm0
-	mov r10d, eax
-	add r10d, 6
-	bswap r10d
-	mov DWORD PTR [r9+396], r10d
-	movdqu XMMWORD PTR [r9+400], xmm0
-	mov r10d, eax
-	add r10d, 7
-	bswap r10d
-	mov DWORD PTR [r9+412], r10d
-	movdqu xmm0, XMMWORD PTR [r9+288]
-	movdqu xmm8, XMMWORD PTR [r9+352]
-	movdqa xmm4, xmm0
-	punpcklqdq xmm0, xmm8
-	punpckhqdq xmm4, xmm8
-	movdqu xmm1, XMMWORD PTR [r9+304]
-	movdqu xmm8, XMMWORD PTR [r9+368]
-	movdqa xmm5, xmm1
-	punpcklqdq xmm1, xmm8
-	punpckhqdq xmm5, xmm8
-	movdqu xmm2, XMMWORD PTR [r9+320]
-	movdqu xmm8, XMMWORD PTR [r9+384]
-	movdqa xmm6, xmm2
-	punpcklqdq xmm2, xmm8
-	punpckhqdq xmm6, xmm8
-	movdqu xmm3, XMMWORD PTR [r9+336]
-	movdqu xmm8, XMMWORD PTR [r9+400]
-	movdqa xmm7, xmm3
-	punpcklqdq xmm3, xmm8
-	punpckhqdq xmm7, xmm8
+	mov rax, QWORD PTR [rdx]
+	mov r10, QWORD PTR [rdx+8]
+	movq xmm0, rax
+	movq xmm4, r10
 	movdqu xmm9, XMMWORD PTR [r9+192]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 8
@@ -80,27 +21,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 8
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 8
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 8
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 8
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 8
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 8
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 8
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+208]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 16
@@ -109,27 +29,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 16
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 16
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 16
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 16
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 16
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 16
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 16
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+224]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 32
@@ -138,27 +37,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 32
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 32
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 32
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 32
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 32
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 32
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 32
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+176]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 4
@@ -167,85 +45,18 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 4
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 4
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 4
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 4
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 4
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 4
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 4
-	pxor xmm3, xmm8
-	movdqu xmm9, XMMWORD PTR [r9+160]
-	movdqa xmm8, xmm0
-	psrlq xmm8, 2
-	pxor xmm8, xmm2
-	pand xmm8, xmm9
-	pxor xmm2, xmm8
-	psllq xmm8, 2
-	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 2
-	pxor xmm8, xmm3
-	pand xmm8, xmm9
-	pxor xmm3, xmm8
-	psllq xmm8, 2
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm4
-	psrlq xmm8, 2
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 2
-	pxor xmm4, xmm8
-	movdqa xmm8, xmm5
-	psrlq xmm8, 2
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 2
-	pxor xmm5, xmm8
-	movdqu xmm9, XMMWORD PTR [r9+144]
-	movdqa xmm8, xmm0
-	psrlq xmm8, 1
-	pxor xmm8, xmm1
-	pand xmm8, xmm9
-	pxor xmm1, xmm8
-	psllq xmm8, 1
-	pxor xmm0, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 1
-	pxor xmm8, xmm3
-	pand xmm8, xmm9
-	pxor xmm3, xmm8
-	psllq xmm8, 1
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm4
-	psrlq xmm8, 1
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 1
-	pxor xmm4, xmm8
-	movdqa xmm8, xmm6
-	psrlq xmm8, 1
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 1
-	pxor xmm6, xmm8
+	movdqa xmm1, xmm0
+	psrlq xmm1, 1
+	movdqa xmm2, xmm0
+	psrlq xmm2, 2
+	movdqa xmm3, xmm0
+	psrlq xmm3, 3
+	movdqa xmm5, xmm4
+	psrlq xmm5, 1
+	movdqa xmm6, xmm4
+	psrlq xmm6, 2
+	movdqa xmm7, xmm4
+	psrlq xmm7, 3
 	mov r10, rsi
 	shr r10, 1
 	sub r10, 1
@@ -1498,63 +1309,28 @@ vg_aes_ctr32_keyed:
 	movdqa xmm6, xmm14
 	movdqa xmm7, xmm15
 	movdqu xmm9, XMMWORD PTR [r9+144]
-	movdqa xmm8, xmm0
-	psrlq xmm8, 1
-	pxor xmm8, xmm1
-	pand xmm8, xmm9
-	pxor xmm1, xmm8
-	psllq xmm8, 1
-	pxor xmm0, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 1
-	pxor xmm8, xmm3
-	pand xmm8, xmm9
-	pxor xmm3, xmm8
-	psllq xmm8, 1
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm4
-	psrlq xmm8, 1
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 1
-	pxor xmm4, xmm8
-	movdqa xmm8, xmm6
-	psrlq xmm8, 1
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 1
-	pxor xmm6, xmm8
-	movdqu xmm9, XMMWORD PTR [r9+160]
-	movdqa xmm8, xmm0
-	psrlq xmm8, 2
-	pxor xmm8, xmm2
-	pand xmm8, xmm9
-	pxor xmm2, xmm8
-	psllq xmm8, 2
-	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 2
-	pxor xmm8, xmm3
-	pand xmm8, xmm9
-	pxor xmm3, xmm8
-	psllq xmm8, 2
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm4
-	psrlq xmm8, 2
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 2
-	pxor xmm4, xmm8
-	movdqa xmm8, xmm5
-	psrlq xmm8, 2
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 2
-	pxor xmm5, xmm8
+	movdqu xmm8, XMMWORD PTR [r9+160]
+	pand xmm9, xmm8
+	pand xmm0, xmm9
+	pand xmm1, xmm9
+	psllq xmm1, 1
+	pxor xmm0, xmm1
+	pand xmm2, xmm9
+	psllq xmm2, 2
+	pxor xmm0, xmm2
+	pand xmm3, xmm9
+	psllq xmm3, 3
+	pxor xmm0, xmm3
+	pand xmm4, xmm9
+	pand xmm5, xmm9
+	psllq xmm5, 1
+	pxor xmm4, xmm5
+	pand xmm6, xmm9
+	psllq xmm6, 2
+	pxor xmm4, xmm6
+	pand xmm7, xmm9
+	psllq xmm7, 3
+	pxor xmm4, xmm7
 	movdqu xmm9, XMMWORD PTR [r9+176]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 4
@@ -1563,27 +1339,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 4
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 4
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 4
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 4
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 4
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 4
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 4
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+224]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 32
@@ -1592,27 +1347,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 32
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 32
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 32
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 32
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 32
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 32
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 32
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+208]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 16
@@ -1621,27 +1355,6 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 16
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 16
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 16
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 16
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 16
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 16
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 16
-	pxor xmm3, xmm8
 	movdqu xmm9, XMMWORD PTR [r9+192]
 	movdqa xmm8, xmm0
 	psrlq xmm8, 8
@@ -1650,63 +1363,13 @@ vg_aes_ctr32_keyed:
 	pxor xmm4, xmm8
 	psllq xmm8, 8
 	pxor xmm0, xmm8
-	movdqa xmm8, xmm1
-	psrlq xmm8, 8
-	pxor xmm8, xmm5
-	pand xmm8, xmm9
-	pxor xmm5, xmm8
-	psllq xmm8, 8
-	pxor xmm1, xmm8
-	movdqa xmm8, xmm2
-	psrlq xmm8, 8
-	pxor xmm8, xmm6
-	pand xmm8, xmm9
-	pxor xmm6, xmm8
-	psllq xmm8, 8
-	pxor xmm2, xmm8
-	movdqa xmm8, xmm3
-	psrlq xmm8, 8
-	pxor xmm8, xmm7
-	pand xmm8, xmm9
-	pxor xmm7, xmm8
-	psllq xmm8, 8
-	pxor xmm3, xmm8
-	movdqa xmm8, xmm0
-	punpcklqdq xmm8, xmm4
-	punpckhqdq xmm0, xmm4
-	movdqu XMMWORD PTR [r9+288], xmm8
-	movdqu XMMWORD PTR [r9+352], xmm0
-	movdqa xmm8, xmm1
-	punpcklqdq xmm8, xmm5
-	punpckhqdq xmm1, xmm5
-	movdqu XMMWORD PTR [r9+304], xmm8
-	movdqu XMMWORD PTR [r9+368], xmm1
-	movdqa xmm8, xmm2
-	punpcklqdq xmm8, xmm6
-	punpckhqdq xmm2, xmm6
-	movdqu XMMWORD PTR [r9+320], xmm8
-	movdqu XMMWORD PTR [r9+384], xmm2
-	movdqa xmm8, xmm3
-	punpcklqdq xmm8, xmm7
-	punpckhqdq xmm3, xmm7
-	movdqu XMMWORD PTR [r9+336], xmm8
-	movdqu XMMWORD PTR [r9+400], xmm3
-	mov rdi, 8
-	cmp r8, 8
-	cmovb rdi, r8
-	mov r10, rdi
-	mov rax, r9
-	add rax, 288
-24:
-	movdqu xmm0, XMMWORD PTR [rax]
+	punpcklqdq xmm0, xmm4
 	movdqu xmm1, XMMWORD PTR [rcx]
 	pxor xmm0, xmm1
 	movdqu XMMWORD PTR [r11], xmm0
-	add rax, 16
 	add rcx, 16
 	add r11, 16
-	sub r10, 1
-	jne 24b
+	mov rdi, 1
 	mov eax, DWORD PTR [rdx+12]
 	bswap eax
 	add eax, edi
