@@ -1,217 +1,123 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Round
+public import VerifiedGarbage.Impl.Sha3.AArch64.RoundConstants
+public import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-!
-Portable scalar Keccak schedule following OpenSSL's scalar KeccakF1600_int:
-https://github.com/openssl/openssl/blob/openssl-3.6.0/crypto/sha/asm/keccak1600-armv8.pl
-Twenty-five state lanes remain in general registers. x18 and x29 are excluded.
-Two temporary lane spills supply the extra parity registers required by theta.
-The abstract operations are mapped to reviewed ISA instructions separately.
+# Keccak-f[1600] on AArch64, in general registers
+
+`core` (the internal function `vg_keccak_f1600_lanes`) is the 24 rounds on
+the lanes in their registers (`Round.lean`), with 24 bytes of working space at
+`x28` for the spilled lanes. `x16`, `x17` and `x30` are its free registers, so
+its return address is in `v27` while it runs, and the address of the table of
+round constants in `v28`: `umov` then costs no integer unit.
+
+The functions around it keep the callee-saved registers in `v16–v26` and
+their own arguments in further vector registers, so that all the general
+registers they may use are the lanes' and `core`'s:
+
+* `permute(state = x0, scratch = x1)`, the permutation;
+* `absorbBlocks(state = x0, rate = x1, data = x2, len = x3, scratch = x4)`,
+  which absorbs all of `data`'s whole blocks (at least one) with the state in
+  registers throughout, and returns the number of bytes left.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar
-open VG VG.AArch64
-abbrev Lane := Spec.Sha3.Lane
 
-def laneReg (i : Nat) : Reg :=
-  match i with
-  | 0 => .x0
-  | 1 => .x1
-  | 2 => .x2
-  | 3 => .x3
-  | 4 => .x4
-  | 5 => .x5
-  | 6 => .x6
-  | 7 => .x7
-  | 8 => .x8
-  | 9 => .x9
-  | 10 => .x10
-  | 11 => .x11
-  | 12 => .x12
-  | 13 => .x13
-  | 14 => .x14
-  | 15 => .x15
-  | 16 => .x16
-  | 17 => .x17
-  | 18 => .x25
-  | 19 => .x19
-  | 20 => .x20
-  | 21 => .x21
-  | 22 => .x22
-  | 23 => .x23
-  | 24 => .x24
-  | _ => .x0
+open VG.AArch64
+open VG.Impl.Sha3.AArch64.RoundConstants (rcs sym)
 
-def thetaReg (i : Nat) : Reg :=
-  if i = 2 then .x27 else if i = 3 then .x26 else if i = 4 then .x28 else laneReg i
+/-- The lanes spilled to memory at `x28`. -/
+def conf : Conf where
+  temps := [.x16, .x17, .x30]
+  lazy := true
+  sp := ⟨fun k r => .str .x r .x28 (8 * k), fun k r => .ldr .x r .x28 (8 * k)⟩
 
-inductive ScalarOp where
-  | xor (dst a b : Reg)
-  | xorRor (dst a b : Reg) (n : Nat)
-  | bic (dst a b : Reg)
-  | bicRor (dst a b : Reg) (n : Nat)
-  | ror (dst a : Reg) (n : Nat)
-  | move (dst a : Reg)
-  | spill (slot : Nat) (a : Reg)
-  | reload (dst : Reg) (slot : Nat)
-  deriving Repr
+/-- ι of round `r`. -/
+def iota (r : Nat) : List Instr :=
+  [.umov .x .x16 .v28 0, .ldrTbl .x .x16 .x16 (8 * r) sym rcs, .logic .eor .x .x0 .x0 .x16]
 
-structure File where
-  regs : Reg → Lane
-  slots : Nat → Lane
+/-- Round `r`. -/
+def fullRound (r : Nat) : List Instr := conf.round (r % 2) ++ iota r
 
-def File.write (f : File) (r : Reg) (v : Lane) : File :=
-  { f with regs := fun q => if q = r then v else f.regs q }
+/-- The 24 rounds, as a function. -/
+def coreCode : List Instr :=
+  ([.vop (.dup .d2 .v27 .x30), .adrSym .x16 sym, .vop (.dup .d2 .v28 .x16)] : List Instr) ++
+  (List.range 24).flatMap fullRound ++ ([.umov .x .x30 .v27 0] : List Instr)
 
-def step (f : File) : ScalarOp → File
-  | .xor d a b => f.write d (f.regs a ^^^ f.regs b)
-  | .xorRor d a b n => f.write d (f.regs a ^^^ (f.regs b).rotateRight n)
-  | .bic d a b => f.write d (f.regs a &&& ~~~f.regs b)
-  | .bicRor d a b n => f.write d (f.regs a &&& ~~~(f.regs b).rotateRight n)
-  | .ror d a n => f.write d ((f.regs a).rotateRight n)
-  | .move d a => f.write d (f.regs a)
-  | .spill k a => { f with slots := fun j => if j = k then f.regs a else f.slots j }
-  | .reload d k => f.write d (f.slots k)
+def core : Prog isa := .block coreCode
 
-def run (ops : List ScalarOp) (f : File) : File := ops.foldl step f
+def coreName : String := "vg_keccak_f1600_lanes"
 
-def thetaOps : List ScalarOp :=
-  [.xor .x26 .x0 .x5,
-   .spill 0 .x4,
-   .spill 1 .x9,
-   .xor .x27 .x1 .x6,
-   .xor .x28 .x2 .x7,
-   .xor .x30 .x3 .x8,
-   .xor .x4 .x4 .x9,
-   .xor .x26 .x26 .x10,
-   .xor .x27 .x27 .x11,
-   .xor .x28 .x28 .x12,
-   .xor .x30 .x30 .x13,
-   .xor .x4 .x4 .x14,
-   .xor .x26 .x26 .x15,
-   .xor .x27 .x27 .x16,
-   .xor .x28 .x28 .x17,
-   .xor .x30 .x30 .x25,
-   .xor .x4 .x4 .x19,
-   .xor .x26 .x26 .x20,
-   .xor .x27 .x27 .x21,
-   .xor .x28 .x28 .x22,
-   .xor .x30 .x30 .x23,
-   .xor .x4 .x4 .x24,
-   .xorRor .x9 .x26 .x28 63,
-   .xor .x1 .x1 .x9,
-   .xor .x6 .x6 .x9,
-   .xor .x11 .x11 .x9,
-   .xor .x16 .x16 .x9,
-   .xor .x21 .x21 .x9,
-   .xorRor .x9 .x27 .x30 63,
-   .xorRor .x28 .x28 .x4 63,
-   .xorRor .x30 .x30 .x26 63,
-   .xorRor .x4 .x4 .x27 63,
-   .xor .x27 .x2 .x9,
-   .xor .x7 .x7 .x9,
-   .xor .x12 .x12 .x9,
-   .xor .x17 .x17 .x9,
-   .xor .x22 .x22 .x9,
-   .xor .x0 .x0 .x4,
-   .xor .x5 .x5 .x4,
-   .xor .x10 .x10 .x4,
-   .xor .x15 .x15 .x4,
-   .xor .x20 .x20 .x4,
-   .reload .x4 0,
-   .reload .x9 1,
-   .xor .x26 .x3 .x28,
-   .xor .x8 .x8 .x28,
-   .xor .x13 .x13 .x28,
-   .xor .x25 .x25 .x28,
-   .xor .x23 .x23 .x28,
-   .xor .x28 .x4 .x30,
-   .xor .x9 .x9 .x30,
-   .xor .x14 .x14 .x30,
-   .xor .x19 .x19 .x30,
-   .xor .x24 .x24 .x30]
+def callCore : Prog isa := .call coreName core
 
-def rhoPiOps : List ScalarOp :=
-  [.move .x30 .x1,
-   .ror .x1 .x6 20,
-   .ror .x2 .x12 21,
-   .ror .x3 .x25 43,
-   .ror .x4 .x24 50,
-   .ror .x6 .x9 44,
-   .ror .x12 .x13 39,
-   .ror .x25 .x17 49,
-   .ror .x24 .x21 62,
-   .ror .x9 .x22 3,
-   .ror .x13 .x19 56,
-   .ror .x17 .x11 54,
-   .ror .x21 .x8 9,
-   .ror .x22 .x14 25,
-   .ror .x19 .x23 8,
-   .ror .x11 .x7 58,
-   .ror .x8 .x16 19,
-   .ror .x14 .x20 46,
-   .ror .x23 .x15 23,
-   .ror .x7 .x10 61,
-   .ror .x16 .x5 28,
-   .ror .x5 .x26 36,
-   .ror .x10 .x30 63,
-   .ror .x15 .x28 37,
-   .ror .x20 .x27 2]
+/-- The callee-saved registers the code writes. -/
+def savedReg (i : Nat) : Reg :=
+  [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30].getD i .x19
 
-def chiOps : List ScalarOp :=
-  [.bic .x26 .x2 .x1,
-   .bic .x27 .x3 .x2,
-   .bic .x28 .x0 .x4,
-   .bic .x30 .x1 .x0,
-   .xor .x0 .x0 .x26,
-   .bic .x26 .x4 .x3,
-   .xor .x1 .x1 .x27,
-   .xor .x3 .x3 .x28,
-   .xor .x4 .x4 .x30,
-   .xor .x2 .x2 .x26,
-   .bic .x26 .x7 .x6,
-   .bic .x27 .x8 .x7,
-   .bic .x28 .x5 .x9,
-   .bic .x30 .x6 .x5,
-   .xor .x5 .x5 .x26,
-   .bic .x26 .x9 .x8,
-   .xor .x6 .x6 .x27,
-   .xor .x8 .x8 .x28,
-   .xor .x9 .x9 .x30,
-   .xor .x7 .x7 .x26,
-   .bic .x26 .x12 .x11,
-   .bic .x27 .x13 .x12,
-   .bic .x28 .x10 .x14,
-   .bic .x30 .x11 .x10,
-   .xor .x10 .x10 .x26,
-   .bic .x26 .x14 .x13,
-   .xor .x11 .x11 .x27,
-   .xor .x13 .x13 .x28,
-   .xor .x14 .x14 .x30,
-   .xor .x12 .x12 .x26,
-   .bic .x26 .x17 .x16,
-   .bic .x27 .x25 .x17,
-   .bic .x28 .x15 .x19,
-   .bic .x30 .x16 .x15,
-   .xor .x15 .x15 .x26,
-   .bic .x26 .x19 .x25,
-   .xor .x16 .x16 .x27,
-   .xor .x25 .x25 .x28,
-   .xor .x19 .x19 .x30,
-   .xor .x17 .x17 .x26,
-   .bic .x26 .x22 .x21,
-   .bic .x27 .x23 .x22,
-   .bic .x28 .x20 .x24,
-   .bic .x30 .x21 .x20,
-   .xor .x20 .x20 .x26,
-   .bic .x26 .x24 .x23,
-   .xor .x21 .x21 .x27,
-   .xor .x23 .x23 .x28,
-   .xor .x24 .x24 .x30,
-   .xor .x22 .x22 .x26]
+/-- Where register `i` of them is kept. -/
+def savedVec (i : Nat) : VReg :=
+  [VReg.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26].getD i .v16
+
+def save : List Instr := (List.range 11).map fun i => .vop (.dup .d2 (savedVec i) (savedReg i))
+def restore : List Instr := (List.range 11).map fun i => .umov .x (savedReg i) (savedVec i) 0
+
+/-- Load lane `i` from `[b, #off]`, pending its rotation. -/
+def loadLane (b : Reg) (i off : Nat) : List Instr :=
+  ([.ldr .x (lreg i) b off] : List Instr) ++ if pend i = 0 then [] else [.ror .x (lreg i) (lreg i) (pend i)]
+
+/-- Store lane `i` at `[b, #off]`. -/
+def storeLane (b : Reg) (i off : Nat) : List Instr :=
+  (if pend i = 0 then [] else [.ror .x (lreg i) (lreg i) (64 - pend i)]) ++ ([.str .x (lreg i) b off] : List Instr)
+
+/-- Load the state at `b`, whose lane `i` is at `stride i + off`. -/
+def load (b : Reg) (stride off : Nat) : List Instr := (List.range 25).flatMap fun i => loadLane b i (stride * i + off)
+
+/-- Store it. -/
+def store (b : Reg) (stride off : Nat) : List Instr := (List.range 25).flatMap fun i => storeLane b i (stride * i + off)
+
+/-- The permutation: `v29` and `v30` hold `state` and `scratch`. -/
+def permute : Prog isa :=
+  .seq (.block (save ++ [.vop (.dup .d2 .v29 .x0), .vop (.dup .d2 .v30 .x1), .umov .x .x16 .v29 0] ++ load .x16 8 0 ++
+    ([.umov .x .x28 .v30 0] : List Instr)))
+  (.seq callCore (.block (([.umov .x .x16 .v29 0] : List Instr) ++ store .x16 8 0 ++ restore)))
+
+/-- Lane `i` of the data at `x16` XORed into the state. -/
+def xorLane (i : Nat) : List Instr := [.ldr .x .x17 .x16 (8 * i), eor (lreg i) (lreg i) .x17 (pend i)]
+
+/-- Lanes `a … b - 1` of the data. -/
+def xorLanes (a b : Nat) : List Instr := (List.range (b - a)).flatMap fun k => xorLane (a + k)
+
+/-- Skip `c` if the rate (in `v0`) is `rate`. -/
+def unlessRate (rate : Nat) (c : Prog isa) : Prog isa :=
+  .seq (.block [.umov .x .x17 .v0 0, .subImm .x .x17 .x17 rate]) (.ite (.zero .x .x17) (.block []) c)
+
+/-- A block of the data at `x16` XORed into the state, `v0` holding the rate. -/
+def xorBlock : Prog isa :=
+  .seq (.block (xorLanes 0 9))
+  (unlessRate 72 (.seq (.block (xorLanes 9 13))
+  (unlessRate 104 (.seq (.block (xorLanes 13 17))
+  (unlessRate 136 (.seq (.block (xorLanes 17 18))
+  (unlessRate 144 (.block (xorLanes 18 21)))))))))
+
+/-- A block absorbed: `v1` holds the pointer to the data left, `v2` its length;
+then `x17` is zero if another whole block is left. -/
+def absorbStep : Prog isa :=
+  .seq (.block [.umov .x .x16 .v1 0])
+  (.seq xorBlock
+  (.seq (.block [.umov .x .x16 .v1 0, .umov .x .x17 .v0 0, .add .x .x16 .x16 .x17, .vop (.dup .d2 .v1 .x16),
+      .umov .x .x28 .v30 0])
+  (.seq callCore
+    (.block [.umov .x .x16 .v2 0, .umov .x .x17 .v0 0, .sub .x .x16 .x16 .x17, .vop (.dup .d2 .v2 .x16),
+      .sub .x .x17 .x16 .x17, .lsr .x .x17 .x17 63]))))
+
+def absorbBlocks : Prog isa :=
+  .seq (.block (save ++ [.vop (.dup .d2 .v29 .x0), .vop (.dup .d2 .v30 .x4), .vop (.dup .d2 .v0 .x1),
+    .vop (.dup .d2 .v1 .x2), .vop (.dup .d2 .v2 .x3), .umov .x .x16 .v29 0] ++ load .x16 8 0))
+  (.seq (.loop absorbStep (.zero .x .x17))
+    (.block (([.umov .x .x16 .v29 0] : List Instr) ++ store .x16 8 0 ++ restore ++ ([.umov .x .x0 .v2 0] : List Instr))))
 
 end VG.Impl.Sha3.AArch64.Scalar
