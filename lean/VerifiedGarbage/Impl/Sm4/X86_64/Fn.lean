@@ -27,10 +27,18 @@ namespace VG.Impl.Sm4.X86_64.Fn
 open VG.X86_64
 open VG.Impl.Scrub.X86_64 (scrubSel scrubAll)
 
-/-- `Spec.Sm4.expandKeyApi`'s function as emitted. -/
-def expandKey : Prog isa :=
-  scrubSel .sse 0 3144 [(0, 1)]
-    (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey)
+/-- The key expansion core also called by SM4-GCM. Its frame is wiped by
+its caller. -/
+def keyCore : Prog isa :=
+  Impl.StackScratch.X86_64.withStackScratch 3144 .rdx Impl.Sm4.X86_64.expandKey
+
+/-- Call the shared core with the System V stack alignment. -/
+def keyCall : Prog isa :=
+  .frame (.alloc 8) (.call "vg_sm4_expand_key_core" keyCore) (.free 8)
+
+/-- `Spec.Sm4.expandKeyApi`'s function as emitted, clearing the core's
+frame, return-address slot and alignment slot. -/
+def expandKey : Prog isa := scrubAll .sse 0 3160 keyCall
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
