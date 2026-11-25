@@ -126,7 +126,7 @@ def classSum (q : Reg) (r : Nat) : List Instr :=
 
 /-- The classes of the high half of `x` and of the key's half `j`. -/
 def classes (x : Reg) (j : Nat) : List Instr :=
-  [.dp .and .r4 .r1 (.shifted x .lsr 16), .dp .and .r5 .r2 (.shifted x .lsr 16), .dp .and .r6 .r3 (.shifted x .lsr 16),
+  [lsrI .r11 x 16, .dp .and .r4 .r1 (.reg .r11), .dp .and .r5 .r2 (.reg .r11), .dp .and .r6 .r3 (.reg .r11),
    ld .r11 j, .dp .and .r7 .r11 (.reg .r1), .dp .and .r8 .r11 (.reg .r2), .dp .and .r9 .r11 (.reg .r3)]
 
 /-- The product of the high half of `x` and the key's half `j`, in `r0`. -/

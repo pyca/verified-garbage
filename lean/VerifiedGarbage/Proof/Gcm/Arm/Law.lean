@@ -246,15 +246,13 @@ theorem Masks.keeps {rs : List Reg} {a b : A} (h : Masks a) (k : Keeps rs a b) (
     (h3 : Reg.r3 ∉ rs) : Masks b :=
   ⟨by rw [k _ h1, h.m0], by rw [k _ h2, h.m1], by rw [k _ h3, h.m2]⟩
 
-theorem classes_ok (x : Reg) (hx : x = .r11 ∨ x = .lr) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
+theorem classes_ok (x : Reg) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
     WA (classes x j) a fun a' =>
       (a'.g .r4 = a.g x >>> 16 &&& c3 0 ∧ a'.g .r5 = a.g x >>> 16 &&& c3 1 ∧ a'.g .r6 = a.g x >>> 16 &&& c3 2) ∧
       (a'.g .r7 = a.m j &&& c3 0 ∧ a'.g .r8 = a.m j &&& c3 1 ∧ a'.g .r9 = a.m j &&& c3 2) ∧
       Keeps work a a' ∧ a'.m = a.m := by
-  have h4 : x ≠ .r4 := by rcases hx with rfl | rfl <;> decide
-  have h5 : x ≠ .r5 := by rcases hx with rfl | rfl <;> decide
-  simp only [WA, classes, ld, evalA, stepA, opA, dpA, shiftA, slotOf_slot hj, Option.map_some, Option.bind_some, A.g_set,
-    A.m_set, h4, h5, hM.m0, hM.m1, hM.m2, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left',
+  simp only [WA, classes, ld, lsrI, evalA, stepA, opA, dpA, shiftA, slotOf_slot hj, Option.map_some, Option.bind_some, A.g_set,
+    A.m_set, hM.m0, hM.m1, hM.m2, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left',
     Nat.reduceLeDiff, and_self, BitVec.and_comm (c3 _)]
   refine ⟨trivial, trivial, fun r hr => ?_, trivial⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -281,10 +279,10 @@ theorem eor_ok (d n m : Reg) (hd : d ≠ .r12) (a : A) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem prod_ok (x : Reg) (hx : x = .r11 ∨ x = .lr) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
+theorem prod_ok (x : Reg) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
     WA (prod x j) a fun a' => a'.g .r0 = cm16 (a.g x >>> 16) (a.m j) ∧ Keeps work a a' ∧ a'.m = a.m := by
   rw [prod, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
-  refine WA.append ((classes_ok x hx j hj a hM).mono fun b ⟨hX, hY, kb, mb⟩ => ?_)
+  refine WA.append ((classes_ok x j hj a hM).mono fun b ⟨hX, hY, kb, mb⟩ => ?_)
   have hMb := hM.keeps kb (by decide) (by decide) (by decide)
   refine WA.append ((classSum_ok .r0 (.inl rfl) 0 (by decide) _ _ b hMb hX hY).mono fun c ⟨e₀, kc, mc⟩ => ?_)
   have hMc := hMb.keeps kc (by decide) (by decide) (by decide)
@@ -324,7 +322,7 @@ theorem mul32_ok (k t : Nat) (hk : k < 48) (ht : t < 9) (kw : BitVec 32) (a : A)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
   have hM₁ := hM.keeps k₁ (by decide) (by decide) (by decide)
-  refine WA.append ((prod_ok .r11 (.inl rfl) (3 * t) (by omega) b hM₁).mono fun c ⟨e₂, k₂, m₂⟩ => ?_)
+  refine WA.append ((prod_ok .r11 (3 * t) (by omega) b hM₁).mono fun c ⟨e₂, k₂, m₂⟩ => ?_)
   refine WA.append (WA.mono (Q := fun d => d.g = c.g ∧ d.m t0S = c.g .r0 ∧ ∀ j, j ≠ t0S → d.m j = c.m j) ?_
     fun d ⟨g₃, e₃, m₃⟩ => ?_)
   · simp only [WA, st, t0S, evalA, stepA, slotOf_slot (show 48 < 64 by decide), Option.map_some, Option.bind_some,
@@ -335,7 +333,7 @@ theorem mul32_ok (k t : Nat) (hk : k < 48) (ht : t < 9) (kw : BitVec 32) (a : A)
   have hM₃ := hM.keeps k₃ (by decide) (by decide) (by decide)
   have l₃ : d.g .lr = a.m k := by rw [g₃, k₂ _ (by decide), l₁]
   have M₃ : ∀ j, j < 48 ∨ 50 ≤ j → d.m j = a.m j := fun j hj => by rw [m₃ j (by unfold t0S; omega), m₂, m₁]
-  refine WA.append ((prod_ok .lr (.inr rfl) (3 * t + 1) (by omega) d hM₃).mono fun e ⟨e₄, k₄, m₄⟩ => ?_)
+  refine WA.append ((prod_ok .lr (3 * t + 1) (by omega) d hM₃).mono fun e ⟨e₄, k₄, m₄⟩ => ?_)
   refine WA.append (WA.mono (Q := fun f => f.g .r11 = e.g .lr ^^^ e.g .lr <<< 16 ∧ Keeps [.r11] e f ∧
     f.m t1S = e.g .r0 ∧ ∀ j, j ≠ t1S → f.m j = e.m j) ?_ fun f ⟨r₅, k₅, e₅, m₅⟩ => ?_)
   · simp only [WA, st, t1S, evalA, stepA, opA, shiftA, dpA, slotOf_slot (show 49 < 64 by decide), Option.map_some,
@@ -347,7 +345,7 @@ theorem mul32_ok (k t : Nat) (hk : k < 48) (ht : t < 9) (kw : BitVec 32) (a : A)
   have k₅' : Keeps workLr a f := k₃.trans ((k₄.mono (by decide)).trans (k₅.mono (by decide)))
   have hM₅ := hM.keeps k₅' (by decide) (by decide) (by decide)
   have M₅ : ∀ j, j < 48 ∨ 50 ≤ j → f.m j = a.m j := fun j hj => by rw [m₅ j (by unfold t1S; omega), m₄, M₃ j hj]
-  refine WA.append ((prod_ok .r11 (.inl rfl) (3 * t + 2) (by omega) f hM₅).mono fun h ⟨e₆, k₆, m₆⟩ => ?_)
+  refine WA.append ((prod_ok .r11 (3 * t + 2) (by omega) f hM₅).mono fun h ⟨e₆, k₆, m₆⟩ => ?_)
   have hp0 : h.m 48 = cm16 (lo16 (a.m k)) (lo16 kw) := by
     rw [m₆, m₅ 48 (by decide), m₄, show d.m 48 = c.g .r0 from e₃, e₂, r₁, m₁, hK.1]; rfl
   have hp1 : h.m 49 = cm16 (hi16 (a.m k)) (hi16 kw) := by
