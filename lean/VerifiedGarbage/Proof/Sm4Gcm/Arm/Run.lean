@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr32
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Impl.StackScratch.Arm
@@ -31,6 +32,7 @@ public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Proof.Sm4.Contract
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
 

@@ -376,7 +376,7 @@ def At (a : A) (b : Nat) (w : W4) : Prop := a.m b = w.w0 ∧ a.m (b + 1) = w.w1 
 theorem mul64_ok (t b : Nat) (ht : t + 2 < 9) (hb : b = 36 ∨ b = 40 ∨ b = 44) (k0 k1 : BitVec 32) (a : A) (hM : Masks a)
     (hK : KeyOk a t k0 ∧ KeyOk a (t + 1) k1 ∧ KeyOk a (t + 2) (k0 ^^^ k1))
     (hS : a.m (27 + (t + 2)) = a.m (27 + t) ^^^ a.m (27 + (t + 1))) :
-    WA (mul64 t b) a fun a' => At a' b (mulW4 (a.m (27 + (t + 1))) (a.m (27 + t)) k1 k0) ∧ Keeps workLr a a' ∧
+    WA (mul64 t b) a fun a' => At a' b (mulW4 Spread.mul32 (a.m (27 + (t + 1))) (a.m (27 + t)) k1 k0) ∧ Keeps workLr a a' ∧
       ∀ j, j < 48 ∨ 50 ≤ j → (j < b ∨ b + 4 ≤ j) → a'.m j = a.m j := by
   rw [mul64, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
   refine WA.append ((mul32_ok (27 + t) t (by omega) (by omega) k0 a hM hK.1).mono fun c ⟨p0, p1, kc, mc⟩ => ?_)
@@ -709,7 +709,7 @@ theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hM : Masks a) (hK : KeysTo a 
     have y31 : c.m 31 = b.m 31 := mc _ (by decide) (by decide)
     simp only [Nat.reduceAdd, y33, y34, y30, y31] at z0 z1 z2 z3
     rw [yOf, z0, z1, z2, z3, ← x3, ← x2, ← x1, ← x0, w4_eq, w4_eq, w4_eq]
-    exact mul_words32 ..
+    exact mul_words32 Spread.isMul_mul32 ..
   · rw [mf k (by omega) (by omega) (by omega) (by omega), me k (by omega) (by omega), md k (by omega) (by omega),
       mc k (by omega) (by omega), mb k (by omega)]
   · exact gd'.trans (ge.trans gf)

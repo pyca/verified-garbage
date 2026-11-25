@@ -7,6 +7,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Gcm.Arm.Lit
 import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Slots
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -74,18 +75,8 @@ theorem ghash_correct [GhashLaw] (s : State) (hs : ghashArm.pre s) :
 /-- Four words, the first the most significant. -/
 abbrev w4 (a b c d : BitVec 32) : BitVec 128 := a ++ b ++ c ++ d
 
-theorem bytes8 (a b c d e f g h : BitVec 8) :
-    (a ++ b ++ c ++ d ++ e ++ f ++ g ++ h : BitVec 64) =
-      ((a ++ b ++ c ++ d : BitVec 32) ++ (e ++ f ++ g ++ h : BitVec 32) : BitVec 64) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [toNat_append]
-  omega
-
-/-- The two halves of a block's words. -/
-theorem w4_eq (a b c d : BitVec 32) : w4 a b c d = ((a ++ b : BitVec 64) ++ (c ++ d : BitVec 64) : BitVec 128) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [w4, toNat_append]
-  omega
+theorem w4_eq (a b c d : BitVec 32) : w4 a b c d = ((a ++ b : BitVec 64) ++ (c ++ d : BitVec 64) : BitVec 128) :=
+  words4 a b c d
 
 /-- Four loads and byte reversals read a block. -/
 theorem blockAt_rev (m : Mem) (p : Addr) :

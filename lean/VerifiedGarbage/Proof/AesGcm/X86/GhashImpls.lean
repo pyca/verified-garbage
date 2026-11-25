@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86.Sse2
+public import VerifiedGarbage.Proof.Gcm.X86.Law
+import VerifiedGarbage.Proof.Gcm.X86.Lit
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub

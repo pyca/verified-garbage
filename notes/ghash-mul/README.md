@@ -149,3 +149,13 @@ bits being combined and the three of 128 (48 + 32); 4 saved registers (16).
 Registers: `ecx` scratch, `ebx`, `esi` the class sum, `edi` the y class,
 `ebp`: data pointer; the count in memory. The product (64 bits) accumulates
 as `lo`, `hi` in memory or in xmm (`movd`, `punpckldq`, `pxor`).
+
+E, settled before its code: all scalar, in 32-bit words, as ARM's, so that the
+same algebra serves both (ARM's word product is replaced by 16 `mul`s).
+Reduction: `ror` by 1, 2 and 7 together are the shifts up and down by those
+amounts at once, so `dn z = (ror sums) ^ up z`: 14 instructions for a word's
+two folds, 4 words. Product: `mov eax,[y]; mov edx,[k]; mul edx; xor ebx,eax;
+xor esi,edx`, the sum of a class in `esi:ebx`, the result in `ebp:edi`.
+Scratch words: 36 key, 4 classes of the word multiplied, 4 of y, 12 of
+products, 4 saved registers, pointer, count: 62 of 64. The words multiplied
+are added up from y's when they are split.

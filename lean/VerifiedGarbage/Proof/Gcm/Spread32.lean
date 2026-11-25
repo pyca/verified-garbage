@@ -198,6 +198,50 @@ theorem lp_mul32 (a b : BitVec 32) : lp (mul32 a b).1 + X ^ 32 * lp (mul32 a b).
   rw [lp_xor, lp_xor, e0, e1, lp_lo_hi16 a, lp_lo_hi16 b]
   linear_combination es + (X ^ 16 * lp (lo16 a) * lp (lo16 b) + X ^ 16 * lp (hi16 a) * lp (hi16 b)) * h2
 
+/-- The four classes' positions, in 32 bits. -/
+def c4 (r : Nat) : BitVec 32 := 0x11111111#32 <<< r
+
+/-- The product of two words from 16 integer products of 64 bits. -/
+def mul32x (a b : BitVec 32) : BitVec 32 × BitVec 32 :=
+  let p := mul4 (a.setWidth 64) (b.setWidth 64)
+  (p.extractLsb' 0 32, p.extractLsb' 32 32)
+
+theorem low_setWidth (a : BitVec 32) : Low (a.setWidth 64) := fun p hp => by
+  rw [BitVec.getLsbD_setWidth, Bool.and_eq_true] at hp
+  exact BitVec.lt_of_getLsbD hp.2
+
+theorem append_halves (v : BitVec 64) : v.extractLsb' 32 32 ++ v.extractLsb' 0 32 = v := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb']
+  by_cases h : i < 32
+  · simp only [h, ite_true, decide_true, Bool.true_and, Nat.zero_add]
+  · simp only [h, ite_false, show i - 32 < 32 by omega, decide_true, Bool.true_and, show 32 + (i - 32) = i by omega]
+
+theorem setWidth_c4 (a : BitVec 32) {r : Nat} (hr : r < 4) : (a &&& c4 r).setWidth 64 = a.setWidth 64 &&& m4 r := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_and, hi, decide_true, Bool.true_and]
+  by_cases h : i < 32
+  · have : ∀ r < 4, ∀ i < 32, (c4 r).getLsbD i = (m4 r).getLsbD i := by decide +kernel
+    rw [this r hr i h]
+  · rw [BitVec.getLsbD_of_ge a i (by omega), Bool.false_and, Bool.false_and]
+
+theorem m4_append {r : Nat} (hr : r < 4) : m4 r = c4 r ++ c4 r := by
+  have : ∀ r < 4, m4 r = c4 r ++ c4 r := by decide
+  exact this r hr
+
+/-- A product of two words, as two. -/
+def IsMul (f : BitVec 32 → BitVec 32 → BitVec 32 × BitVec 32) : Prop :=
+  ∀ a b, lp (f a b).1 + X ^ 32 * lp (f a b).2 = lp a * lp b
+
+theorem isMul_mul32 : IsMul mul32 := lp_mul32
+
+theorem isMul_mul32x : IsMul mul32x := fun a b => by
+  show lp ((mul4 _ _).extractLsb' 0 32) + X ^ 32 * lp ((mul4 _ _).extractLsb' 32 32) = _
+  rw [← lp_append, append_halves, mul4_eq (low_setWidth a), lp_low (low_setWidth a) (low_setWidth b), lp_setWidth,
+    lp_setWidth]
+
 /-! ## 64-bit words, as two -/
 
 /-- The carry-less product of `a₁ : a₀` and `b₁ : b₀`, four words, the low one first. -/
@@ -207,21 +251,21 @@ structure W4 where
   w2 : BitVec 32
   w3 : BitVec 32
 
-def mulW4 (a1 a0 b1 b0 : BitVec 32) : W4 :=
-  let p := mul32 a0 b0
-  let q := mul32 a1 b1
-  let r := mul32 (a0 ^^^ a1) (b0 ^^^ b1)
+def mulW4 (f : BitVec 32 → BitVec 32 → BitVec 32 × BitVec 32) (a1 a0 b1 b0 : BitVec 32) : W4 :=
+  let p := f a0 b0
+  let q := f a1 b1
+  let r := f (a0 ^^^ a1) (b0 ^^^ b1)
   ⟨p.1, p.2 ^^^ (r.1 ^^^ p.1 ^^^ q.1), q.1 ^^^ (r.2 ^^^ p.2 ^^^ q.2), q.2⟩
 
-theorem mulW4_eq (a1 a0 b1 b0 : BitVec 32) :
-    let w := mulW4 a1 a0 b1 b0
+theorem mulW4_eq {f : BitVec 32 → BitVec 32 → BitVec 32 × BitVec 32} (hf : IsMul f) (a1 a0 b1 b0 : BitVec 32) :
+    let w := mulW4 f a1 a0 b1 b0
     polyMul (a1 ++ a0) (b1 ++ b0) = ((w.w3 ++ w.w2 : BitVec 64) ++ (w.w1 ++ w.w0 : BitVec 64) : BitVec 128) := by
   intro w
   apply lp_ext
   have h2 : (2 : P) = 0 := CharTwo.two_eq_zero
-  have e0 := lp_mul32 a0 b0
-  have e1 := lp_mul32 a1 b1
-  have em := lp_mul32 (a0 ^^^ a1) (b0 ^^^ b1)
+  have e0 := hf a0 b0
+  have e1 := hf a1 b1
+  have em := hf (a0 ^^^ a1) (b0 ^^^ b1)
   rw [lp_xor, lp_xor] at em
   rw [lp_polyMul, lp_append a1 a0, lp_append b1 b0, lp_append (n := 64) (m := 64), lp_append w.w3 w.w2,
     lp_append w.w1 w.w0]
@@ -333,25 +377,25 @@ def redW4 (l h c : W4) : W4 :=
     h.w2 ^^^ z2 ^^^ (up32 z2 ^^^ dn32 z3), h.w3 ^^^ z3 ^^^ up32 z3⟩
 
 /-- The block's product in words: `y₃` first. -/
-theorem mul_words32 (y3 y2 y1 y0 a3 a2 a1 a0 : BitVec 32) :
+theorem mul_words32 {f : BitVec 32 → BitVec 32 → BitVec 32 × BitVec 32} (hf : IsMul f) (y3 y2 y1 y0 a3 a2 a1 a0 : BitVec 32) :
     let k0 := a0 <<< 1 ^^^ a3 >>> 31
     let k1 := a1 <<< 1 ^^^ a0 >>> 31
     let k2 := a2 <<< 1 ^^^ a1 >>> 31
     let k3 := a3 <<< 1 ^^^ a2 >>> 31 ^^^ dn32 (a3 >>> 31)
-    let z := redW4 (mulW4 y1 y0 k1 k0) (mulW4 y3 y2 k3 k2) (mulW4 (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2))
+    let z := redW4 (mulW4 f y1 y0 k1 k0) (mulW4 f y3 y2 k3 k2) (mulW4 f (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2))
     ((z.w3 ++ z.w2 : BitVec 64) ++ (z.w1 ++ z.w0 : BitVec 64) : BitVec 128) =
       Spec.Gcm.mul ((y3 ++ y2 : BitVec 64) ++ (y1 ++ y0 : BitVec 64) : BitVec 128)
         ((a3 ++ a2 : BitVec 64) ++ (a1 ++ a0 : BitVec 64) : BitVec 128) := by
   intro k0 k1 k2 k3 z
-  have hl := mulW4_eq y1 y0 k1 k0
-  have hh := mulW4_eq y3 y2 k3 k2
-  have hc := mulW4_eq (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2)
+  have hl := mulW4_eq hf y1 y0 k1 k0
+  have hh := mulW4_eq hf y3 y2 k3 k2
+  have hc := mulW4_eq hf (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2)
   rw [← mul_words, mulW, keyW1_append, keyW0_append]
   rw [xor_append', xor_append', hl, hh, hc]
   simp only [z]
-  generalize mulW4 y1 y0 k1 k0 = l
-  generalize mulW4 y3 y2 k3 k2 = h
-  generalize mulW4 (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2) = c
+  generalize mulW4 f y1 y0 k1 k0 = l
+  generalize mulW4 f y3 y2 k3 k2 = h
+  generalize mulW4 f (y1 ^^^ y3) (y0 ^^^ y2) (k1 ^^^ k3) (k0 ^^^ k2) = c
   simp only [redW, vdword_xor, vd0, vd1, dn_append, xor_append', up_append, redW4, BitVec.xor_zero]
 
 end VG.Proof.Gcm.Spread
