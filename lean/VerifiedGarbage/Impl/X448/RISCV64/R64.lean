@@ -317,10 +317,11 @@ def T6 : Nat := 560
 /-- `R = R²` (`t1` counting down). -/
 def sqStep (o : Nat) : Prog isa := .seq (.block [.addi .t1 .t1 (-1)]) (mul o o o)
 
-/-- `[o] = [x]^(2^n)`, `1 ≤ n ≤ 2048`: one square, then `n - 1` in a loop on
-`t1`. -/
+/-- `[o] = [x]^(2^n)`, `1 ≤ n ≤ 2048`. In-place squarings share one
+loop body. Otherwise the first square copies into `o`, then the loop repeats it. -/
 def sqn (o x n : Nat) : Prog isa :=
   if n = 1 then mul o x x
+  else if o = x ∧ n < 2048 then .seq (.block [.li .t1 (n : Int)]) (.loop (sqStep o) (.nonzero .t1))
   else .seq (mul o x x) (.seq (.block [.li .t1 ((n - 1 : Nat) : Int)]) (.loop (sqStep o) (.nonzero .t1)))
 
 /-- `[R] = [z]^(2²²³ - 1)` and `[T6] = [z]^(2²²² - 1)`, through `T0`–`T5`:

@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `invert` of `Impl/X448/RISCV64/R64.lean` computes `z^(p-2)` into `R` for the
 element `z` at `Z2` by the addition chain of `Proof/X448/Invert.lean`
-(`invertQ_ok`): runs of squarings (`sqn_ok`, a loop on `t1` after the first),
+(`invertQ_ok`): runs of squarings (`sqn_ok`, with in-place runs sharing one loop body),
 the chain as far as `z^(2²²³ - 1)` in `R` and `z^(2²²² - 1)` in `T6`
 (`chain223_ok`, which Ed448's square root shares), then its two final
 factors. The chain's slots `T0`–`T6` are separate from the slots `qs` the
@@ -96,7 +96,7 @@ theorem sep8_self {o : Nat} {qs : List Nat} (hq : Sep8 o qs = true) (ho : o + 56
   omega_using [ho, h8]
 
 theorem sqStep_ok {o n : Nat} {qs : List Nat} {v : Nat → Fe} {y : Fe} (hq : Sep8 o qs = true)
-    (ho : o + 56 ≤ ACC) {m : Nat} (hm : 1 ≤ m) (hmn : m < n) (hn : n ≤ 2048) {s : State}
+    (ho : o + 56 ≤ ACC) {m : Nat} (hm : 1 ≤ m) (hmn : m ≤ n) (hn : n ≤ 2048) {s : State}
     (h : SqInv b s0 a o n qs v y m s) :
     WP isa (sqStep o) s fun s' => SqInv b s0 a o n qs v y (m - 1) s' ∧
       (s'.gpr .t1 != 0) = decide (m - 1 ≠ 0) := by
@@ -122,22 +122,51 @@ theorem sqn_ok {o x n : Nat} {qs : List Nat} {v : Nat → Fe} (hn1 : 1 ≤ n) (h
   · subst h1
     exact opMulE hq ho hx hx h
   · simp only [h1, ↓reduceIte]
-    refine WP.seq (WP.mono (opMulE hq ho hx hx h) fun s1 ⟨c1, h1'⟩ => ?_)
-    refine WP.seq (wp_li (by omega_using [hn]) fun s2 u2 => WP.block_nil ?_)
-    obtain h2 : SqInv b s0 a o n qs v (v x) (n - 1) s2 :=
-      ⟨h1'.ctx.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide),
-        h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide) u2.mem),
-        by rw [u2.other _ (by decide), h1'.t2], by rw [u2.gpr],
-        by rw [u2.mem, show n - (n - 1) = 1 by omega_using [hn1]]; exact h1'.slots⟩
-    refine WP.mono (Q := SqInv b s0 a o n qs v (v x) 0) (WP.loop (M := isa)
-      (fun m s' => 1 ≤ m ∧ m < n ∧ SqInv b s0 a o n qs v (v x) m s') ?_ (n - 1) s2
-        ⟨by omega_using [hn1, h1], by omega_using [hn1], h2⟩) fun s' h' => ⟨_, by
-          have := h'.slots; rw [Nat.sub_zero] at this; exact ⟨h'.ctx, h'.stp, h'.t2, h'.t1, this⟩⟩
-    rintro m s' ⟨hm1, hm2, hl⟩
-    refine WP.mono (sqStep_ok hq ho hm1 hm2 hn hl) fun s'' ⟨hl', hz⟩ => ?_
-    by_cases hm : m - 1 = 0
-    · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-    · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_using [hm1], by omega_using [hm], by omega_using [hm2], hl'⟩
+    by_cases hox : o = x ∧ n < 2048
+    · have hxx := hox.1
+      subst x
+      rw [ite_eq_left hox]
+      obtain ⟨c, h⟩ := h
+      refine WP.seq (wp_li hox.2 fun s1 u1 => WP.block_nil ?_)
+      have hi : SqInv b s0 a o n qs v (v o) n s1 := by
+        refine ⟨h.ctx.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide),
+          h.stp.trans (Stp.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide) u1.mem),
+          by rw [u1.other _ (by decide), h.t2], by rw [u1.gpr], ?_⟩
+        rw [u1.mem, Nat.sub_self]
+        refine (h.slots.mono (fun q hq => ?_)).congr (fun q _ => ?_)
+        · rcases List.mem_cons.mp hq with rfl | hq
+          · exact hx
+          · exact hq
+        · by_cases he : q = o
+          · subst q; rw [upd_self]; rfl
+          · rw [upd_of_ne _ _ he]
+      refine WP.mono (Q := SqInv b s0 a o n qs v (v o) 0) (WP.loop (M := isa)
+        (fun m s' => 1 ≤ m ∧ m ≤ n ∧ SqInv b s0 a o n qs v (v o) m s') ?_ n s1
+          ⟨hn1, Nat.le_refl _, hi⟩) fun s' h' => ⟨_, by
+            have := h'.slots; rw [Nat.sub_zero] at this; exact ⟨h'.ctx, h'.stp, h'.t2, h'.t1, this⟩⟩
+      rintro m s' ⟨hm1, hm2, hl⟩
+      refine WP.mono (sqStep_ok hq ho hm1 hm2 hn hl) fun s'' ⟨hl', hz⟩ => ?_
+      by_cases hm : m - 1 = 0
+      · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
+      · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_using [hm1],
+          by omega_using [hm], by omega_using [hm2], hl'⟩
+    · rw [ite_eq_right hox]
+      refine WP.seq (WP.mono (opMulE hq ho hx hx h) fun s1 ⟨c1, h1'⟩ => ?_)
+      refine WP.seq (wp_li (by omega_using [hn]) fun s2 u2 => WP.block_nil ?_)
+      obtain h2 : SqInv b s0 a o n qs v (v x) (n - 1) s2 :=
+        ⟨h1'.ctx.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide),
+          h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide) u2.mem),
+          by rw [u2.other _ (by decide), h1'.t2], by rw [u2.gpr],
+          by rw [u2.mem, show n - (n - 1) = 1 by omega_using [hn1]]; exact h1'.slots⟩
+      refine WP.mono (Q := SqInv b s0 a o n qs v (v x) 0) (WP.loop (M := isa)
+        (fun m s' => 1 ≤ m ∧ m < n ∧ SqInv b s0 a o n qs v (v x) m s') ?_ (n - 1) s2
+          ⟨by omega_using [hn1, h1], by omega_using [hn1], h2⟩) fun s' h' => ⟨_, by
+            have := h'.slots; rw [Nat.sub_zero] at this; exact ⟨h'.ctx, h'.stp, h'.t2, h'.t1, this⟩⟩
+      rintro m s' ⟨hm1, hm2, hl⟩
+      refine WP.mono (sqStep_ok hq ho hm1 (Nat.le_of_lt hm2) hn hl) fun s'' ⟨hl', hz⟩ => ?_
+      by_cases hm : m - 1 = 0
+      · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
+      · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega_using [hm1], by omega_using [hm], by omega_using [hm2], hl'⟩
 
 /-! ## The chain
 
