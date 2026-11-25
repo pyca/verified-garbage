@@ -157,7 +157,7 @@ elab "#assert_spec_apis " ts:(ppSpace colGt term:max)* : command => liftTermElab
       let e ← Term.elabTermEnsuringType t ty
       Term.synthesizeSyntheticMVarsNoPostponing
       let e ← instantiateMVars e
-      let apis ← (← listElems e).mapM reduceApi
+      let apis ← (← listElems e).mapM (reduceApi ·)
       let b := (apis.filter (!isSpecApi env ·)).map fun a => m!"{indentExpr a}"
       if b.isEmpty then
         let rhs ← Meta.mkListLit api apis.toList
