@@ -27,7 +27,7 @@ open VG VG.Arm VG.Arm.FrameStack
 open VG.Impl.Aes.Arm (scratchUsed)
 
 theorem sat (g : List Byte → Spec.Aes.State → Spec.Aes.State) :
-    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 32) (ecbPost 32 g) false 24 none).pre s := by
+    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 32) (ecbPost 32 g scratchUsed) false 24 none).pre s := by
   implies_sat [Spec.Aes.blocksSig, pre, Arm.abi] [Proof.Aes.Arm.Ecb.sat] using Proof.Aes.Arm.Ecb.sat
 
 theorem args_length : ∀ s vals,
@@ -68,8 +68,8 @@ theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {na
     (hw : ∀ s t s', (Spec.Aes.blocksSig.contract abi (pre 32) (post 32 g) false 0 none).pre s →
       Exec isa body s t s' → Sig.writtenWithin Arm.abi Spec.Aes.blocksSig [("scratch", scratchUsed)] s s')
     (hd : armStack body = 0) :
-    Verified target (Impl.AesEcb.Arm.wiped name body) (Spec.Aes.blocksSig.contract abi (pre 32) (ecbPost 32 g) false 24 none) :=
-  Verified.callWipeStackTail' (post := postTail 32 g scratchUsed) (post' := ecbPost 32 g)
+    Verified target (Impl.AesEcb.Arm.wiped name body) (Spec.Aes.blocksSig.contract abi (pre 32) (ecbPost 32 g scratchUsed) false 24 none) :=
+  Verified.callWipeStackTail' (post := postTail 32 g scratchUsed) (post' := ecbPost 32 g scratchUsed)
     (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64)
     (kk := 256) (n := scratchUsed) (i := 4) (k := 1) (off := 0)
@@ -78,11 +78,11 @@ theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {na
     (by rw [hd]) (by decide) (Nat.zero_le _)
     (pre_local 32) (postTail_local 32 g _) (postTail_out 32 g (by decide)) (wipedTail 32 g _) (sat g)
 
-theorem encrypt_verified : Verified target Impl.AesEcb.Arm.encrypt (Spec.AesEcb.encryptContract abi 24) :=
+theorem encrypt_verified : Verified target Impl.AesEcb.Arm.encrypt (wipedContract enc scratchUsed abi 24) :=
   wiped_verified (Proof.Aes.encryptBlocks_keyed Proof.Aes.Arm.Ecb.encryptBlocks_verified) enc_written
     (by decide)
 
-theorem decrypt_verified : Verified target Impl.AesEcb.Arm.decrypt (Spec.AesEcb.decryptContract abi 24) :=
+theorem decrypt_verified : Verified target Impl.AesEcb.Arm.decrypt (wipedContract dec scratchUsed abi 24) :=
   wiped_verified (Proof.Aes.decryptBlocks_keyed Proof.Aes.Arm.Ecb.decryptBlocks_verified) dec_written
     (by decide)
 

@@ -19,7 +19,8 @@ def direct : List (Artifact X86_64.target) := [
     suffix := "_vaes_avx512"
     code := Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx Proof.Zeroize.X86_64.ZeroizeImpl.avx.name
       Proof.Zeroize.X86_64.ZeroizeImpl.avx.code
-    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_scrubbedFn }]
+    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_scrubbedFn
+    publicOutOk := Proof.AesCbc.X86_64.Wiped.decryptVaes512_public }]
 
 end VG.Artifacts.AesCbc.X86_64
 
@@ -35,6 +36,7 @@ def artifacts : List (Artifact X86_64.target) :=
         suffix := v.suffix
         code := Impl.AesCbc.X86_64.Fn.encryptFree .sse
         verified := Proof.AesCbc.X86_64.Wiped.encryptFree_scrubbed v h
+        publicOutOk := Proof.AesCbc.X86_64.Wiped.encryptFree_public v h
         spSafe := Proof.AesCbc.X86_64.Wiped.encryptFree_spSafeFn }]
       else []
     else [Spec.Cbc.aesEncryptApi.artifact X86_64.target {
@@ -42,6 +44,7 @@ def artifacts : List (Artifact X86_64.target) :=
       code := Impl.AesCbc.X86_64.Fn.encrypt (v.level.join z.level) (Proof.AesCbc.X86_64.Caller.hardware v) v.enc v.suffix
         z.name z.code
       verified := Proof.AesCbc.X86_64.Wiped.encrypt_scrubbedFn v z
+      publicOutOk := Proof.AesCbc.X86_64.Wiped.encrypt_public v z
       spSafe := Proof.AesCbc.X86_64.Wiped.encrypt_spSafeFn v z }]) ++
     (if Proof.AesCbc.X86_64.Caller.vaes v then
       if z.suffix = "" then []
@@ -50,12 +53,14 @@ def artifacts : List (Artifact X86_64.target) :=
         code := Impl.AesCbc.X86_64.Fn.decrypt (Proof.AesCbc.X86_64.Wiped.decLv v z) (Proof.AesCbc.X86_64.Caller.vaes v)
           (Proof.AesCbc.X86_64.Caller.hardware v) v.dec v.suffix z.name z.code
         verified := Proof.AesCbc.X86_64.Wiped.decrypt_scrubbedFn v z
+        publicOutOk := Proof.AesCbc.X86_64.Wiped.decrypt_public v z
         spSafe := Proof.AesCbc.X86_64.Wiped.decrypt_spSafeFn v z }]
     else [Spec.Cbc.aesDecryptApi.artifact X86_64.target {
       suffix := v.suffix ++ z.suffix
       code := Impl.AesCbc.X86_64.Fn.decrypt (Proof.AesCbc.X86_64.Wiped.decLv v z) (Proof.AesCbc.X86_64.Caller.vaes v)
         (Proof.AesCbc.X86_64.Caller.hardware v) v.dec v.suffix z.name z.code
       verified := Proof.AesCbc.X86_64.Wiped.decrypt_scrubbedFn v z
+      publicOutOk := Proof.AesCbc.X86_64.Wiped.decrypt_public v z
       spSafe := Proof.AesCbc.X86_64.Wiped.decrypt_spSafeFn v z }]))
 
 end VG.Artifacts.AesCbc.X86_64

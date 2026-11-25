@@ -13,9 +13,11 @@ namespace VG.Artifacts.AesCbc.Arm
 def artifacts : List (Artifact Arm.target) := [
   Spec.Cbc.aesEncryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cbcEncrypt
-    verified := Proof.Aes.Arm.Fn.cbcEncrypt },
+    verified := Proof.Aes.Arm.Fn.cbcEncrypt
+    publicOutOk := Proof.Aes.Arm.Fn.cbcEncrypt_public },
   Spec.Cbc.aesDecryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cbcDecrypt
-    verified := Proof.Aes.Arm.Fn.cbcDecrypt }]
+    verified := Proof.Aes.Arm.Fn.cbcDecrypt
+    publicOutOk := Proof.Aes.Arm.Fn.cbcDecrypt_public }]
 
 end VG.Artifacts.AesCbc.Arm

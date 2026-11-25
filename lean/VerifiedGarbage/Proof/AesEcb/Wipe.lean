@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.AesEcb.Contract
-public import VerifiedGarbage.Proof.Framework.PostMono
+public import VerifiedGarbage.Proof.Framework.PublicOut
+public import VerifiedGarbage.Proof.Zeroize.Wiped
 public import VerifiedGarbage.Proof.Aes.Rounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -16,9 +17,14 @@ import VerifiedGarbage.Proof.Framework.Omega
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (or of one of their
 variants) where it writes nothing in `scratch` (`Verified.ecb_of_unwritten`),
 and otherwise a call of it followed by the zeroize function on the whole of
-`scratch`, which the target's `callWipe` proves zero on return
-(`wiped`). Either way, each byte of `scratch` is unchanged or zero
-(`Spec.Zeroize.scrubbed`).
+`scratch`, or on the part of it that they write, which the target's
+`callWipe` proves zero on return (`wiped`, `wipedTail`). Either way, the first
+`w` bytes of `scratch` are zero and the others unchanged (`ecbPost`), for a `w`
+that depends only on the code. So each target proves its functions against a
+contract that says which bytes those are (`wipedContract`), which implies the
+specification's (`encrypt_imp`, `decrypt_imp`: each byte of `scratch` is unchanged
+or zero, `Spec.Zeroize.scrubbed`), and that which bytes are zero is public
+(`scratch_public`, `Spec.AesEcb.scratchOut`).
 
 `callWipe` needs the blocks functions' postcondition to read the memory on
 entry only within the buffers (`post_local`) and the memory on return only
@@ -81,28 +87,6 @@ theorem keySchedule_congr {r : Nat} {key : List Byte}
 
 end
 
-/-- A buffer whose bytes are all zero holds nothing written. -/
-theorem scrubbed_of_zeros {m m' : Mem} {p : Addr} {len : Nat}
-    (h : Spec.Zeroize.bytesAt m' p len = Spec.Zeroize.zeros len) : Spec.Zeroize.scrubbed m m' p len := by
-  intro a ha
-  right
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
-  have he := congrArg (·[(a - p).toNat]?) h
-  simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hi,
-    List.getElem?_replicate, hi, ite_true, Option.map_some, Option.some.injEq,
-    BitVec.ofNat_toNat, BitVec.setWidth_eq] at he
-  rwa [BitVec.add_comm, BitVec.sub_add_cancel] at he
-
-/-- A buffer of which nothing was written holds nothing written. -/
-theorem scrubbed_of_unchanged {m m' : Mem} {p : Addr} {len : Nat}
-    (h : ∀ i, i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Zeroize.scrubbed m m' p len := by
-  intro a ha
-  left
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
-  have he := h _ hi
-  rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel] at he
-
 /-! ## The contracts -/
 
 /-- The precondition of the blocks functions and of ECB. -/
@@ -116,11 +100,12 @@ def post (pb : Nat) (g : List Byte → State → State) : blocksSig.Post pb :=
     ∀ key, KeySchedule m schedule rounds.toNat key →
       statesAt m' data n.toNat = (statesAt m data n.toNat).map (g key)
 
-/-- The postcondition of ECB: the blocks functions', and nothing written left
-in `scratch`. -/
-def ecbPost (pb : Nat) (g : List Byte → State → State) : blocksSig.Post pb :=
+/-- The postcondition of ECB that each target proves: the blocks functions', and
+the first `w` bytes of `scratch` zero, the others unchanged. -/
+def ecbPost (pb : Nat) (g : List Byte → State → State) (w : Nat) : blocksSig.Post pb :=
   fun schedule rounds data n scratch m m' x =>
-    post pb g schedule rounds data n scratch m m' x ∧ Spec.Zeroize.scrubbed m m' scratch 2048
+    post pb g schedule rounds data n scratch m m' x ∧
+      Zeroize.WipedBy (fun i => decide (i < w)) m m' scratch 2048
 
 /-- The cipher of a key. -/
 def enc (key : List Byte) : State → State := cipher (Spec.Aes.rounds (key.length / 4)) (expandKey key)
@@ -136,15 +121,15 @@ theorem decryptBlocks_eq {M : ISA} (A : Abi M) (stack : Nat) :
     Proof.Aes.decryptBlocksContract A stack = blocksSig.contract A (pre A.ptrBits) (post A.ptrBits dec) false stack none :=
   rfl
 
-theorem encrypt_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    Spec.AesEcb.encryptContract A stack =
-      blocksSig.contract A (pre A.ptrBits) (ecbPost A.ptrBits enc) false stack none :=
-  rfl
+/-- `Spec.AesEcb.encryptContract`, for `g` `enc`, and `Spec.AesEcb.decryptContract`, for
+`g` `dec`, for code that leaves the first `w` bytes of `scratch` zero and the others as
+they were. -/
+def wipedContract (g : List Byte → State → State) (w : Nat) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  blocksSig.contract A (pre A.ptrBits) (ecbPost A.ptrBits g w) false stack none
 
-theorem decrypt_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    Spec.AesEcb.decryptContract A stack =
-      blocksSig.contract A (pre A.ptrBits) (ecbPost A.ptrBits dec) false stack none :=
-  rfl
+/-- An `Api` with that contract: the forms that clean up a function's code take one. -/
+def wipedApi (g : List Byte → State → State) (w : Nat) : Api :=
+  { Spec.AesEcb.encryptApi with contracts := some fun A stack => wipedContract g w A stack }
 
 /-- The arguments, five words. -/
 theorem vs_eq {pb : Nat} {vs : List (BitVec 64)} (h : vs.length = (blocksSig.words pb).length) :
@@ -219,15 +204,32 @@ theorem post_out (pb : Nat) (g : List Byte → State → State) : ∀ vs m m₁ 
   rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega_using [hi, this])]
   exact h key hk
 
+/-- ECB's postcondition reads the memory on return only within the buffers. -/
+theorem ecbPost_out (pb : Nat) (g : List Byte → State → State) (w : Nat) : ∀ vs m m₁ m₂ x,
+    vs.length = (blocksSig.words pb).length →
+    (∀ b ∈ Sig.bufs blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (blocksSig.words pb) (ecbPost pb g w) vs m m₁ x →
+      Curry.apply (blocksSig.words pb) (ecbPost pb g w) vs m m₂ x := by
+  intro vs m m₁ m₂ x hlen hb h
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
+  rw [bufs_eq] at hb
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+  obtain ⟨h1, h2⟩ := h
+  refine ⟨fun key hk => ?_, h2.congr (fun _ _ => rfl) (agree_of hb.2.2)⟩
+  show statesAt m₂ c (d.setWidth pb).toNat = (statesAt m c (d.setWidth pb).toNat).map (g key)
+  have hd := agree_of hb.2.1
+  rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := pb) d; omega_using [hi, this])]
+  exact h1 key hk
+
 /-- With the whole of `scratch` zero on return, the postcondition of ECB. -/
 theorem wiped (pb : Nat) (g : List Byte → State → State) : ∀ vs m m' x,
     vs.length = (blocksSig.words pb).length →
     Curry.apply (blocksSig.words pb) (post pb g) vs m m' x →
     Spec.Zeroize.bytesAt m' (vs.getD 4 0) 2048 = Spec.Zeroize.zeros 2048 →
-      Curry.apply (blocksSig.words pb) (ecbPost pb g) vs m m' x := by
+      Curry.apply (blocksSig.words pb) (ecbPost pb g 2048) vs m m' x := by
   intro vs m m' x hlen h hz
   obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-  exact ⟨h, scrubbed_of_zeros hz⟩
+  exact ⟨h, .of_zeros hz⟩
 
 /-- With nothing of `scratch` written, the postcondition of ECB. -/
 theorem unwritten (pb : Nat) (g : List Byte → State → State) : ∀ vs m m' x,
@@ -235,12 +237,10 @@ theorem unwritten (pb : Nat) (g : List Byte → State → State) : ∀ vs m m' x
     Curry.apply (blocksSig.words pb) (post pb g) vs m m' x →
     (∀ b ∈ Sig.arrays blocksSig.params vs, b.1 = "scratch" →
       ∀ i, 0 ≤ i → i < b.2.len → m' (b.2.base + BitVec.ofNat 64 i) = m (b.2.base + BitVec.ofNat 64 i)) →
-      Curry.apply (blocksSig.words pb) (ecbPost pb g) vs m m' x := by
+      Curry.apply (blocksSig.words pb) (ecbPost pb g 0) vs m m' x := by
   intro vs m m' x hlen h hw
   obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-  refine ⟨h, scrubbed_of_unchanged fun i hi => ?_⟩
-  exact hw ("scratch", ⟨e, 2048⟩) (List.mem_cons_of_mem _ (List.mem_singleton_self _)) rfl i
-    (Nat.zero_le _) hi
+  exact ⟨h, .of_prefix rfl (hw ("scratch", ⟨e, 2048⟩) (List.mem_cons_of_mem _ (List.mem_singleton_self _)) rfl)⟩
 
 /-- A proof of the blocks functions' contract is one of ECB's for code that
 writes nothing in `scratch`, on a calling convention that gives each run the
@@ -252,7 +252,7 @@ theorem Verified.ecb_of_unwritten {T : Target} {c : Prog T.isa} {A : Abi T.isa} 
       Exec T.isa c s t s' → Sig.writtenWithin A blocksSig [("scratch", 0)] s s')
     (hlen : ∀ s vals, A.args ((blocksSig.words A.ptrBits).map (·.bits A.ptrBits)) = some vals →
       (vals s).length = (blocksSig.words A.ptrBits).length) :
-    Verified T c (blocksSig.contract A (pre A.ptrBits) (ecbPost A.ptrBits g) false stack none) := by
+    Verified T c (blocksSig.contract A (pre A.ptrBits) (ecbPost A.ptrBits g 0) false stack none) := by
   obtain ⟨hc, hct, hsat⟩ := h
   refine ⟨fun s hs => ?_, hct, hsat⟩
   obtain ⟨t, s', he, ha, hq⟩ := hc s hs
@@ -275,26 +275,6 @@ theorem Verified.ecb_of_unwritten {T : Target} {c : Prog T.isa} {A : Abi T.isa} 
 
 
 /-! ## Zeroing the part of `scratch` that is written -/
-
-/-- A buffer whose first `w` bytes are zero and whose others are unchanged
-holds nothing written. -/
-theorem scrubbed_of_prefix {m m' : Mem} {p : Addr} {w len : Nat}
-    (hz : Spec.Zeroize.bytesAt m' p w = Spec.Zeroize.zeros w)
-    (ht : ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Zeroize.scrubbed m m' p len := by
-  intro a ha
-  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega_using [ha]
-  have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  by_cases hw : (a - p).toNat < w
-  · right
-    have he := congrArg (·[(a - p).toNat]?) hz
-    simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hw,
-      List.getElem?_replicate, hw, ite_true, Option.map_some, Option.some.injEq] at he
-    rwa [ea] at he
-  · left
-    have he := ht _ (Nat.le_of_not_lt hw) hi
-    rwa [ea] at he
 
 /-- The blocks functions' postcondition, with the bytes of `scratch` at
 offset `w` and beyond unchanged. -/
@@ -347,10 +327,10 @@ theorem wipedTail (pb : Nat) (g : List Byte → State → State) (w : Nat) : ∀
     vs.length = (blocksSig.words pb).length →
     Curry.apply (blocksSig.words pb) (postTail pb g w) vs m m' x →
     Spec.Zeroize.bytesAt m' (vs.getD 4 0) w = Spec.Zeroize.zeros w →
-      Curry.apply (blocksSig.words pb) (ecbPost pb g) vs m m' x := by
+      Curry.apply (blocksSig.words pb) (ecbPost pb g w) vs m m' x := by
   intro vs m m' x hlen h hz
   obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-  exact ⟨h.1, scrubbed_of_prefix hz h.2⟩
+  exact ⟨h.1, .of_prefix hz h.2⟩
 
 /-- A proof of the blocks functions' contract is one with `postTail w` for
 code that writes `scratch` only within its first `w` bytes. -/
@@ -385,5 +365,48 @@ theorem Verified.tail_of_written {T : Target} {c : Prog T.isa} {A : Abi T.isa} {
     refine ⟨hq, fun i h1 h2 => ?_⟩
     exact hW _ (List.mem_singleton_self _) ("scratch", ⟨e, 2048⟩)
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) rfl i h1 h2
+
+/-! ## The specification's contracts, and the public output -/
+
+/-- What `wipedContract enc` requires of a run meets `Spec.AesEcb.encryptContract`. -/
+theorem encrypt_imp {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack rb w : Nat}
+    (h : VerifiedScrubbed T c (wipedContract enc w A stack) rb)
+    (hR : (T.noResidue.elim False fun R => R c (wipedContract enc w A stack) rb) →
+      T.noResidue.elim False fun R => R c (Spec.AesEcb.encryptContract A stack) rb) :
+    VerifiedScrubbed T c (Spec.AesEcb.encryptContract A stack) rb :=
+  h.post_mono hR fun _ _ _ _ _ _ _ _ ⟨hp, hw⟩ => ⟨hp, hw.scrubbed⟩
+
+/-- What `wipedContract dec` requires of a run meets `Spec.AesEcb.decryptContract`. -/
+theorem decrypt_imp {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack rb w : Nat}
+    (h : VerifiedScrubbed T c (wipedContract dec w A stack) rb)
+    (hR : (T.noResidue.elim False fun R => R c (wipedContract dec w A stack) rb) →
+      T.noResidue.elim False fun R => R c (Spec.AesEcb.decryptContract A stack) rb) :
+    VerifiedScrubbed T c (Spec.AesEcb.decryptContract A stack) rb :=
+  h.post_mono hR fun _ _ _ _ _ _ _ _ ⟨hp, hw⟩ => ⟨hp, hw.scrubbed⟩
+
+/-- `F` at the arguments `vs`. -/
+theorem blocks_apply {α : Type} (pb : Nat) (F : Curry (blocksSig.words pb) α) :
+    ∀ vs, Curry.apply (blocksSig.words pb) F vs =
+      @id (Addr → BitVec pb → Addr → BitVec pb → Addr → α) F (vs.getD 0 0) ((vs.getD 1 0).setWidth pb)
+        (vs.getD 2 0) ((vs.getD 3 0).setWidth pb) (vs.getD 4 0)
+  | [] | [_] | [_, _] | [_, _, _] | [_, _, _, _] | _ :: _ :: _ :: _ :: _ :: _ => rfl
+
+/-- Which bytes of `scratch` are zero is public, under any contract that differs from
+`wipedContract` only in the postcondition. -/
+theorem scratch_public {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack rb w : Nat}
+    {g : List Byte → State → State} {post : blocksSig.Post A.ptrBits}
+    (h : VerifiedScrubbed T c (wipedContract g w A stack) rb) :
+    Spec.AesEcb.scratchOut.Of A c (blocksSig.contract A (pre A.ptrBits) post false stack none) := by
+  refine PublicOut.of_post h.verified fun vals _ s₁ s₂ s₁' s₂' _ _ _ hg h₁ h₂ => ?_
+  replace hg := (congrFun (blocks_apply A.ptrBits _ _) _).symm.trans
+    (hg.trans (congrFun (blocks_apply A.ptrBits _ _) _))
+  replace h₁ := (congrFun (congrFun (congrFun (blocks_apply A.ptrBits _ _) _) _) _).mp h₁
+  replace h₂ := (congrFun (congrFun (congrFun (blocks_apply A.ptrBits _ _) _) _) _).mp h₂
+  have ho (s s' : T.isa.State) := congrFun (congrFun (congrFun
+    (blocks_apply A.ptrBits (Spec.AesEcb.scratchOut.out A.ptrBits) (vals s)) (A.mem s)) (A.mem s'))
+    ((A.ret s').setWidth _)
+  refine (ho s₁ s₁').trans (Eq.trans ?_ (ho s₂ s₂').symm)
+  dsimp only [id, Spec.AesEcb.scratchOut] at hg ⊢
+  exact h₁.2.left h₂.2 hg
 
 end VG.Proof.AesEcb

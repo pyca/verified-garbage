@@ -35,41 +35,49 @@ def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List (Artifact X86_64.target
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.keyGen (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.keyGen_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.keyGen_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.keyGen_spSafe v z },
   Spec.MlKem.encapsHApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.encapsH (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.encapsH_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.encapsH_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.encapsH_spSafe v z },
   Spec.MlKem.encapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.encaps (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.encaps_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.encaps_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.encaps_spSafe v z },
   Spec.MlKem.decapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.decaps (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.decaps_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.decaps_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.decaps_spSafe v z },
   Spec.MlKem1024.keyGenApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.keyGen1024 (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.keyGen1024_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.keyGen1024_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.keyGen1024_spSafe v z },
   Spec.MlKem1024.encapsHApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.encapsH1024 (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.encapsH1024_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.encapsH1024_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.encapsH1024_spSafe v z },
   Spec.MlKem1024.encapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.encaps1024 (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.encaps1024_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.encaps1024_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.encaps1024_spSafe v z },
   Spec.MlKem1024.decapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.Fn.decaps1024 (Proof.MlKem.X86_64.KemScrub.level v z) v.callee v.suffix z.name z.code
     verified := Proof.MlKem.X86_64.KemScrub.decaps1024_scrubbed v z
+    publicOutOk := Proof.MlKem.X86_64.KemScrub.decaps1024_public v z
     spSafe := Proof.MlKem.X86_64.KemScrub.decaps1024_spSafe v z }]
 
 end VG.Artifacts.MlKem.X86_64.MlKemSample4Zeroize

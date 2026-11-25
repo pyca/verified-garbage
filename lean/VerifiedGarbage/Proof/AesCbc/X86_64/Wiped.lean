@@ -25,11 +25,12 @@ write nothing past them, all 2176 for the others) with an implementation of
 already). The loop in AES-NI registers that encrypts writes none of
 `scratch`, and is not wrapped.
 
-Each implementation meets its contract and leaves each byte of `scratch`
-unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
-`*_verified`): the bytes it may write are zero
-(`Verified.callWipeTail'`), and the others it did not write
-(`Verified.cbc_tail_of_written`, from its `written` bound).
+Each implementation is proven against a contract that says which bytes of
+`scratch` it leaves zero (`*_verified`, `wipedContract`): the bytes it may write
+are (`Verified.callWipeTail'`), and the others it did not write
+(`Verified.cbc_tail_of_written`, from its `written` bound). So as emitted
+(`*_wipes`) it meets the contract of `Spec/Cbc/`, that each byte of `scratch` is
+unchanged or zero (`*_scrubbed`), and which bytes are zero is public (`*_public`).
 
 Which are emitted, for each implementation `v` of the blocks functions and
 `z` of `vg_zeroize` (`Artifacts/AesCbc/X86_64.lean`). Encryption: none for
@@ -72,7 +73,7 @@ theorem args_length : ∀ s vals,
 
 /-- An implementation with 8 bytes of stack that writes nothing in
 `scratch` from `w` on, wrapped to zero the rest. -/
-theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {body : Prog isa}
+theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {body : Prog isa}
     (z : ZeroizeImpl)
     (h : Verified target body (Spec.Cbc.aesSig.contract abi (pre 64) (tailPost 64 w P) false 8 none))
     (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 8) (hw : w ≤ 2176)
@@ -85,7 +86,7 @@ theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₁ x → Curry.apply (Spec.Cbc.aesSig.words 64) P vs m m₂ x) :
     Verified target (wiped z w name body)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 P) false 32 none) :=
+      (Spec.Cbc.aesSig.contract abi (pre 64) (wipedPost 64 P fun i => decide (i < w)) false 32 none) :=
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (i := 5) h z.verified (by decide) rfl rfl rfl
@@ -148,15 +149,10 @@ theorem decrypt_tail (v : BlocksImpl) :
 def decrypt (v : BlocksImpl) (z : ZeroizeImpl) : Prog isa :=
   wiped z (decWrites v) ("vg_aes_cbc_decrypt_unwiped" ++ v.suffix) (Caller.decrypt v)
 
-theorem decrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (decrypt v z)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
-  wiped_scrubbed z (decrypt_tail v) (Caller.decryptSpSafe v) (decrypt_depth v) (decWrites_le v)
-    (decPost_local 64) (decPost_out 64)
-
 theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (decrypt v z) (Spec.Cbc.aesDecryptContract abi 32) :=
-  decrypt_scrubbed v z
+    Verified target (decrypt v z) (wipedContract decPost (fun i => decide (i < decWrites v)) abi 32) :=
+  wiped_verified z (decrypt_tail v) (Caller.decryptSpSafe v) (decrypt_depth v) (decWrites_le v)
+    (decPost_local 64) (decPost_out 64)
 
 theorem decrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (decrypt v z).all (fun i => !isa.writesSp i) = true :=
@@ -167,15 +163,10 @@ which may write all of `scratch`. -/
 def encrypt (v : BlocksImpl) (z : ZeroizeImpl) : Prog isa :=
   wiped z 2176 ("vg_aes_cbc_encrypt_unwiped" ++ v.suffix) (Caller.encrypt v)
 
-theorem encrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (encrypt v z)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 32 none) :=
-  wiped_scrubbed z (Verified.cbc_tail_full (Proof.AesCbc.encrypt_keyed (Caller.verified v)))
-    (Caller.spSafe v) (encrypt_depth v) (by decide) (encPost_local 64) (encPost_out 64)
-
 theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
-    Verified target (encrypt v z) (Spec.Cbc.aesEncryptContract abi 32) :=
-  encrypt_scrubbed v z
+    Verified target (encrypt v z) (wipedContract encPost (fun i => decide (i < 2176)) abi 32) :=
+  wiped_verified z (Verified.cbc_tail_full (Proof.AesCbc.encrypt_keyed (Caller.verified v)))
+    (Caller.spSafe v) (encrypt_depth v) (by decide) (encPost_local 64) (encPost_out 64)
 
 theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (encrypt v z).all (fun i => !isa.writesSp i) = true :=
@@ -183,9 +174,8 @@ theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
 
 /-- The loop in AES-NI registers that encrypts writes nothing in `scratch`,
 and uses no stack. -/
-theorem encrypt_free_scrubbed (v : BlocksImpl) (h : Caller.hardware v = true) :
-    Verified target (Caller.encrypt v)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 0 none) :=
+theorem encrypt_free (v : BlocksImpl) (h : Caller.hardware v = true) :
+    Verified target (Caller.encrypt v) (wipedContract encPost (fun _ => false) abi 0) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.encrypt_keyed (Caller.verifiedFree v h))
     (Caller.writtenFree v h) args_length
 
@@ -193,16 +183,11 @@ theorem encrypt_free_scrubbed (v : BlocksImpl) (h : Caller.hardware v = true) :
 def decryptVaes512 : Prog isa :=
   wiped .avx 224 "vg_aes_cbc_decrypt_unwiped_vaes_avx512" Impl.AesCbc.X86_64.Vaes512Decrypt.decrypt
 
-theorem decryptVaes512_scrubbed :
-    Verified target decryptVaes512
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
-  wiped_scrubbed .avx (Verified.cbc_tail_of_written (Proof.AesCbc.decrypt_keyed Vaes512Decrypt.verified)
+theorem decryptVaes512_verified :
+    Verified target decryptVaes512 (wipedContract decPost (fun i => decide (i < 224)) abi 32) :=
+  wiped_verified .avx (Verified.cbc_tail_of_written (Proof.AesCbc.decrypt_keyed Vaes512Decrypt.verified)
       Vaes512Decrypt.written args_length)
     Vaes512Decrypt.spSafe (by decide) (by decide) (decPost_local 64) (decPost_out 64)
-
-theorem decryptVaes512_verified :
-    Verified target decryptVaes512 (Spec.Cbc.aesDecryptContract abi 32) :=
-  decryptVaes512_scrubbed
 
 theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe Vaes512Decrypt.spSafe
@@ -211,43 +196,15 @@ theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = 
 
 /-- The postcondition of `vg_aes_cbc_encrypt` reads the memory on return only
 within the buffers. -/
-theorem encryptOut (stack : Nat) :
-    Scrub.PostOut (Spec.Cbc.aesEncryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
-  rw [encrypt_eq]
-  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    have hd := AesEcb.agree_of hb.2.2.1
-    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
-    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · obtain ⟨h1a, h1b⟩ := h1 key hk
-      exact ⟨hb'.trans h1a, hc.trans h1b⟩
-    · rw [← hb.2.2.2 z hz]
-      exact h2 z hz
+theorem encryptOut (S : Nat → Bool) (stack : Nat) :
+    Scrub.PostOut (wipedContract encPost S abi stack) (Spec.Cbc.aesSig.retBits 64) :=
+  Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain (wipedPost_ret _ _ S (encPost_ret _))
 
 /-- The postcondition of `vg_aes_cbc_decrypt` reads the memory on return only
 within the buffers. -/
-theorem decryptOut (stack : Nat) :
-    Scrub.PostOut (Spec.Cbc.aesDecryptContract abi stack) (Spec.Cbc.aesSig.retBits 64) := by
-  rw [decrypt_eq]
-  exact Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    have hd := AesEcb.agree_of hb.2.2.1
-    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
-    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · obtain ⟨h1a, h1b⟩ := h1 key hk
-      exact ⟨hb'.trans h1a, hc.trans h1b⟩
-    · rw [← hb.2.2.2 z hz]
-      exact h2 z hz
+theorem decryptOut (S : Nat → Bool) (stack : Nat) :
+    Scrub.PostOut (wipedContract decPost S abi stack) (Spec.Cbc.aesSig.retBits 64) :=
+  Scrub.postOut_of_local (leak := none) Scrub.ScrubAbi.plain (wipedPost_ret _ _ S (decPost_ret _))
 
 theorem encrypt_eq_fn (v : BlocksImpl) (z : ZeroizeImpl) (lv : Impl.Scrub.X86_64.VecLevel) :
     Impl.AesCbc.X86_64.Fn.encrypt lv (Caller.hardware v) v.enc v.suffix z.name z.code =
@@ -260,27 +217,38 @@ theorem decrypt_eq_fn (v : BlocksImpl) (z : ZeroizeImpl) (lv : Impl.Scrub.X86_64
 /-- `vg_aes_cbc_encrypt` over `v` and `z`, as emitted (`Impl.AesCbc.X86_64.Fn.encrypt`), meets
 its contract in constant time and returns without secret residue: its code
 is its code over a stub, with `v`'s and `z`'s where it calls them (`Fill`). -/
-theorem encrypt_scrubbedFn (v : BlocksImpl) (z : ZeroizeImpl) :
+theorem encrypt_wipes (v : BlocksImpl) (z : ZeroizeImpl) :
     VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.encrypt (v.level.join z.level) (Caller.hardware v) v.enc v.suffix z.name z.code)
-      (Spec.Cbc.aesEncryptApi.contract abi 32) 0 := by
+      (wipedContract encPost (fun i => decide (i < 2176)) abi 32) 0 := by
   have := calleeSide_mono (level_join_left v.level z.level) (Nat.le_refl _) v.encSide
   have := calleeSide_mono (level_join_right v.level z.level) (Nat.le_refl _) z.side
   rw [encrypt_eq_fn]
-  exact verifiedScrubbedAllFill (api := Spec.Cbc.aesEncryptApi) (ks := 0) (n := fun _ => 0)
+  exact verifiedScrubbedAllFill (api := wipedApi encPost (fun i => decide (i < 2176))) (ks := 0) (n := fun _ => 0)
     (a := Impl.CallWipe.X86_64.callWipe .r9 2176 "" (Impl.AesCbc.X86_64.Fn.encBody (Caller.hardware v) ⟨"", .block []⟩) "" (.block []))
     { code := encrypt v z, stack := 32, verified := encrypt_verified v z, spSafe := encrypt_spSafe v z }
-    _ (encryptOut _) (by unfold encrypt wiped Caller.encrypt; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+    _ (encryptOut _ _) (by unfold encrypt wiped Caller.encrypt; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
     (ha := by cases Caller.hardware v <;> lit_decide)
+
+theorem encrypt_scrubbedFn (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.encrypt (v.level.join z.level) (Caller.hardware v) v.enc v.suffix z.name z.code)
+      (Spec.Cbc.aesEncryptApi.contract abi 32) 0 :=
+  encrypt_imp (encrypt_wipes v z) id
+
+theorem encrypt_public (v : BlocksImpl) (z : ZeroizeImpl) :
+    Spec.Cbc.aesScratchOut.Of abi
+      (Impl.AesCbc.X86_64.Fn.encrypt (v.level.join z.level) (Caller.hardware v) v.enc v.suffix z.name z.code)
+      (Spec.Cbc.aesEncryptApi.contract abi 32) :=
+  scratch_public (encrypt_wipes v z)
 
 /-- The level of `vg_aes_cbc_decrypt`'s cleanup over `v` and `z`. -/
 abbrev decLv (v : BlocksImpl) (z : ZeroizeImpl) : Impl.Scrub.X86_64.VecLevel :=
   (v.level.join z.level).join (Impl.AesCbc.X86_64.Fn.decLevel (Caller.vaes v))
 
 /-- `vg_aes_cbc_decrypt` over `v` and `z`, as emitted (`Impl.AesCbc.X86_64.Fn.decrypt`). -/
-theorem decrypt_scrubbedFn (v : BlocksImpl) (z : ZeroizeImpl) :
+theorem decrypt_wipes (v : BlocksImpl) (z : ZeroizeImpl) :
     VerifiedScrubbed target
       (Impl.AesCbc.X86_64.Fn.decrypt (decLv v z) (Caller.vaes v) (Caller.hardware v) v.dec v.suffix z.name z.code)
-      (Spec.Cbc.aesDecryptApi.contract abi 32) 0 := by
+      (wipedContract decPost (fun i => decide (i < decWrites v)) abi 32) 0 := by
   rw [decrypt_eq_fn]
   unfold decLv
   cases hv : Caller.vaes v
@@ -289,42 +257,75 @@ theorem decrypt_scrubbedFn (v : BlocksImpl) (z : ZeroizeImpl) :
     have := calleeSide_mono (Nat.le_trans (level_join_left v.level z.level) hk) (Nat.le_refl _) v.decSide
     have := calleeSide_mono (Nat.le_trans (level_join_right v.level z.level) hk) (Nat.le_refl _) z.side
     have hs := level_join_right (v.level.join z.level) (Impl.AesCbc.X86_64.Fn.decLevel false)
-    exact verifiedScrubbedAllFill (api := Spec.Cbc.aesDecryptApi) (ks := 0) (n := fun _ => 0)
+    exact verifiedScrubbedAllFill (api := wipedApi decPost (fun i => decide (i < decWrites v))) (ks := 0) (n := fun _ => 0)
       (a := Impl.CallWipe.X86_64.callWipe .r9 (Impl.AesCbc.X86_64.Fn.decWrites (Caller.vaes v) (Caller.hardware v)) ""
         (Impl.AesCbc.X86_64.Fn.decBody (Caller.vaes v) (Caller.hardware v) ⟨"", .block []⟩) "" (.block []))
       { code := decrypt v z, stack := 32, verified := decrypt_verified v z, spSafe := decrypt_spSafe v z }
-      _ (decryptOut _) (by unfold decrypt wiped Caller.decrypt decWrites; fill_calls)
+      _ (decryptOut _ _) (by unfold decrypt wiped Caller.decrypt decWrites; fill_calls)
       (Nat.zero_le _) (Nat.le_refl _) (ha := by rw [hv]; cases Caller.hardware v <;> lit_decide)
   ·
     have hk := level_join_left (v.level.join z.level) (Impl.AesCbc.X86_64.Fn.decLevel true)
     have := calleeSide_mono (Nat.le_trans (level_join_left v.level z.level) hk) (Nat.le_refl _) v.decSide
     have := calleeSide_mono (Nat.le_trans (level_join_right v.level z.level) hk) (Nat.le_refl _) z.side
     have hs := level_join_right (v.level.join z.level) (Impl.AesCbc.X86_64.Fn.decLevel true)
-    exact verifiedScrubbedAllFill (api := Spec.Cbc.aesDecryptApi) (ks := 1) (n := fun _ => 0)
+    exact verifiedScrubbedAllFill (api := wipedApi decPost (fun i => decide (i < decWrites v))) (ks := 1) (n := fun _ => 0)
       (a := Impl.CallWipe.X86_64.callWipe .r9 (Impl.AesCbc.X86_64.Fn.decWrites (Caller.vaes v) (Caller.hardware v)) ""
         (Impl.AesCbc.X86_64.Fn.decBody (Caller.vaes v) (Caller.hardware v) ⟨"", .block []⟩) "" (.block []))
       { code := decrypt v z, stack := 32, verified := decrypt_verified v z, spSafe := decrypt_spSafe v z }
-      _ (decryptOut _) (by unfold decrypt wiped Caller.decrypt decWrites; fill_calls)
+      _ (decryptOut _ _) (by unfold decrypt wiped Caller.decrypt decWrites; fill_calls)
       hs (Nat.le_refl _) (ha := by rw [hv]; cases Caller.hardware v <;> lit_decide)
+
+theorem decrypt_scrubbedFn (v : BlocksImpl) (z : ZeroizeImpl) :
+    VerifiedScrubbed target
+      (Impl.AesCbc.X86_64.Fn.decrypt (decLv v z) (Caller.vaes v) (Caller.hardware v) v.dec v.suffix z.name z.code)
+      (Spec.Cbc.aesDecryptApi.contract abi 32) 0 :=
+  decrypt_imp (decrypt_wipes v z) id
+
+theorem decrypt_public (v : BlocksImpl) (z : ZeroizeImpl) :
+    Spec.Cbc.aesScratchOut.Of abi
+      (Impl.AesCbc.X86_64.Fn.decrypt (decLv v z) (Caller.vaes v) (Caller.hardware v) v.dec v.suffix z.name z.code)
+      (Spec.Cbc.aesDecryptApi.contract abi 32) :=
+  scratch_public (decrypt_wipes v z)
 
 /-- `vg_aes_cbc_encrypt` as the loop in AES-NI registers alone, as emitted
 (`Impl.AesCbc.X86_64.Fn.encryptFree`). -/
-theorem encryptFree_scrubbed (v : BlocksImpl) (h : Caller.hardware v = true) :
-    VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.encryptFree .sse) (Spec.Cbc.aesEncryptApi.contract abi 0) 0 := by
+theorem encryptFree_wipes (v : BlocksImpl) (h : Caller.hardware v = true) :
+    VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.encryptFree .sse) (wipedContract encPost (fun _ => false) abi 0) 0 := by
   have hc : Caller.encrypt v = Impl.AesCbc.X86_64.Encrypt.encrypt := by unfold Caller.encrypt; rw [ite_eq_left h]
-  have hv := encrypt_free_scrubbed v h
+  have hv := encrypt_free v h
   rw [hc] at hv
-  exact verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi)
+  exact verifiedScrubbedAll (api := wipedApi encPost (fun _ => false))
     { code := Impl.AesCbc.X86_64.Encrypt.encrypt, verified := hv, spSafe := hc ▸ Caller.spSafe v }
-    .sse (encryptOut _)
+    .sse (encryptOut _ _)
+
+theorem encryptFree_scrubbed (v : BlocksImpl) (h : Caller.hardware v = true) :
+    VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.encryptFree .sse) (Spec.Cbc.aesEncryptApi.contract abi 0) 0 :=
+  encrypt_imp (encryptFree_wipes v h) id
+
+theorem encryptFree_public (v : BlocksImpl) (h : Caller.hardware v = true) :
+    Spec.Cbc.aesScratchOut.Of abi
+      (Impl.AesCbc.X86_64.Fn.encryptFree .sse)
+      (Spec.Cbc.aesEncryptApi.contract abi 0) :=
+  scratch_public (encryptFree_wipes v h)
 
 /-- `vg_aes_cbc_decrypt_vaes_avx512`, as emitted (`Impl.AesCbc.X86_64.Fn.decryptVaes512`). -/
+theorem decryptVaes512_wipes :
+    VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx ZeroizeImpl.avx.name ZeroizeImpl.avx.code)
+      (wipedContract decPost (fun i => decide (i < 224)) abi 32) 0 :=
+  verifiedScrubbedAll (api := wipedApi decPost (fun i => decide (i < 224)))
+    { code := decryptVaes512, stack := 32, verified := decryptVaes512_verified, spSafe := decryptVaes512_spSafe }
+    .avx (decryptOut _ _)
+
 theorem decryptVaes512_scrubbedFn :
     VerifiedScrubbed target (Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx ZeroizeImpl.avx.name ZeroizeImpl.avx.code)
       (Spec.Cbc.aesDecryptApi.contract abi 32) 0 :=
-  verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi)
-    { code := decryptVaes512, stack := 32, verified := decryptVaes512_verified, spSafe := decryptVaes512_spSafe }
-    .avx (decryptOut _)
+  decrypt_imp decryptVaes512_wipes id
+
+theorem decryptVaes512_public :
+    Spec.Cbc.aesScratchOut.Of abi
+      (Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx ZeroizeImpl.avx.name ZeroizeImpl.avx.code)
+      (Spec.Cbc.aesDecryptApi.contract abi 32) :=
+  scratch_public decryptVaes512_wipes
 
 /-! The code as emitted keeps `rsp`: the artifacts' `spSafe`. -/
 

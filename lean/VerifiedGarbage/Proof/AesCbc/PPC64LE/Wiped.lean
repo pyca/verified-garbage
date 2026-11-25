@@ -12,10 +12,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` (`Impl/AesCbc/PPC64LE/Wiped.lean`)
 call the CBC code, then zero the whole of `scratch` (2176 bytes, which its
-proofs do not bound) with `vg_zeroize`, leaving it scrubbed
-(`encrypt_scrubbed`, `decrypt_scrubbed`: `Verified.callWipe'`, with the side
-conditions of `Proof/AesCbc/Wipe.lean`). `encrypt_verified` and
-`decrypt_verified` state them as the contracts of `Spec/Cbc/`.
+proofs do not bound) with `vg_zeroize`, so that all of it is zero
+(`encrypt_verified`, `decrypt_verified`: `wipedContract`, by
+`Verified.callWipe'`, with the side conditions of `Proof/AesCbc/Wipe.lean`).
 -/
 
 @[expose] public section
@@ -29,30 +28,22 @@ theorem sat (P : Spec.Cbc.aesSig.Post 64) :
   implies_sat [Spec.Cbc.aesSig, PPC64LE.abi, PPC64LE.argRegs, pre] [Proof.AesCbc.PPC64LE.sat]
     using Proof.AesCbc.PPC64LE.sat
 
-theorem encrypt_scrubbed :
+theorem encrypt_verified :
     Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.encrypt
-      (Spec.Cbc.aesSig.contract PPC64LE.abi (pre 64) (scrubbedPost 64 (encPost 64)) false 48 none) :=
+      (wipedContract encPost (fun i => decide (i < 2176)) PPC64LE.abi 48) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5)
     (Proof.AesCbc.encrypt_keyed Proof.AesCbc.PPC64LE.encrypt_verified) Proof.Zeroize.PPC64LE.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (pre_local 64) (encPost_local 64) (encPost_out 64) (wiped 64 _) (sat _)
 
-theorem decrypt_scrubbed :
+theorem decrypt_verified :
     Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.decrypt
-      (Spec.Cbc.aesSig.contract PPC64LE.abi (pre 64) (scrubbedPost 64 (decPost 64)) false 48 none) :=
+      (wipedContract decPost (fun i => decide (i < 2176)) PPC64LE.abi 48) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (i := 5)
     (Proof.AesCbc.decrypt_keyed Proof.AesCbc.PPC64LE.decrypt_verified) Proof.Zeroize.PPC64LE.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (pre_local 64) (decPost_local 64) (decPost_out 64) (wiped 64 _) (sat _)
-
-theorem encrypt_verified :
-    Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.encrypt (Spec.Cbc.aesEncryptContract PPC64LE.abi 48) :=
-  encrypt_scrubbed
-
-theorem decrypt_verified :
-    Verified PPC64LE.target Impl.AesCbc.PPC64LE.Wiped.decrypt (Spec.Cbc.aesDecryptContract PPC64LE.abi 48) :=
-  decrypt_scrubbed
 
 end VG.Proof.AesCbc.PPC64LE.Wiped

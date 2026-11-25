@@ -1767,11 +1767,10 @@ end
 Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/RISCV64.lean`) of its code, which zeroes all of
 `scratch` with `vg_zeroize` once that code returns, and is verified against
-the same contract with 32 more bytes of stack and `scratch` left scrubbed
+the same contract with 32 more bytes of stack and `scratch` left wiped
 (`Verified.callWipe'`; `*_scrubbed`, the contracts of
 `Proof/MlKem/Scrubbed.lean`), since every byte of it is zero
-(`Scrubbed.keyGen_wiped`, …). `*_verified` state them as the contracts of
-`Spec/MlKem/`.
+(`Scrubbed.keyGen_wiped`, …).
 -/
 
 @[expose] public section
@@ -2257,57 +2256,29 @@ theorem decaps1024_sat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi
 theorem keyGen_scrubbed : Verified target Impl.MlKem.RISCV64.Wipe.keyGen (Scrubbed.keyGenContract abi 1200) :=
   keyGen_wipe Proof.MlKem.RISCV64.KeyGen.verified keyGen_sdepth keyGen_sat
 
-theorem keyGen_verified : Verified target Impl.MlKem.RISCV64.Wipe.keyGen (Spec.MlKem.keyGenContract abi 1200) :=
-  keyGen_scrubbed
-
 theorem encapsH_scrubbed : Verified target Impl.MlKem.RISCV64.Wipe.encapsH (Scrubbed.encapsHContract abi 1200) :=
   encapsH_wipe Proof.MlKem.RISCV64.Encaps.verifiedH encapsH_sdepth encapsH_sat
-
-theorem encapsH_verified : Verified target Impl.MlKem.RISCV64.Wipe.encapsH (Spec.MlKem.encapsHContract abi 1200) :=
-  encapsH_scrubbed
 
 theorem encaps_scrubbed : Verified target Impl.MlKem.RISCV64.Wipe.encaps (Scrubbed.encapsContract abi 1200) :=
   encaps_wipe Proof.MlKem.RISCV64.Encaps.verified encaps_sdepth encaps_sat
 
-theorem encaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.encaps (Spec.MlKem.encapsContract abi 1200) :=
-  encaps_scrubbed
-
 theorem decaps_scrubbed : Verified target Impl.MlKem.RISCV64.Wipe.decaps (Scrubbed.decapsContract abi 1200) :=
   decaps_wipe Proof.MlKem.RISCV64.Decaps.verified decaps_sdepth decaps_sat
-
-theorem decaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.decaps (Spec.MlKem.decapsContract abi 1200) :=
-  decaps_scrubbed
 
 theorem keyGen1024_scrubbed :
     Verified target Impl.MlKem.RISCV64.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 1200) :=
   keyGen1024_wipe Proof.MlKem1024.RISCV64.KeyGen.verified keyGen1024_sdepth keyGen1024_sat
 
-theorem keyGen1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 1200) :=
-  keyGen1024_scrubbed
-
 theorem encapsH1024_scrubbed :
     Verified target Impl.MlKem.RISCV64.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 1200) :=
   encapsH1024_wipe Proof.MlKem1024.RISCV64.Encaps.verifiedH encapsH1024_sdepth encapsH1024_sat
-
-theorem encapsH1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 1200) :=
-  encapsH1024_scrubbed
 
 theorem encaps1024_scrubbed :
     Verified target Impl.MlKem.RISCV64.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 1200) :=
   encaps1024_wipe Proof.MlKem1024.RISCV64.Encaps.verified encaps1024_sdepth encaps1024_sat
 
-theorem encaps1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 1200) :=
-  encaps1024_scrubbed
-
 theorem decaps1024_scrubbed :
     Verified target Impl.MlKem.RISCV64.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 1200) :=
   decaps1024_wipe Proof.MlKem1024.RISCV64.Decaps.verified decaps1024_sdepth decaps1024_sat
-
-theorem decaps1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 1200) :=
-  decaps1024_scrubbed
 
 end VG.Proof.MlKem.RISCV64.Wipe

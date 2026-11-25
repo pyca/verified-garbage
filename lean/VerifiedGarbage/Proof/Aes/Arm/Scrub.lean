@@ -95,93 +95,25 @@ theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).t
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size :=
   Nat.le_trans (Nat.le_of_eq (Nat.mul_one _).symm) (len_le x 1)
 
-namespace Ecb
-
-open VG.Proof.AesEcb
-
-/-- The postcondition of `vg_aes_ecb_encrypt` reads the memory on return only
-within the buffers. -/
-theorem encryptOut (stack : Nat) :
-    PostOut (Spec.AesEcb.encryptContract abi stack) (Spec.Aes.blocksSig.retBits 32) := by
-  rw [Proof.AesEcb.encrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
-
-/-- The postcondition of `vg_aes_ecb_decrypt` reads the memory on return only
-within the buffers. -/
-theorem decryptOut (stack : Nat) :
-    PostOut (Spec.AesEcb.decryptContract abi stack) (Spec.Aes.blocksSig.retBits 32) := by
-  rw [Proof.AesEcb.decrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = _
-      have hd := agree_of hb.2.1
-      rw [statesAt_congr fun i hi => hd i (by have := n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-      exact h1 key hk
-    · rw [← hb.2.2 z hz]
-      exact h2 z hz
-
-end Ecb
-
-namespace Cbc
-
-open VG.Proof.AesCbc.Wipe
+/-- The postcondition of `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` reads the
+memory on return only within the buffers. -/
+theorem ecbOut (g : List Byte → Spec.Aes.State → Spec.Aes.State) (w stack : Nat) :
+    PostOut (Proof.AesEcb.wipedContract g w abi stack) (Spec.Aes.blocksSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.AesEcb.ecbPost_out _ g w)
 
 /-- The postcondition of `vg_aes_cbc_encrypt` reads the memory on return only
 within the buffers. -/
-theorem encryptOut (stack : Nat) :
-    PostOut (Spec.Cbc.aesEncryptContract abi stack) (Spec.Cbc.aesSig.retBits 32) := by
-  rw [Proof.AesCbc.Wipe.encrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    have hd := AesEcb.agree_of hb.2.2.1
-    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
-    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · obtain ⟨h1a, h1b⟩ := h1 key hk
-      exact ⟨hb'.trans h1a, hc.trans h1b⟩
-    · rw [← hb.2.2.2 z hz]
-      exact h2 z hz
+theorem cbcEncryptOut (S : Nat → Bool) (stack : Nat) :
+    PostOut (Proof.AesCbc.Wipe.wipedContract Proof.AesCbc.Wipe.encPost S abi stack) (Spec.Cbc.aesSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.AesCbc.Wipe.wipedPost_ret _ _ S (Proof.AesCbc.Wipe.encPost_ret _))
 
 /-- The postcondition of `vg_aes_cbc_decrypt` reads the memory on return only
 within the buffers. -/
-theorem decryptOut (stack : Nat) :
-    PostOut (Spec.Cbc.aesDecryptContract abi stack) (Spec.Cbc.aesSig.retBits 32) := by
-  rw [Proof.AesCbc.Wipe.decrypt_eq]
-  exact postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ x hlen hb h => by
-    obtain ⟨a, b, c, d, e, f, rfl⟩ := vs_eq hlen
-    rw [bufs_eq] at hb
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-    obtain ⟨h1, h2⟩ := h
-    have hd := AesEcb.agree_of hb.2.2.1
-    have hb' : Spec.Cbc.blocksAt m₂ d (e.setWidth abi.ptrBits).toNat = Spec.Cbc.blocksAt m₁ d (e.setWidth abi.ptrBits).toNat :=
-      blocksAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) e; omega_using [hi, this])
-    have hc := AesEcb.bytesAt_congr (AesEcb.agree_of hb.2.1)
-    refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-    · obtain ⟨h1a, h1b⟩ := h1 key hk
-      exact ⟨hb'.trans h1a, hc.trans h1b⟩
-    · rw [← hb.2.2.2 z hz]
-      exact h2 z hz
-
-end Cbc
+theorem cbcDecryptOut (S : Nat → Bool) (stack : Nat) :
+    PostOut (Proof.AesCbc.Wipe.wipedContract Proof.AesCbc.Wipe.decPost S abi stack) (Spec.Cbc.aesSig.retBits 32) :=
+  postOut_of_local (leak := none) ScrubAbi.plain
+    (Proof.AesCbc.Wipe.wipedPost_ret _ _ S (Proof.AesCbc.Wipe.decPost_ret _))
 
 theorem cfb8EncryptOut (stack : Nat) :
     PostOut (Spec.Cfb8.aesEncryptContract Arm.abi stack) (Spec.Cfb8.aesSig.retBits 32) :=
@@ -408,32 +340,68 @@ theorem expandKey : VerifiedScrubbed target Impl.Aes.Arm.Fn.expandKey (Spec.Aes.
     (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_aes_ecb_encrypt`. -/
-theorem ecbEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbEncrypt (Spec.AesEcb.encryptContract abi 24) 0 :=
-  verifiedScrubbedAll (api := Spec.AesEcb.encryptApi)
+theorem ecbEncrypt_wipes :
+    VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbEncrypt
+      (Proof.AesEcb.wipedContract Proof.AesEcb.enc Impl.Aes.Arm.scratchUsed abi 24) 0 :=
+  verifiedScrubbedAll (api := Proof.AesEcb.wipedApi Proof.AesEcb.enc Impl.Aes.Arm.scratchUsed)
     { code := Impl.AesEcb.Arm.encrypt
       verified := Proof.AesEcb.Arm.encrypt_verified }
-    (Scrub.Ecb.encryptOut _) (scrubSideF_of Scrub.ecbEncrypt_code Scrub.frameOk_24 _)
+    (Scrub.ecbOut _ _ _) (scrubSideF_of Scrub.ecbEncrypt_code Scrub.frameOk_24 _)
+
+theorem ecbEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbEncrypt (Spec.AesEcb.encryptContract abi 24) 0 :=
+  Proof.AesEcb.encrypt_imp ecbEncrypt_wipes id
+
+theorem ecbEncrypt_public :
+    Spec.AesEcb.scratchOut.Of abi Impl.Aes.Arm.Fn.ecbEncrypt (Spec.AesEcb.encryptContract abi 24) :=
+  Proof.AesEcb.scratch_public ecbEncrypt_wipes
 
 /-- `vg_aes_ecb_decrypt`. -/
-theorem ecbDecrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbDecrypt (Spec.AesEcb.decryptContract abi 24) 0 :=
-  verifiedScrubbedAll (api := Spec.AesEcb.decryptApi)
+theorem ecbDecrypt_wipes :
+    VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbDecrypt
+      (Proof.AesEcb.wipedContract Proof.AesEcb.dec Impl.Aes.Arm.scratchUsed abi 24) 0 :=
+  verifiedScrubbedAll (api := Proof.AesEcb.wipedApi Proof.AesEcb.dec Impl.Aes.Arm.scratchUsed)
     { code := Impl.AesEcb.Arm.decrypt
       verified := Proof.AesEcb.Arm.decrypt_verified }
-    (Scrub.Ecb.decryptOut _) (scrubSideF_of Scrub.ecbDecrypt_code Scrub.frameOk_24 _)
+    (Scrub.ecbOut _ _ _) (scrubSideF_of Scrub.ecbDecrypt_code Scrub.frameOk_24 _)
+
+theorem ecbDecrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbDecrypt (Spec.AesEcb.decryptContract abi 24) 0 :=
+  Proof.AesEcb.decrypt_imp ecbDecrypt_wipes id
+
+theorem ecbDecrypt_public :
+    Spec.AesEcb.scratchOut.Of abi Impl.Aes.Arm.Fn.ecbDecrypt (Spec.AesEcb.decryptContract abi 24) :=
+  Proof.AesEcb.scratch_public ecbDecrypt_wipes
 
 /-- `vg_aes_cbc_encrypt`. -/
-theorem cbcEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcEncrypt (Spec.Cbc.aesEncryptContract abi 32) 0 :=
-  verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi)
+theorem cbcEncrypt_wipes :
+    VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcEncrypt
+      (Proof.AesCbc.Wipe.wipedContract Proof.AesCbc.Wipe.encPost (fun i => decide (i < 2176)) abi 32) 0 :=
+  verifiedScrubbedAll (api := Proof.AesCbc.Wipe.wipedApi Proof.AesCbc.Wipe.encPost (fun i => decide (i < 2176)))
     { code := Impl.AesCbc.Arm.Wiped.encrypt
       verified := Proof.AesCbc.Arm.Wiped.encrypt_verified }
-    (Scrub.Cbc.encryptOut _) (scrubSideF_of Scrub.cbcEncrypt_code Scrub.frameOk_32 _)
+    (Scrub.cbcEncryptOut _ _) (scrubSideF_of Scrub.cbcEncrypt_code Scrub.frameOk_32 _)
+
+theorem cbcEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcEncrypt (Spec.Cbc.aesEncryptContract abi 32) 0 :=
+  Proof.AesCbc.Wipe.encrypt_imp cbcEncrypt_wipes id
+
+theorem cbcEncrypt_public :
+    Spec.Cbc.aesScratchOut.Of abi Impl.Aes.Arm.Fn.cbcEncrypt (Spec.Cbc.aesEncryptContract abi 32) :=
+  Proof.AesCbc.Wipe.scratch_public cbcEncrypt_wipes
 
 /-- `vg_aes_cbc_decrypt`. -/
-theorem cbcDecrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcDecrypt (Spec.Cbc.aesDecryptContract abi 32) 0 :=
-  verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi)
+theorem cbcDecrypt_wipes :
+    VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcDecrypt
+      (Proof.AesCbc.Wipe.wipedContract Proof.AesCbc.Wipe.decPost (fun i => decide (i < 2176)) abi 32) 0 :=
+  verifiedScrubbedAll (api := Proof.AesCbc.Wipe.wipedApi Proof.AesCbc.Wipe.decPost (fun i => decide (i < 2176)))
     { code := Impl.AesCbc.Arm.Wiped.decrypt
       verified := Proof.AesCbc.Arm.Wiped.decrypt_verified }
-    (Scrub.Cbc.decryptOut _) (scrubSideF_of Scrub.cbcDecrypt_code Scrub.frameOk_32 _)
+    (Scrub.cbcDecryptOut _ _) (scrubSideF_of Scrub.cbcDecrypt_code Scrub.frameOk_32 _)
+
+theorem cbcDecrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.cbcDecrypt (Spec.Cbc.aesDecryptContract abi 32) 0 :=
+  Proof.AesCbc.Wipe.decrypt_imp cbcDecrypt_wipes id
+
+theorem cbcDecrypt_public :
+    Spec.Cbc.aesScratchOut.Of abi Impl.Aes.Arm.Fn.cbcDecrypt (Spec.Cbc.aesDecryptContract abi 32) :=
+  Proof.AesCbc.Wipe.scratch_public cbcDecrypt_wipes
 
 /-- `vg_aes_ctr`. -/
 theorem ctr : VerifiedScrubbed target Impl.Aes.Arm.Fn.ctr (Spec.Ctr.aesContract abi 8) 0 :=

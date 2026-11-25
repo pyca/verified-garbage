@@ -15,9 +15,11 @@ namespace VG.Artifacts.AesEcb.RISCV64
 def artifacts : List (Artifact RISCV64.target) := [
   Spec.AesEcb.encryptApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ecbEncrypt
-    verified := Proof.Aes.RISCV64.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Aes.RISCV64.Scrub.ecbEncrypt_scrubbed
+    publicOutOk := Proof.Aes.RISCV64.Scrub.ecbEncrypt_public },
   Spec.AesEcb.decryptApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ecbDecrypt
-    verified := Proof.Aes.RISCV64.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Aes.RISCV64.Scrub.ecbDecrypt_scrubbed
+    publicOutOk := Proof.Aes.RISCV64.Scrub.ecbDecrypt_public }]
 
 end VG.Artifacts.AesEcb.RISCV64
