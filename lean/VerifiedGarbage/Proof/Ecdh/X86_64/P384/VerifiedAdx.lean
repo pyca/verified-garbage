@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
@@ -31,7 +30,6 @@ meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
@@ -44,8 +42,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 # ECDH over P-384 on x86-64 with BMI2 and ADX: `Verified`
 
 As `Verified.lean`, for `p384x` (`p384` multiplying modulo `p` with BMI2 and
-ADX): the same curve, so the same precondition and postcondition, with the
-doubling whose small multiples are fused (`doubleCms_dblOk`, `mulQJP384Cms_ok`).
+ADX): the same curve, so the same precondition and postcondition, and the same
+window method (`mulQJP384_ok`).
 -/
 
 @[expose] public section
@@ -68,14 +66,6 @@ theorem post_of_x {s s' : State} (h : EPost p384x s s') : ecdhX86_64.post s s' :
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p384x.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- The Jacobian window method with an affine table and the doubling
-`doubleCms` computes `[d]P` on P-384, whose field `cms` needs. -/
-theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P384.curve)
-    (hsp : c.MP'.sparse = true) (hL : Weierstrass.Law c.C) (hO : Weierstrass.PrimeOrder c.C) :
-    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c (Impl.Weierstrass.X86_64.doubleCms c.MP' c.rcbSlots)) (mulQJAW c) :=
-  mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleCms_dblOk hsp
-    (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
-
 theorem ecdh_inlineOk_adx : exchangeP384Adx.InlineOk = true := by lit_decide
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
@@ -83,7 +73,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X8
     ∃ t s', Exec isa exchangeP384Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := 
     exchangeWith_ok (p384x_ok hI) hL
-    (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
+    (mulQJP384_ok (p384x_ok hI) rfl rfl hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs

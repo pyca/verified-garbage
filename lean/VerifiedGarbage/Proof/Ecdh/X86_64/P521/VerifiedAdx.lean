@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
@@ -34,7 +33,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.FastAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
@@ -49,8 +47,8 @@ public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 # ECDH over P-521 on x86-64 with BMI2 and ADX: `Verified`
 
 As `Verified.lean`, for `p521x` (`p521` multiplying modulo `p` with BMI2 and
-ADX): the same curve, so the same precondition and postcondition, its window
-loop by the fast steps (`Cfg.mulQJ4F`, `mulQJ4F_ok`).
+ADX): the same curve, so the same precondition and postcondition, and the
+same window method (`mulQJ4_ok`).
 -/
 
 @[expose] public section
@@ -88,7 +86,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL
-    (mulQJ4F_ok (p521x_ok hI) (fastCfg_p521x (p521x_ok hI)) (by decide) hL hO (by decide +kernel))
+    (mulQJ4_ok (p521x_ok hI) (by decide) hL hO (by decide +kernel))
     (mulQJ4_w (p521x_ok hI)) (pre_of_x hs)
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he ecdh_noCalls_adx).2.2
@@ -113,7 +111,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521Adx := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) exchangeP521Adx h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.winBuildJXSum, Proof.P521.X86_64.winNormJXSum,
-      Proof.P521.X86_64.winLoopFXSum, Proof.P521.X86_64.winLastJXSum]
+      Proof.P521.X86_64.winLoopJXSum, Proof.P521.X86_64.winLastJXSum]
   refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) ?_ hc
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
