@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.LazyP521
 
 /-!
 # Short Weierstrass curves on x86-64: windows in Jacobian coordinates
@@ -96,7 +96,11 @@ def jacPairOn (a b : Pt) : Prog isa :=
 
 /-- `R = 16 R` in Jacobian coordinates: two pairs of doublings between `R`
 and `D`. -/
-def quadJ : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPairOn K K.R K.D) .ae)
+def quadG : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPairOn K K.R K.D) .ae)
+
+/-- `R = 16 R` in Jacobian coordinates: `quadLazy` for P-521 with BMI2 and ADX,
+else `quadG`. -/
+def quadJ : Prog isa := if lazyOk K then quadLazy K else quadG K
 
 /-- The mask `rdx` of `[z] = 0` (all ones if it is), as `zeroMask`. -/
 def zmask (z : Nat) : List Instr :=
