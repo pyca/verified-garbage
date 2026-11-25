@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Gcm.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Aes.RISCV64.Common
+public import VerifiedGarbage.Proof.Aes.RISCV64.Layers
 import VerifiedGarbage.Proof.Aes.RISCV64.Prologue
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Gcm.RISCV64.PrepLaw
@@ -85,8 +86,10 @@ def bitsliceRISCV64 : Contract isa where
 theorem slicedKeyAt_of_keyRel {m : Mem} {p : Addr} {rk : List Byte}
     (h : KeyRel (fun k => m.readW (p + BitVec.ofNat 64 (8 * k)) 64) rk) : SlicedKeyAt m p rk := by
   intro t ht b hb i hi
-  rw [← h b hb i hi, getLsbD_bsByte _ _ ht]
-  rfl
+  rw [show Spec.Gcm.slicePos b i = Proof.Aes.posAt 4 false i b by
+    simp only [Spec.Gcm.slicePos, Proof.Aes.posAt, Bool.false_eq_true, ite_false]; omega_using [],
+    ← Proof.Aes.getD_rkState _ hi]
+  exact h t ht i hi b hb
 
 /-! ## The body -/
 
