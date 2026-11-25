@@ -323,7 +323,7 @@ B['s51'] = sqr51(448, 224); B['s51_dep'] = sqr51(224, 224)
 B['st51'] = ['mov x19, #100'] + st51()
 
 # ---- NEON pairs, radix 2^51 ----
-NS = {'x2': 16, 'z2': 64, 'x3': 112, 'z3': 160, 'A': 208, 'B': 256, 'C': 304, 'D': 352, 'AA': 400, 'BB': 448, 'x1': 560, 'E': 608, 'F': 656}
+NS = {'x2': 16, 'z2': 64, 'x3': 112, 'z3': 160, 'A': 208, 'B': 256, 'C': 304, 'D': 352, 'AA': 400, 'BB': 448, 'x1': 560, 'E': 256, 'F': 208}
 KM51, KM26, KM25, K19 = 704, 720, 736, 752      # constants: 2^51-1, 2^26-1, 2^25-1 (2d), 19 (4s)
 VSP = 768                                        # vector spills
 def v2(op, d, *r): return f'{op} v{d}.2d, ' + ', '.join(f'v{x}.2d' if isinstance(x, int) else x for x in r)
@@ -460,7 +460,7 @@ def ldstfix(b):
     out = []
     for l in b:
         m = __import__('re').match(r'(ld|st)p (x\d+), (x\d+), \[x0, #(\d+)\]', l)
-        if m and int(m[4]) > 504: out += [f'{m[1]}r {m[2]}, [x0, #{m[4]}]', f'{m[1]}r {m[3]}, [x0, #{int(m[4])+8}]']
+        if m and int(m[4]) > 504 and False or (m and m[1] == 'ld' and int(m[4]) > 504): out += [f'{m[1]}r {m[2]}, [x0, #{m[4]}]', f'{m[1]}r {m[3]}, [x0, #{int(m[4])+8}]']
         else: out.append(l)
     return out
 KC = ['mov x2, #0xffff','movk x2, #0xffff, lsl #16','movk x2, #0xffff, lsl #32','movk x2, #7, lsl #48','dup v0.2d, x2',f'str q0, [x0, #{KM51}]','lsr x3, x2, #25','dup v0.2d, x3',f'str q0, [x0, #{KM26}]','lsr x3, x2, #26','dup v0.2d, x3',f'str q0, [x0, #{KM25}]','mov x3, #19','lsl x4, x3, #32','add x3, x3, x4','dup v0.2d, x3',f'str q0, [x0, #{K19}]']
@@ -513,8 +513,104 @@ for od in ('o1', 'o3'):
             for seed in (None, 1, 2):
                 r = sched.schedule(step_src(ORD[od]), {0, 10, 19, 26, 27}, REGS, lim, 4.0, W=W, seed=seed)
                 if r: B[f'sc_{od}_{lim}_{W}_{seed or 0}'] = PRE + r[0]
+
+# ---- experiment 10 ----
+def sumhalves(v, t=31): return [f'ext v{t}.16b, v{v}.16b, v{v}.16b, #8', f'add v{v}.4s, v{v}.4s, v{t}.4s']
+def kar_tail(LL, HH, K, o1, o2):
+    r = []
+    for m in range(5): r += [v2('sub', K[m], K[m], LL[m]), v2('sub', K[m], K[m], HH[m])]
+    for m in range(1, 5): r += [v2('add', LL[m], LL[m], HH[m-1]), v2('add', LL[m], LL[m], HH[m-1])]
+    r += [v2('shl', 0, HH[4], '#1'), v2('shl', 1, HH[4], '#2'), v2('shl', 2, HH[4], '#5'), v2('add', LL[0], LL[0], 0), v2('add', 1, 1, 2), v2('add', LL[0], LL[0], 1)]
+    return r + vreduce(LL, K, o1, o2, (0, 1, 2, 3, 4, 5))
+def mu2k(o1, a1, b1, o2, a2, b2):
+    A, Bv, Nn = [0,1,2,3,4], [5,6,7,8,9], [None,10,11,12,13]
+    LL, HH, K = [14,15,16,17,18], [19,20,21,22,23], [24,25,26,27,28]
+    r = [f'ldr q31, [x0, #{KM26}]'] + split(a1, a2, A) + split(b1, b2, Bv) + [f'ldr q31, [x0, #{K19}]'] + [f'mul v{Nn[k]}.4s, v{Bv[k]}.4s, v31.4s' for k in range(1, 5)]
+    acc = set()
+    for m in range(5):
+        for i in range(5):
+            j = (m - i) % 5; b = (Nn if i + j >= 5 else Bv)[j]
+            r += [um(acc, LL[m], A[i], b, False), um(acc, HH[m], A[i], b, True)]
+    for v in A + Bv + Nn[1:]: r += sumhalves(v)
+    for m in range(5):
+        for i in range(5):
+            j = (m - i) % 5; r += [um(acc, K[m], A[i], (Nn if i + j >= 5 else Bv)[j], False)]
+    return r + kar_tail(LL, HH, K, o1, o2)
+def sq2k(o1, a1, o2, a2, pre=None):
+    A, Dd, Nn = [0,1,2,3,4], [5,6,7,8], [None,9,10,11,12]
+    LL, HH, K = [14,15,16,17,18], [19,20,21,22,23], [24,25,26,27,28]
+    r = [f'ldr q31, [x0, #{KM26}]'] + (pre or split(a1, a2, A)) + [f'add v{Dd[k]}.4s, v{A[k]}.4s, v{A[k]}.4s' for k in range(4)] + [f'ldr q31, [x0, #{K19}]'] + [f'mul v{Nn[k]}.4s, v{A[k]}.4s, v31.4s' for k in range(1, 5)]
+    acc = set()
+    T = [[(i, (m - i) % 5) for i in range(5) if i <= (m - i) % 5] for m in range(5)]
+    for m in range(5):
+        for i, j in T[m]:
+            a, b = (A if i == j else Dd)[i], (Nn if i + j >= 5 else A)[j]
+            r += [um(acc, LL[m], a, b, False), um(acc, HH[m], a, b, True)]
+    for v in A + Dd + Nn[1:]: r += sumhalves(v)
+    for m in range(5):
+        for i, j in T[m]: r += [um(acc, K[m], (A if i == j else Dd)[i], (Nn if i + j >= 5 else A)[j], False)]
+    return r + kar_tail(LL, HH, K, o1, o2)
+def front_p():
+    """The front, two limbs at a time, stored by stp."""
+    r = ['sub x19, x19, #1', 'add x17, x0, x19', 'ldrb w16, [x17, #1984]', 'ldrb w17, [x17, #1985]', 'eor x16, x16, x17', 'tst x16, x16'] + p2()
+    for k in (0, 2, 4):
+        n = 2 if k < 4 else 1
+        g = lambda nm, e=0: f'[x0, #{NS[nm]+8*k+8*e}]'
+        if n == 2: r += [f'ldp x1, x9, {g("x2")}', f'ldp x2, x10, {g("z2")}', f'ldp x3, x11, {g("x3")}', f'ldp x4, x12, {g("z3")}']
+        else: r += [f'ldr x1, {g("x2")}', f'ldr x2, {g("z2")}', f'ldr x3, {g("x3")}', f'ldr x4, {g("z3")}']
+        outs = []
+        for e in range(n):
+            x, z, u, v = ('x1','x2','x3','x4') if e == 0 else ('x9','x10','x11','x12')
+            a, b, c, d = ('x5','x6','x7','x8') if e == 0 else ('x13','x14','x15','x16')
+            r += [f'csel {a}, {u}, {x}, ne', f'csel {b}, {v}, {z}, ne', f'csel {c}, {x}, {u}, ne', f'csel {d}, {z}, {v}, ne',
+                  f'add {x}, {a}, {b}', f'add {a}, {a}, {P2[k+e]}', f'sub {a}, {a}, {b}', f'add {z}, {c}, {d}', f'add {c}, {c}, {P2[k+e]}', f'sub {c}, {c}, {d}']
+            outs.append((x, a, z, c))
+        o2 = outs[1] if n == 2 else ('xzr',) * 4
+        for q, nm in enumerate('ABCD'):
+            w = 'x22' if n == 1 else o2[q]
+            r += [f'stp {outs[0][q]}, {w}, {g(nm)}']
+    return r
+def mid_p():
+    r = mid(); out = []
+    for nm, regs in (('E', ['x6','x7','x8','x9','x10']), ('F', B5)):
+        r = [l for l in r if not (l.startswith('str') and any(l.endswith(f'#{NS[nm]+8*k}]') for k in range(5)))] if False else r
+    res = []
+    for l in r:
+        m = re_.match(r'str (x\d+), \[x0, #(\d+)\]', l)
+        if m and int(m[2]) in (NS['E'], NS['E']+16, NS['E']+32, NS['F'], NS['F']+16, NS['F']+32): out = (m[1], int(m[2])); 
+        if m:
+            o = int(m[2]); base = NS['E'] if o < NS['F'] else NS['F']; k = (o - base) // 8
+            if k in (0, 2): hold = m[1]; continue
+            if k in (1, 3): res.append(f'stp {hold}, {m[1]}, [x0, #{o-8}]'); continue
+            res.append(f'stp {m[1]}, {m[1]}, [x0, #{o}]'); continue
+        res.append(l)
+    return res
+def sc_x3t_pre():
+    """DA + CB and DA - CB, split, in v0..v4 (NEON), for the pair x3 | t."""
+    A = [0,1,2,3,4]; r = [f'ldr q30, [x0, #{KP2A}]', f'ldr q29, [x0, #{KP2B}]']
+    for k in (0, 2, 4):
+        p = 30 if k == 0 else 29
+        r += [f'ldr q20, [x0, #{NS["D"]+8*k}]', f'ldr q21, [x0, #{NS["C"]+8*k}]', v2('add', 22, 20, 21), v2('add', 20, 20, p), v2('sub', 20, 20, 21),
+              v2('trn1', 23, 22, 20)] + ([v2('trn2', 24, 22, 20)] if k < 4 else [])
+        for src, d in ((23, k), (24, k + 1)):
+            if d > 4: continue
+            r += [vand(25, src, 31), v2('ushr', src, src, '#26'), f'uzp1 v{A[d]}.4s, v25.4s, v{src}.4s']
+    return r
+KP2A, KP2B = 784, 800
+KC += ['mov x2, #0xfffe','movk x2, #0xffff, lsl #16','movk x2, #0xffff, lsl #32','movk x2, #0xf, lsl #48','sub x3, x2, #36',f'stp x3, x2, [x0, #{KP2A}]' if False else f'str x3, [x0, #{KP2A}]',f'str x2, [x0, #{KP2A+8}]','dup v0.2d, x2',f'str q0, [x0, #{KP2B}]']
+def st_n2(ka=True, pairs=True):
+    f = front_p() if pairs else front_neon(); md = mid_p() if pairs else mid()
+    sq, mu = (sq2k, mu2k) if ka else (sq2, mu2)
+    s1, s2 = sbranch()
+    return f + weave(s1, sq(NS['AA'], NS['A'], NS['BB'], NS['B'])) + md + weave(s2, mu(NS['x2'], NS['AA'], NS['BB'], NS['z2'], NS['E'], NS['F']))
+def st_n3():
+    s1, _ = sbranch()
+    m51s = mid() + mul51(NS['x2'], NS['AA'], NS['BB']) + mul51(NS['z2'], NS['E'], NS['F'])
+    return front_p() + weave(s1, sq2k(NS['AA'], NS['A'], NS['BB'], NS['B'])) + weave(m51s, sq2k(NS['x3'], None, NS['z3'], None, sc_x3t_pre())) + mul51(NS['z3'], NS['x1'], NS['z3'])
+B['sq2k'] = sq2k(NS['AA'], NS['A'], NS['BB'], NS['B']); B['mu2k'] = mu2k(NS['x2'], NS['A'], NS['B'], NS['z2'], NS['C'], NS['D'])
+B['sn2'] = ldstfix(['mov x19, #100'] + st_n2(False, True)); B['sn3'] = ldstfix(['mov x19, #100'] + st_n2(True, True)); B['sn4'] = ldstfix(['mov x19, #100'] + st_n3())
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
