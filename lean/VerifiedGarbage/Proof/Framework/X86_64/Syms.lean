@@ -63,6 +63,8 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
   | xop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.XOp.exec_eq op s]
   | vop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
   | zop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> rfl
   | eop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
   | e5op op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.E5Op.exec_eq op s]
   | evLoad d m | evMadd52Load _ d _ m | evBroadcastLoad d m | e5InsertLoad d _ m _ =>

@@ -536,7 +536,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       exact hw.pubM hm
     rw [ite_t hm']
     exact ⟨_, rfl, h.clearX⟩
-  | vpmovmskb _ d _ | leaSym d _ | vpcmpltuw d _ _ =>
+  | vpmovmskb _ d _ | leaSym d _ | vpcmpltuw d _ _ | evCmpUq _ d _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
@@ -577,7 +577,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       simp only [step, Option.some.injEq] at hs ⊢
       cases hs
       exact ⟨_, rfl, h.clearX⟩
-  | vop _ | zop _ | eop _ | e5op _ =>
+  | vop _ | zop _ | eop _ | e5op _ | evMaskAddQ _ _ _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.clearX⟩
