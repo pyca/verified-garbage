@@ -12,8 +12,9 @@ accumulators, which start as `(0 : R : 0)`, the entry of a digit of magnitude
 zero. It reads the eight entries in turn, at addresses that depend on no digit,
 and inserts each under a mask which is all ones only for the entry whose number,
 counted in both lanes of `v30`, is the digit's magnitude, then stores the
-accumulators into `E`, whose coordinates are consecutive. The vector registers
-are all ones the calling convention does not preserve (`v0`–`v7`, `v16`–`v31`).
+accumulators into `E`, whose coordinates are consecutive. It writes 22 of the
+vector registers the calling convention does not preserve, all but `v18` and
+`v29`.
 -/
 
 @[expose] public section
