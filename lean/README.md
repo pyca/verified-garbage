@@ -188,6 +188,36 @@ To keep review of the trusted parts focused, new specs, additions to the TCB,
 and new implementations are never combined in one PR: an implementation is
 only proven against a spec and TCB that were reviewed and merged beforehand.
 
+### What enforces what
+
+| Property | Enforced by |
+| --- | --- |
+| Terminates, never faults, accesses only the memory it may | `TCB/` (`Verified`) |
+| Keeps callee-saved registers, the stack pointer and the return address | `TCB/` (`Verified`, `Artifact.spSafe`) |
+| Branches and addresses depend only on public data and the contract's `leak` | `TCB/` (`ConstantTime`) |
+| Leaves no secrets in registers, flags or its stack | `TCB/` (`NoResidue`) |
+| What it returns and writes to its buffers | **The contract's postcondition only** |
+| Instructions take the same time whatever their operands | [Assumed](../README.md#what-the-constant-time-guarantee-assumes) |
+| The Rust code around it | [Tests](../README.md#what-is-not-verified) |
+
+`TCB/` enforces its rows for every function called with its precondition met.
+For the postcondition's row, review the contract: a writable byte it does not
+mention may end up holding anything, and nothing checks that it mentions them
+all.
+
+### Memory nobody has written
+
+Functions may read stack or `MaybeUninit` memory that nobody has written. The
+proofs hold whatever it contains, so it cannot affect:
+
+* branches, addresses or faults, unless the contract's precondition or `leak`
+  mentions it;
+* any output that the postcondition makes a function of the inputs.
+
+Valgrind may report such reads
+([#6435](https://github.com/pyca/verified-garbage/issues/6435)). That is a bug
+only if an output really depends on the value.
+
 ## Building
 
 ```sh
