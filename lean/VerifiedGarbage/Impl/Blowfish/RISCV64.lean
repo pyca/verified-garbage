@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Blowfish.Table
 
 One block at a time in general-purpose registers, and an S-box lookup reads
 every entry of the S-box's four byte planes, a row of eight entries of each
-plane (a doubleword, `ld`) at a time, with the 32 rows unrolled. A row's
+plane (a doubleword, `ld`) at a time, with sixteen rows per iteration. A row's
 mask is all ones if the row holds the index's entry, else zero, made
 without a comparison from one bit at the index's row `q` (the index
 shifted right by three), `2 ^ q` (1 shifted left by `q`, `sll`): row `k`'s
@@ -98,23 +98,12 @@ shifted to the top, and arithmetically down). -/
 def rowMask (k : Nat) : List Instr :=
   [.shift .sll .d mReg qReg (63 - k), .shift .sra .d mReg mReg 63]
 
-/-- Plane `b`'s doubleword of row 0, masked, into its accumulator. -/
-def firstPlane (b : Nat) : List Instr :=
-  [.load .d (accOf b) sch (256 * b), .logic .and (accOf b) (accOf b) mReg]
-
 /-- Plane `b`'s doubleword of row `k`, masked, ORed into its accumulator. -/
 def plane (k b : Nat) : List Instr :=
   [.load .d tmp sch (256 * b + 8 * k), .logic .and tmp tmp mReg, .logic .or (accOf b) (accOf b) tmp]
 
-/-- Row 0 (eight entries) of the S-box at `sch`: the mask and the four
-planes, which start the accumulators. -/
-def row0 : List Instr := rowMask 0 ++ firstPlane 0 ++ firstPlane 1 ++ firstPlane 2 ++ firstPlane 3
-
-/-- Row `k > 0`: the mask and the four planes. -/
+/-- Row `k`: the mask and the four planes. -/
 def row (k : Nat) : List Instr := rowMask k ++ plane k 0 ++ plane k 1 ++ plane k 2 ++ plane k 3
-
-/-- Rows `0, …, n`. -/
-def rows (n : Nat) : List Instr := row0 ++ (List.range n).flatMap fun i => row (i + 1)
 
 /-- Plane `b`'s byte of the entry from its accumulator: shifted right by
 `8L` (in `t3`), the low byte, shifted up to byte `b`. -/
@@ -129,9 +118,22 @@ def extract (j : Nat) : List Instr :=
     pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
     [.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)]
 
+/-- A scan uses two groups of sixteen rows. The round-key pointer is at
+`base + 4096 + 4r`, with `r ≤ 16`. Bit 7 of its difference from the box
+pointer, after advancing by 128 bytes, is set after the first group and
+clear after the second. Both pointers are public. The masks' one-bit
+indices shift by sixteen between groups; the box pointer is restored. -/
+def scanRows (rs : List Instr) (qs acs : List Reg) : Prog isa :=
+  .seq (.block (acs.map fun r => .li r 0))
+    (.seq (.loop (.block (rs ++ ([.addi sch sch 128] ++
+        qs.map (fun q => .shift .srl .d q q 16) ++ [.sub tmp pPtr sch, .logicImm .and tmp tmp 128])))
+      (.nonzero tmp)) (.block [.addi sch sch (-256)]))
+
 /-- S-box `j`, at `sch` (which F moves there), of xL's byte `3 - j`, into
 the accumulator's low word. -/
-def lookup (j : Nat) : Prog isa := .block (index j ++ rows 31 ++ extract j)
+def lookup (j : Nat) : Prog isa :=
+  .seq (.block (index j)) (.seq (scanRows ((List.range 16).flatMap row) [qReg]
+    [accOf 0, accOf 1, accOf 2, accOf 3]) (.block (extract j)))
 
 /-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
 def combine (j : Nat) : Instr :=
@@ -231,26 +233,14 @@ def index2 (j : Nat) : List Instr :=
 def rowMask2 (k : Nat) : List Instr :=
   rowMask k ++ [.shift .sll .d mReg2 qReg2 (63 - k), .shift .sra .d mReg2 mReg2 63]
 
-/-- Plane `b`'s doubleword of row 0, masked by each block's mask, into its
-accumulators. -/
-def firstPlane2 (b : Nat) : List Instr :=
-  [.load .d tmp sch (256 * b), .logic .and (accOf b) tmp mReg, .logic .and (accOf2 b) tmp mReg2]
-
 /-- Plane `b`'s doubleword of row `k`, masked by each block's mask, ORed
 into its accumulators. -/
 def plane2 (k b : Nat) : List Instr :=
   [.load .d tmp sch (256 * b + 8 * k), .logic .and tmp2 tmp mReg, .logic .or (accOf b) (accOf b) tmp2,
    .logic .and tmp tmp mReg2, .logic .or (accOf2 b) (accOf2 b) tmp]
 
-/-- Row 0 for both blocks. -/
-def row20 : List Instr :=
-  rowMask2 0 ++ firstPlane2 0 ++ firstPlane2 1 ++ firstPlane2 2 ++ firstPlane2 3
-
-/-- Row `k > 0` for both blocks. -/
+/-- Row `k` for both blocks. -/
 def row2 (k : Nat) : List Instr := rowMask2 k ++ plane2 k 0 ++ plane2 k 1 ++ plane2 k 2 ++ plane2 k 3
-
-/-- Rows `0, …, n` for both blocks. -/
-def rows2 (n : Nat) : List Instr := row20 ++ (List.range n).flatMap fun i => row2 (i + 1)
 
 /-- `pick b` for block B. -/
 def pick2 (b : Nat) : List Instr :=
@@ -265,7 +255,10 @@ def extractB (j : Nat) : List Instr :=
      .logic .or (accOf2 0) (accOf2 0) (accOf2 2)]
 
 /-- S-box `j`'s lookups for both blocks. -/
-def lookup2 (j : Nat) : Prog isa := .block (index j ++ index2 j ++ rows2 31 ++ extract j ++ extractB j)
+def lookup2 (j : Nat) : Prog isa :=
+  .seq (.block (index j ++ index2 j)) (.seq (scanRows ((List.range 16).flatMap row2) [qReg, qReg2]
+    [accOf 0, accOf 1, accOf 2, accOf 3, accOf2 0, accOf2 1, accOf2 2, accOf2 3])
+      (.block (extract j ++ extractB j)))
 
 /-- `combine j` for both blocks. -/
 def combine2 (j : Nat) : List Instr :=

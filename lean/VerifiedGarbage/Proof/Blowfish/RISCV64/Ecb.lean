@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.RISCV64.Cipher
+public import VerifiedGarbage.Proof.Blowfish.RISCV64.Scan
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Blowfish.Blocks
@@ -154,8 +155,7 @@ the caller's stack pointer and restored. The structure of PPC64LE's
 Two blocks are enciphered at once (`cipher2_run`), as one is by
 `cipher_run` (`Proof/Blowfish/RISCV64/Cipher.lean`): `lookup2 j` leaves
 S-box `j`'s entries for both blocks' xL (`a3`, `s1`) in the low words of
-their accumulators (`t2`, `s6`), its rows (`row2_step`, by induction in
-`rows2_run`) scanning each plane for both indices, and each block's end is
+their accumulators (`t2`, `s6`), its rows (`Chunk.row2_step`, in two passes) scanning each plane for both indices, and each block's end is
 `extract`'s (`lookup2_run`); `f2_run` follows `f_run`.
 -/
 
@@ -166,297 +166,6 @@ namespace VG.Proof.Blowfish.RISCV64
 open VG VG.RISCV64 VG.RISCV64.ByteLoad VG.Impl.Blowfish.RISCV64 VG.Spec.Blowfish VG.Proof.Blowfish
 open VG.WriteBytes (writeBytes)
 open VG.Impl.Words.RISCV64 (loadBE32 storeBE)
-
-/-- The registers the lookups of both blocks write. -/
-def lookRegs2 : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .s4, .s5, .s6, .s7, .s8, .s9, .s10]
-
-/-! ## Two blocks: the indices -/
-
-theorem index2_run (s : State) {j : Nat} (hj : j < 4) :
-    WP isa (.block (index2 j)) s fun t =>
-      t.gpr .s4 = BitVec.twoPow 64 ((quarter (lo (s.gpr .s1)) j).toNat / 8) ∧ t.mem = s.mem := by
-  obtain e : (s.gpr .s1 <<< (32 + 8 * j)) >>> 59 = BitVec.ofNat 64 ((quarter (lo (s.gpr .s1)) j).toNat / 8) := by
-    obtain h := congrArg (fun v : BitVec 64 => v >>> 3) (index_val (s.gpr .s1) hj)
-    rw [← BitVec.shiftRight_add] at h
-    rw [h]
-    apply BitVec.eq_of_toNat_eq
-    have := (quarter (lo (s.gpr .s1)) j).isLt
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-      Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
-  obtain hq := (quarter (lo (s.gpr .s1)) j).isLt
-  unfold index2
-  brun [xL2, qReg2, mReg2, show 32 + 8 * j < 64 by omega_using [hj], e]
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
-  rfl
-
-/-! ## Two blocks: the rows -/
-
-/-- Row `k > 0` for both blocks. -/
-theorem row2_run (u : State) {k : Nat} (hk : k < 32) {B q q' : BitVec 64}
-    (h7 : u.gpr .a7 = B) (h1 : u.gpr .t1 = q) (h4 : u.gpr .s4 = q')
-    (r0 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (8 * k)) 8)
-    (r1 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (256 + 8 * k)) 8)
-    (r2 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (512 + 8 * k)) 8)
-    (r3 : InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (768 + 8 * k)) 8)
-    (a0 : (B + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0)
-    (a1 : (B + BitVec.ofNat 64 (256 + 8 * k)).toNat % 8 = 0)
-    (a2 : (B + BitVec.ofNat 64 (512 + 8 * k)).toNat % 8 = 0)
-    (a3 : (B + BitVec.ofNat 64 (768 + 8 * k)).toNat % 8 = 0) :
-    WP isa (.block (row2 k)) u fun t =>
-      let M := (q <<< (63 - k)).sshiftRight 63
-      let M' := (q' <<< (63 - k)).sshiftRight 63
-      t.gpr .t2 = u.gpr .t2 ||| (u.mem.readW (B + BitVec.ofNat 64 (8 * k)) 64 &&& M) ∧
-      t.gpr .t5 = u.gpr .t5 ||| (u.mem.readW (B + BitVec.ofNat 64 (256 + 8 * k)) 64 &&& M) ∧
-      t.gpr .t6 = u.gpr .t6 ||| (u.mem.readW (B + BitVec.ofNat 64 (512 + 8 * k)) 64 &&& M) ∧
-      t.gpr .t0 = u.gpr .t0 ||| (u.mem.readW (B + BitVec.ofNat 64 (768 + 8 * k)) 64 &&& M) ∧
-      t.gpr .s6 = u.gpr .s6 ||| (u.mem.readW (B + BitVec.ofNat 64 (8 * k)) 64 &&& M') ∧
-      t.gpr .s7 = u.gpr .s7 ||| (u.mem.readW (B + BitVec.ofNat 64 (256 + 8 * k)) 64 &&& M') ∧
-      t.gpr .s8 = u.gpr .s8 ||| (u.mem.readW (B + BitVec.ofNat 64 (512 + 8 * k)) 64 &&& M') ∧
-      t.gpr .s9 = u.gpr .s9 ||| (u.mem.readW (B + BitVec.ofNat 64 (768 + 8 * k)) 64 &&& M') ∧
-      t.mem = u.mem := by
-  unfold row2 rowMask2 rowMask plane2
-  brun [accOf, accOf2, qReg2, mReg2, tmp2, Nat.zero_add, h7, h1, h4, r0, r1, r2, r3, a0, a1, a2, a3,
-    show 63 - k < 64 by omega_using [],
-    show 8 * k < 2048 by omega_using [hk], show 256 * 1 + 8 * k < 2048 by omega_using [hk],
-    show 256 * 2 + 8 * k < 2048 by omega_using [hk], show 256 * 3 + 8 * k < 2048 by omega_using [hk]]
-
-/-- Row 0 for both blocks. -/
-theorem row20_run (u : State) {B q q' : BitVec 64}
-    (h7 : u.gpr .a7 = B) (h1 : u.gpr .t1 = q) (h4 : u.gpr .s4 = q')
-    (r0 : InRegions (u.rd ++ u.wr) B 8)
-    (r1 : InRegions (u.rd ++ u.wr) (B + 256#64) 8)
-    (r2 : InRegions (u.rd ++ u.wr) (B + 512#64) 8)
-    (r3 : InRegions (u.rd ++ u.wr) (B + 768#64) 8)
-    (a0 : B.toNat % 8 = 0) (a1 : (B + 256#64).toNat % 8 = 0)
-    (a2 : (B + 512#64).toNat % 8 = 0) (a3 : (B + 768#64).toNat % 8 = 0) :
-    WP isa (.block row20) u fun t =>
-      let M := (q <<< (63 - 0)).sshiftRight 63
-      let M' := (q' <<< (63 - 0)).sshiftRight 63
-      t.gpr .t2 = u.mem.readW B 64 &&& M ∧ t.gpr .t5 = u.mem.readW (B + 256#64) 64 &&& M ∧
-      t.gpr .t6 = u.mem.readW (B + 512#64) 64 &&& M ∧ t.gpr .t0 = u.mem.readW (B + 768#64) 64 &&& M ∧
-      t.gpr .s6 = u.mem.readW B 64 &&& M' ∧ t.gpr .s7 = u.mem.readW (B + 256#64) 64 &&& M' ∧
-      t.gpr .s8 = u.mem.readW (B + 512#64) 64 &&& M' ∧ t.gpr .s9 = u.mem.readW (B + 768#64) 64 &&& M' ∧
-      t.mem = u.mem := by
-  unfold row20 rowMask2 rowMask firstPlane2
-  brun [accOf, accOf2, qReg2, mReg2, tmp2, h7, h1, h4, r0, r1, r2, r3, a0, a1, a2, a3]
-
-/-- After rows `0, …, n - 1` of S-box `j` for both blocks' indices. -/
-structure RowInv2 (s₀ : State) (S : Addr) (j : Nat) (idx idx' : Byte) (n : Nat) (u : State) : Prop where
-  q : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)
-  q' : u.gpr .s4 = BitVec.twoPow 64 (idx'.toNat / 8)
-  p0 : u.gpr .t2 = scanPlane s₀.mem S j 0 idx.toNat n
-  p1 : u.gpr .t5 = scanPlane s₀.mem S j 1 idx.toNat n
-  p2 : u.gpr .t6 = scanPlane s₀.mem S j 2 idx.toNat n
-  p3 : u.gpr .t0 = scanPlane s₀.mem S j 3 idx.toNat n
-  p0' : u.gpr .s6 = scanPlane s₀.mem S j 0 idx'.toNat n
-  p1' : u.gpr .s7 = scanPlane s₀.mem S j 1 idx'.toNat n
-  p2' : u.gpr .s8 = scanPlane s₀.mem S j 2 idx'.toNat n
-  p3' : u.gpr .s9 = scanPlane s₀.mem S j 3 idx'.toNat n
-  keep : Keep lookRegs2 s₀ u
-  mem : u.mem = s₀.mem
-
-theorem row20_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx idx' : Byte)
-    {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
-    (hq : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)) (hq' : u.gpr .s4 = BitVec.twoPow 64 (idx'.toNat / 8))
-    (hk : Keep lookRegs2 s₀ u) (hm : u.mem = s₀.mem) :
-    WP isa (.block row20) u (RowInv2 s₀ S j idx idx' 1) := by
-  obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [hk.2.1, hk.2.2]
-  let B := S + BitVec.ofNat 64 (1024 * j)
-  obtain ad : ∀ b < 4, B + BitVec.ofNat 64 (256 * b) = S + BitVec.ofNat 64 (1024 * j + 256 * b + 8 * 0) :=
-    fun b hb => plane_addr S j b 0 (by omega_using [hj, hb])
-  obtain hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (256 * b)) 8 :=
-    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega_using []) (by omega_using [hj, hb])
-  obtain hal : ∀ b < 4, (B + BitVec.ofNat 64 (256 * b)).toNat % 8 = 0 :=
-    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega_using []) (by omega_using [hj, hb])
-  obtain r0 := hr 0 (by decide)
-  obtain l0 := hal 0 (by decide)
-  simp only [Nat.mul_zero, BitVec.add_zero] at r0 l0
-  refine WP.mono (WP.keep [.t2, .t3, .t5, .t6, .t0, .s5, .s6, .s7, .s8, .s9, .t4]
-    (row20_run u h7 hq hq' r0 (hr 1 (by decide)) (hr 2 (by decide))
-    (hr 3 (by decide)) l0 (hal 1 (by decide)) (hal 2 (by decide)) (hal 3 (by decide))) (by rfl) rfl)
-    fun t ⟨⟨t2, t5, t6, t0, s6, s7, s8, s9, tm⟩, tk⟩ => ?_
-  obtain M := mask_eq idx (k := 0) (by decide)
-  obtain M' := mask_eq idx' (k := 0) (by decide)
-  obtain pl : ∀ b < 4, u.mem.readW (B + BitVec.ofNat 64 (256 * b)) 64 = planeWord64 s₀.mem S j b 0 :=
-    fun b hb => by rw [ad b hb, hm]; rfl
-  obtain p0 := pl 0 (by decide)
-  simp only [Nat.mul_zero, BitVec.add_zero] at p0
-  have e1 : (256#64 : BitVec 64) = BitVec.ofNat 64 (256 * 1) := rfl
-  have e2 : (512#64 : BitVec 64) = BitVec.ofNat 64 (256 * 2) := rfl
-  have e3 : (768#64 : BitVec 64) = BitVec.ofNat 64 (256 * 3) := rfl
-  refine ⟨by rw [tk.gpr (by decide), hq], by rw [tk.gpr (by decide), hq'], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    hk.trans tk |>.mono (by decide), tm.trans hm⟩
-  · rw [t2, M, p0, scanPlane_one]
-  · rw [t5, M, e1, pl 1 (by decide), scanPlane_one]
-  · rw [t6, M, e2, pl 2 (by decide), scanPlane_one]
-  · rw [t0, M, e3, pl 3 (by decide), scanPlane_one]
-  · rw [s6, M', p0, scanPlane_one]
-  · rw [s7, M', e1, pl 1 (by decide), scanPlane_one]
-  · rw [s8, M', e2, pl 2 (by decide), scanPlane_one]
-  · rw [s9, M', e3, pl 3 (by decide), scanPlane_one]
-
-theorem row2_step {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx idx' : Byte)
-    {k : Nat} (hk : k < 32) {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
-    (I : RowInv2 s₀ S j idx idx' k u) :
-    WP isa (.block (row2 k)) u (RowInv2 s₀ S j idx idx' (k + 1)) := by
-  obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [I.keep.2.1, I.keep.2.2]
-  let B := S + BitVec.ofNat 64 (1024 * j)
-  obtain ad : ∀ b < 4, B + BitVec.ofNat 64 (256 * b + 8 * k) = S + BitVec.ofNat 64 (1024 * j + 256 * b + 8 * k) :=
-    fun b hb => plane_addr S j b k (by omega_using [hj, hk, hb])
-  obtain hr : ∀ b < 4, InRegions (u.rd ++ u.wr) (B + BitVec.ofNat 64 (256 * b + 8 * k)) 8 :=
-    fun b hb => by rw [ad b hb, hrd]; exact E.rd8 _ (by omega_using []) (by omega_using [hj, hk, hb])
-  obtain hal : ∀ b < 4, (B + BitVec.ofNat 64 (256 * b + 8 * k)).toNat % 8 = 0 :=
-    fun b hb => by rw [ad b hb]; exact al8_add E.al8 (by omega_using []) (by omega_using [hj, hk, hb])
-  obtain pl : ∀ b < 4, u.mem.readW (B + BitVec.ofNat 64 (256 * b + 8 * k)) 64 = planeWord64 s₀.mem S j b k :=
-    fun b hb => by rw [ad b hb, I.mem]; rfl
-  obtain r0 := hr 0 (by decide)
-  obtain l0 := hal 0 (by decide)
-  obtain p0 := pl 0 (by decide)
-  obtain r1 := hr 1 (by decide)
-  obtain l1 := hal 1 (by decide)
-  obtain p1 := pl 1 (by decide)
-  obtain r2 := hr 2 (by decide)
-  obtain l2 := hal 2 (by decide)
-  obtain p2 := pl 2 (by decide)
-  obtain r3 := hr 3 (by decide)
-  obtain l3 := hal 3 (by decide)
-  obtain p3 := pl 3 (by decide)
-  simp only [Nat.mul_zero, Nat.zero_add, Nat.mul_one, Nat.reduceMul] at r0 l0 p0 r1 l1 p1 r2 l2 p2 r3 l3 p3
-  refine WP.mono (WP.keep [.t2, .t3, .t4, .t5, .t6, .t0, .s5, .s6, .s7, .s8, .s9, .s10]
-    (row2_run u hk h7 I.q I.q' r0 r1 r2 r3 l0 l1 l2 l3)
-    (by rfl) rfl) fun t ⟨⟨t2, t5, t6, t0, s6, s7, s8, s9, tm⟩, tk⟩ => ?_
-  obtain M := mask_eq idx hk
-  obtain M' := mask_eq idx' hk
-  refine ⟨by rw [tk.gpr (by decide), I.q], by rw [tk.gpr (by decide), I.q'], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    I.keep.trans tk |>.mono (by decide), tm.trans I.mem⟩
-  · rw [t2, M, p0, I.p0, scanPlane_succ]
-  · rw [t5, M, p1, I.p1, scanPlane_succ]
-  · rw [t6, M, p2, I.p2, scanPlane_succ]
-  · rw [t0, M, p3, I.p3, scanPlane_succ]
-  · rw [s6, M', p0, I.p0', scanPlane_succ]
-  · rw [s7, M', p1, I.p1', scanPlane_succ]
-  · rw [s8, M', p2, I.p2', scanPlane_succ]
-  · rw [s9, M', p3, I.p3', scanPlane_succ]
-
-theorem rows2_succ (n : Nat) : rows2 (n + 1) = rows2 n ++ row2 (n + 1) := by
-  simp only [rows2, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, List.append_assoc]
-
-theorem rows2_run {s₀ : State} {S : Addr} (E : SchAt s₀ S) {j : Nat} (hj : j < 4) (idx idx' : Byte)
-    {u : State} (h7 : u.gpr .a7 = S + BitVec.ofNat 64 (1024 * j))
-    (hq : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8)) (hq' : u.gpr .s4 = BitVec.twoPow 64 (idx'.toNat / 8))
-    (hk : Keep lookRegs2 s₀ u) (hm : u.mem = s₀.mem)
-    (h7₀ : s₀.gpr .a7 = S + BitVec.ofNat 64 (1024 * j)) :
-    ∀ n, n < 32 → WP isa (.block (rows2 n)) u (RowInv2 s₀ S j idx idx' (n + 1)) := by
-  intro n
-  induction n with
-  | zero => intro _; exact row20_step E hj idx idx' h7 hq hq' hk hm
-  | succ n ih =>
-    intro hn
-    rw [rows2_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega_using [hn])) fun v V => row2_step E hj idx idx' hn ?_ V
-    rw [V.keep.gpr (by decide), h7₀]
-
-/-! ## Two blocks: the entries from the accumulators -/
-
-theorem lane2_run (s : State) {j : Nat} (hj : j < 4) :
-    WP isa (.block [.shift .srl .d mReg2 xL2 (24 - 8 * j), .logicImm .and mReg2 mReg2 7,
-      .shift .sll .d mReg2 mReg2 3]) s fun t =>
-      t.gpr .s5 = BitVec.ofNat 64 (8 * ((quarter (lo (s.gpr .s1)) j).toNat % 8)) ∧ t.mem = s.mem := by
-  rw [← lane_val _ hj]
-  brun [mReg2, xL2, show 24 - 8 * j < 64 by omega_using []]
-
-theorem pick2_run (u : State) {K A0 A1 A2 A3 : BitVec 64} (h3 : u.gpr .s5 = K) (h2 : u.gpr .s6 = A0)
-    (h5 : u.gpr .s7 = A1) (h6 : u.gpr .s8 = A2) (h0 : u.gpr .s9 = A3) :
-    WP isa (.block (pick2 0 ++ pick2 1 ++ pick2 2 ++ pick2 3 ++
-      ([.logic .or (accOf2 0) (accOf2 0) (accOf2 1), .logic .or (accOf2 2) (accOf2 2) (accOf2 3),
-        .logic .or (accOf2 0) (accOf2 0) (accOf2 2)] : List Instr))) u fun t =>
-      t.gpr .s6 = ((A0 >>> (K.toNat % 64) &&& 255#64) ||| (A1 >>> (K.toNat % 64) &&& 255#64) <<< 8) |||
-        ((A2 >>> (K.toNat % 64) &&& 255#64) <<< 16 ||| (A3 >>> (K.toNat % 64) &&& 255#64) <<< 24) ∧
-        t.mem = u.mem := by
-  unfold pick2
-  brun [accOf2, mReg2, h3, h2, h5, h6, h0]
-
-/-- The entry of S-box `j` for `idx`, from the accumulators of the four
-planes after the 32 rows, shifted by `8 (idx mod 8)`. -/
-theorem entry_eq (m : Mem) (S : Addr) {j : Nat} (hj : j < 4) (idx : Byte) {K : BitVec 64}
-    (hK : K.toNat % 64 = 8 * (idx.toNat % 8)) :
-    lo (((scanPlane m S j 0 idx.toNat 32 >>> (K.toNat % 64) &&& 255#64) |||
-        (scanPlane m S j 1 idx.toNat 32 >>> (K.toNat % 64) &&& 255#64) <<< 8) |||
-      ((scanPlane m S j 2 idx.toNat 32 >>> (K.toNat % 64) &&& 255#64) <<< 16 |||
-        (scanPlane m S j 3 idx.toNat 32 >>> (K.toNat % 64) &&& 255#64) <<< 24)) =
-      sEntry (scheduleAt m S) j idx := by
-  rw [hK, scanPlane_all, scanPlane_all, scanPlane_all, scanPlane_all, shr_byte, shr_byte,
-    shr_byte, shr_byte]
-  refine word_ext fun c hc => ?_
-  obtain e := pack_byte (fun b => (planeWord64 m S j b (idx.toNat / 8)).extractLsb' (8 * (idx.toNat % 8)) 8) hc
-  rw [e, planeWord64_byte _ _ hj hc]
-
-/-- The lookups of S-box `j` (at `sch`, moved to it) for the bytes `3 - j`
-of both blocks' xL. -/
-theorem lookup2_run {s : State} {S : Addr} (E : SchAt s S) {j : Nat} (hj : j < 4)
-    (h7 : s.gpr .a7 = S + BitVec.ofNat 64 (1024 * j)) :
-    WP isa (lookup2 j) s fun t =>
-      lo (t.gpr .t2) = sEntry (scheduleAt s.mem S) j (quarter (lo (s.gpr .a3)) j) ∧
-      lo (t.gpr .s6) = sEntry (scheduleAt s.mem S) j (quarter (lo (s.gpr .s1)) j) ∧
-        Keep lookRegs2 s t ∧ t.mem = s.mem := by
-  let idx := quarter (lo (s.gpr .a3)) j
-  let idx' := quarter (lo (s.gpr .s1)) j
-  obtain hx : extract j ++ extractB j =
-      [.shift .srl .d mReg xL (24 - 8 * j), .logicImm .and mReg mReg 7, .shift .sll .d mReg mReg 3] ++
-      ((pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
-        ([.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)] :
-          List Instr)) ++
-      ([.shift .srl .d mReg2 xL2 (24 - 8 * j), .logicImm .and mReg2 mReg2 7, .shift .sll .d mReg2 mReg2 3] ++
-      (pick2 0 ++ pick2 1 ++ pick2 2 ++ pick2 3 ++
-      ([.logic .or (accOf2 0) (accOf2 0) (accOf2 1), .logic .or (accOf2 2) (accOf2 2) (accOf2 3),
-        .logic .or (accOf2 0) (accOf2 0) (accOf2 2)] : List Instr)))) := by
-    simp only [extract, extractB, List.append_assoc]
-  unfold lookup2
-  simp only [List.append_assoc]
-  rw [hx, WP.block_append_iff]
-  refine WP.mono (WP.keep [.t1, .t3] (index_run s hj) (by rfl) rfl) fun u₀ ⟨⟨u1, um₀⟩, uk₀⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.s4, .s5] (index2_run u₀ hj) (by rfl) rfl) fun u ⟨⟨u4, um⟩, uk⟩ => ?_
-  obtain e1 : u₀.gpr .s1 = s.gpr .s1 := uk₀.gpr (by decide)
-  rw [e1] at u4
-  obtain u1' : u.gpr .t1 = BitVec.twoPow 64 (idx.toNat / 8) := by rw [uk.gpr (by decide), u1]
-  rw [WP.block_append_iff]
-  obtain uk' : Keep lookRegs2 s u := (uk₀.trans uk).mono (by decide)
-  refine WP.mono (rows2_run E hj idx idx' (by rw [uk'.gpr (by decide), h7]) u1' u4 uk' (um.trans um₀) h7 31
-    (by decide)) fun v V => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t3] (lane_run v hj) (by rfl) rfl) fun w ⟨⟨w3, wm⟩, wk⟩ => ?_
-  obtain hv3 : v.gpr .a3 = s.gpr .a3 := V.keep.gpr (by decide)
-  obtain hK : (w.gpr .t3).toNat % 64 = 8 * (idx.toNat % 8) := by
-    have := idx.isLt
-    rw [w3, hv3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t2, .t5, .t6, .t0] (pick_run w rfl
-    ((wk.gpr (by decide)).trans V.p0) ((wk.gpr (by decide)).trans V.p1)
-    ((wk.gpr (by decide)).trans V.p2) ((wk.gpr (by decide)).trans V.p3)) (by rfl) rfl)
-    fun x ⟨⟨x2, xm⟩, xk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.s5] (lane2_run x hj) (by rfl) rfl) fun y ⟨⟨y5, ym⟩, yk⟩ => ?_
-  obtain hx1 : x.gpr .s1 = s.gpr .s1 := by
-    rw [xk.gpr (by decide), wk.gpr (by decide), V.keep.gpr (by decide)]
-  obtain hK' : (y.gpr .s5).toNat % 64 = 8 * (idx'.toNat % 8) := by
-    have := idx'.isLt
-    rw [y5, hx1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [])]
-  obtain g : ∀ r, r ∉ [Reg.s5] → r ∉ [Reg.t2, .t5, .t6, .t0] → r ∉ [Reg.t3] → y.gpr r = v.gpr r :=
-    fun r h1 h2 h3 => by rw [yk.gpr h1, xk.gpr h2, wk.gpr h3]
-  refine WP.mono (WP.keep [.s6, .s7, .s8, .s9] (pick2_run y rfl
-    ((g .s6 (by decide) (by decide) (by decide)).trans V.p0')
-    ((g .s7 (by decide) (by decide) (by decide)).trans V.p1')
-    ((g .s8 (by decide) (by decide) (by decide)).trans V.p2')
-    ((g .s9 (by decide) (by decide) (by decide)).trans V.p3')) (by rfl) rfl)
-    fun t ⟨⟨t6, tm⟩, tk⟩ => ?_
-  refine ⟨?_, ?_, (((V.keep.trans wk).trans xk).trans yk).trans tk |>.mono (by decide),
-    by rw [tm, ym, xm, wm, V.mem]⟩
-  · rw [tk.gpr (by decide), yk.gpr (by decide), x2]
-    exact entry_eq s.mem S hj idx hK
-  · rw [t6]
-    exact entry_eq s.mem S hj idx' hK'
 
 /-! ## Two blocks: F -/
 
@@ -476,7 +185,8 @@ theorem combine2_run (u : State) {j : Nat} (hj : j < 4) :
 def fRegs27 : List Reg := .a7 :: fRegs2
 
 /-- S-box `j`'s lookups, then their accumulation, for both blocks. -/
-theorem step2_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs27 s₀ u)
+theorem step2_run {s₀ : State} (E : LookEnv s₀)
+    (phase : ((s₀.gpr .a6 - s₀.gpr .a7).setWidth 8).toNat < 128) {j : Nat} (hj : j < 4) {u : State} (k : Keep fRegs27 s₀ u)
     (hm : u.mem = s₀.mem) (h7 : u.gpr .a7 = s₀.gpr .a7 + BitVec.ofNat 64 (1024 * j))
     (hp : 0 < j → lo (u.gpr .a5) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7)) (lo (s₀.gpr .a3)) (j - 1))
     (hp' : 0 < j → lo (u.gpr .s3) = fAcc (scheduleAt s₀.mem (s₀.gpr .a7)) (lo (s₀.gpr .s1)) (j - 1))
@@ -488,7 +198,7 @@ theorem step2_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) {u : 
   obtain hrd : u.rd ++ u.wr = s₀.rd ++ s₀.wr := by rw [k.2.1, k.2.2]
   obtain Eu : SchAt u (s₀.gpr .a7) := ⟨fun o h1 h2 => by rw [hrd]; exact E.rd8 o h1 h2, E.al8⟩
   apply WP.seq
-  refine WP.mono (lookup2_run Eu hj h7) fun v ⟨v10, v11, vk, vm⟩ => ?_
+  refine WP.mono (lookup2_run Eu hj h7 (by rw [k.gpr (by decide)]; exact phase)) fun v ⟨v10, v11, vk, vm⟩ => ?_
   refine WP.mono (WP.keep [.a5, .s3] (combine2_run v hj) (by
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide) rfl)
     fun t ⟨⟨t7, t8, tm⟩, tk⟩ => hQ t ?_ ?_ ((k.trans vk).trans tk |>.mono (by decide)) (by rw [tm, vm, hm])
@@ -511,29 +221,30 @@ theorem next2_run {s₀ : State} {j : Nat} {u : State} (k : Keep fRegs27 s₀ u)
   rw [t7, h7, Offset.add_add]
   congr 2
 
-theorem f2_run {s : State} (E : LookEnv s) :
+theorem f2_run {s : State} (E : LookEnv s)
+    (phase : ((s.gpr .a6 - s.gpr .a7).setWidth 8).toNat < 128) :
     WP isa f2 s fun t =>
       lo (t.gpr .a5) = Spec.Blowfish.f (scheduleAt s.mem (s.gpr .a7)) (lo (s.gpr .a3)) ∧
       lo (t.gpr .s3) = Spec.Blowfish.f (scheduleAt s.mem (s.gpr .a7)) (lo (s.gpr .s1)) ∧
         Keep fRegs2 s t ∧ t.mem = s.mem := by
   unfold f2
   apply WP.reassoc; apply WP.seq
-  refine step2_run E (j := 0) (by decide) (Keep.refl _ _) rfl (by simp) (fun h => absurd h (by decide))
+  refine step2_run E phase (j := 0) (by decide) (Keep.refl _ _) rfl (by simp) (fun h => absurd h (by decide))
     (fun h => absurd h (by decide)) fun t0 h0 h0' k0 m0 e0 => ?_
   apply WP.seq
   refine WP.mono (next2_run (j := 0) k0 (by rw [e0]; simp)) fun u0 ⟨k0', m0', e0', a0, b0⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step2_run E (j := 1) (by decide) k0' (m0'.trans m0) e0' (fun _ => by rw [a0]; exact h0)
+  refine step2_run E phase (j := 1) (by decide) k0' (m0'.trans m0) e0' (fun _ => by rw [a0]; exact h0)
     (fun _ => by rw [b0]; exact h0') fun t1 h1 h1' k1 m1 e1 => ?_
   apply WP.seq
   refine WP.mono (next2_run (j := 1) k1 (by rw [e1, e0'])) fun u1 ⟨k1', m1', e1', a1, b1⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step2_run E (j := 2) (by decide) k1' (m1'.trans m1) e1' (fun _ => by rw [a1]; exact h1)
+  refine step2_run E phase (j := 2) (by decide) k1' (m1'.trans m1) e1' (fun _ => by rw [a1]; exact h1)
     (fun _ => by rw [b1]; exact h1') fun t2 h2 h2' k2 m2 e2 => ?_
   apply WP.seq
   refine WP.mono (next2_run (j := 2) k2 (by rw [e2, e1'])) fun u2 ⟨k2', m2', e2', a2, b2⟩ => ?_
   apply WP.reassoc; apply WP.seq
-  refine step2_run E (j := 3) (by decide) k2' (m2'.trans m2) e2' (fun _ => by rw [a2]; exact h2)
+  refine step2_run E phase (j := 3) (by decide) k2' (m2'.trans m2) e2' (fun _ => by rw [a2]; exact h2)
     (fun _ => by rw [b2]; exact h2') fun t3 h3 h3' k3 m3 e3 => ?_
   obtain back : WP isa (.block [.addi sch sch (-2048), .addi sch sch (-1024)]) t3 fun t =>
       t.gpr .a7 = t3.gpr .a7 - BitVec.ofNat 64 2048 - BitVec.ofNat 64 1024 ∧ t.mem = t3.mem := by
@@ -618,7 +329,10 @@ theorem round2_step {s₀ : State} (E : LookEnv s₀) (up : Bool) {i : Nat} (hi 
   obtain kv : Keep cRegs2 s₀ v := (I.keep.trans vk).mono (by decide)
   obtain Ev : LookEnv v := E.keep kv (by decide)
   apply WP.seq
-  refine WP.mono (f2_run Ev) fun w ⟨w7, w7', wk, wm⟩ => ?_
+  have phase : ((v.gpr .a6 - v.gpr .a7).setWidth 8).toNat < 128 := by
+    rw [vk.gpr (r := .a6) (by decide), vk.gpr (r := .a7) (by decide), I.p, u3]
+    cases up <;> simp [pBase] <;> bv_omega
+  refine WP.mono (f2_run Ev phase) fun w ⟨w7, w7', wk, wm⟩ => ?_
   obtain w3 : w.gpr .a7 = s₀.gpr .a7 := by rw [wk.gpr (by decide), vk.gpr (by decide), u3]
   obtain w8 : w.gpr .a6 = s₀.gpr .a7 + BitVec.ofNat 64 (pBase up i) := by
     rw [wk.gpr (by decide), vk.gpr (by decide), I.p]
