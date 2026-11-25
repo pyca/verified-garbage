@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.LazyP521
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
@@ -999,6 +1003,350 @@ theorem prog_ok (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n))) (hred : M
       ⟨⟨fun r hr => (k₂.gpr r hr).trans (k₁.gpr r hr), k₂.rd.trans k₁.rd, k₂.wr.trans k₁.wr, fun x hx hx' => ?_⟩, I₂⟩
     rw [List.map_cons] at hx
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) hx', k₁.mem x (hx _ (List.mem_cons_self ..)) hx']
+
+end
+
+/-! ## The points -/
+
+open Spec.Weierstrass VG.Impl.Weierstrass VG.Proof.Weierstrass
+
+theorem mem_of_lookup : ∀ {L : Bounds} {x k : Nat}, L.lookup x = some k → (x, k) ∈ L
+  | (y, j) :: L, x, k, h => by
+    rw [List.lookup_cons] at h
+    by_cases hx : x = y
+    · subst hx; simp only [beq_self_eq_true, Option.some.injEq] at h; subst h; exact List.mem_cons_self ..
+    · rw [beq_eq_false_iff_ne.mpr hx] at h; exact List.mem_cons_of_mem _ (mem_of_lookup h)
+
+theorem LInv.of_mem {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} {L : Bounds}
+    {E : Nat → Fin m} {s : State} (hs : Scr s base size) (hM : ModOkW M size m s.mem base)
+    (h : ∀ p ∈ L, Sl p.1 ∧ Bd m p.2 (wordsVal s.mem base p.1 M.n) ∧
+      toM m (2 ^ (64 * M.n)) (wordsVal s.mem base p.1 M.n) = E p.1) : LInv M base size m Sl L E s :=
+  ⟨hs, hM, fun x k hx => (h (x, k) (mem_of_lookup hx)).1, fun x k hx => (h (x, k) (mem_of_lookup hx)).2.1,
+    fun x k hx => (h (x, k) (mem_of_lookup hx)).2.2⟩
+
+theorem Bd.mono {m k j v : Nat} (h : Bd m k v) (hj : k ≤ j) (h0 : j = 0 → k = 0) : Bd m j v :=
+  ⟨Nat.le_trans h.1 (Nat.mul_le_mul_right _ (by omega_using [hj])), fun e => h.2 (h0 e)⟩
+
+theorem Bd.lt {m v : Nat} (h : Bd m 0 v) : v < m := h.2 rfl
+
+theorem Bd.of_lt {m v : Nat} (h : v < m) : Bd m 0 v :=
+  ⟨by rw [show max 0 1 = 1 by decide, Nat.one_mul]; exact Nat.le_of_lt h, fun _ => h⟩
+
+/-- A slot a program does not write. -/
+theorem progKeep_wordsVal {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hn : base.toNat + size ≤ 2 ^ 64) {W : List Nat} {s s' : State} (h : ProgKeep M base W s s')
+    (hW : ∀ w ∈ W, Sl w) {y : Nat} (hy : Sl y) (hyW : y ∉ W) :
+    wordsVal s'.mem base y M.n = wordsVal s.mem base y M.n := by
+  have hle := hL.le y hy
+  have ht := hL.tmp y hy
+  have key : ∀ k z, y ≤ z → z + 8 * k ≤ y + 8 * M.n → wordsVal s'.mem base z k = wordsVal s.mem base z k := by
+    intro k
+    induction k with
+    | zero => intro _ _ _; rfl
+    | succ k ih =>
+      intro z h1 h2
+      simp only [wordsVal]
+      have hw : word s'.mem base z = word s.mem base z :=
+        Mem.readW_congr fun i hi => h.mem _ (fun w hw => by
+          have := hL.apart y w hy (hW w hw) (fun e => hyW (e ▸ hw))
+          rw [ofs_off base (by omega_arith)]; omega_arith)
+          (by rw [ofs_off base (by omega_arith)]; omega_arith)
+      rw [ih (z + 8) (by omega_using [h1]) (by omega_using [h2]), hw]
+  exact key M.n y (Nat.le_refl _) (Nat.le_refl _)
+
+/-- The doubling, with `H = 2Y` in place of `Y`. -/
+theorem dbl_run {m : Nat} [NeZero m] (S : RcbSlots) (p : Pt) (E : Nat → Fin m) {Y : Fin m}
+    (hd : [S.t0, S.t1, S.t2, S.t3, p.x, p.y, p.z].Nodup) (hY : E p.y = Y + Y) :
+    (runs (dblOps S p) E p.x = (dblJF (E p.x) Y (E p.z)).1 ∧
+      runs (dblOps S p) E p.y = (dblJF (E p.x) Y (E p.z)).2.1 + (dblJF (E p.x) Y (E p.z)).2.1) ∧
+      runs (dblOps S p) E p.z = (dblJF (E p.x) Y (E p.z)).2.2 := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
+  rcases hd with ⟨⟨h01, h02, h03, h04, h05, h06⟩, ⟨h12, h13, h14, h15, h16⟩, ⟨h23, h24, h25, h26⟩,
+    ⟨h34, h35, h36⟩, ⟨h45, h46⟩, h56, _⟩
+  have h10 := Ne.symm h01
+  have h20 := Ne.symm h02
+  have h30 := Ne.symm h03
+  have h40 := Ne.symm h04
+  have h50 := Ne.symm h05
+  have h60 := Ne.symm h06
+  have h21 := Ne.symm h12
+  have h31 := Ne.symm h13
+  have h41 := Ne.symm h14
+  have h51 := Ne.symm h15
+  have h61 := Ne.symm h16
+  have h32 := Ne.symm h23
+  have h42 := Ne.symm h24
+  have h52 := Ne.symm h25
+  have h62 := Ne.symm h26
+  have h43 := Ne.symm h34
+  have h53 := Ne.symm h35
+  have h63 := Ne.symm h36
+  have h54 := Ne.symm h45
+  have h64 := Ne.symm h46
+  have h65 := Ne.symm h56
+  simp only [dblOps, runs, List.foldl, run, Function.update_apply, dblJF, *, ite_true, ite_false]
+  refine ⟨⟨?_, ?_⟩, ?_⟩ <;> grind
+
+theorem lazyChecks_spec {L : Bounds} {ops : List LOp} {want : Bounds} (h : WinCfg.lazyChecks L ops want = true) :
+    ∃ L', check L ops = some L' ∧ ∀ w ∈ want, L'.lookup w.1 = some w.2 := by
+  unfold WinCfg.lazyChecks at h
+  split at h
+  · exact absurd h (by decide)
+  · rename_i L' hL
+    exact ⟨L', hL, fun w hw => by simpa using List.all_eq_true.mp h w hw⟩
+
+/-- What `lazyOk` says. -/
+theorem lazyOk_spec {K : WinCfg} (h : WinCfg.lazyOk K = true) :
+    [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.D.x, K.D.y, K.D.z, K.zero].Nodup ∧
+    K.M.n = 9 ∧ K.M.red = .friendly p521Ws ∧ K.M.tmp = Mont.fnTmp ∧
+    (∃ L, check (WinCfg.lazyBounds K) (dblOps K.S K.R) = some L ∧ L.lookup K.R.x = some 1 ∧ L.lookup K.R.y = some 1 ∧
+      L.lookup K.R.z = some 0) ∧
+    ∃ L, check (WinCfg.lazyAddBounds K) (maddOps K.S K.R K.E K.D) = some L ∧ L.lookup K.D.x = some 0 ∧
+      L.lookup K.D.y = some 0 ∧ L.lookup K.D.z = some 0 := by
+  rw [WinCfg.lazyOk, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+  obtain ⟨⟨⟨h0, h1⟩, h4⟩, h5⟩ := h
+  rw [Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at h1
+  obtain ⟨⟨⟨-, h1⟩, h2⟩, h3⟩ := h1
+  obtain ⟨L, c, l⟩ := lazyChecks_spec h4
+  obtain ⟨L', c', l'⟩ := lazyChecks_spec h5
+  exact ⟨h0, of_decide_eq_true h1, of_decide_eq_true h2, of_decide_eq_true h3,
+    ⟨L, c, l (_, 1) (by simp), l (_, 1) (by simp), l (_, 0) (by simp)⟩,
+    ⟨L', c', l' (_, 0) (by simp), l' (_, 0) (by simp), l' (_, 0) (by simp)⟩⟩
+
+section
+variable {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+
+/-- The slots the lazy programs write, in `rcbW`. -/
+theorem dbl_outs (S : RcbSlots) (p : Pt) : ∀ x ∈ (dblOps S p).map LOp.out, x ∈ rcbW S p := by
+  intro x hx
+  simp only [dblOps, List.map_cons, List.map_nil, LOp.out, List.mem_cons, List.not_mem_nil, or_false] at hx
+  simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false]
+  rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+
+theorem madd_outs (S : RcbSlots) (p q o : Pt) : ∀ x ∈ (maddOps S p q o).map LOp.out, x ∈ rcbW S o := by
+  intro x hx
+  simp only [maddOps, List.map_cons, List.map_nil, LOp.out, List.mem_cons, List.not_mem_nil, or_false] at hx
+  simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false]
+  rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+
+theorem nodup_zero {a b c d e f x y z u v i j k w : Nat}
+    (h : [a, b, c, d, e, f, x, y, z, u, v, i, j, k, w].Nodup) : w ≠ x ∧ w ≠ y := by
+  constructor <;> (rintro rfl; simp at h)
+
+theorem nodup_dbl {a b c d e f x y z u v i j k w : Nat}
+    (h : [a, b, c, d, e, f, x, y, z, u, v, i, j, k, w].Nodup) : [a, b, c, d, x, y, z].Nodup :=
+  h.sublist (by
+    refine .cons_cons _ (.cons_cons _ (.cons_cons _ (.cons_cons _ (.cons _ (.cons _ (.cons_cons _ (.cons_cons _ (.cons_cons _ ?_))))))))
+    exact List.nil_sublist _)
+
+/-- A lazy doubling. -/
+theorem dblLazy_ok (hz : WinCfg.lazyOk K = true) (hL : WinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
+    (hC : Law C) (hM3 : AM3 C) {E : Nat → Fe C} {s : State}
+    (hI : LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) E s) {Y : Fe C} (hY : E K.R.y = Y + Y)
+    {Q : Point C} (hQ : onCurve C Q = true) (hJ : InvJ C (E K.R.x) Y (E K.R.z) Q) :
+    WP isa (prog K.M (dblOps K.S K.R)).inline s fun t => ProgKeep K.M base (rcbW K.S K.R) s t ∧
+      ∃ (E' : Nat → Fe C) (Y' : Fe C), LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) E' t ∧
+        E' K.R.y = Y' + Y' ∧ InvJ C (E' K.R.x) Y' (E' K.R.z) (Spec.Weierstrass.add Q Q) ∧
+        Bd C.p 1 (wordsVal t.mem base K.R.y K.M.n) := by
+  obtain ⟨hnd, -, hred, ht, ⟨L, hc, lx, ly, lz⟩, -⟩ := lazyOk_spec hz
+  obtain oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
+  obtain w := winJ_sl oR (fun x hx => winOther_mem (oR x hx)) (fun x hx => winOther_mem (oR x hx))
+  refine WP.mono (prog_ok hL.lay hp hred ht _ hI (fun op hop => w.1 _ (List.mem_append_left _
+    (dbl_outs _ _ _ (List.mem_map_of_mem hop)))) hc) fun t ⟨k, I⟩ => ⟨k.mono (dbl_outs _ _), ?_⟩
+  obtain ⟨⟨rx, ry⟩, rz⟩ := dbl_run K.S K.R E (nodup_dbl hnd) hY
+  refine ⟨_, _, LInv.of_mem I.scr I.mod fun p hp' => ?_, ry, ?_, I.bd _ _ ly⟩
+  · simp only [WinCfg.lazyBounds, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl | rfl
+    · exact ⟨I.sl _ _ lx, I.bd _ _ lx, I.val _ _ lx⟩
+    · exact ⟨I.sl _ _ ly, (I.bd _ _ ly).mono (j := 2) (by decide) (by decide), I.val _ _ ly⟩
+    · exact ⟨I.sl _ _ lz, I.bd _ _ lz, I.val _ _ lz⟩
+  · exact InvJ.dbl' hC hM3 hQ hJ (by rw [rx, rz])
+
+/-- A program over `rcbW`'s slots, as the loop's frame. -/
+theorem progKeep_next {o : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈ winOther K) (hL : WinLay K size)
+    {Rp : Fe C → Fe C → Fe C → Point C → Prop} {P : Point C} {s₀ s t : State}
+    (hS : WinStR K C base size Rp P s₀ s) (k : ProgKeep K.M base (rcbW K.S o) s t) :
+    WinStR K C base size Rp P s₀ t ∧ KeepRegs (clob K.M.n) s t ∧ Unch base (loopW K) s.mem t.mem := by
+  obtain w := winJ_sl ho (fun x hx => winOther_mem (ho x hx)) (fun x hx => winOther_mem (ho x hx))
+  have kr : KeepRegs (clob K.M.n) s t := ⟨k.gpr, k.rd, k.wr⟩
+  have U : Unch base (loopW K) s.mem t.mem := k.unch.mono fun v hv => by
+    simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hv ⊢
+    rcases hv with ⟨y, hy, rfl⟩ | rfl
+    · exact Or.inl ⟨y, w.2 y hy, rfl⟩
+    · exact Or.inr rfl
+  exact ⟨hS.next hL (k.scr hS.scr) (kr.mono clob_powClob) U, kr, U⟩
+
+/-- A Jacobian point doubled: `H = 2Y`. -/
+theorem hdbl_check (K : WinCfg) (a b : Nat) : check [(K.R.y, 0), (K.R.x, a), (K.R.z, b)] [.add K.R.y K.R.y K.R.y] =
+    some [(K.R.y, 2), (K.R.y, 0), (K.R.x, a), (K.R.z, b)] := by
+  simp [check, step]
+
+/-- `quadLazy`: `R = 16 R` (`quadJ_ok`). -/
+theorem quadLazy_ok (hz : WinCfg.lazyOk K = true) (hL : WinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
+    (hC : Law C) (hM3 : AM3 C) {P : Point C} {k : Nat}
+    (hP : onCurve C P = true) {Rp : Fe C → Fe C → Fe C → Point C → Prop} {s₀ s : State}
+    (hF : WinFixed K C base s₀ P k) (hS : WinStR K C base size Rp P s₀ s) {i : Nat} (hi : i < 4096)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 i) {e : Nat}
+    (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
+    (hR : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
+      (mul e P)) :
+    WP isa (WinCfg.quadLazy K).inline s fun s' =>
+      WinStR K C base size Rp P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
+      (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
+      InvJ C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
+        (mul (16 * e) P) := by
+  obtain ⟨hnd, hn9, hred, ht, -, -⟩ := lazyOk_spec hz
+  have hp9 : C.p + 1 = 512 * (2 ^ 64) ^ 8 := (p521_of_red hred hS.mod.red).2
+  obtain oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
+  have sR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winSlots K := fun x hx => winOther_mem (oR x hx)
+  have oQ := fun (a : Nat) => hC.onCurve_mul hP a
+  have rW : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ rcbW K.S K.R := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> simp [rcbW]
+  have hne := nodup_dbl hnd
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hne
+  obtain ⟨-, -, -, -, ⟨hxy, hxz⟩, hyz, -⟩ := hne
+  rw [WinCfg.quadLazy]
+  simp only [Code.inline]
+  -- `H = 2Y`.
+  have I₀ : LInv K.M base size C.p (· ∈ winSlots K) [(K.R.y, 0), (K.R.x, 0), (K.R.z, 0)] (tmv C K.M.n base s) s :=
+    LInv.of_mem hS.scr hS.mod fun p hp' => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+      rcases hp' with rfl | rfl | rfl
+      · exact ⟨sR _ (by simp), Bd.of_lt (hlt _ (by simp)), rfl⟩
+      · exact ⟨sR _ (by simp), Bd.of_lt (hlt _ (by simp)), rfl⟩
+      · exact ⟨sR _ (by simp), Bd.of_lt (hlt _ (by simp)), rfl⟩
+  refine WP.seq (WP.mono (prog_ok hL.lay hp hred ht _ I₀ (fun op hop => by
+    simp only [List.mem_singleton] at hop; subst hop; exact sR _ (by simp [LOp.out])) (hdbl_check K 0 0))
+    fun s₁ ⟨k₁, I₁⟩ => ?_)
+  obtain ⟨S₁, kr₁, -⟩ := progKeep_next oR hL hS (k₁.mono (W' := rcbW K.S K.R) fun x hx => by
+    simp only [List.map_cons, List.map_nil, LOp.out, List.mem_singleton] at hx; subst hx; exact rW _ (by simp))
+  have b₁ : s₁.gpr .rbx = BitVec.ofNat 64 i := by rw [kr₁.gpr _ (rbx_not_clob _), hb]
+  have E₁ : ∀ x, x ≠ K.R.y → runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) x = tmv C K.M.n base s x := fun x hx => by
+    simp only [runs, List.foldl, run, Function.update_of_ne hx]
+  have E₁y : runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) K.R.y =
+      tmv C K.M.n base s K.R.y + tmv C K.M.n base s K.R.y := by
+    simp only [runs, List.foldl, run, Function.update_self]
+  generalize hE₁ : runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) = F₁ at I₁ E₁ E₁y
+  have J₁ : LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) F₁ s₁ :=
+    LInv.of_mem I₁.scr I₁.mod fun p hp' => by
+      have hlx : List.lookup K.R.x [(K.R.y, 2), (K.R.y, 0), (K.R.x, 0), (K.R.z, 0)] = some 0 := by
+        simp [List.lookup_cons, beq_eq_false_iff_ne.mpr hxy]
+      have hlz : List.lookup K.R.z [(K.R.y, 2), (K.R.y, 0), (K.R.x, 0), (K.R.z, 0)] = some 0 := by
+        simp [List.lookup_cons, beq_eq_false_iff_ne.mpr (Ne.symm hyz), beq_eq_false_iff_ne.mpr (Ne.symm hxz)]
+      have hly : List.lookup K.R.y [(K.R.y, 2), (K.R.y, 0), (K.R.x, 0), (K.R.z, 0)] = some 2 := by
+        simp
+      simp only [WinCfg.lazyBounds, List.mem_cons, List.not_mem_nil, or_false] at hp'
+      rcases hp' with rfl | rfl | rfl
+      · exact ⟨sR _ (by simp), (I₁.bd _ _ hlx).mono (j := 1) (by decide) (by decide), I₁.val _ _ hlx⟩
+      · exact ⟨sR _ (by simp), I₁.bd _ _ hly, I₁.val _ _ hly⟩
+      · exact ⟨sR _ (by simp), I₁.bd _ _ hlz, I₁.val _ _ hlz⟩
+  -- The doublings.
+  refine WP.seq (WP.mono (quadStart_ok s₁ b₁) fun s₂ ⟨b₂, kc₂⟩ => ?_)
+  have lk : ∀ {E : Nat → Fe C} {t t' : State}, LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) E t →
+      Keeps [.rbx] t t' → LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) E t' := fun I k =>
+    ⟨I.scr.of_keeps k (by decide), by rw [k.2.1]; exact I.mod, I.sl, by rw [k.2.1]; exact I.bd, by rw [k.2.1]; exact I.val⟩
+  let LI := fun j st => WinStR K C base size Rp P s₀ st ∧
+    st.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) ∧ ∃ (E : Nat → Fe C) (Y : Fe C),
+    LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) E st ∧ E K.R.y = Y + Y ∧
+    InvJ C (E K.R.x) Y (E K.R.z) (mul (4 ^ (2 - j) * e) P) ∧ (j < 2 → Bd C.p 1 (wordsVal st.mem base K.R.y K.M.n))
+  obtain start : LI 2 s₂ := ⟨S₁.rbxKeeps hL kc₂, b₂, F₁, _, lk J₁ kc₂, E₁y, by
+    rw [E₁ _ hxy, E₁ _ (Ne.symm hyz)]; simpa using hR, fun h => absurd h (by decide)⟩
+  obtain body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
+      WP isa (WinCfg.lazyPair K).inline st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
+    intro j st hj hj' ⟨S, b, E, Y, I, hY, J, _⟩
+    simp only [WinCfg.lazyPair, Code.inline]
+    refine WP.seq (WP.mono (dblLazy_ok hz hL hp hC hM3 I hY (oQ _) J) fun st₁ ⟨k₁', E', Y', I', hY', J', _⟩ => ?_)
+    obtain ⟨S', kr', -⟩ := progKeep_next oR hL S k₁'
+    rw [hC.double hP] at J'
+    refine WP.seq (WP.mono (dblLazy_ok hz hL hp hC hM3 I' hY' (oQ _) J') fun st₂ ⟨k₂', E'', Y'', I'', hY'', J'', B''⟩ => ?_)
+    obtain ⟨S'', kr'', -⟩ := progKeep_next oR hL S' k₂'
+    rw [hC.double hP] at J''
+    obtain ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
+      obtain hj12 : j = 1 ∨ j = 2 := by omega_using [hj, hj']
+      rcases hj12 with rfl | rfl <;> simp <;> omega_using []
+    rw [ar] at J''
+    obtain b' : st₂.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) := by
+      rw [kr''.gpr _ (rbx_not_clob _), kr'.gpr _ (rbx_not_clob _), b]
+    refine WP.mono (quadCount_ok st₂ hi hj hj' b') fun st₃ ⟨b₃, c₃, kc₃⟩ => ?_
+    exact ⟨⟨S''.rbxKeeps hL kc₃, b₃, E'', Y'', lk I'' kc₃, hY'', J'', fun _ => by rw [kc₃.2.1]; exact B''⟩, c₃⟩
+  refine WP.seq (WP.mono (quadLoop_ok body (fun _ h => h) start) fun s₅ ⟨S₅, b₅, E₅, Y₅, I₅, hY₅, J₅, B₅⟩ => ?_)
+  obtain rb₅ : s₅.gpr .rbx = s.gpr .rbx := by simpa only [Nat.mul_zero, Nat.add_zero, hb] using b₅
+  replace J₅ : InvJ C (E₅ K.R.x) Y₅ (E₅ K.R.z) (mul (16 * e) P) := by simpa using J₅
+  replace B₅ := B₅ (by decide)
+  -- `Y = H / 2`, and `X` and `Y` canonical.
+  obtain ⟨-, -, ro_lt, ro_z⟩ := S₅.ro_tmv hL hF
+  have lx₅ : List.lookup K.R.x (WinCfg.lazyBounds K) = some 1 := by simp [WinCfg.lazyBounds]
+  have ly₅ : List.lookup K.R.y (WinCfg.lazyBounds K) = some 2 := by
+    simp [WinCfg.lazyBounds, List.lookup_cons, beq_eq_false_iff_ne.mpr (Ne.symm hxy)]
+  have lz₅ : List.lookup K.R.z (WinCfg.lazyBounds K) = some 0 := by
+    simp [WinCfg.lazyBounds, List.lookup_cons, beq_eq_false_iff_ne.mpr (Ne.symm hxz), beq_eq_false_iff_ne.mpr (Ne.symm hyz)]
+  have zW : K.zero ∈ winRo K := by simp [winRo]
+  obtain ⟨zx, zy⟩ := nodup_zero hnd
+  have I₆ : LInv K.M base size C.p (· ∈ winSlots K) [(K.R.y, 1), (K.R.x, 1), (K.zero, 0)] (tmv C K.M.n base s₅) s₅ :=
+    LInv.of_mem S₅.scr S₅.mod fun p hp' => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
+      rcases hp' with rfl | rfl | rfl
+      · exact ⟨sR _ (by simp), B₅, rfl⟩
+      · exact ⟨sR _ (by simp), I₅.bd _ _ lx₅, rfl⟩
+      · exact ⟨by win_mem, Bd.of_lt (ro_lt _ zW), rfl⟩
+  have hc₆ : check [(K.R.y, 1), (K.R.x, 1), (K.zero, 0)]
+      [.half K.R.y K.R.y, .cadd K.R.y K.R.y K.zero, .cadd K.R.x K.R.x K.zero] =
+      some [(K.R.x, 0), (K.R.y, 0), (K.R.y, 1), (K.R.y, 1), (K.R.x, 1), (K.zero, 0)] := by
+    simp [check, step, List.lookup_cons, beq_eq_false_iff_ne.mpr zx, beq_eq_false_iff_ne.mpr zy,
+      beq_eq_false_iff_ne.mpr hxy]
+  refine WP.mono (prog_ok hL.lay hp hred ht _ I₆ (fun op hop => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hop
+    rcases hop with rfl | rfl | rfl <;> exact sR _ (by simp [LOp.out])) hc₆) fun s₇ ⟨k₇, I₇⟩ => ?_
+  have outs : ∀ x ∈ ([.half K.R.y K.R.y, .cadd K.R.y K.R.y K.zero, .cadd K.R.x K.R.x K.zero] : List LOp).map LOp.out,
+      x = K.R.y ∨ x = K.R.x := by
+    intro x hx
+    simp only [List.map_cons, List.map_nil, LOp.out, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with h | h | h
+    · exact Or.inl h
+    · exact Or.inl h
+    · exact Or.inr h
+  obtain ⟨S₇, kr₇, -⟩ := progKeep_next oR hL S₅ (k₇.mono (W' := rcbW K.S K.R) fun x hx => by
+    rcases outs x hx with rfl | rfl <;> exact rW _ (by simp))
+  have lx₇ : List.lookup K.R.x [(K.R.x, 0), (K.R.y, 0), (K.R.y, 1), (K.R.y, 1), (K.R.x, 1), (K.zero, 0)] = some 0 := by
+    simp
+  have ly₇ : List.lookup K.R.y [(K.R.x, 0), (K.R.y, 0), (K.R.y, 1), (K.R.y, 1), (K.R.x, 1), (K.zero, 0)] = some 0 := by
+    simp [List.lookup_cons, beq_eq_false_iff_ne.mpr (Ne.symm hxy)]
+  have zv : tmv C K.M.n base s₅ K.zero = 0 := by
+    show toM _ _ (wordsVal _ _ _ _) = 0
+    rw [ro_z]; exact toM_zero _ _
+  have z₇ : wordsVal s₇.mem base K.R.z K.M.n = wordsVal s₅.mem base K.R.z K.M.n :=
+    progKeep_wordsVal hL.lay hS.scr.nowrap k₇ (fun x hx => by
+      rcases outs x hx with rfl | rfl <;> exact sR _ (by simp)) (sR _ (by simp)) (fun h => by
+      rcases outs _ h with h | h
+      · exact hyz h.symm
+      · exact hxz h.symm)
+  have hx : tmv C K.M.n base s₇ K.R.x = E₅ K.R.x := by
+    show toM _ _ _ = _
+    rw [I₇.val _ _ lx₇]
+    simp only [runs, List.foldl, run, Function.update_apply, hxy, zy, ite_true, ite_false]
+    rw [zv]
+    have : tmv C K.M.n base s₅ K.R.x = E₅ K.R.x := I₅.val _ _ lx₅
+    rw [this]; grind
+  have hy : tmv C K.M.n base s₇ K.R.y = Y₅ := by
+    show toM _ _ _ = _
+    rw [I₇.val _ _ ly₇]
+    simp only [runs, List.foldl, run, Function.update_apply, hxy, zy, Ne.symm hxy, ite_true, ite_false]
+    rw [zv]
+    have h1 : tmv C K.M.n base s₅ K.R.y = E₅ K.R.y := I₅.val _ _ ly₅
+    have h2 := halfF_two hp9
+    rw [h1, hY₅]
+    grind
+  have hzz : tmv C K.M.n base s₇ K.R.z = E₅ K.R.z := by
+    show toM _ _ _ = _
+    rw [z₇]; exact I₅.val _ _ lz₅
+  refine ⟨S₇, by rw [kr₇.gpr _ (rbx_not_clob _), rb₅], fun x hx => ?_, by rw [hx, hy, hzz]; exact J₅⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl
+  · exact (I₇.bd _ _ lx₇).lt
+  · exact (I₇.bd _ _ ly₇).lt
+  · rw [z₇]; exact (I₅.bd _ _ lz₅).lt
 
 end
 

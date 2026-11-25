@@ -201,24 +201,27 @@ namespace WinCfg
 
 variable (K : WinCfg)
 
-/-- The bounds of `R`'s slots between the doublings, and of the constant zero. -/
-def lazyBounds : LazyP521.Bounds := [(K.R.x, 1), (K.R.y, 2), (K.R.z, 0), (K.zero, 0)]
+/-- The bounds of `R`'s slots between the doublings. -/
+def lazyBounds : LazyP521.Bounds := [(K.R.x, 1), (K.R.y, 2), (K.R.z, 0)]
 
 /-- The bounds of the points of an addition. -/
 def lazyAddBounds : LazyP521.Bounds :=
   [(K.R.x, 0), (K.R.y, 0), (K.R.z, 0), (K.E.x, 0), (K.E.y, 0)]
 
-/-- Whether the doublings of `quadLazy` and the addition of `sumJ` are P-521's
+/-- Whether `check` gives slots bounds. -/
+def lazyChecks (L : LazyP521.Bounds) (ops : List LazyP521.LOp) (want : LazyP521.Bounds) : Bool :=
+  match LazyP521.check L ops with
+  | none => false
+  | some L => want.all fun w => L.lookup w.1 == some w.2
+
+/-- Whether the doublings of `quadLazy` and the addition of `maddP` are P-521's
 with BMI2 and ADX, on slots that suit them. -/
 def lazyOk : Bool :=
-  K.M.adx && decide (K.M.n = 9) && decide (K.M.red = .friendly p521Ws) && decide (K.M.tmp = Mont.fnTmp) &&
-  (match LazyP521.check (lazyBounds K) (LazyP521.dblOps K.S K.R) with
-  | none => false
-  | some L => (L.lookup K.R.x == some 1) && (L.lookup K.R.y == some 1) && (L.lookup K.R.z == some 0) &&
-      (L.lookup K.zero == some 0)) &&
-  (match LazyP521.check (lazyAddBounds K) (LazyP521.maddOps K.S K.R K.E K.D) with
-  | none => false
-  | some L => (L.lookup K.D.x == some 0) && (L.lookup K.D.y == some 0) && (L.lookup K.D.z == some 0))
+  decide ([K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.D.x, K.D.y,
+    K.D.z, K.zero].Nodup) &&
+  (K.M.adx && decide (K.M.n = 9) && decide (K.M.red = .friendly p521Ws) && decide (K.M.tmp = Mont.fnTmp)) &&
+  lazyChecks (lazyBounds K) (LazyP521.dblOps K.S K.R) [(K.R.x, 1), (K.R.y, 1), (K.R.z, 0)] &&
+  lazyChecks (lazyAddBounds K) (LazyP521.maddOps K.S K.R K.E K.D) [(K.D.x, 0), (K.D.y, 0), (K.D.z, 0)]
 
 /-- A pair of lazy doublings, with the public count in `rbx` (`jacPairOn`). -/
 def lazyPair : Prog isa :=
