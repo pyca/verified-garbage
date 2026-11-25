@@ -606,7 +606,7 @@ structure RR (rd wr : List Region) (B S E : BitVec 32) (R : Nat) (w : List Byte)
 
 theorem RGood.gupd (he : Env rd wr B S E R) {s₀ s s' : State} (h : RGood rd wr B S E R w s₀ s) {d : Reg} {v : BitVec 32}
     (u : GUpd s s' d v) (hd : d = .eax ∨ d = .ecx) : RGood rd wr B S E R w s₀ s' :=
-  h.gprs he (fun r h1 h2 => u.other r (by rcases hd with rfl | rfl <;> assumption)) u.mem u.rd u.wr
+  h.gprs he (fun r h1 h2 => u.other r (by rcases hd with rfl | rfl <;> with_reducible assumption)) u.mem u.rd u.wr
 
 theorem at'_congr {loc : Nat → Loc} {s s' : State} (hx : s'.xmm = s.xmm) (hm : s'.mem = s.mem)
     (hd : s'.gpr .edi = s.gpr .edi) : at' loc s' = at' loc s := by
