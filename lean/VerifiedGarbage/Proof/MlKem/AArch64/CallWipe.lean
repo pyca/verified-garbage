@@ -786,7 +786,7 @@ private theorem entry_exec_iff (n name : String) (body : Prog isa)
         Exec isa (.call name body) (Proof.Sha3.AArch64.eSave n s) tc u ∧
         execBlock isa Impl.Sha3.AArch64.leaveD8 u = some (v, tl) ∧
         isa.pop (.free 16) (allocated 16 s) v = some t ∧
-        tr = [.addr (Proof.Sha3.AArch64.eslot s 0), .addr (Proof.Sha3.AArch64.eslot s 8)] ++ tc ++ tl := by
+        tr = ([.addr (Proof.Sha3.AArch64.eslot s 0), .addr (Proof.Sha3.AArch64.eslot s 8)] : List Leak) ++ tc ++ tl := by
   constructor
   · intro h
     unfold Impl.Sha3.AArch64.entryD8 at h
