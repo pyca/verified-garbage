@@ -48,10 +48,10 @@ def cachedKeySearch (v : VecLevel) (name : String) (mul : Nat → Nat → Nat �
 /-- `Spec.Ffdh.sievedParameterSearchApi`'s function as emitted, over the
 Montgomery multiplication `mul` and the Miller–Rabin round `round` named
 `roundName`. -/
-def sievedParameterSearch (v : VecLevel) (mul : Nat → Nat → Nat → Prog isa) (roundName : String)
+def sievedParameterSearch (v : VecLevel) (mul : Nat → Nat → Nat → Prog isa) (prepareName roundName : String)
     (round : Prog isa) : Prog isa :=
   scrubAll v 32 160
-    (Generation.Search.code (ParameterCandidate.code mul (R2Words.choice mul) (VG.Impl.MillerRabin.X86_64.Caller.call roundName round)))
+    (Generation.Search.code (ParameterCandidate.code mul (ParameterCandidate.prepareCall prepareName mul) (VG.Impl.MillerRabin.X86_64.Caller.call roundName round)))
 
 /-- The domain operations' `R² mod p` over the multiplication `mul`. -/
 def r2 (mul : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (.block Domain.r2Head) (R2Words.choice mul)

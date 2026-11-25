@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
@@ -97,7 +99,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
-theorem modulusPolicy_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem modulusPolicy_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
@@ -106,7 +108,7 @@ theorem modulusPolicy_ok (M : Mont) (R : R2Impl M) (K : Kernel)
     (ho : p.phaseValue q % 2 = 1) :
     WP isa (modulusPolicy M.mm R.code K.run) s (PhaseRoundsPost p used q c s) := by
   unfold modulusPolicy
-  refine WP.seq (WP.mono (prepareModulus_state_ok M R h hg hp hn ho)
+  refine WP.seq (WP.mono (R.ok h hg hp hn ho)
     fun u ⟨mi', hu, hr, hp', hs, hf, ku⟩ => ?_)
   refine WP.mono (rounds_state_ok M K hu hp' ho hr)
     fun t ⟨n, hn', ht, hdi, hl, hresult, hs', hf', kt⟩ => ?_

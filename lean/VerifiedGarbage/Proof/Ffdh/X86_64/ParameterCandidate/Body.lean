@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
@@ -142,7 +144,7 @@ def PhasePost (p : CandidateP) (used : Nat) (R : Option (Bool × List Byte)) (s 
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem phaseTest_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem phaseTest_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State} {prep next : Prog isa} (q : Bool) (c : Checks)
     (nextR : List Byte → Option (Bool × List Byte))
     (h : CandidateTape p used s) (hodd : p.phaseValue q % 2 = 1)
@@ -199,7 +201,7 @@ theorem shape_prep {p : CandidateP} {used : Nat} {s : State}
   WP.mono (shapeOriginal_ok h hdi havail) fun _ ⟨ht, hd, hv, hs, hf, k, _⟩ =>
     ⟨ht, hd, hv, hs, hf, k.mono (by decide)⟩
 
-theorem testP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testP_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length) :
     WP isa (testP M.mm R.code K.run) s (PhasePost p used (policyRest p (p.rand.drop used)) s) := by
@@ -215,7 +217,7 @@ theorem testP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   exact ⟨0, Nat.zero_le _, by simpa only [Nat.add_zero] using ht', hdt', by simp [TapeOutcome, hy'],
     fun _ => hvt', hst', hft', kt'.mono (by decide)⟩
 
-theorem testQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testQ_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -225,7 +227,7 @@ theorem testQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   exact WP.mono (halveOutput_ok h₁ hd₁ hv₁) fun t ⟨ht, hd, hv, hs, hf, k⟩ =>
     ⟨ht, hd, hv, hs₁.trans hs, hf₁.trans hf, (k₁.trans k).mono (by decide)⟩
 
-theorem testFirst_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testFirst_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -233,7 +235,7 @@ theorem testFirst_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   phaseTest_ok M R K false .first _ h (p.odd_P (by omega_using [h.base.bits1])) (shape_prep h hdi havail)
     fun u t ht hdt _ => testQ_ok M R K ht hdt havail hq
 
-theorem sieveP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem sieveP_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hq : p.Q % 2 = 1) :
@@ -266,7 +268,7 @@ theorem sieveP_ok (M : Mont) (R : R2Impl M) (K : Kernel)
       fun he => by rw [hst] at he; contradiction,
       hs.trans hsave, hf.trans hframe, (kk.trans kt).mono (by decide)⟩
 
-theorem sieveQ_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem sieveQ_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {used : Nat} {s : State}
     (h : CandidateTape p used s) (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length)
     (hv : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem p.op p.k) = p.P) :
@@ -328,7 +330,7 @@ def CandidateTestPost (p : CandidateP) (s t : State) : Prop :=
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep (.rdi :: mmRegs) s t
 
-theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem testCandidate_ok (M : Mont) (R : Preparation M) (K : Kernel)
     {p : CandidateP} {s : State} (h : CandidateTape p 0 s)
     (hdi : s.gpr .rdi = p.B) (havail : p.k ≤ p.rand.length) :
     WP isa (testCandidate M.mm R.code K.run) s (CandidateTestPost p s) := by
@@ -550,7 +552,7 @@ def BodyPost (s t : State) : Prop :=
     (word t.mem p.B (8 * oStatus) = 1 → Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem p.op p.k) = p.P) ∧
     (∀ i < 6, word t.mem p.B (8 * i) = s.gpr (saved.getD i .rax)) ∧ Keep (.rdi :: mmRegs) s t
 
-theorem body_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s) :
+theorem body_ok (M : Mont) (R : Preparation M) (K : Kernel) {s : State} (c : PcCtx s) :
     WP isa (body M.mm R.code K.run) s (BodyPost s) := by
   let p := candidateOfState s
   change WP isa (body M.mm R.code K.run) s (fun t => ∃ used,

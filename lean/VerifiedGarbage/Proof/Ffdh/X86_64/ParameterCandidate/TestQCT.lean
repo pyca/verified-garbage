@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestPCT
@@ -29,7 +31,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64 VG.Proof.RsaKeyGen.X86_64
 /-- q is odd: it passed its trial division. -/
 def QOdd (p : CandidateP) : Prop := p.Q % 2 = 1
 
-theorem testQ_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem testQ_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two fun d s => OuterState d s ∧ QOdd d.p) (testQ M.mm R.code K.run) fun _ _ => True := by
   unfold testQ
   refine phaseTest_ct M R K true .all QOdd (fun _ _ _ h => h) ?_
@@ -40,7 +42,7 @@ theorem testQ_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
   exact two_post (two_map CandidatePublic.outer (fun _ _ h => h.1.1.header) halveOutput_ct)
     (fun d s h => WP.mono (halve_outer d s h.1) fun _ ht => ⟨ht, h.2⟩)
 
-theorem testFirst_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem testFirst_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two fun d s => OuterState d s ∧ QOdd d.p) (testFirst M.mm R.code K.run) fun _ _ => True := by
   unfold testFirst
   refine phaseTest_ct M R K false .first QOdd
@@ -57,7 +59,7 @@ private theorem p_leave (d : CandidatePublic) (s : State)
     fun _ ⟨ht, hd, _, _, _, k⟩ => ⟨⟨⟨ht, k.2.2.trans h.1.1.1.1.2.1, h.1.1.1.1.2.2⟩, hd⟩, h.1.2⟩
 
 /-- p's whole trial division, once q has passed its own. -/
-theorem sieveP_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem sieveP_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two fun d s => OuterState d s ∧ QOdd d.p) (sieveP M.mm R.code K.run) fun _ _ => True := by
   unfold sieveP
   simp only [VG.Impl.Bignum.X86_64.seqs]
@@ -89,7 +91,7 @@ private theorem q_leave (d : CandidatePublic) (s : State)
   exact WP.mono (leavePhase_ok h.1.1.1.1 hg.rdi hp.link)
     fun _ ⟨ht, hd, _, _, _, k⟩ => ⟨⟨⟨ht, k.2.2.trans h.1.1.1.2.1, h.1.1.1.2.2⟩, hd⟩, odd_of_sieved hs⟩
 
-theorem sieveQ_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem sieveQ_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two (OuterValue false)) (sieveQ M.mm R.code K.run) fun _ _ => True := by
   unfold sieveQ
   simp only [VG.Impl.Bignum.X86_64.seqs]

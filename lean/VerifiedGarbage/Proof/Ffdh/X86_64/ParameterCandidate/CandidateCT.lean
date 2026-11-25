@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
@@ -143,7 +145,7 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64
 open VG.Impl.Ffdh.X86_64.ParameterCandidate
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 
-theorem candidateFilter_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem candidateFilter_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two (OuterValue false)) (candidateFilter M.mm R.code K.run) fun _ _ => True := by
   unfold candidateFilter
   simp only [VG.Impl.Bignum.X86_64.seqs]
@@ -198,7 +200,7 @@ private theorem shape_initial (d : CandidatePublic) (s : State) (h : OuterState 
     WP isa shapeOriginal s (fun t => OuterValue false d t ∧ d.used = 0) :=
   WP.mono (shape_outer d s h.1) fun _ ht => ⟨ht, h.2⟩
 
-theorem testCandidate_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem testCandidate_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two fun d s => OuterState d s ∧ d.used = 0) (testCandidate M.mm R.code K.run) fun _ _ => True := by
   unfold testCandidate
   simp only [VG.Impl.Bignum.X86_64.seqs]

@@ -85,7 +85,7 @@ theorem search_candidate_run (v : RoundImpl)
   have hw := search_call_writes h k.2.2
   have hr := search_call_reads h k.2.1 k.2.2
   have hp := search_call_pre h ha hm k
-  have hcorrect := pc_correct v.mont (R2Impl.words v.mont) (Kernel.called v)
+  have hcorrect := pc_correct v.mont (Preparation.called ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.mont (R2Impl.words v.mont)) (Kernel.called v)
     (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_ctl v)
   refine WP.mono (inline_stack (k := pcContract) hcorrect
     (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (by decide) hp
@@ -230,11 +230,11 @@ private theorem call_pub {p : SearchPoint} {s t : State} (h₁ : SearchCallCT p 
 theorem search_candidate_inline_ct (v : RoundImpl) :
     RelCT isa (Two SearchCallCT) (candidateCode v) (fun _ _ => True) := by
   intro s₁ s₂ tr₁ tr₂ t₁ t₂ ⟨p, h₁, h₂⟩ he₁ he₂
-  have hc := pc_correct v.mont (R2Impl.words v.mont) (Kernel.called v)
+  have hc := pc_correct v.mont (Preparation.called ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.mont (R2Impl.words v.mont)) (Kernel.called v)
     (SpSafe.of_all (candidateCode_sp v)) (candidateCode_depth v) (candidateCode_ctl v)
   have ct := inline_constantTime (k := pcContract)
     (fun s h => by obtain ⟨tr, t, he, _, _⟩ := hc s h; exact ⟨tr, t, he⟩)
-    (pc_constantTime v.mont (R2Impl.words v.mont) (Kernel.called v))
+    (pc_constantTime v.mont (Preparation.called ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.mont (R2Impl.words v.mont)) (Kernel.called v))
     (fun _ => callReads p.inputs p.used) (fun _ => callWrites p.inputs)
   exact ⟨ct _ _ _ _ _ _ h₁.1 h₂.1 (call_pub h₁ h₂) he₁ he₂, trivial⟩
 

@@ -74,7 +74,7 @@ def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm v.name v.code
+      code := Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code
       verified := Proof.Ffdh.X86_64.RoundScrub.search_scrubbed v
       spSafe := Proof.Ffdh.X86_64.RoundScrub.search_spSafe v }])
 

@@ -85,17 +85,17 @@ theorem key_spSafe (v : RoundImpl) :
   scrubKs_spSafe (Cached.SearchProof.keyCode_sp v)
 
 /-- The stack the round (called) and the multiplication (inline) need. -/
-def searchStack : String → Nat := fun s => if s = "r" then 128 else 0
+def searchStack : String → Nat := fun s => if s = "r" then 128 else if s = "prep" then 8 else 0
 
 theorem search_stub :
     stubSideG (Impl.Ffdh.X86_64.Generation.Search.code (Impl.Ffdh.X86_64.ParameterCandidate.code stubMM
-      (Impl.Bignum.X86_64.R2Words.choice stubMM) (Impl.MillerRabin.X86_64.Caller.call "r" (.block []))))
+      (Impl.Ffdh.X86_64.ParameterCandidate.prepareCall "prep" stubMM) (Impl.MillerRabin.X86_64.Caller.call "r" (.block []))))
       VecLevel.sse.level searchStack 160 [] = true := by lit_decide
 
 /-- `Spec.Ffdh.sievedParameterSearchApi`'s function as emitted over `v`
 meets its contract in constant time and returns without secret residue. -/
 theorem search_scrubbed (v : RoundImpl) :
-    VerifiedScrubbed target (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm v.name v.code)
+    VerifiedScrubbed target (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code)
       (Spec.Ffdh.sievedParameterSearchApi.contract X86_64.abi 160) 32 :=
   verifiedScrubbedAllFillG (api := Spec.Ffdh.sievedParameterSearchApi)
     { code := Generation.searchCode v
@@ -110,7 +110,7 @@ theorem search_scrubbed (v : RoundImpl) :
     (Nat.zero_le _) (Nat.le_refl _) (ha := search_stub)
 
 theorem search_spSafe (v : RoundImpl) :
-    (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm v.name v.code).all
+    (Impl.Ffdh.X86_64.Fn.sievedParameterSearch v.level v.mont.mm ("vg_ffdh_prepare_modulus" ++ v.arithSuffix) v.name v.code).all
       (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Generation.searchCode_sp v)
 
