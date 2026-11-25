@@ -268,3 +268,22 @@ kernel to prove (the pair of squares) and one scalar one (the product).
 Experiment 11: in split (c), sn5: the plain pair of squares; sn6: and 2^51 - 1,
 19 and 2p's limb kept in x25-x27 (six instructions less an operation); sn7: and a
 sequential carry (26 instructions for 32, 5 more setters).
+
+## 14. Experiment 11's result (run 45683741432)
+
+sn4 323 (313 before E, F took the slots of B, A; alignment or forwarding),
+sn5 317, sn6 317, sn6k 319, sn7 320: the instruction count no longer shows; the
+all-51-bit design ends near 315.
+
+Design weighed again. Instructions: four-word product 96 (51-bit 137), square
+72 (94); NEON pair of squares 196. So four-word scalar code with NEON pairs
+costs fewer instructions than 51-bit scalar code with the same pairs, if the
+conversion is cheap: the split of four words into the ten limbs is 31 vector
+operations (22 from 51-bit limbs; the same positions 51 k, 51 k + 26), and the
+result's five limbs are packed by 16 scalar operations an element, 3 setters.
+Also the scalar proofs that exist stay.
+
+Experiment 12: `h1`: AA|BB on NEON beside DA, CB (and t, `h2`; and t, x3, `h3`),
+everything else four-word code in the order pack, E, x2, z2, (t, x3,) z3.
+`h4`: also x3|t on NEON (limbs of DA, CB added and subtracted as vectors, plus 4p
+in limbs) beside E, x2, z2.
