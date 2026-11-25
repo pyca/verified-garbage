@@ -804,6 +804,21 @@ while len(ORDS) < 24:
     if bad <= 1 and o[-1] not in ('E',) and o not in ORDS: ORDS.append(o)
 B['r_now'] = H0 + S2
 for q, o in enumerate(ORDS): B[f'r{q}'] = H0 + FR2 + sum((OPS2[k] for k in o), [])
+
+# ---- experiment 15 ----
+_e = OPS2['E'][4:]
+def OP15(k): return (pack(VO1, ['x4','x5','x6','x7']) + stw(slot(9), ['x4','x5','x6','x7']) + pack(VO2, ['x21','x22','x23','x24']) + stw(slot(10), ['x21','x22','x23','x24']) + _e) if k == 'PE' else OPS2[k]
+_cd = next(k for k, l in enumerate(FR2) if l == f'ldp x21, x22, [x0, #{slot(4)}]')
+def s15(w, rest, early=False):
+    go = lambda t: sum((OP15(k) for k in t.split()), [])
+    v = sq2_4(slot(5), slot(6), VO1, VO2)
+    if early: return H0 + fixldp(FR2[:_cd] + weave(FR2[_cd:] + go(w), v) + go(rest))
+    return H0 + fixldp(FR2 + weave(go(w), v) + go(rest))
+for k, (w, r_) in {'a': ('DA CB t', 'PE x3 x2 z2 z3'), 'b': ('DA CB t', 'PE x2 x3 z2 z3'), 'c': ('DA CB x3', 'PE t x2 z2 z3'), 'd': ('DA CB t', 'PE x2 z2 x3 z3'),
+    'e': ('DA CB t x3', 'PE x2 z2 z3'), 'f': ('DA CB t', 'PE z3 x2 x3 z2'), 'g': ('DA CB t', 'x3 PE z3 x2 z2'), 'h': ('DA CB x3', 'PE x2 t z2 z3'), 'i': ('DA CB t', 'PE x3 z2 x2 z3'),'j': ('DA CB', 'PE x3 t x2 z3 z2')}.items():
+    B['u' + k] = s15(w, r_)
+for k in 'ace': pass
+B['va'] = s15('DA CB t', 'PE x3 x2 z2 z3', True); B['vb'] = s15('DA CB t', 'PE x2 x3 z2 z3', True); B['vc'] = s15('DA CB x3', 'PE t x2 z2 z3', True); B['ve'] = s15('DA CB t x3', 'PE x2 z2 z3', True); B['vj'] = s15('DA CB', 'PE x3 t x2 z3 z2', True)
 if __name__ == '__main__':
     open(pathlib.Path(__file__).parent / 'orders.txt', 'w').write('\n'.join(f'r{q} ' + ' '.join(o) for q, o in enumerate(ORDS)))
     for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7','h1','h3','h4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))

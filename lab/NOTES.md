@@ -330,3 +330,11 @@ The landed order 350.1 cycles; 24 others 347.7 (r2: BB DA CB AA E t x3 z3 z2 x2)
 to 383. Order is worth 2.4 more cycles; the base is about 340. What is left is the
 NEON pair (h2 / ta: 334-331 with the lab's reduction, which is slower than
 `Word.lean`'s, so about 322-325 is expected with the real one): (C).
+
+## 20. Experiment 15: the NEON pair beside the real scalar blocks
+
+The h2 family again, with the emitted blocks (`step2.s`) for the scalar side:
+front, weave(DA CB t, AA|BB on NEON), then the pack and the rest. The pack leaves
+AA and BB in the registers E reads them from, so E loads nothing. Also: the
+weave starting already at C and D (A and B, which the squares need, are stored
+first), and other orders of the rest. Expected 322-325.
