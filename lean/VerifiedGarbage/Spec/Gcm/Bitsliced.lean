@@ -12,10 +12,9 @@ them again, on the stack, at every call:
 
 * bytes `64 j` to `64 j + 63`, for `j` from 0 to 14: the 16 bytes at byte
   `16 j` of the key context (round key `j` of its key schedule, for `j` up to
-  its number of rounds) in the bitsliced layout of BearSSL's `aes_ct64`
-  (Thomas Pornin), the block repeated four times (`SlicedKeyAt`): bit `t` of
-  byte `i` of each of the four blocks `b` is bit `slicePos b i` of the
-  little-endian 64-bit word at byte `8 t`;
+  its number of rounds), bitsliced, the block repeated four times
+  (`SlicedKeyAt`): bit `t` of byte `i` of each of the four blocks `b` is bit
+  `slicePos b i` of the little-endian 64-bit word at byte `8 t`;
 * bytes 960 to 1247: 36 little-endian 64-bit words derived from the hash
   subkey `H` (`ghashOperand`, `ghashClass`): the two 64-bit words of
   `H · x⁻¹` and their sum, each split into its low and high 32 bits and their
@@ -46,7 +45,7 @@ namespace VG.Spec.Gcm
 /-! ## The buffer -/
 
 /-- Bit `t` of byte `i = r + 4c` of block `b` (of four) is bit
-`16r + 4c + b` of word `t`: the layout of BearSSL's `aes_ct64`. -/
+`16r + 4c + b` of word `t`. -/
 def slicePos (b i : Nat) : Nat := 16 * (i % 4) + 4 * (i / 4) + b
 
 /-- The eight little-endian 64-bit words at `p` hold the 16 bytes `rk` in
@@ -145,7 +144,7 @@ def bitsliceApi : Api where
   contracts := some fun A stack => bitsliceContract A stack
   summary := "Writes to `*bk` the bitsliced form of the key context `*ctx` of \
     `vg_aes_gcm_init`: at byte `64*j`, for `j` from 0 to 14, its 16 bytes at byte `16*j` \
-    (the round keys of its key schedule) in the bitsliced layout of BearSSL's `aes_ct64`, \
+    (the round keys of its key schedule) bitsliced, as `VG.Spec.Gcm.SlicedKeyAt` defines, \
     and at byte 960 the 36 words derived from its hash subkey `H` (its bytes 240 to 255) that \
     GHASH's integer multiplications read (`VG.Spec.Gcm.SlicedRepr`), as the `*_bitsliced` \
     functions require for that key context. It reads only `*ctx` and writes only `*bk`. The \

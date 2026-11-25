@@ -70,7 +70,7 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
     unsafe { crate::gcm::vg_aes_gcm_stream_aad(ctx, state, aad_len, data, len) }
 }
 
-/// Writes to `*bk` the bitsliced form of the key context `*ctx` of `vg_aes_gcm_init`: at byte `64*j`, for `j` from 0 to 14, its 16 bytes at byte `16*j` (the round keys of its key schedule) in the bitsliced layout of BearSSL's `aes_ct64`, and at byte 960 the 36 words derived from its hash subkey `H` (its bytes 240 to 255) that GHASH's integer multiplications read (`VG.Spec.Gcm.SlicedRepr`), as the `*_bitsliced` functions require for that key context. It reads only `*ctx` and writes only `*bk`. The key context and the buffer are secret: only the pointers may affect timing.
+/// Writes to `*bk` the bitsliced form of the key context `*ctx` of `vg_aes_gcm_init`: at byte `64*j`, for `j` from 0 to 14, its 16 bytes at byte `16*j` (the round keys of its key schedule) bitsliced, as `VG.Spec.Gcm.SlicedKeyAt` defines, and at byte 960 the 36 words derived from its hash subkey `H` (its bytes 240 to 255) that GHASH's integer multiplications read (`VG.Spec.Gcm.SlicedRepr`), as the `*_bitsliced` functions require for that key context. It reads only `*ctx` and writes only `*bk`. The key context and the buffer are secret: only the pointers may affect timing.
 ///
 /// Contract: `VG.Spec.Gcm.bitsliceContract`.
 ///
