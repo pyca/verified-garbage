@@ -81,6 +81,7 @@ NOT_RUST_FILES = {
     "LICENSE",
     "LICENSE.APACHE",
     "LICENSE.BSD",
+    "LICENSE.THIRD-PARTY",
     "logo.svg",
     "logo-dark.svg",
     ".github/workflows/bench.yml",
