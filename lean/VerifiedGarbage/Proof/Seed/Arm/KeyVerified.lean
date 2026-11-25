@@ -445,13 +445,13 @@ def chunkIn (c : Nat) : List (Nat × Nat) := (List.range 8).map fun w => (uSlot 
 def chunkOut (c : Nat) : List (Nat × Nat) := (List.range 8).map fun w => (tSlot w, 8 * c + w)
 
 theorem keyChunk_eq (c : Nat) :
-    keyChunk c = copiesCode (chunkIn c) ++ g8 ++ storesCode (chunkOut c) := by
+    keyChunk c = .seq (.block (copiesCode (chunkIn c))) (.seq g8Call (.block (storesCode (chunkOut c)))) := by
   simp only [keyChunk, copiesCode, storesCode, chunkIn, chunkOut, List.flatMap_map]
 
 theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 32}
     (hp : s.gpr kp = P) (hm : (⟨State.addr P, 128⟩ : Region) ∈ s.wr) (hf : P.toNat + 128 ≤ 2 ^ 32)
     (hsep : Region.Disjoint ⟨State.addr P, 128⟩ (scratchR s)) :
-    ∃ s', runBlock isa (keyChunk c) s = some s' ∧
+    WP isa (keyChunk c) s fun s' =>
       (∀ w < 8, s'.mem.readW (State.addr P + BitVec.ofNat 64 (4 * (8 * c + w))) 32 =
         Spec.Seed.g (slotW s (uSlot (8 * c + w)))) ∧
       (∀ o < 32, (o < 8 * c ∨ 8 * c + 8 ≤ o) → s'.mem.readW (State.addr P + BitVec.ofNat 64 (4 * o)) 32 =
@@ -473,7 +473,7 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
     simp only [chunkIn, List.map_map, List.mem_map, List.mem_range, Function.comp, not_exists, not_and]
     intro w hw he; simp [tSlot] at he; omega_arith)
   -- `G`.
-  obtain ⟨s₂, e₂, gv₂, k₂, h₂, rd₂, wr₂, sp₂, g₂, f₂⟩ := g8_lanes h₁
+  obtain ⟨tr₂, s₂, e₂, gv₂, k₂, h₂, rd₂, wr₂, sp₂, g₂, f₂⟩ := g8Call_lanes h₁
   obtain sb₂ : s₂.gpr sb = s.gpr sb := by rw [g₂ _ (by decide), sb₁]
   obtain hO : OutPre s₂ P :=
     ⟨h₂, by rw [g₂ _ (by decide), g₁ _ (by decide), hp], by rw [wr₂, wr₁]; exact hm, hf,
@@ -488,9 +488,12 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
   -- `s`'s memory outside the scratch buffer through the first three steps.
   obtain fr₃ : Frame [workR s] s.mem s₂.mem := by
     exact (by simpa [workR] using f₁ : Frame [workR s] s.mem s₁.mem).trans (by simpa [workR, sb₁] using f₂)
-  refine ⟨s', ?_, fun w hw => ?_, fun o ho ho' => ?_, fun j h1 h2 => ?_, h.congr sb' (by rw [wr', wr₂, wr₁]), sb',
+  rw [keyChunk_eq]
+  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
+  refine WP.seq ⟨tr₂, s₂, e₂, ?_⟩
+  refine WP.of_runBlock ⟨s', e', ?_⟩
+  refine ⟨fun w hw => ?_, fun o ho ho' => ?_, fun j h1 h2 => ?_, h.congr sb' (by rw [wr', wr₂, wr₁]), sb',
     by rw [g' _ (by decide)]; exact hO.kp, by rw [rd', rd₂, rd₁], by rw [wr', wr₂, wr₁], by rw [sp', sp₂, sp₁], ?_⟩
-  · rw [keyChunk_eq, runBlock_append, runBlock_append, e₁, Option.bind_some, e₂, Option.bind_some, e']
   · rw [v' (tSlot w, 8 * c + w) (by simp only [chunkOut, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩),
       tSlot_lane, show slotW s₂ (tSlot 0 + w) = lv s₂ (tSlot 0) w from rfl, gv₂ w hw, lv, ← tSlot_lane,
       v₁ (uSlot (8 * c + w), tSlot w) (by simp only [chunkIn, List.mem_map, List.mem_range]; exact ⟨w, hw, rfl⟩)]
@@ -509,21 +512,22 @@ theorem keyChunk_ok {c : Nat} (hc : c < 4) {s : State} (h : Room s) {P : BitVec 
 theorem keyChunks_ok {s : State} (h : Room s) {P : BitVec 32}
     (hp : s.gpr kp = P) (hm : (⟨State.addr P, 128⟩ : Region) ∈ s.wr) (hf : P.toNat + 128 ≤ 2 ^ 32)
     (hsep : Region.Disjoint ⟨State.addr P, 128⟩ (scratchR s)) :
-    ∀ n ≤ 4, ∃ s', runBlock isa ((List.range n).flatMap keyChunk) s = some s' ∧
+    ∀ n ≤ 4, WP isa (keyChunks n) s fun s' =>
       (∀ o < 8 * n, s'.mem.readW (State.addr P + BitVec.ofNat 64 (4 * o)) 32 =
         Spec.Seed.g (slotW s (uSlot o))) ∧
       (∀ j, 56 ≤ j → j < slots → slotW s' j = slotW s j) ∧ Room s' ∧ s'.gpr sb = s.gpr sb ∧ s'.gpr kp = P ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [workR s, ⟨State.addr P, 128⟩] s.mem s'.mem := by
   intro n hn
   induction n with
-  | zero => exact ⟨s, runBlock_nil, fun o ho => by omega_arith, fun _ _ _ => rfl, h, rfl, hp, rfl, rfl, rfl, Frame.refl _ _⟩
+  | zero => exact WP.block_nil ⟨ fun o ho => by omega_arith, fun _ _ _ => rfl, h, rfl, hp, rfl, rfl, rfl, Frame.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, e₁, v₁, k₁, h₁, sb₁, kp₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_arith)
-    obtain ⟨s₂, e₂, v₂, o₂, k₂, h₂, sb₂, kp₂, rd₂, wr₂, sp₂, f₂⟩ := keyChunk_ok (c := n) (by omega_arith) h₁
+    obtain ⟨tr₁, s₁, e₁, v₁, k₁, h₁, sb₁, kp₁, rd₁, wr₁, sp₁, f₁⟩ := ih (by omega_arith)
+    obtain ⟨tr₂, s₂, e₂, v₂, o₂, k₂, h₂, sb₂, kp₂, rd₂, wr₂, sp₂, f₂⟩ := keyChunk_ok (c := n) (by omega_arith) h₁
       kp₁ (by rw [wr₁]; exact hm) hf (by unfold scratchR; rw [sb₁]; exact hsep)
-    refine ⟨s₂, ?_, fun o ho => ?_, fun j h1 h2 => by rw [k₂ j h1 h2, k₁ j h1 h2], h₂, by rw [sb₂, sb₁], kp₂,
+    rw [keyChunks]
+    refine WP.seq ⟨tr₁, s₁, e₁, ?_⟩
+    refine ⟨tr₂, s₂, e₂, fun o ho => ?_, fun j h1 h2 => by rw [k₂ j h1 h2, k₁ j h1 h2], h₂, by rw [sb₂, sb₁], kp₂,
       by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁], f₁.trans (by simpa [workR, sb₁] using f₂)⟩
-    · rw [List.range_succ, List.flatMap_append, runBlock_append, e₁, Option.bind_some, List.flatMap_singleton, e₂]
     · by_cases hlo : o < 8 * n
       · rw [o₂ o (by omega_arith) (.inl hlo), v₁ o hlo]
       · rw [show o = 8 * n + (o - 8 * n) by omega_arith, v₂ _ (by omega_arith),
@@ -617,7 +621,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyArm.pre s₀) :
   obtain keep₅ : ∀ j < slots, uSlot 32 ≤ j → slotW s₅ j = slotW s₃ j := fun j h1 h2 => by
     rw [o₅ j h1 (.inr h2), sl₄]
   -- `G`, to the schedule.
-  obtain ⟨s₆, e₆, v₆, k₆, h₆, sb₆, -, rd₆, wr₆, sp₆, f₆⟩ := keyChunks_ok h₅ (P := P)
+  obtain ⟨tr₆, s₆, e₆, v₆, k₆, h₆, sb₆, -, rd₆, wr₆, sp₆, f₆⟩ := keyChunks_ok h₅ (P := P)
     (by rw [g₅ _ (by decide), g₄ _ (by decide) (by decide) (by decide) (by decide), ptr₃])
     (by rw [wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwP) fitS'
     (by unfold scratchR; rw [sb₅]; exact dSB) 4 (Nat.le_refl _)
@@ -633,16 +637,17 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyArm.pre s₀) :
     exact sv₁ i hi
   obtain ⟨s₈, e₈, rg₈, -, m₈, -, -, -⟩ := restore_ok (s₀ := s₀) (b := b)
     (by rw [wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwS) (by rw [r₇, sb₆, sb₅]) (by rw [m₇]; exact sv₆)
-  refine WP.of_runBlock ⟨s₈, ?_, rg₈, ?_⟩
-  · rw [runBlock_append, runBlock_append, runBlock_append, runBlock_append, runBlock_append,
-      runBlock_append, e₁, Option.bind_some,
+  rw [expandKey]
+  refine WP.seq (WP.of_runBlock ⟨s₅, ?_, ?_⟩)
+  · rw [runBlock_append, runBlock_append, runBlock_append, e₁, Option.bind_some,
       show ([movR sb .r2, movR kp .r1] : List Instr) = [movR sb .r2] ++ [movR kp .r1] from rfl,
-      runBlock_append, e₂, Option.bind_some, e₃, Option.bind_some, e₄, Option.bind_some, e₅, Option.bind_some,
-      e₆, Option.bind_some, e₇, Option.bind_some, e₈]
-  · show Spec.Seed.scheduleAt s₈.mem (State.addr P) = Spec.Seed.expandKey key
-    rw [Proof.Seed.expandKey_eq]
-    apply Vector.ext; intro i hi
-    rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₈, m₇, v₆ i (by omega_arith), v₅ i (by omega_arith)]
+      runBlock_append, e₂, Option.bind_some, e₃, Option.bind_some, e₄, Option.bind_some, e₅]
+  refine WP.seq ⟨tr₆, s₆, e₆, ?_⟩
+  refine WP.of_runBlock ⟨s₈, runBlock_trans e₇ e₈, rg₈, ?_⟩
+  show Spec.Seed.scheduleAt s₈.mem (State.addr P) = Spec.Seed.expandKey key
+  rw [Proof.Seed.expandKey_eq]
+  apply Vector.ext; intro i hi
+  rw [Proof.Seed.scheduleAt_readW _ _ i hi, Vector.getElem_ofFn, m₈, m₇, v₆ i (by omega_arith), v₅ i (by omega_arith)]
 
 end VG.Proof.Seed.Arm
 
