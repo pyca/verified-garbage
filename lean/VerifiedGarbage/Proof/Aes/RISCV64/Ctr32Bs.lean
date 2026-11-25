@@ -215,7 +215,7 @@ theorem bsKb_wp {s : State} {R : Nat} (hR : s.gpr .a1 = BitVec.ofNat 64 R) (hR' 
 
 /-- Where the loop runs: the scratch buffer at `X`, rounded to `b`, with the
 masks; the bitsliced round keys of `w` at `K`. -/
-structure CSetup (s₀ : State) (X b K : Addr) (R : Nat) (w : List Byte) : Prop where
+structure BsSetup (s₀ : State) (X b K : Addr) (R : Nat) (w : List Byte) : Prop where
   scr : Scr s₀ X 2048
   base : s₀.gpr sb = b
   masks : MasksAt s₀.mem b allKs
@@ -226,7 +226,7 @@ structure CSetup (s₀ : State) (X b K : Addr) (R : Nat) (w : List Byte) : Prop 
   keys : KeysAt s₀.mem K R w
 
 /-- Before round key `j`. -/
-structure CInv (s₀ : State) (b K : Addr) (R : Nat) (w : List Byte) (j : Nat) (s : State) : Prop where
+structure BsInv (s₀ : State) (b K : Addr) (R : Nat) (w : List Byte) (j : Nat) (s : State) : Prop where
   hj : j ≤ R
   a1 : s.gpr .a1 = BitVec.ofNat 64 (j + 1)
   a0 : s.gpr .a0 = K + BitVec.ofNat 64 (64 * j)
@@ -255,10 +255,10 @@ theorem bsStep_ok (s : State) :
   · rw [u₃.other _ h3, u₂.other _ h2, u₁.other _ h1]
 
 theorem bsConvBody_ok {s₀ : State} {X b K : Addr} {R : Nat} {w : List Byte}
-    (hk : CSetup s₀ X b K R w) {j : Nat} {s : State} (hi : CInv s₀ b K R w j s) :
+    (hk : BsSetup s₀ X b K R w) {j : Nat} {s : State} (hi : BsInv s₀ b K R w j s) :
     WP isa bsConvBody s fun s' =>
       (j = 0 ∧ isa.eval (.nonzero .a1) s' = some false ∧ FDone s₀ b R w s') ∨
-      (0 < j ∧ isa.eval (.nonzero .a1) s' = some true ∧ CInv s₀ b K R w (j - 1) s') := by
+      (0 < j ∧ isa.eval (.nonzero .a1) s' = some true ∧ BsInv s₀ b K R w (j - 1) s') := by
   have hR := hk.rounds
   have hjR := hi.hj
   obtain hsb : s.gpr sb = b := by rw [hi.keep sb (by decide), hk.base]
@@ -431,9 +431,9 @@ theorem bsConvBody_ok {s₀ : State} {X b K : Addr} {R : Nat} {w : List Byte}
       · exact hold i (by omega_arith) hiR
 
 theorem bsConvLoop_ok {s₀ : State} {X b K : Addr} {R : Nat} {w : List Byte}
-    (hk : CSetup s₀ X b K R w) {s : State} (hi : CInv s₀ b K R w R s) :
+    (hk : BsSetup s₀ X b K R w) {s : State} (hi : BsInv s₀ b K R w R s) :
     WP isa (.loop bsConvBody (.nonzero .a1)) s (FDone s₀ b R w) := by
-  refine WP.loop (M := isa) (CInv s₀ b K R w) (fun n s hs => ?_) R s hi
+  refine WP.loop (M := isa) (BsInv s₀ b K R w) (fun n s hs => ?_) R s hi
   refine WP.mono (bsConvBody_ok hk hs) fun s' h => ?_
   rcases h with ⟨_, hcf, hd⟩ | ⟨hn, hcf, hi'⟩
   · exact .inl ⟨hcf, hd⟩
@@ -747,7 +747,7 @@ theorem correctBsWith {o : Bool} {s₀ : State} {S : Addr} {w : List Byte} (hp :
       obtain hb₅ : s₅.gpr sb = b := by
         rw [o₅ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hb₄
       obtain hscr₅ : Scr s₅ X 2048 := ⟨by rw [wr₅]; exact hscr₄.wr, hb₅⟩
-      obtain hk : CSetup s₅ X b BK R w :=
+      obtain hk : BsSetup s₅ X b BK R w :=
         { scr := hscr₅
           base := hb₅
           masks := by rw [m₅]; exact mk₄
