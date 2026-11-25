@@ -23,9 +23,12 @@ open VG VG.X86 VG.X86.StraightSse VG.Bitslice VG.Impl.Aes.X86.Sse VG.Proof.Aes
 
 /-! ## The evaluator, without a table of constants -/
 
+/-- `k` slots at `b`, and `n` words at `e`. -/
+def cfgAt (b : Reg) (k : Nat) (e : Reg) (n : Nat) : Cfg :=
+  { base := b, slots := k, ext := e, exts := n, tbl := .ebp, name := "", words := [] }
+
 /-- The slots, and `n` words at `eax`. -/
-def cfg (n : Nat) : Cfg :=
-  { base := .edi, slots := 18, ext := .eax, exts := n, tbl := .ebp, name := "", words := [] }
+abbrev cfg (n : Nat) : Cfg := cfgAt .edi 18 .eax n
 
 def sseOnly (is : List Instr) : Bool :=
   is.all fun | .xop _ | .movdquLoad .. | .movdquStore .. => true | _ => false
@@ -57,16 +60,18 @@ theorem runBlock_syms {is : List Instr} (h : sseOnly is = true) (σ : String →
     | some t => exact ih h.2 t
 
 /-- What the machine needs. -/
-structure Ok (n : Nat) (s : State) : Prop where
-  slotIn : ∀ k < 18, InRegions s.wr (xAddr (s.gpr .edi) k) 16
-  extIn : ∀ k < n, InRegions (s.rd ++ s.wr) (xAddr (s.gpr .eax) k) 16
-  fit : (s.gpr .edi).toNat + 288 ≤ 2 ^ 32
-  sep : ∀ k < 18, ∀ j < n, Mem.Sep (xAddr (s.gpr .edi) k) 16 (xAddr (s.gpr .eax) j) 16
+structure OkAt (b : Reg) (k : Nat) (e : Reg) (n : Nat) (s : State) : Prop where
+  slotIn : ∀ j < k, InRegions s.wr (xAddr (s.gpr b) j) 16
+  extIn : ∀ j < n, InRegions (s.rd ++ s.wr) (xAddr (s.gpr e) j) 16
+  fit : (s.gpr b).toNat + 16 * k ≤ 2 ^ 32
+  sep : ∀ i < k, ∀ j < n, Mem.Sep (xAddr (s.gpr b) i) 16 (xAddr (s.gpr e) j) 16
 
-theorem run' {α : Type} {D : XDom α} {R : α → BitVec 128 → Prop} (hD : D.Sound R) {n : Nat} {ext : Nat → Option α}
-    {is : List Instr} {e e' : Env α} {s : State} (hs : sseOnly is = true) (hok : Ok n s) (hrel : Rel R (cfg n) ext e s)
-    (h : eval D (cfg n) ext is e = some e') :
-    ∃ s', runBlock isa is s = some s' ∧ Post R (cfg n) ext e' s s' is := by
+abbrev Ok (n : Nat) (s : State) : Prop := OkAt .edi 18 .eax n s
+
+theorem run' {α : Type} {D : XDom α} {R : α → BitVec 128 → Prop} (hD : D.Sound R) {b e : Reg} {k n : Nat}
+    {ext : Nat → Option α} {is : List Instr} {v v' : StraightSse.Env α} {s : State} (hs : sseOnly is = true)
+    (hok : OkAt b k e n s) (hrel : Rel R (cfgAt b k e n) ext v s) (h : eval D (cfgAt b k e n) ext is v = some v') :
+    ∃ s', runBlock isa is s = some s' ∧ Post R (cfgAt b k e n) ext v' s s' is := by
   obtain ⟨t, ht, p⟩ := run hD (s := { s with syms := fun _ => s.gpr .ebp })
     ⟨hok.slotIn, hok.extIn, hok.fit, hok.sep, rfl⟩ ⟨hrel.reg, hrel.slot, hrel.ext⟩ h
   rw [runBlock_syms hs] at ht
@@ -88,7 +93,7 @@ def locVal (s : State) : Loc → BitVec 128
   | .x r => s.xmm r
   | .m k => s.mem.readW (xAddr (s.gpr .edi) k) 128
 
-def locAt {α : Type} (e : Env α) : Loc → Option α
+def locAt {α : Type} (e : StraightSse.Env α) : Loc → Option α
   | .x r => e.reg r
   | .m k => e.slot k
 
@@ -96,7 +101,7 @@ def locOk : Loc → Bool
   | .x _ => true
   | .m k => decide (k < 18)
 
-def envOf {α : Type} (l : List (Loc × α)) : Env α :=
+def envOf {α : Type} (l : List (Loc × α)) : StraightSse.Env α :=
   { reg := fun r => (l.find? (·.1 == .x r)).map (·.2)
     slot := fun k => (l.find? (·.1 == .m k)).map (·.2) }
 
@@ -128,7 +133,7 @@ theorem Keep.rd {s s' : State} (h : Keep s s') : s'.rd = s.rd := by rw [h.only]
 theorem Keep.wr {s s' : State} (h : Keep s s') : s'.wr = s.wr := by rw [h.only]
 theorem Keep.zf {s s' : State} (h : Keep s s') : s'.zf = s.zf := by rw [h.only]
 
-theorem post_at {α : Type} {R : α → BitVec 128 → Prop} {n : Nat} {ext : Nat → Option α} {e : Env α} {s s' : State}
+theorem post_at {α : Type} {R : α → BitVec 128 → Prop} {n : Nat} {ext : Nat → Option α} {e : StraightSse.Env α} {s s' : State}
     {is : List Instr} (p : Post R (cfg n) ext e s s' is) {l : Loc} (hl : locOk l = true) {a : α}
     (h : locAt e l = some a) : R a (locVal s' l) := by
   cases l with
@@ -147,7 +152,7 @@ def linExt (j : Nat) : Option (Nat × Nat) := some (inWordW 128 (8 + j))
 /-- Pairs as the numbers of atoms. -/
 def atoms (T : Nat → Nat → List (Nat × Nat)) (j p : Nat) : List Nat := (T j p).map fun t => 128 * t.1 + t.2
 
-def linPost (lo : Nat → Loc) (T : Nat → Nat → List (Nat × Nat)) (e : Env (Nat × Nat)) : Bool :=
+def linPost (lo : Nat → Loc) (T : Nat → Nat → List (Nat × Nat)) (e : StraightSse.Env (Nat × Nat)) : Bool :=
   (List.range 8).all fun j => locOk (lo j) && outOkW 128 11 (locAt e (lo j)) (atoms T j)
 
 def linCheck (n : Nat) (is : List Instr) (li : Nat → Loc) (ms : List (XReg × BitVec 128)) (lo : Nat → Loc)
@@ -193,7 +198,7 @@ theorem lin_ok {n : Nat} {is : List Instr} {li lo : Nat → Loc} {ms : List (XRe
 /-! ## S-boxes -/
 
 def subIns : List (Loc × Nat) := (List.range 8).map fun j => (mid j, sbIn j)
-def subPost (lo : Nat → Loc) (T : List Nat) (e : Env Nat) : Bool :=
+def subPost (lo : Nat → Loc) (T : List Nat) (e : StraightSse.Env Nat) : Bool :=
   (List.range 8).all fun j => locOk (lo j) && locAt e (lo j) == some (T.getD j 0)
 
 def subCheck (is : List Instr) (lo : Nat → Loc) (T : List Nat) : Bool :=
@@ -241,9 +246,12 @@ def mulT (c j : Nat) : List Nat :=
   | 0x02 => [[7], [0, 7], [1], [2, 7], [3, 7], [4], [5], [6]]
   | 0x03 => [[0, 7], [0, 1, 7], [1, 2], [2, 3, 7], [3, 4, 7], [4, 5], [5, 6], [6, 7]]
   | 0x09 => [[0, 5], [1, 5, 6], [2, 6, 7], [0, 3, 5, 7], [1, 4, 5, 6], [2, 5, 6, 7], [3, 6, 7], [4, 7]]
-  | 0x0b => [[0, 5, 7], [0, 1, 5, 6, 7], [1, 2, 6, 7], [0, 2, 3, 5], [1, 3, 4, 5, 6, 7], [2, 4, 5, 6, 7], [3, 5, 6, 7], [4, 6, 7]]
-  | 0x0d => [[0, 5, 6], [1, 5, 7], [0, 2, 6], [0, 1, 3, 5, 6, 7], [1, 2, 4, 5, 7], [2, 3, 5, 6], [3, 4, 6, 7], [4, 5, 7]]
-  | _ => [[5, 6, 7], [0, 5], [0, 1, 6], [0, 1, 2, 5, 6], [1, 2, 3, 5], [2, 3, 4, 6], [3, 4, 5, 7], [4, 5, 6]] : List (List Nat))).getD j []
+  | 0x0b => [[0, 5, 7], [0, 1, 5, 6, 7], [1, 2, 6, 7], [0, 2, 3, 5], [1, 3, 4, 5, 6, 7], [2, 4, 5, 6, 7],
+      [3, 5, 6, 7], [4, 6, 7]]
+  | 0x0d => [[0, 5, 6], [1, 5, 7], [0, 2, 6], [0, 1, 3, 5, 6, 7], [1, 2, 4, 5, 7], [2, 3, 5, 6], [3, 4, 6, 7],
+      [4, 5, 7]]
+  | _ => [[5, 6, 7], [0, 5], [0, 1, 6], [0, 1, 2, 5, 6], [1, 2, 3, 5], [2, 3, 4, 6], [3, 4, 5, 7],
+      [4, 5, 6]] : List (List Nat))).getD j []
 
 theorem mulT_eq : ∀ c ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09], ∀ j < 8, mulTerms c j = mulT c j := by
   decide +kernel
@@ -271,9 +279,99 @@ def invAT (j p : Nat) : List (Nat × Nat) := withKey (mixL invMcCoeffs true j p)
 /-- The round key, InvMixColumns in form 0, and ShiftRows twice. -/
 def invBT (j p : Nat) : List (Nat × Nat) := withKey (mixL invMcCoeffs false j (sr2Src 8 p))
 
+theorem sr2Src_lt {p : Nat} (hp : p < 128) : sr2Src 8 p < 128 := by
+  unfold sr2Src
+  omega
+
+theorem mixL_lt (cs : List Nat) (f : Bool) {j p : Nat} (hp : p < 128) : ∀ t ∈ mixL cs f j p, t.2 < 128 := by
+  intro t ht
+  simp only [mixL, List.mem_flatMap, List.mem_map, List.mem_range] at ht
+  obtain ⟨i, _, b, _, rfl⟩ := ht
+  have hb : byteAt 8 f p < 16 := by unfold byteAt; split <;> omega
+  exact posAt_lt f (down_lt hb) (Nat.mod_lt _ (by decide))
+
+theorem linAT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ linAT j p, t.2 < 128 := by
+  intro t ht
+  simp only [linAT, List.mem_append, List.mem_singleton] at ht
+  rcases ht with h | rfl
+  · exact mixL_lt _ _ hp t h
+  · exact hp
+
+theorem linBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ linBT j p, t.2 < 128 := by
+  intro t ht
+  simp only [linBT, List.mem_append, List.mem_singleton, List.mem_map] at ht
+  rcases ht with ⟨u, h, rfl⟩ | rfl
+  · exact sr2Src_lt (mixL_lt _ _ hp u h)
+  · exact hp
+
+theorem withKey_lt {l : List (Nat × Nat)} (h : ∀ t ∈ l, t.2 < 128) : ∀ t ∈ withKey l, t.2 < 128 := by
+  intro t ht
+  simp only [withKey, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at ht
+  obtain ⟨u, hu, rfl | rfl⟩ := ht
+  · exact h _ hu
+  · exact h u hu
+
+theorem invAT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invAT j p, t.2 < 128 := withKey_lt (mixL_lt _ _ hp)
+theorem invBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invBT j p, t.2 < 128 :=
+  withKey_lt (mixL_lt _ _ (sr2Src_lt hp))
+
 theorem linA_check : linCheck 8 linA subOut [] mid linAT = true := by decide +kernel
 theorem linB_check : linCheck 8 linB subOut [] mid linBT = true := by decide +kernel
 theorem invLinA_check : linCheck 8 invLinA invSubOut [] mid invAT = true := by decide +kernel
 theorem invLinB_check : linCheck 8 invLinB invSubOut [] mid invBT = true := by decide +kernel
+
+/-! ## Between bytes and slices -/
+
+/-- The masks of the exchanges of bytes, bits and pairs of bits. -/
+def bytesM : BitVec 128 := 0x00FF00FF00FF00FF00FF00FF00FF00FF
+def bitsM : BitVec 128 := 0x55555555555555555555555555555555
+def pairsM : BitVec 128 := 0x33333333333333333333333333333333
+def nibblesM : BitVec 128 := 0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F
+
+def groupMs : List (XReg × BitVec 128) := [(.xmm5, bytesM), (.xmm6, bitsM), (.xmm7, pairsM)]
+def pairMs : List (XReg × BitVec 128) := [(.xmm6, nibblesM)]
+
+/-- The state between `toGroups` and `toPairs` has the third bit of the
+numbers of blocks and slices not exchanged yet. -/
+def toGroupT (w p : Nat) : List (Nat × Nat) :=
+  [(p % 4 + 4 * (w / 4), 8 * byteAt 8 false p + (w % 4 + 4 * (p / 4 % 2))), (8, 8 * byteAt 8 false p + (w % 4 + 4 * (p / 4 % 2)))]
+def toPairT (j p : Nat) : List (Nat × Nat) := [(j % 4 + 4 * (p / 4 % 2), p - 4 * (p / 4 % 2) + 4 * (j / 4))]
+def toPairT' (inv : Bool) (j p : Nat) : List (Nat × Nat) := toPairT j (if inv then sr2Src 8 p else p)
+def fromPairT' (enc : Bool) (w p : Nat) : List (Nat × Nat) :=
+  [(w % 4 + 4 * (p / 4 % 2), (if enc then sr2Src 8 else id) (p - 4 * (p / 4 % 2) + 4 * (w / 4)))]
+def fromGroupT (b t : Nat) : List (Nat × Nat) :=
+  [(t % 4 + 4 * (b / 4), b % 4 + 4 * (t / 4 % 2) + 8 * (t / 8 / 4 + 4 * (t / 8 % 4))), (8, t)]
+
+theorem toGroups_check : linCheck 1 toGroups .m groupMs .m toGroupT = true := by decide +kernel
+theorem toPairs_check : ∀ inv, linCheck 0 (toPairs inv) .m pairMs mid (toPairT' inv) = true := by decide +kernel
+theorem toSlots_check : linCheck 0 (toSlots subOut) subOut [] .m (fun j p => [(j, p)]) = true := by decide +kernel
+theorem invToSlots_check : linCheck 0 (toSlots invSubOut) invSubOut [] .m (fun j p => [(j, p)]) = true := by
+  decide +kernel
+theorem fromPairs_check : ∀ enc, linCheck 0 (fromPairs enc) .m pairMs .m (fromPairT' enc) = true := by decide +kernel
+theorem fromGroups_check : linCheck 1 fromGroups .m groupMs .m fromGroupT = true := by decide +kernel
+
+/-! ## The round keys -/
+
+/-- The constants of the key setup, as words. -/
+def keyWords : List (BitVec 128) :=
+  [nibblesM, pairsM, bitsM, 0x00000000FF00FF0000000000FF00FF00, 0xFFFFFFFF00000000FFFFFFFF00000000,
+   0x63636363636363636363636363636363]
+
+def keyExt (j : Nat) : Option (Nat × Nat) := (keyWords[j]?).map fun v => (v.toNat, 0)
+
+/-- Slice `j` of a round key in form `f`: a bit of a byte of it, eight times. -/
+def keyT (f : Bool) (j p : Nat) : List Nat := [8 * byteAt 8 f p + j]
+
+def keyPost (f : Bool) (e : StraightSse.Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => outOkW 128 7 (e.slot j) (keyT f j)
+
+/-- The round key, whose word is `W ⊕ {63…}` with `W` atoms, to slices. -/
+def keyCheck (f : Bool) : Bool :=
+  sseOnly (keyBytes f ++ keySlices) &&
+    check (ofDom (lanes 128 7)) (cfgAt .edx 8 .edi 6) keyExt (keyBytes f ++ keySlices)
+      { reg := fun r => if r = .xmm0 then some (inX 0 0x63636363636363636363636363636363) else none
+        slot := fun _ => none } (keyPost f)
+
+theorem key_check : ∀ f, keyCheck f = true := by decide +kernel
 
 end VG.Proof.Aes.X86.Sse
