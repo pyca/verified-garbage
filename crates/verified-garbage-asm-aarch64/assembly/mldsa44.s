@@ -1887,6 +1887,7 @@ vg_mldsa44_pk_tr:
 	movi v21.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0
 	tst x1, x1

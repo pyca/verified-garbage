@@ -588,6 +588,10 @@ pub(crate) mod vg_keccak_pad_scratch;
 pub(crate) mod vg_keccak_pad_scratch_sha3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_keccak_scalar_core.rs"]
+pub(crate) mod vg_keccak_scalar_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_keccak_squeeze_scratch.rs"]
 pub(crate) mod vg_keccak_squeeze_scratch;
 

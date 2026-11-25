@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+
 public import VerifiedGarbage.Proof.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
 import VerifiedGarbage.Proof.Framework.Block
@@ -1003,7 +1006,7 @@ structure Keep (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   sp : t.sp = s.sp
-  vec : ∀ v, v ≠ .v24 → v ≠ .v25 → v ≠ .v28 → v ≠ .v29 → t.v v = s.v v
+  vec : ∀ v, v ≠ .v24 → v ≠ .v25 → t.v v = s.v v
 
 /-- A complete machine-code round realizes the checked rotated lane layout. -/
 theorem round_ok (r : Fin 24) (A : Spec.Sha3.State) (s : State)
@@ -1041,9 +1044,9 @@ theorem round_ok (r : Fin 24) (A : Spec.Sha3.State) (s : State)
   refine ⟨?_, ⟨hvm.trans (hk.mem.trans hm), hvrd.trans (hk.rd.trans hrd),
     hvwr.trans (hk.wr.trans hwr), hvsp.trans (hk.sp.trans hsp), ?_⟩⟩
   · exact layout_of_regs _ _ _ _ (abstractRound_state r A f h) hrv.regs
-  · intro w h24 h25 h28 h29
-    exact (hvvec w h24 h25 h28 h29).trans
-      ((congrFun hk.vec w).trans (hv w h24 h25 h28 h29))
+  · intro w h24 h25
+    exact (hvvec w h24 h25).trans
+      ((congrFun hk.vec w).trans (hv w h24 h25))
 
 end VG.Proof.Sha3.AArch64.Scalar.Lazy
 
@@ -1062,11 +1065,11 @@ open VG.Impl.Sha3.AArch64.Scalar.Lazy
 open VG.Proof.Sha3.AArch64.Scalar
 
 theorem Keep.refl (s : State) : Keep s s :=
-  ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl⟩
+  ⟨rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩
 
 theorem Keep.trans {s t u : State} (h : Keep s t) (k : Keep t u) : Keep s u :=
   ⟨k.mem.trans h.mem, k.rd.trans h.rd, k.wr.trans h.wr, k.sp.trans h.sp,
-    fun v a b c d => (k.vec v a b c d).trans (h.vec v a b c d)⟩
+    fun v a b => (k.vec v a b).trans (h.vec v a b)⟩
 
 def roundPrefix (n : Nat) : List Instr := (List.range n).flatMap roundNat
 
@@ -1151,18 +1154,18 @@ theorem core_state_keep (orig : State) (A : Spec.Sha3.State) (s : State)
     WP isa (.block permutationCore) s fun t =>
       Boundary.CoreState orig (Spec.Sha3.keccakF A) t ∧ RoundKeep s t := by
   refine (core_ok A s hs.lanes).mono fun t ⟨hl, hk⟩ => ?_
-  refine ⟨?_, ⟨hk.mem, hk.vec⟩⟩
+  refine ⟨?_, ⟨hk.mem, fun v h24 h25 _ _ => hk.vec v h24 h25⟩⟩
   refine ⟨⟨hk.rd.trans hs.keep.rd, hk.wr.trans hs.keep.wr, hk.sp.trans hs.keep.sp⟩,
     ?_, ?_, ?_, hl⟩
-  · simpa only [Boundary.Ptrs, hk.vec .v30 (by decide) (by decide) (by decide) (by decide),
-      hk.vec .v31 (by decide) (by decide) (by decide) (by decide)] using hs.ptrs
+  · simpa only [Boundary.Ptrs, hk.vec .v30 (by decide) (by decide),
+      hk.vec .v31 (by decide) (by decide)] using hs.ptrs
   · intro i hi
     have hn := savedVec_not_temps i hi
-    rw [hk.vec _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    rw [hk.vec _ hn.1 hn.2.1]
     exact hs.saved i hi
   · intro q hq
     have hn := preservedV_not_temps q hq
-    rw [hk.vec _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    rw [hk.vec _ hn.1 hn.2.1]
     exact hs.vec q hq
 
 theorem core_state (orig : State) (A : Spec.Sha3.State) (s : State)
@@ -1170,10 +1173,89 @@ theorem core_state (orig : State) (A : Spec.Sha3.State) (s : State)
     WP isa (.block permutationCore) s (Boundary.CoreState orig (Spec.Sha3.keccakF A)) :=
   (core_state_keep orig A s hs).mono fun _ h => h.1
 
+open VG.Proof.Sha3.AArch64.Sha3.Vector
+
+private def savedCore (s : State) : State :=
+  (s.setV .v24 (ofVDwords (s.gpr .x16) (s.gpr .x16))).setV .v25
+    (ofVDwords (s.gpr .x17) (s.gpr .x17))
+
+private def enteredCore (s : State) : State :=
+  ((s.setV .v29 (ofVDwords (s.gpr .x30) (s.gpr .x30))).write .x .x16
+    (vdword (s.v .v24) 0)).write .x .x17 (vdword (s.v .v25) 0)
+
+private theorem savedCore_run (s : State) :
+    runBlock isa sharedCoreSave s = some (savedCore s) := by
+  rfl
+
+private theorem enteredCore_run (s : State) :
+    runBlock isa [.vop (.dup .d2 .v29 .x30), .umov .x .x16 .v24 0,
+      .umov .x .x17 .v25 0] s = some (enteredCore s) := by
+  rfl
+
+/-- Sharing the core keeps its resident lanes through the veneer registers,
+and saves its return address in a vector the core does not write. -/
+theorem sharedCore_ok (A : Spec.Sha3.State) (s : State)
+    (hs : ∀ (i : Nat) (hi : i < 25), s.gpr (laneReg i) = A[i]) :
+    WP isa sharedCore s fun t =>
+      (∀ (i : Nat) (hi : i < 25), t.gpr (laneReg i) = (Spec.Sha3.keccakF A)[i]) ∧
+      Boundary.Keep s t ∧ RoundKeep s t := by
+  unfold sharedCore
+  refine WP.seq (WP.of_runBlock ⟨savedCore s, savedCore_run s, ?_⟩)
+  let e := (savedCore s).callEntry
+  let b := enteredCore e
+  have hn : ∀ (i : Nat) (hi : i < 25), laneReg i ≠ .x30 := by decide
+  have hb : ∀ (i : Nat) (hi : i < 25), b.gpr (laneReg i) = A[i] := by
+    intro i hi
+    rw [← hs i hi]
+    by_cases h16 : laneReg i = .x16 <;> by_cases h17 : laneReg i = .x17 <;>
+      simp [b, enteredCore, e, savedCore, State.callEntry, State.write, State.setV,
+        h16, h17, hn i hi, vdword_ofVDwords_0]
+  have hbody : WP isa sharedCoreBody e fun t =>
+      (∀ (i : Nat) (hi : i < 25), t.gpr (laneReg i) = (Spec.Sha3.keccakF A)[i]) ∧
+      Boundary.Keep s t ∧ RoundKeep s t ∧ t.gpr .x30 = e.gpr .x30 := by
+    unfold sharedCoreBody
+    refine WP.seq (WP.of_runBlock ⟨b, enteredCore_run e, ?_⟩)
+    refine WP.seq ((core_ok A b hb).mono fun u ⟨hl, hk⟩ => ?_)
+    refine WP.cons (exec_umov_low u .x30 .v29) (WP.block_nil ?_)
+    refine ⟨?_, ⟨hk.rd, hk.wr, hk.sp⟩, ⟨hk.mem, ?_⟩, ?_⟩
+    · intro i hi
+      simpa only [RegUpd.gpr_write, hn i hi, ite_false] using hl i hi
+    · intro v h24 h25 h28 h29
+      simpa [b, enteredCore, e, savedCore, State.callEntry, State.write, State.setV,
+        h24, h25, h29] using hk.vec v h24 h25
+    · simp only [RegUpd.gpr_write_self, Size.bits, BitVec.setWidth_eq]
+      rw [hk.vec .v29 (by decide) (by decide)]
+      change vdword (ofVDwords (e.gpr .x30) (e.gpr .x30)) 0 = e.gpr .x30
+      exact vdword_ofVDwords_0 _ _
+  obtain ⟨tr, t, he, hl, hk, hr, hret⟩ := hbody
+  refine ⟨_, t, Exec.call (call_callEntry _) he ?_, hl, hk, hr⟩
+  change (if t.gpr .x30 = e.gpr .x30 then some t else none) = some t
+  rw [ite_eq_left hret]
+
+/-- The shared core has the same workspace and ABI invariant as its inline form. -/
+theorem sharedCore_state_keep (orig : State) (A : Spec.Sha3.State) (s : State)
+    (hs : Boundary.CoreState orig A s) :
+    WP isa sharedCore s fun t =>
+      Boundary.CoreState orig (Spec.Sha3.keccakF A) t ∧ RoundKeep s t := by
+  refine (sharedCore_ok A s hs.lanes).mono fun t ⟨hl, hk, hr⟩ => ?_
+  refine ⟨⟨⟨hk.rd.trans hs.keep.rd, hk.wr.trans hs.keep.wr, hk.sp.trans hs.keep.sp⟩,
+    ?_, ?_, ?_, hl⟩, hr⟩
+  · simpa only [Boundary.Ptrs, hr.v .v30 (by decide) (by decide) (by decide) (by decide),
+      hr.v .v31 (by decide) (by decide) (by decide) (by decide)] using hs.ptrs
+  · intro i hi
+    have hn := savedVec_not_temps i hi
+    rw [hr.v _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    exact hs.saved i hi
+  · intro q hq
+    have hn := preservedV_not_temps q hq
+    rw [hr.v _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    exact hs.vec q hq
+
 theorem permute_correct (s : State) (hs : VG.Proof.Sha3.permuteAArch64.pre s) :
     ∃ t s', Exec isa permute s t s' ∧ abiPreserved s s' ∧
       VG.Proof.Sha3.permuteAArch64.post s s' :=
-  Boundary.wrap_correct (.block permutationCore) (fun orig A s _ hs => core_state orig A s hs)
+  Boundary.wrap_correct sharedCore (fun orig A s _ hs =>
+    (sharedCore_state_keep orig A s hs).mono fun _ h => h.1)
     s (VG.Proof.Sha3.AArch64.pre_of s hs)
 
 theorem permute_noFrames : permute.noFrames = true := by lit_decide

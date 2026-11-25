@@ -368,13 +368,13 @@ theorem scalar_ok {s : State} {p : Addr} (hp : s.gpr .x0 = p)
   unfold scalar
   rw [WP.seq_iff]
   refine (scalarFirst_ok hp fun i hi => hall (hwp i hi 0 (by decide))).mono fun s₂ ⟨c₂,m₂⟩ => ?_
-  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₂ c₂) fun s₃ ⟨c₃,r₃⟩ => ?_)
+  refine WP.seq (WP.mono (Scalar.Lazy.sharedCore_state_keep s _ s₂ c₂) fun s₃ ⟨c₃,r₃⟩ => ?_)
   have m₃ : s₃.mem = s.mem := r₃.mem.trans m₂
   rw [WP.seq_iff]
   refine (scalarNext_ok hp c₃ (fun i hi => hwp i hi 0 (by decide))
     fun i hi => hall (hwp i hi 1 (by decide))).mono fun s₅ ⟨c₅,f₅,a₅⟩ => ?_
   rw [m₃] at c₅ f₅
-  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₅ c₅) fun s₆ ⟨c₆,r₆⟩ => ?_)
+  refine WP.seq (WP.mono (Scalar.Lazy.sharedCore_state_keep s _ s₅ c₅) fun s₆ ⟨c₆,r₆⟩ => ?_)
   rw [WP.block_append_iff]
   refine (storeLanes_ok (k := 1) (by decide) s₆ (p := p) _ c₆.lanes (c₆.ptrs.1.trans hp)
     (fun i hi => by rw [c₆.keep.wr]; exact hwp i hi 1 (by decide))).mono

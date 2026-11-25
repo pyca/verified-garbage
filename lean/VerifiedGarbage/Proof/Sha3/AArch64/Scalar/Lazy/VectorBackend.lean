@@ -39,7 +39,7 @@ def callee : Impl.Sha3.AArch64.Callee where
   suffix := ""
   clear :=
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v24, .v25, .v30, .v31], []⟩
+     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v24, .v25, .v29, .v30, .v31], []⟩
   absorbOverride := none
 
 /- The rounds of the permutation, from nothing public. They write every
