@@ -349,3 +349,11 @@ A saving seen while writing the kernel out: every product of X_m has an even
 coefficient (cross terms of a square), so the exchanged vectors are taken of 2a
 once (`ext` of D) and the 15 `add`s into a temporary go; 181 operations for 196.
 Experiment 16: ue, uc, ui with that (`xe`, `xc`, `xi`), `xE`: t after x3.
+
+## 22. Experiment 16's result (run 45697986744): what is landed
+
+Cycles: xh 320.9 (CB DA t x3 | pair; pack, E, x2, z2, z3), xi 322, ue 323, xE, xc 323,
+xe 324, xf 326, xg 326. xh is taken: projected 320.9 x 255 + 4.9k = 86.7k = 25.5 us.
+For the proof: the constants are loaded from the working space (written by the setup),
+v8-v15 saved and restored around the ladder; the woven scalar block's ldp and stp are
+two loads and two stores to the interleaving proof.
