@@ -55,3 +55,14 @@ each product has 4 live words between rows (5 in one), as word i is final after
 row i and is stored. 9 + 8 + 1 = 18 of the 20. b is loaded again for each row
 (24 loads a pair, against 1.5 `ldp` a cycle). Folds one after the other.
 Compare 2 x 38.4 = 77; floor about 45.
+
+## 3. Experiment 2's result (run 45677393309)
+
+Two products one after the other (this row code, words stored): 74.0 cycles,
+the same when each depends on the one before. Rows alternating: 69.9 (dependent
+76.4). So H3 is false too: what limits is a resource. 41 multiplies + about 45
+flag-setting operations take 37 cycles, though 2 and 3 of them a cycle are
+possible alone. Hypothesis H4: flag-setting operations share the two multiply
+pipes, with at most one other: (41 + 45)/3 = 29, or worse. Experiment 3:
+mixtures of `mul` with `adds`, `adcs` chains, `add`, at two ratios, and
+additions that take their operand from a multiply.
