@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

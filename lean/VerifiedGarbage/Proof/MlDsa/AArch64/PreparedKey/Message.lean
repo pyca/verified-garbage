@@ -39,8 +39,7 @@ public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash

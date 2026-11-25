@@ -5,8 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims

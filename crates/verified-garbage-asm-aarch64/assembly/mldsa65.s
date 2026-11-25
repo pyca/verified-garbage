@@ -2788,8 +2788,13 @@ vg_mldsa65_pk_tr:
 	movi v19.2d, #0
 	movi v20.2d, #0
 	movi v21.2d, #0
+	movi v22.2d, #0
+	movi v23.2d, #0
 	movi v24.2d, #0
 	movi v25.2d, #0
+	movi v26.2d, #0
+	movi v27.2d, #0
+	movi v28.2d, #0
 	movi v29.2d, #0
 	movi v30.2d, #0
 	movi v31.2d, #0

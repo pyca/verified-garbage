@@ -17,9 +17,9 @@ import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Boundary
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SeedSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
