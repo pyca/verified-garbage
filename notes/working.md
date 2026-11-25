@@ -45,3 +45,16 @@ Selecting U and V together costs nothing (one flag). Chosen, from the latter:
 i.e. neighbours are independent; the two halves (doubling, addition) interleave.
 Slots (7 live at once): x2..z3 = 3..6; A 7 B 8 C 9 D 10 U 11 V 12; P in 10, Q in 9, AA in 11,
 BB in 12, E in 8, s in 7, d and dd in 9, w in 11. Only slots 3-12 used.
+
+## After a first version in Lean (unproven), measured locally (Sapphire Rapids, tsc/op, one process)
+Order matters as the model says: RFC order 15% slower than the chosen one (base 51227 vs 44661,
+adx 43832 vs 38292); against main as a black box the first version is 1.0% (base) and 1.8% (adx)
+slower. A loop whose operations write slots nothing reads (no dependencies between operations)
+is 4.5% (base), 9% (adx) faster: so there is latency left to hide, not only instructions.
+Ideas, in the order to try:
+1. climb over orders on the hardware rather than in the model (ord.py), one order for both fields;
+2. one block for A, B and the selection (the sums are still in registers when selected): saves
+   8 loads and store-to-load latency. First try: no gain alone (base +0.5%, adx -0.7% by order);
+3. the first iteration is known (k_254 = 1, so swap = 1, x2 = 1, z2 = 0): 0.2%;
+4. shorter folds: products are below 2^255 + 2^12, so a sum's carry can be folded into its low
+   word alone (3 instructions of 23), if mul's bound is stated so.
