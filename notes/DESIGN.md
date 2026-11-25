@@ -107,3 +107,14 @@ forms, SR^2 written and checked by evaluation (Proof/Aes/X86_64/Sse/Layers.lean)
 differs from the estimate only by the AND masks' loads. por is not in the lane domain with two
 non-constant operands: pxor instead. Not yet: InvMixColumns, key setup, batch, block and CTR
 loops, key expansion and their proofs; the other targets' helpers and engines; SEED x86-64 G16.
+
+## x86-64 key expansion, concretely
+One loop over words i = nk .. 4(nk+7)-1; registers: r9 scratch, rdx -> w[i], rsi = 4 nk,
+r8 = 4 (i mod nk), rdi = bytes left (3*4nk + 112 at first). temp = w[i-1] in eax.
+r8 = 0: SubWord, ror 8, xor rcon (slot 54), rcon doubled (shift; minus the carry bit & 11b).
+Otherwise the only SubWord is nk = 8, i mod 8 = 4, i.e. rsi + r8 = 48 (nk = 4: at most 28,
+nk = 6: at most 44), one compare. Then xor w[i-nk] at rdx - rsi. SubWord: slice j = word >> j,
+S-box (spills slots 0-47), slices & 01010101, << j, xored. Callee-saved in slots 48-53.
+
+## x86-64 SEED G16
+(to be recorded below, before its code)
