@@ -14,8 +14,7 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 /-!
 # X448 of the base point on AArch64: the comb's digits and masks
 
-Untrusted: everything here is checked by Lean. As Ed25519's comb
-(`Proof/Ed25519/AArch64/CombDigit.lean`): step `j` reads the nibbles `2j + 1`
+Untrusted: everything here is checked by Lean. Step `j` reads the nibbles `2j + 1`
 and `2j` of the decoded scalar from its bits (one per byte at `BITS`) by
 Horner's rule; `magnitude` turns each into `|n - 8|`; `masks` sets the register
 for `m` to all ones exactly if the magnitude is `m`, for `m = 1 … 8`, and
