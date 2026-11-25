@@ -89,4 +89,13 @@ theorem sign_sub (x r : BitVec 64) (hr : r.toNat ≤ 168) (h : (x - r) >>> 63 = 
   have := x.isLt
   omega
 
+/-- The arguments of `absorbBlocks`, entered from `o`. -/
+abbrev rt (o : State) : Nat := (o.gpr .x1).toNat
+abbrev ln (o : State) : Nat := (o.gpr .x3).toNat
+
+theorem rt_bounds {o : State} (hp : blocksK.pre o) : 72 ≤ rt o ∧ rt o ≤ 168 ∧ rt o % 8 = 0 := by
+  have : rt o ∈ rates := hp.2.2.2.2.2.1
+  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at this
+  omega
+
 end VG.Proof.Sha3.AArch64.Blocks

@@ -133,10 +133,6 @@ theorem xorBlock_ok {s : State} {S : Spec.Sha3.State} {m : Mem} {p : Addr} {r : 
 
 /-! ## The loop -/
 
-/-- The arguments of `absorbBlocks`, entered from `o`. -/
-abbrev rt (o : State) : Nat := (o.gpr .x1).toNat
-abbrev ln (o : State) : Nat := (o.gpr .x3).toNat
-
 /-- Before block `k`. -/
 structure LInv (o : State) (k : Nat) (s : State) : Prop where
   ctx : Ctx o s
@@ -147,11 +143,6 @@ structure LInv (o : State) (k : Nat) (s : State) : Prop where
   v1 : vdword (s.v .v1) 0 = o.gpr .x2 + BitVec.ofNat 64 (rt o * k)
   v2 : vdword (s.v .v2) 0 = BitVec.ofNat 64 (ln o - rt o * k)
   frame : Frame [⟨o.gpr .x4, 512⟩] o.mem s.mem
-
-theorem rt_bounds {o : State} (hp : blocksK.pre o) : 72 ≤ rt o ∧ rt o ≤ 168 ∧ rt o % 8 = 0 := by
-  have : rt o ∈ rates := hp.2.2.2.2.2.1
-  simp only [rates, List.mem_cons, List.not_mem_nil, or_false] at this
-  omega
 
 theorem step_ok {o : State} (hp : blocksK.pre o) {k : Nat} {s : State} (hI : LInv o k s) (hk : rt o * k + rt o ≤ ln o) :
     WP isa absorbStep s fun t => LInv o (k + 1) t ∧
