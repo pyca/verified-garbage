@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.X25519.AArch64.Word
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Pairs
+public import VerifiedGarbage.Impl.X25519.AArch64.Squares
+public import VerifiedGarbage.Impl.AArch64Weave
 
 /-!
 # The X25519 ladder on AArch64
@@ -28,7 +30,9 @@ What an iteration keeps in registers:
 * a sum or difference that only one product takes is left where that product
   reads an operand (`x12`–`x15`): `DA + CB` and `DA - CB`, which are squared, and
   `AA + a24 E`, a product's other operand;
-* every product is stored.
+* every product is stored;
+* `A` and `B` are squared in vectors (`Squares.lean`), beside `DA`, `CB` and the squares of their sum
+  and difference.
 
 Products and squares are below `2²⁵⁵ + 2¹³⁵` (`fold255`), so the sums fold their
 carry once, and `A` and `C`, at most `2²⁵⁶ + 2¹³⁶`, into three words; `AA +
@@ -41,7 +45,8 @@ throughout; `x1`, the output's address, and `x19` are public.
 namespace VG.Impl.X25519.AArch64.Ladder
 
 open VG.AArch64
-open VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Pairs
+open VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Pairs VG.Impl.X25519.AArch64.Squares
+open VG.Impl.AArch64Weave (weave)
 
 /-! ## The swap -/
 
@@ -82,12 +87,6 @@ def sumsCD : List Instr :=
 
 /-! ## Products -/
 
-/-- `E := AA − BB`, also in `x12`–`x15`. -/
-def diffE : List Instr :=
-  loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 10) .x21 .x22 .x23 .x24 ++
-    diff4 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 .x22 .x23 .x24 .x2 .x3 ++
-    storePairs (offset 11) .x12 .x13 .x14 .x15
-
 /-- `a24 = 121665`. -/
 def a24Const : List Instr := [.movz .x .x11 0xdb41 0, .movk .x .x11 1 1]
 
@@ -125,33 +124,46 @@ def diffDACB : List Instr :=
 /-- The swaps, and the sums and differences of the swapped elements. -/
 def front : List Instr := loadAll ++ (swapTest ++ (swapRegs ++ (sumsAB ++ sumsCD)))
 
-/-- The products of an iteration, those that need each other apart: an operation's carry chains
-wait in the core's window for what they need, and the operations after it wait behind them. -/
-def back : List (List Instr) := [
-  sqrSlots 9 5, sqrSlots 10 6,
-  mulSlots 12 8 5, mulSlots 13 7 6,
-  diffE, mulSlots 1 9 10,
+/-- The products `DA` and `CB`, and the squares of their difference and sum (`x_3`). -/
+def backA : List Instr :=
+  mulSlots 13 7 6 ++ (mulSlots 12 8 5 ++ ((diffDACB ++ squareRegs ++ toSlot 4) ++ (sumDACB ++ squareRegs ++ toSlot 3)))
+
+/-- `AA` and `BB` out of their limbs, and `E`. -/
+def packE : List Instr :=
+  packLoad OUT ++ (packSum .x4 .x5 .x6 .x7 ++ (storePairs (offset 9) .x4 .x5 .x6 .x7 ++
+    (packLoad (OUT + 48) ++ (packSum .x21 .x22 .x23 .x24 ++ (storePairs (offset 10) .x21 .x22 .x23 .x24 ++
+      (diff4 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 .x22 .x23 .x24 .x2 .x3 ++
+        storePairs (offset 11) .x12 .x13 .x14 .x15))))))
+
+/-- `z_2`, into `x12`–`x15` and from them into its slot. -/
+def mulE : List Instr :=
   loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 11) .x12 .x13 .x14 .x15 ++
-    a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11,
-  diffDACB ++ squareRegs ++ toSlot 4,
-  sumDACB ++ squareRegs ++ toSlot 3,
-  mulSlots 4 0 4]
+    a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11
+
+/-- The products of an iteration. `A` and `B` are squared in vectors beside the operations of
+`backA`, which need neither square: the carry chains of one and the vector operations of the other
+take different parts of the core. What needs the squares follows. -/
+def back : List Instr :=
+  weave backA (squares (offset 5) (offset 6)) ++ (packE ++ (mulSlots 1 9 10 ++ (mulE ++ mulSlots 4 0 4)))
 
 /-- One iteration. -/
-def step : List Instr := front ++ back.flatten
+def step : List Instr := front ++ back
 
 /-- The bits `254, …, 0`. -/
 def ladder : Prog isa := .loop (.block step) (.nonzero .x .x19)
 
-/-- The working space set up for the ladder (and `x0` its address, `x1` the output's). -/
-def setup : List Instr :=
+/-- The working space set up for the ladder (and `x0` its address, `x1` the output's), but for the
+squares. -/
+def setup0 : List Instr :=
   VG.Impl.X25519.AArch64.save ++ VG.Impl.X25519.AArch64.bits ++
   ([.movz .x .x19 0 0, .strb .x19 .x3 (BITS + 255), mov .x1 .x0, mov .x0 .x3] : List Instr) ++
   loadY ++ store4 (offset 0) ++
-  fieldCode [.copy 3 0, .const 1 1, .const 2 0, .const 4 1] ++
-  ([.movz .w .x10 0 0, .movz .w .x19 255 0] : List Instr)
+  fieldCode [.copy 3 0, .const 1 1, .const 2 0, .const 4 1]
+
+def setup : List Instr :=
+  setup0 ++ (constants ++ (vsave ++ ([.movz .w .x10 0 0, .movz .w .x19 255 0] : List Instr)))
 
 def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq ladder <| .seq Divstep.invert (.block Word.finish)
+  .seq (.block setup) <| .seq ladder <| .seq (.block vrestore) <| .seq Divstep.invert (.block Word.finish)
 
 end VG.Impl.X25519.AArch64.Ladder

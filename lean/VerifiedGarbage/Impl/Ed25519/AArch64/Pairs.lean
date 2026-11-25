@@ -64,8 +64,4 @@ def mulSlots (o a b : Slot) : List Instr :=
 /-- The square of `x12`–`x15`, in eight words. -/
 def squareRegs : List Instr := sqrCross ++ sqrDouble ++ sqrDiag
 
-/-- `[o] := [a]²`. -/
-def sqrSlots (o a : Slot) : List Instr :=
-  loadPairs (offset a) .x12 .x13 .x14 .x15 ++ squareRegs ++ toSlot o
-
 end VG.Impl.Ed25519.AArch64.Pairs

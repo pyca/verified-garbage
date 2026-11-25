@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.Ladder
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Pairs
+public import VerifiedGarbage.Proof.X25519.AArch64.Squares
+public import VerifiedGarbage.Proof.Framework.AArch64.InterleavePairs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -19,6 +21,7 @@ namespace VG.Proof.X25519.AArch64.Ladder
 
 open VG VG.AArch64 VG.Impl.X25519.AArch64.Ladder VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Pairs
 open VG.Impl.X25519.AArch64 (BITS)
+open VG.Impl.X25519.AArch64.Squares VG.Proof.X25519.AArch64.Squares
 open VG.Proof.Ed25519.AArch64 VG.Proof.Ed25519.AArch64.Pairs VG.Proof.Ed25519.Word64 VG.Proof.X25519
 variable {large : Bool}
 
@@ -459,13 +462,174 @@ theorem front_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .
 
 /-! ## The products of an iteration -/
 
-theorem diffE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (hb : Sm s.mem base 10) :
-    WP isa (.block diffE) s fun t => Put base 11 s t ∧
-      F t.mem base (offset 11) = env s.mem base 9 - env s.mem base 10 := by
-  rw [diffE, WP.block_append_iff]
-  refine WP.mono (diffRegs_ok hs hz 9 10 (by decide) (by decide) hb) fun u ⟨e, k⟩ => ?_
-  refine WP.mono (putPairs_ok (hs.of_keeps k (by decide)) 11 (by decide) _ _ _ _) fun t ⟨p, _, h⟩ => ?_
-  exact ⟨Put.of_keeps k (fun _ h => h) p, by rw [F, h]; exact e⟩
+theorem pack_arith {a b c d e w0 w1 w2 w3 k0 k1 k2 k3 b' c' d' e' : Nat}
+    (hd : d < 2 ^ 52) (he : e < 2 ^ 51 + 2 ^ 17) (hb' : b' = b * 2 ^ 51 % 2 ^ 64) (hc' : c' = c * 2 ^ 38 % 2 ^ 64)
+    (hd' : d' = d * 2 ^ 25 % 2 ^ 64) (he' : e' = e * 2 ^ 12 % 2 ^ 64)
+    (f0 : w0 + 2 ^ 64 * k0 = a + b' + 0) (f1 : w1 + 2 ^ 64 * k1 = b / 2 ^ 13 + c' + k0)
+    (f2 : w2 + 2 ^ 64 * k2 = c / 2 ^ 26 + d' + k1) (f3 : w3 + 2 ^ 64 * k3 = d / 2 ^ 39 + e' + k2)
+    (hw : w3 < 2 ^ 64) (h2 : k2 ≤ 1) :
+    w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 = a + 2 ^ 51 * b + 2 ^ 102 * c + 2 ^ 153 * d + 2 ^ 204 * e := by
+  have q1 : b = b / 2 ^ 13 * 2 ^ 13 + b % 2 ^ 13 := by omega_using []
+  have q2 : c = c / 2 ^ 26 * 2 ^ 26 + c % 2 ^ 26 := by omega_using []
+  have q3 : d = d / 2 ^ 39 * 2 ^ 39 + d % 2 ^ 39 := by omega_using []
+  have r1 : b' = b % 2 ^ 13 * 2 ^ 51 := by omega_using [hb']
+  have r2 : c' = c % 2 ^ 26 * 2 ^ 38 := by omega_using [hc']
+  have r3 : d' = d % 2 ^ 39 * 2 ^ 25 := by omega_using [hd']
+  have r4 : e' = e * 2 ^ 12 := by omega_using [he', he]
+  have l3 : d / 2 ^ 39 < 2 ^ 13 := by omega_using [hd]
+  have hk : k3 = 0 := by omega_using [f3, r4, l3, he, h2, hw]
+  generalize b / 2 ^ 13 = b1 at *
+  generalize b % 2 ^ 13 = b0 at *
+  generalize c / 2 ^ 26 = c1 at *
+  generalize c % 2 ^ 26 = c0 at *
+  generalize d / 2 ^ 39 = d1 at *
+  generalize d % 2 ^ 39 = d0 at *
+  omega_using [q1, q2, q3, r1, r2, r3, r4, f0, f1, f2, f3, hk]
+
+/-- The five limbs packed. -/
+theorem pack_value {a b c d e : Word} (hd : d.toNat < 2 ^ 52) (he : e.toNat < 2 ^ 51 + 2 ^ 17) :
+    let c0 := carryOut a (b <<< 51) false
+    let c1 := carryOut (b >>> 13) (c <<< 38) c0
+    let c2 := carryOut (c >>> 26) (d <<< 25) c1
+    val4 (addCarry a (b <<< 51) false) (addCarry (b >>> 13) (c <<< 38) c0) (addCarry (c >>> 26) (d <<< 25) c1)
+        (addCarry (d >>> 39) (e <<< 12) c2) =
+      a.toNat + 2 ^ 51 * b.toNat + 2 ^ 102 * c.toNat + 2 ^ 153 * d.toNat + 2 ^ 204 * e.toNat := by
+  intro c0 c1 c2
+  have f0 := addCarry_value a (b <<< 51) false
+  have f1 := addCarry_value (b >>> 13) (c <<< 38) c0
+  have f2 := addCarry_value (c >>> 26) (d <<< 25) c1
+  have f3 := addCarry_value (d >>> 39) (e <<< 12) c2
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow] at f1 f2 f3
+  exact pack_arith hd he (by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]) (by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq])
+    (by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]) (by rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]) f0 f1 f2 f3
+    (addCarry (d >>> 39) (e <<< 12) c2).isLt (Bool.toNat_le c2)
+
+theorem packLoad_ok {s : State} {base : Addr} (hs : Scr s base large) {o : Nat} (h8 : o % 8 = 0) (ho : o + 40 ≤ 4096) :
+    WP isa (.block (packLoad o)) s fun t =>
+      t.gpr .x2 = word s.mem base o ∧ t.gpr .x3 = word s.mem base (o + 8) ∧ t.gpr .x8 = word s.mem base (o + 16) ∧
+      t.gpr .x9 = word s.mem base (o + 24) ∧ t.gpr .x16 = word s.mem base (o + 32) ∧
+      Keeps [.x2, .x3, .x8, .x9, .x16] s t := by
+  have hw := workSize_ge large
+  apply WP.of_runBlock
+  have e0 : ∀ {u : State}, Scr u base large → ∀ (r : Reg) (d : Nat), d % 8 = 0 → d + 8 ≤ o + 40 →
+      exec (.ldr .x r .x0 d) u = some (u.write .x r (word u.mem base d)) := fun hu r d h1 h2 =>
+    load_sc hu h1 (by omega_using [h2, ho, hw]) r
+  have h1 := hs.write (r := .x2) (by decide) (word s.mem base o)
+  have h2 := h1.write (r := .x3) (by decide) (word s.mem base (o + 8))
+  have h3 := h2.write (r := .x8) (by decide) (word s.mem base (o + 16))
+  have h4 := h3.write (r := .x9) (by decide) (word s.mem base (o + 24))
+  simp only [packLoad, runBlock_cons, runStep_some, runBlock_nil, e0 hs _ o h8 (by omega_using []),
+    e0 h1 _ (o + 8) (by omega_using [h8]) (by omega_using []), e0 h2 _ (o + 16) (by omega_using [h8]) (by omega_using []),
+    e0 h3 _ (o + 24) (by omega_using [h8]) (by omega_using []), e0 h4 _ (o + 32) (by omega_using [h8]) (by omega_using []),
+    RegUpd.mem_write, RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, trivial, trivial, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr, ite_false]
+
+theorem packAA_ok (s : State) (h9 : (s.gpr .x9).toNat < 2 ^ 52) (h16 : (s.gpr .x16).toNat < 2 ^ 51 + 2 ^ 17) :
+    WP isa (.block (packSum .x4 .x5 .x6 .x7)) s fun t =>
+      v4 t .x4 .x5 .x6 .x7 = (s.gpr .x2).toNat + 2 ^ 51 * (s.gpr .x3).toNat + 2 ^ 102 * (s.gpr .x8).toNat +
+        2 ^ 153 * (s.gpr .x9).toNat + 2 ^ 204 * (s.gpr .x16).toNat ∧
+      Keeps [.x4, .x5, .x6, .x7, .x3, .x8, .x9, .x17] s t := by
+  apply WP.of_runBlock
+  simp only [v4, packSum, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
+    show (51 : Nat) < 64 from by decide, show (13 : Nat) < 64 from by decide, show (38 : Nat) < 64 from by decide,
+    show (26 : Nat) < 64 from by decide, show (25 : Nat) < 64 from by decide, show (39 : Nat) < 64 from by decide,
+    show (12 : Nat) < 64 from by decide,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry, ↓RegUpd.c_write,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  sum_done (pack_value (a := s.gpr .x2) (b := s.gpr .x3) (c := s.gpr .x8) h9 h16)
+
+theorem packBB_ok (s : State) (h9 : (s.gpr .x9).toNat < 2 ^ 52) (h16 : (s.gpr .x16).toNat < 2 ^ 51 + 2 ^ 17) :
+    WP isa (.block (packSum .x21 .x22 .x23 .x24)) s fun t =>
+      v4 t .x21 .x22 .x23 .x24 = (s.gpr .x2).toNat + 2 ^ 51 * (s.gpr .x3).toNat + 2 ^ 102 * (s.gpr .x8).toNat +
+        2 ^ 153 * (s.gpr .x9).toNat + 2 ^ 204 * (s.gpr .x16).toNat ∧
+      Keeps [.x21, .x22, .x23, .x24, .x3, .x8, .x9, .x17] s t := by
+  apply WP.of_runBlock
+  simp only [v4, packSum, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
+    show (51 : Nat) < 64 from by decide, show (13 : Nat) < 64 from by decide, show (38 : Nat) < 64 from by decide,
+    show (26 : Nat) < 64 from by decide, show (25 : Nat) < 64 from by decide, show (39 : Nat) < 64 from by decide,
+    show (12 : Nat) < 64 from by decide,
+    ↓RegUpd.gpr_write, ↓RegUpd.gpr_addWithCarry, ↓RegUpd.c_addWithCarry, ↓RegUpd.c_write,
+    BitVec.setWidth_eq, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  sum_done (pack_value (a := s.gpr .x2) (b := s.gpr .x3) (c := s.gpr .x8) h9 h16)
+
+/-- The bounds of the limbs that the squares leave. -/
+abbrev OutLt (m : Mem) (base : Addr) (e : Nat) : Prop := ∀ k < 5, out m base e k < 2 ^ 51 + 2 ^ 17
+
+theorem outVal_lt {m : Mem} {base : Addr} {e : Nat} (h : OutLt m base e) :
+    outVal m base e < 2 ^ 256 - 38 := by
+  have h0 := h 0 (by decide)
+  have h1 := h 1 (by decide)
+  have h2 := h 2 (by decide)
+  have h3 := h 3 (by decide)
+  have h4 := h 4 (by decide)
+  simp only [outVal]
+  omega_using [h0, h1, h2, h3, h4]
+
+theorem packAA {s : State} {base : Addr} (hs : Scr s base large) (h : OutLt s.mem base 0) :
+    WP isa (.block (packLoad OUT ++ packSum .x4 .x5 .x6 .x7)) s fun t =>
+      v4 t .x4 .x5 .x6 .x7 = outVal s.mem base 0 ∧ Keeps [.x4, .x5, .x6, .x7, .x2, .x3, .x8, .x9, .x16, .x17] s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (packLoad_ok hs (by decide) (by decide)) fun a ⟨a2, a3, a8, a9, a16, ka⟩ => ?_
+  refine WP.mono (packAA_ok a (by rw [a9]; exact Nat.lt_trans (h 3 (by decide)) (by decide)) (by rw [a16]; exact h 4 (by decide)))
+    fun t ⟨et, kt⟩ => ⟨?_, (ka.mono (by decide)).trans (kt.mono (by decide))⟩
+  rw [et, a2, a3, a8, a9, a16]
+  rfl
+
+theorem packBB {s : State} {base : Addr} (hs : Scr s base large) (h : OutLt s.mem base 1) :
+    WP isa (.block (packLoad (OUT + 48) ++ packSum .x21 .x22 .x23 .x24)) s fun t =>
+      v4 t .x21 .x22 .x23 .x24 = outVal s.mem base 1 ∧
+      Keeps [.x21, .x22, .x23, .x24, .x2, .x3, .x8, .x9, .x16, .x17] s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (packLoad_ok hs (by decide) (by decide)) fun a ⟨a2, a3, a8, a9, a16, ka⟩ => ?_
+  refine WP.mono (packBB_ok a (by rw [a9]; exact Nat.lt_trans (h 3 (by decide)) (by decide)) (by rw [a16]; exact h 4 (by decide)))
+    fun t ⟨et, kt⟩ => ⟨?_, (ka.mono (by decide)).trans (kt.mono (by decide))⟩
+  rw [et, a2, a3, a8, a9, a16]
+  rfl
+
+theorem outVal_outside {m m' : Mem} {base : Addr} {o : Slot} (h : Outside base (offset o) 32 m m') {e : Nat} (he : e < 2) :
+    (∀ k < 5, out m' base e k = out m base e k) ∧ outVal m' base e = outVal m base e := by
+  have hO : OUT = 1024 := rfl
+  have w : ∀ k < 5, out m' base e k = out m base e k := fun k hk => by
+    rw [out, h.word (Or.inr (by simp only [offset]; omega_arith)) (by omega_using [hk, he, hO])]
+  exact ⟨w, by simp only [outVal, w 0 (by decide), w 1 (by decide), w 2 (by decide), w 3 (by decide), w 4 (by decide)]⟩
+
+/-- `AA`, `BB` and `E` into slots 9, 10 and 11. -/
+theorem packE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0)
+    (h0 : OutLt s.mem base 0) (h1 : OutLt s.mem base 1) :
+    WP isa (.block packE) s fun t =>
+      env t.mem base = Function.update (Function.update (Function.update (env s.mem base) 9 (toFe (outVal s.mem base 0))) 10
+        (toFe (outVal s.mem base 1))) 11 (toFe (outVal s.mem base 0) - toFe (outVal s.mem base 1)) ∧
+      (∀ i : Slot, i ≠ 9 → i ≠ 10 → i ≠ 11 → fe t.mem base (offset i) = fe s.mem base (offset i)) ∧ LF base s t := by
+  rw [packE, ← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (packAA hs h0) fun a ⟨ea, ka⟩ => ?_
+  have hsa := hs.of_keeps ka (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (putPairs_ok hsa 9 (by decide) _ _ _ _) fun b ⟨pb, gb, fb⟩ => ?_
+  have hsb := pb.scr hsa
+  obtain ⟨wb, ob⟩ := outVal_outside pb.mem (e := 1) (by decide)
+  rw [ka.mem] at wb ob
+  rw [← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (packBB hsb fun k hk => by rw [wb k hk]; exact h1 k hk) fun c ⟨ec, kc⟩ => ?_
+  have hsc := hsb.of_keeps kc (by decide)
+  rw [ob] at ec
+  rw [WP.block_append_iff]
+  refine WP.mono (putPairs_ok hsc 10 (by decide) _ _ _ _) fun d ⟨pd, gd, fd⟩ => ?_
+  have hsd := pd.scr hsc
+  have va : v4 d .x4 .x5 .x6 .x7 = outVal s.mem base 0 := by
+    rw [← ea, v4, gd, kc.gpr _ (by decide), kc.gpr _ (by decide), kc.gpr _ (by decide), kc.gpr _ (by decide), gb]
+  have vb : v4 d .x21 .x22 .x23 .x24 = outVal s.mem base 1 := by rw [← ec, v4, gd]
+  have zd : d.gpr .x10 = 0 := by rw [gd, kc.gpr _ (by decide), gb, ka.gpr _ (by decide), hz]
+  rw [WP.block_append_iff]
+  refine WP.mono (diffReg_ok d zd (by rw [vb]; exact outVal_lt h1)) fun f ⟨ef, kf⟩ => ?_
+  refine WP.mono (putPairs_ok (hsd.of_keeps kf (by decide)) 11 (by decide) _ _ _ _) fun t ⟨pt, _, ft⟩ => ?_
+  rw [va, vb] at ef
+  refine ⟨?_, fun i h9 h10 h11 => ?_, ?_⟩
+  · rw [pt.env, F, ft, ef, kf.mem, pd.env, F, fd, ec, kc.mem, pb.env, F, fb, ea, ka.mem]
+  · rw [pt.fe h11, kf.mem, pd.fe h10, kc.mem, pb.fe h9, ka.mem]
+  · exact (LF.of_keeps ka (by decide)).trans ((pb.lf (by decide)).trans ((LF.of_keeps kc (by decide)).trans
+      ((pd.lf (by decide)).trans ((LF.of_keeps kf (by decide)).trans (pt.lf (by decide))))))
 
 theorem sumSqr_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (ha : Sm s.mem base 12)
     (hb : Sm s.mem base 13) :
@@ -489,15 +653,13 @@ theorem diffSqr_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr
   exact ⟨Put.of_keeps k (fun _ h => h) p, by rw [h, e], l⟩
 
 theorem mulE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) :
-    WP isa (.block (loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 11) .x12 .x13 .x14 .x15 ++
-        a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11)) s fun t =>
+    WP isa (.block mulE) s fun t =>
       Put base 2 s t ∧ F t.mem base (offset 2) = env s.mem base 11 *
         (env s.mem base 9 + Spec.X25519.a24 * env s.mem base 11) ∧
       fe t.mem base (offset 2) < 2 ^ 255 + 2 ^ 135 := by
-  rw [show loadPairs (offset 9) .x4 .x5 .x6 .x7 ++ loadPairs (offset 11) .x12 .x13 .x14 .x15 ++
-      a24Const ++ a24Low ++ a24High ++ a24Sum ++ mulInto 2 11 = loadPairs (offset 9) .x4 .x5 .x6 .x7 ++
+  rw [show mulE = loadPairs (offset 9) .x4 .x5 .x6 .x7 ++
       (loadPairs (offset 11) .x12 .x13 .x14 .x15 ++ ((a24Const ++ a24Low ++ a24High ++ a24Sum) ++ mulInto 2 11)) by
-    simp only [List.append_assoc], WP.block_append_iff]
+    simp only [mulE, List.append_assoc], WP.block_append_iff]
   refine WP.mono (getPairs_ok hs 9 (by decide) (by decide)) fun a ⟨ea, ka⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (getPairs_ok (hs.of_keeps ka (by decide)) 11 (by decide) (by decide)) fun b ⟨eb, kb⟩ => ?_
@@ -513,9 +675,94 @@ theorem mulE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   rw [h, kk.mem, ec, va, eb, ka.mem]
   rfl
 
+/-- The frame of an iteration's products: `LF`, with the vector code's results. -/
+structure BF (base : Addr) (s t : State) : Prop where
+  gpr : ∀ r, r ∉ lclob → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+  mem : Outside base 64 1056 s.mem t.mem
+
+theorem BF.trans {base : Addr} {s t u : State} (h : BF base s t) (k : BF base t u) : BF base s u :=
+  ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr, k.sp.trans h.sp, h.mem.trans k.mem⟩
+
+theorem BF.of_lf {base : Addr} {s t : State} (h : LF base s t) : BF base s t :=
+  ⟨h.gpr, h.rd, h.wr, h.sp, h.mem.mono (by decide) (by decide)⟩
+
+theorem BF.scr {base : Addr} {s t : State} (h : BF base s t) (hs : Scr s base large) : Scr t base large :=
+  ⟨(h.gpr _ (by decide)).trans hs.x0, h.wr ▸ hs.wr, hs.nowrap⟩
+
+theorem BF.zero {base : Addr} {s t : State} (h : BF base s t) (hz : s.gpr .x10 = 0) : t.gpr .x10 = 0 :=
+  (h.gpr _ (by decide)).trans hz
+
+theorem backA_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) :
+    WP isa (.block backA) s fun t =>
+      let e := env s.mem base
+      let DA := e 8 * e 5
+      let CB := e 7 * e 6
+      env t.mem base = Function.update (Function.update (Function.update (Function.update e 13 CB) 12 DA) 4
+        ((DA - CB) * (DA - CB))) 3 ((DA + CB) * (DA + CB)) ∧
+      fe t.mem base (offset 3) < 2 ^ 255 + 2 ^ 135 ∧ LF base s t ∧
+      fe t.mem base (offset 5) = fe s.mem base (offset 5) ∧ fe t.mem base (offset 6) = fe s.mem base (offset 6) := by
+  rw [backA, WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hs hz 13 7 6 (by decide) (by decide)) fun a ⟨pa, fa, ba⟩ => ?_
+  obtain hsa := pa.scr hs
+  obtain za := pa.zero hz
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hsa za 12 8 5 (by decide) (by decide)) fun b ⟨pb, fb, bb⟩ => ?_
+  obtain hsb := pb.scr hsa
+  obtain zb := pb.zero za
+  obtain m12 : Sm b.mem base 12 := by rw [Sm]; omega_using [bb]
+  obtain m13 : Sm b.mem base 13 := by rw [Sm, pb.fe (by decide)]; omega_using [ba]
+  rw [WP.block_append_iff]
+  refine WP.mono (diffSqr_ok hsb zb m13) fun c ⟨pc, fc, bc⟩ => ?_
+  refine WP.mono (sumSqr_ok (pc.scr hsb) (pc.zero zb) (by rw [Sm, pc.fe (by decide)]; exact m12)
+    (by rw [Sm, pc.fe (by decide)]; exact m13)) fun t ⟨pt, ft, bt⟩ => ?_
+  obtain ea := pa.env
+  obtain eb := pb.env
+  obtain ec := pc.env
+  obtain et := pt.env
+  simp only [fa] at ea
+  simp only [fb, ea, Function.update_apply, Fin.reduceEq, ite_false] at eb
+  simp only [fc, eb, Function.update_apply, Fin.reduceEq, ite_true, ite_false] at ec
+  simp only [ft, ec, Function.update_apply, Fin.reduceEq, ite_true, ite_false] at et
+  refine ⟨et, bt, (pa.lf (by decide)).trans ((pb.lf (by decide)).trans ((pc.lf (by decide)).trans (pt.lf (by decide)))), ?_, ?_⟩
+  · rw [pt.fe (by decide), pc.fe (by decide), pb.fe (by decide), pa.fe (by decide)]
+  · rw [pt.fe (by decide), pc.fe (by decide), pb.fe (by decide), pa.fe (by decide)]
+
+theorem back_indeps : Interleave.Indeps .x0 (backA.flatMap Interleave.expand)
+    ((squares (offset 5) (offset 6)).flatMap Interleave.expand) :=
+  Interleave.indeps_of_check (by decide +kernel)
+
+/-- `backA`, and the squares of `A` and `B` beside it. -/
+theorem woven_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (hc : Consts s.mem base) :
+    WP isa (.block (VG.Impl.AArch64Weave.weave backA (squares (offset 5) (offset 6)))) s fun t =>
+      let e := env s.mem base
+      let DA := e 8 * e 5
+      let CB := e 7 * e 6
+      env t.mem base = Function.update (Function.update (Function.update (Function.update e 13 CB) 12 DA) 4
+        ((DA - CB) * (DA - CB))) 3 ((DA + CB) * (DA + CB)) ∧
+      fe t.mem base (offset 3) < 2 ^ 255 + 2 ^ 135 ∧ BF base s t ∧ OutLt t.mem base 0 ∧ OutLt t.mem base 1 ∧
+      toFe (outVal t.mem base 0) = e 5 * e 5 ∧ toFe (outVal t.mem base 1) = e 6 * e 6 := by
+  refine Interleave.WP.weavePairs back_indeps (WP.mono (backA_ok hs hz) fun a ⟨ea, ba, la, a5, a6⟩ => ?_)
+  refine WP.mono (squares_ok (la.scr hs) (hc.outside (la.mem.mono (by decide) (by decide))) (a := offset 5) (b := offset 6)
+    (by decide) (by decide) (by decide) (by decide)) fun t ⟨o, om, og, or, ow, op⟩ => ?_
+  obtain ⟨o0, v0⟩ := o 0 (by decide)
+  obtain ⟨o1, v1⟩ := o 1 (by decide)
+  have ef : ∀ i : Fin 22, fe t.mem base (offset i) = fe a.mem base (offset i) := fun i =>
+    om.fe (Or.inl (by simp only [offset, OUT]; omega_arith)) (by simp only [offset]; omega_arith)
+  refine ⟨by rw [← ea]; funext i; exact congrArg toFe (ef i), by rw [ef 3]; exact ba,
+    (BF.of_lf la).trans ⟨fun r _ => by rw [og], or, ow, op, om.mono (by decide) (by decide)⟩, o0, o1, ?_, ?_⟩
+  · refine toFe_mul (v0.trans ?_)
+    show fe a.mem base (offset 5) * fe a.mem base (offset 5) % _ = _
+    rw [a5]
+  · refine toFe_mul (v1.trans ?_)
+    show fe a.mem base (offset 6) * fe a.mem base (offset 6) % _ = _
+    rw [a6]
+
 /-- The products of an iteration, from `A, B, C, D` in slots 5–8 and `x_1` in slot 0. -/
-theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) :
-    WP isa (.block back.flatten) s fun t =>
+theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (hc : Consts s.mem base) :
+    WP isa (.block back) s fun t =>
       let e := env s.mem base
       let AA := e 5 * e 5
       let BB := e 6 * e 6
@@ -524,77 +771,36 @@ theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
       let CB := e 7 * e 6
       env t.mem base 0 = e 0 ∧ env t.mem base 1 = AA * BB ∧ env t.mem base 2 = E * (AA + Spec.X25519.a24 * E) ∧
       env t.mem base 3 = (DA + CB) * (DA + CB) ∧ env t.mem base 4 = e 0 * ((DA - CB) * (DA - CB)) ∧
-      Sm4 t.mem base ∧ LF base s t := by
-  simp only [back, List.flatten_cons, List.flatten_nil, List.append_nil]
+      Sm4 t.mem base ∧ BF base s t := by
+  rw [back, WP.block_append_iff]
+  refine WP.mono (woven_ok hs hz hc) fun a ⟨ea, ba, la, o0, o1, v0, v1⟩ => ?_
+  obtain hsa := la.scr hs
+  obtain za := la.zero hz
   rw [WP.block_append_iff]
-  refine WP.mono (sqrSlots_ok hs hz 9 5 (by decide) (by decide)) fun a ⟨pa, fa, ba⟩ => ?_
-  obtain hsa := pa.scr hs
-  obtain za := pa.zero hz
+  refine WP.mono (packE_ok hsa za o0 o1) fun b ⟨eb, fb, lb⟩ => ?_
+  obtain hsb := lb.scr hsa
+  obtain zb := lb.zero za
   rw [WP.block_append_iff]
-  refine WP.mono (sqrSlots_ok hsa za 10 6 (by decide) (by decide)) fun b ⟨pb, fb, bb⟩ => ?_
-  obtain hsb := pb.scr hsa
-  obtain zb := pb.zero za
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hsb zb 12 8 5 (by decide) (by decide)) fun c ⟨pc, fc, bc⟩ => ?_
+  refine WP.mono (mulSlots_ok hsb zb 1 9 10 (by decide) (by decide)) fun c ⟨pc, fc, bc⟩ => ?_
   obtain hsc := pc.scr hsb
   obtain zc := pc.zero zb
   rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hsc zc 13 7 6 (by decide) (by decide)) fun d ⟨pd, fd, bd⟩ => ?_
-  obtain hsd := pd.scr hsc
-  obtain zd := pd.zero zc
-  rw [WP.block_append_iff]
-  refine WP.mono (diffE_ok hsd zd (by rw [Sm, pd.fe (by decide), pc.fe (by decide)]; omega_using [bb]))
-    fun e ⟨pe, fe'⟩ => ?_
-  obtain hse := pe.scr hsd
-  obtain ze := pe.zero zd
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hse ze 1 9 10 (by decide) (by decide)) fun f ⟨pf, ff, bf⟩ => ?_
-  obtain hsf := pf.scr hse
-  obtain zf := pf.zero ze
-  rw [WP.block_append_iff]
-  refine WP.mono (mulE_ok hsf zf) fun g ⟨pg, fg, bg⟩ => ?_
-  obtain hsg := pg.scr hsf
-  obtain zg := pg.zero zf
-  obtain m12 : Sm g.mem base 12 := by
-    rw [Sm, pg.fe (by decide), pf.fe (by decide), pe.fe (by decide), pd.fe (by decide)]; omega_using [bc]
-  obtain m13 : Sm g.mem base 13 := by
-    rw [Sm, pg.fe (by decide), pf.fe (by decide), pe.fe (by decide)]; omega_using [bd]
-  rw [WP.block_append_iff]
-  refine WP.mono (diffSqr_ok hsg zg m13) fun h ⟨ph, fh, bh⟩ => ?_
-  obtain hsh := ph.scr hsg
-  obtain zh := ph.zero zg
-  rw [WP.block_append_iff]
-  refine WP.mono (sumSqr_ok hsh zh (by rw [Sm, ph.fe (by decide)]; exact m12) (by rw [Sm, ph.fe (by decide)]; exact m13))
-    fun i ⟨pi, fi, bi⟩ => ?_
-  refine WP.mono (mulSlots_ok (pi.scr hsh) (pi.zero zh) 4 0 4 (by decide) (by decide)) fun t ⟨pt, ft, bt⟩ => ?_
-  obtain ea := pa.env
-  obtain eb := pb.env
+  refine WP.mono (mulE_ok hsc zc) fun d ⟨pd, fd, bd⟩ => ?_
+  refine WP.mono (mulSlots_ok (pd.scr hsc) (pd.zero zc) 4 0 4 (by decide) (by decide)) fun t ⟨pt, ft, bt⟩ => ?_
   obtain ec := pc.env
   obtain ed := pd.env
-  obtain ee := pe.env
-  obtain ef := pf.env
-  obtain eg := pg.env
-  obtain eh := ph.env
-  obtain ei := pi.env
   obtain et := pt.env
-  simp only [fa] at ea
-  simp only [fb] at eb
+  simp only [v0, v1] at eb
   simp only [fc] at ec
   simp only [fd] at ed
-  simp only [fe'] at ee
-  simp only [ff] at ef
-  simp only [fg] at eg
-  simp only [fh] at eh
-  simp only [fi] at ei
   simp only [ft] at et
-  simp only [et, ei, eh, eg, ef, ee, ed, ec, eb, ea, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
+  simp only [et, ed, ec, eb, ea, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
   refine ⟨trivial, trivial, trivial, trivial, trivial, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [Sm, pt.fe (by decide), pi.fe (by decide), ph.fe (by decide), pg.fe (by decide)]; omega_using [bf]
-  · rw [Sm, pt.fe (by decide), pi.fe (by decide), ph.fe (by decide)]; omega_using [bg]
-  · rw [Sm, pt.fe (by decide)]; omega_using [bi]
+  · rw [Sm, pt.fe (by decide), pd.fe (by decide)]; omega_using [bc]
+  · rw [Sm, pt.fe (by decide)]; omega_using [bd]
+  · rw [Sm, pt.fe (by decide), pd.fe (by decide), pc.fe (by decide), fb _ (by decide) (by decide) (by decide)]; omega_using [ba]
   · rw [Sm]; omega_using [bt]
-  · exact (pa.lf (by decide)).trans ((pb.lf (by decide)).trans ((pc.lf (by decide)).trans ((pd.lf (by decide)).trans
-      ((pe.lf (by decide)).trans ((pf.lf (by decide)).trans ((pg.lf (by decide)).trans ((ph.lf (by decide)).trans
-      ((pi.lf (by decide)).trans (pt.lf (by decide))))))))))
+  · exact la.trans ((BF.of_lf lb).trans ((BF.of_lf (pc.lf (by decide))).trans ((BF.of_lf (pd.lf (by decide))).trans
+      (BF.of_lf (pt.lf (by decide))))))
 
 end VG.Proof.X25519.AArch64.Ladder

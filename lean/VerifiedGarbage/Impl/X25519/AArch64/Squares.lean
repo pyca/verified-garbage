@@ -75,8 +75,8 @@ def split : List Instr :=
 /-- Twice the limbs, those exchanged, and 19 times the limbs. -/
 def multiples : List Instr :=
   ((List.range 5).map fun k => vo (.add .s4 (dv k) (av k) (av k))) ++
-    ((List.range 5).map fun k => vo (.ext (xv k) (dv k) (dv k) 8)) ++
-    (ldq .v31 K19 :: (List.range 5).map fun k => vo (.mul (nv k) (av k) .v31))
+    (((List.range 5).map fun k => vo (.ext (xv k) (dv k) (dv k) 8)) ++
+      ldq .v31 K19 :: (List.range 5).map fun k => vo (.mul (nv k) (av k) .v31))
 
 /-- A product: of the high words (`hi`) or the low ones of two registers. -/
 abbrev Term := Bool × VReg × VReg
@@ -105,7 +105,7 @@ def msum (d : VReg) : List Term → List Instr
   | p :: ps => vo (.umull p.1 d p.2.1 p.2.2) :: ps.map (mla d)
 
 def column (m : Nat) : List Instr :=
-  msum (ev m) (highs m) ++ ([add2 (ev m) (ev m) (ev m)] ++ ((lows m).map (mla (ev m)) ++ msum (cv m) (crosses m)))
+  msum (ev m) (highs m) ++ add2 (ev m) (ev m) (ev m) :: ((lows m).map (mla (ev m)) ++ msum (cv m) (crosses m))
 
 def columns : List Instr := (List.range 5).flatMap column
 
@@ -140,21 +140,24 @@ def squares (a b : Nat) : List Instr :=
 
 /-! ## Around them -/
 
-/-- The five limbs at `o` as four words in `d0`–`d3`; `x2, x3, x8, x9, x16, x17` are clobbered. -/
-def pack (o : Nat) (d0 d1 d2 d3 : Reg) : List Instr :=
+/-- The five limbs at `o` into `x2, x3, x8, x9, x16`. -/
+def packLoad (o : Nat) : List Instr :=
   [.ldr .x .x2 .x0 o, .ldr .x .x3 .x0 (o + 8), .ldr .x .x8 .x0 (o + 16), .ldr .x .x9 .x0 (o + 24),
-    .ldr .x .x16 .x0 (o + 32),
-    .lsl .x .x17 .x3 51, .adds .x d0 .x2 .x17, .lsr .x .x3 .x3 13, .lsl .x .x17 .x8 38, .adcs .x d1 .x3 .x17,
+    .ldr .x .x16 .x0 (o + 32)]
+
+/-- Those as four words in `d0`–`d3`; `x2, x3, x8, x9, x16, x17` are clobbered. -/
+def packSum (d0 d1 d2 d3 : Reg) : List Instr :=
+  [.lsl .x .x17 .x3 51, .adds .x d0 .x2 .x17, .lsr .x .x3 .x3 13, .lsl .x .x17 .x8 38, .adcs .x d1 .x3 .x17,
     .lsr .x .x8 .x8 26, .lsl .x .x17 .x9 25, .adcs .x d2 .x8 .x17, .lsr .x .x9 .x9 39, .lsl .x .x17 .x16 12,
     .adc .x d3 .x9 .x17]
 
-/-- The word `v` in both lanes of the vector at `o`. -/
-def constant (o : Nat) (w0 w1 w2 w3 : BitVec 16) : List Instr :=
-  [.movz .x .x4 w0 0, .movk .x .x4 w1 1, .movk .x .x4 w2 2, .movk .x .x4 w3 3, .vop (.dup .d2 .v0 .x4), stq .v0 o]
+/-- The word `x` in both lanes of the vector at `o`. -/
+def constant (o : Nat) (x : BitVec 64) : List Instr :=
+  [.movz .x .x4 (x.extractLsb' 0 16) 0, .movk .x .x4 (x.extractLsb' 16 16) 1, .movk .x .x4 (x.extractLsb' 32 16) 2,
+    .movk .x .x4 (x.extractLsb' 48 16) 3, vo (.dup .d2 .v0 .x4), stq .v0 o]
 
 def constants : List Instr :=
-  constant K51 0xffff 0xffff 0xffff 7 ++ (constant K26 0xffff 0x3ff 0 0 ++
-    (constant K25 0xffff 0x1ff 0 0 ++ constant K19 19 0 19 0))
+  constant K51 0x7ffffffffffff ++ (constant K26 0x3ffffff ++ (constant K25 0x1ffffff ++ constant K19 0x1300000013))
 
 /-- Where `v8`–`v15` are saved. -/
 def VSAVE : Nat := 1184

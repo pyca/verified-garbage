@@ -36,6 +36,7 @@ namespace VG.Proof.X25519.AArch64.Ladder
 
 open VG VG.AArch64 VG.Impl.X25519.AArch64.Ladder VG.Impl.Ed25519.AArch64 VG.Impl.Ed25519.AArch64.Pairs
 open VG.Impl.X25519.AArch64 (BITS)
+open VG.Impl.X25519.AArch64.Squares VG.Proof.X25519.AArch64.Squares
 open VG.Proof.Ed25519.AArch64 VG.Proof.Ed25519.AArch64.Pairs VG.Proof.Ed25519.Word64 VG.Proof.X25519
 open VG.Spec.X25519 (Fe P decodeScalar25519 decodeUCoordinate ladderStep)
 
@@ -70,12 +71,13 @@ structure Inv (s₀ : State) (base : Addr) (k : Nat) (x1 : Fe) (n : Nat) (s : St
   count : s.gpr .x19 = BitVec.ofNat 64 n
   bits : BitsAt s.mem base (bitOf k)
   small : Sm4 s.mem base
+  consts : Consts s.mem base
   holds : Holds s.mem base x1 (ladderAfter k x1 n)
   gpr : ∀ r, r ∉ .x19 :: lclob → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  mem : Outside base 64 448 s₀.mem s.mem
+  mem : Outside base 64 1056 s₀.mem s.mem
 
 theorem bitsAt_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (hn : o + n ≤ BITS)
     {b : Nat → Nat} (hb : BitsAt m base b) : BitsAt m' base b := fun t ht => by
@@ -88,9 +90,10 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {x1 : Fe} {n : Nat} (hn
   refine WP.mono (front_ok h.scr h.zero h.small h.bits hn (bitOf_lt k n) (bitOf_lt k (n + 1)) h.count)
     fun a ⟨a5, a6, a7, a8, a0, a19, a10, ag, ard, awr, asp, am⟩ => ?_
   obtain hsa : Scr a base false := ⟨(ag _ (by decide)).trans h.scr.x0, awr ▸ h.scr.wr, h.scr.nowrap⟩
-  refine WP.mono (back_ok hsa a10) fun t ⟨t0, t1, t2, t3, t4, ts, tl⟩ => ?_
-  obtain om := am.trans tl.mem
-  refine ⟨tl.scr hsa, tl.zero a10, (tl.gpr _ (by decide)).trans a19, bitsAt_outside om (by decide) h.bits, ts, ?_,
+  obtain am' : Outside base 64 1056 s.mem a.mem := am.mono (by decide) (by decide)
+  refine WP.mono (back_ok hsa a10 (h.consts.outside am')) fun t ⟨t0, t1, t2, t3, t4, ts, tl⟩ => ?_
+  obtain om := am'.trans tl.mem
+  refine ⟨tl.scr hsa, tl.zero a10, (tl.gpr _ (by decide)).trans a19, bitsAt_outside om (by decide) h.bits, ts, h.consts.outside om, ?_,
     fun r hr => ((tl.gpr r fun hm => hr (List.mem_cons_of_mem _ hm)).trans (ag r hr)).trans (h.gpr r hr),
     tl.rd.trans (ard.trans h.rd), tl.wr.trans (awr.trans h.wr), tl.sp.trans (asp.trans h.sp), h.mem.trans om⟩
   obtain ⟨h0, h1, h2, h3, h4⟩ := h.holds
@@ -210,9 +213,11 @@ theorem outside_scR {b : Addr} {o n : Nat} (hn : o + n ≤ 4096) {m m' : Mem} (h
 abbrev kOf (m : Mem) (p : Addr) : Nat := decodeScalar25519 (Spec.X25519.bytesAt m p 32)
 abbrev uOf (m : Mem) (q : Addr) : Fe := toFe (decodeUCoordinate (Spec.X25519.bytesAt m q 32))
 
-theorem setup_ok {s : State} (hp : LPre s) :
-    WP isa (.block setup) s fun t =>
-      Inv t (s.gpr .x3) (kOf s.mem (s.gpr .x1)) (uOf s.mem (s.gpr .x2)) 255 t ∧
+theorem setup0_ok {s : State} (hp : LPre s) :
+    WP isa (.block setup0) s fun t =>
+      Scr t (s.gpr .x3) false ∧ BitsAt t.mem (s.gpr .x3) (bitOf (kOf s.mem (s.gpr .x1))) ∧ Sm4 t.mem (s.gpr .x3) ∧
+      Holds t.mem (s.gpr .x3) (uOf s.mem (s.gpr .x2))
+        (ladderAfter (kOf s.mem (s.gpr .x1)) (uOf s.mem (s.gpr .x2)) 255) ∧
       SavedW (s.gpr .x3) s.gpr t.mem ∧ t.gpr .x1 = s.gpr .x0 ∧
       (∀ r, r ∉ .x0 :: .x1 :: .x10 :: .x19 :: lclob → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
@@ -221,10 +226,9 @@ theorem setup_ok {s : State} (hp : LPre s) :
   obtain ⟨b, hb⟩ : ∃ b, s.gpr .x3 = b := ⟨_, rfl⟩
   rw [hb] at hn hwr osc ssc psc ⊢
   obtain hs : Sc b s := ⟨hb, by rw [hwr]; simp⟩
-  rw [show setup = VG.Impl.X25519.AArch64.save ++ (VG.Impl.X25519.AArch64.bits ++ (moves ++ (loadY ++
-      (store4 (offset 0) ++ (fieldCode [.copy 3 0, .const 1 1, .const 2 0, .const 4 1] ++
-        ([.movz .w .x10 0 0, .movz .w .x19 255 0] : List Instr)))))) by
-    simp only [setup, moves, List.append_assoc], WP.block_append_iff]
+  rw [show setup0 = VG.Impl.X25519.AArch64.save ++ (VG.Impl.X25519.AArch64.bits ++ (moves ++ (loadY ++
+      (store4 (offset 0) ++ fieldCode [.copy 3 0, .const 1 1, .const 2 0, .const 4 1])))) by
+    simp only [setup0, moves, List.append_assoc], WP.block_append_iff]
   refine WP.mono (save_ok hs) fun a ⟨wa, fa, ka⟩ => ?_
   obtain hsa := hs.of_kp ka (by decide)
   obtain oa : Outside b 0 48 s.mem a.mem := outside_of_frame (by decide) (by
@@ -303,24 +307,18 @@ theorem setup_ok {s : State} (hp : LPre s) :
   obtain uv : env f.mem b 0 = uOf s.mem (s.gpr .x2) := by
     rw [env, F, ff, uOf, decodeUCoordinate_eq (length_bytesAt _ _ _), ← pd, VG.Proof.Ed25519.decodeLE_eq]
     rfl
-  rw [WP.block_append_iff]
   refine WP.mono (fieldCode_okS _ hsf (S := fun i => decide (i = 0)) (fun i hi => by
     rw [of_decide_eq_true hi]; omega_using [f0])) fun g ⟨kg, eg, sg⟩ => ?_
-  refine WP.mono (count_ok g) fun t ⟨t10, t19, kt⟩ => ?_
-  obtain ot : Outside b 64 704 d.mem t.mem := by
-    rw [kt.mem]
-    exact (of.mono (by decide) (by decide)).trans kg.mem
-  refine ⟨⟨(kg.scr hsf).of_keeps kt (by decide), t10, t19, bitsAt_outside ot (by decide) kd, ?_, ?_, fun _ _ => rfl,
-    rfl, rfl, rfl, Outside.refl _ _ _ _⟩, savedW_outside ot (by decide) svd, ?_, fun r hr => ?_, ?_, ?_⟩
-  · rw [kt.mem]
-    exact ⟨sg 1 (small0 1 (by decide)), sg 2 (small0 2 (by decide)), sg 3 (small0 3 (by decide)), sg 4 (small0 4 (by decide))⟩
-  · rw [kt.mem, Holds, eg, ladderAfter_255]
+  obtain ot : Outside b 64 704 d.mem g.mem := (of.mono (by decide) (by decide)).trans kg.mem
+  refine ⟨kg.scr hsf, bitsAt_outside ot (by decide) kd, ?_, ?_, savedW_outside ot (by decide) svd, ?_, fun r hr => ?_, ?_, ?_⟩
+  · exact ⟨sg 1 (small0 1 (by decide)), sg 2 (small0 2 (by decide)), sg 3 (small0 3 (by decide)), sg 4 (small0 4 (by decide))⟩
+  · rw [Holds, eg, ladderAfter_255]
     simp only [evalOps, evalOp, List.foldl_cons, List.foldl_nil, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
     exact ⟨uv, rfl, rfl, uv, rfl⟩
-  · rw [kt.gpr _ (by decide), kg.gpr _ (by decide), gf, ke.gpr _ (by decide), d1, kc.gpr _ (by decide), ka.gpr _ (by decide)]
+  · rw [kg.gpr _ (by decide), gf, ke.gpr _ (by decide), d1, kc.gpr _ (by decide), ka.gpr _ (by decide)]
   · simp only [List.mem_cons, not_or] at hr
     obtain ⟨r0, r1, r10, r19, rl⟩ := hr
-    rw [kt.gpr r (by simp [r10, r19]), kg.gpr r (fun h => by
+    rw [kg.gpr r (fun h => by
         rcases (by decide : ∀ q ∈ clob, q = .x10 ∨ q ∈ lclob) r h with h | h
         · exact r10 h
         · exact rl h), gf, ke.gpr r (fun h => rl ((by decide : ∀ q ∈ [Reg.x4, .x5, .x6, .x7, .x8], q ∈ lclob) r h))]
@@ -332,8 +330,56 @@ theorem setup_ok {s : State} (hp : LPre s) :
     · subst h; exact rl (by decide)
     · exact r19 h
     · subst h; exact rl (by decide)
-  · rw [kt.rd, kg.rd, rf, ke.rd, rds]
-  · rw [kt.wr, kg.wr, wf, ke.wr, wrs]
+  · rw [kg.rd, rf, ke.rd, rds]
+  · rw [kg.wr, wf, ke.wr, wrs]
+
+theorem setup_ok {s : State} (hp : LPre s) :
+    WP isa (.block setup) s fun t =>
+      Inv t (s.gpr .x3) (kOf s.mem (s.gpr .x1)) (uOf s.mem (s.gpr .x2)) 255 t ∧
+      SavedW (s.gpr .x3) s.gpr t.mem ∧ SavedV (s.gpr .x3) s.v t.mem ∧ t.gpr .x1 = s.gpr .x0 ∧
+      (∀ r, r ∉ .x0 :: .x1 :: .x10 :: .x19 :: lclob → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  rw [setup, WP.block_append_iff]
+  refine WP.mono (WP.preservedV (setup0_ok hp) (by lit_decide))
+    fun a ⟨⟨hsa, ab, as, ah, aw, a1, ag, ard, awr⟩, av⟩ => ?_
+  generalize s.gpr .x3 = b at *
+  rw [WP.block_append_iff]
+  refine WP.mono (constants_ok hsa) fun c ⟨cc, co, cg, crd, cwr, cv⟩ => ?_
+  have hsc : Scr c b false := scr_of hsa (cg _ (by decide)) cwr
+  rw [WP.block_append_iff]
+  refine WP.mono (vsave_ok hsc) fun d ⟨dv, dm, dg, drd, dwr⟩ => ?_
+  have hsd : Scr d b false := scr_of hsc (by rw [dg]) dwr
+  refine WP.mono (count_ok d) fun t ⟨t10, t19, kt⟩ => ?_
+  obtain o : Outside b 1120 192 a.mem t.mem := by
+    rw [kt.mem]
+    exact (co.mono (by decide) (by decide)).trans (dm.mono (by decide) (by decide))
+  have ef : ∀ i : Fin 14, fe t.mem b (offset (i.castLE (by decide))) = fe a.mem b (offset (i.castLE (by decide))) := fun i =>
+    o.fe (Or.inl (by simp only [offset, Fin.val_castLE]; omega_arith)) (by simp only [offset, Fin.val_castLE]; omega_arith)
+  refine ⟨⟨hsd.of_keeps kt (by decide), t10, t19, ?_, ?_, ?_, ?_, fun _ _ => rfl, rfl, rfl, rfl, Outside.refl _ _ _ _⟩,
+    ?_, ?_, ?_, fun r hr => ?_, ?_, ?_⟩
+  · intro n hn
+    have hB : BITS = 1984 := rfl
+    rw [o _ (Or.inr (by rw [ofs_off' b (by omega_using [hB, hn])]; omega_using [hB])), ab n hn]
+  · exact ⟨Nat.lt_of_le_of_lt (Nat.le_of_eq (ef 1)) as.1, Nat.lt_of_le_of_lt (Nat.le_of_eq (ef 2)) as.2.1, Nat.lt_of_le_of_lt (Nat.le_of_eq (ef 3)) as.2.2.1, Nat.lt_of_le_of_lt (Nat.le_of_eq (ef 4)) as.2.2.2⟩
+  · rw [kt.mem]
+    refine ⟨fun e he => ?_, fun e he => ?_, fun e he => ?_, fun k hk => ?_⟩
+    · rw [read16_outside dm (by decide) (by decide)]; exact cc.k51 e he
+    · rw [read16_outside dm (by decide) (by decide)]; exact cc.k26 e he
+    · rw [read16_outside dm (by decide) (by decide)]; exact cc.k25 e he
+    · rw [read16_outside dm (by decide) (by decide)]; exact cc.k19 k hk
+  · exact ⟨(congrArg toFe (ef 0)).trans ah.1, (congrArg toFe (ef 1)).trans ah.2.1, (congrArg toFe (ef 2)).trans ah.2.2.1,
+      (congrArg toFe (ef 3)).trans ah.2.2.2.1, (congrArg toFe (ef 4)).trans ah.2.2.2.2⟩
+  · exact savedW_outside o (by decide) aw
+  · rw [kt.mem]
+    intro k hk
+    have hm : ∀ k < 8, vsaved k ∈ preservedV ∧ vsaved k ≠ .v0 := by decide
+    rw [dv k hk, cv _ (hm k hk).2, av _ (hm k hk).1]
+  · rw [kt.gpr _ (by decide), dg, cg _ (by decide), a1]
+  · simp only [List.mem_cons, not_or] at hr
+    rw [kt.gpr r (by simp [hr.2.2.1, hr.2.2.2.1]), dg, cg r fun h => hr.2.2.2.2 (h ▸ by decide),
+      ag r (by simp only [List.mem_cons, not_or]; exact hr)]
+  · rw [kt.rd, drd, crd, ard]
+  · rw [kt.wr, dwr, cwr, awr]
 
 /-! ## The finish -/
 
@@ -375,20 +421,33 @@ theorem restore_ok {s : State} {b : Addr} (hs : Scr s b false) {g : Reg → BitV
 /-! ## The whole function -/
 
 theorem x25519_wp [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hp : LPre s) :
-    WP isa x25519 s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+    WP isa x25519 s fun t => ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
+      ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧
       Spec.X25519.bytesAt t.mem (s.gpr .x0) 32 =
         Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) (Spec.X25519.bytesAt s.mem (s.gpr .x2) 32) := by
   obtain ⟨b, hb⟩ : ∃ b, s.gpr .x3 = b := ⟨_, rfl⟩
   obtain osc := hp.pre.out_sc
   obtain hwr := hp.pre.wr
   rw [x25519]
-  refine WP.seq (WP.mono (setup_ok hp) fun a ⟨ia, sva, a1, ag, _, awr⟩ => ?_)
-  rw [hb] at ia sva osc hwr
+  refine WP.seq (WP.mono (setup_ok hp) fun a ⟨ia, sva, svv, a1, ag, _, awr⟩ => ?_)
+  rw [hb] at ia sva svv osc hwr
   refine WP.seq (WP.mono (ladder_ok ia) fun c ic => ?_)
-  obtain svc := savedW_outside ic.mem (by decide) sva
-  refine WP.seq (WP.mono (Divstep.invert_ok ic.scr) fun d ⟨dv, kd, d1, od⟩ => ?_)
+  refine WP.seq (WP.mono (vrestore_ok ic.scr (svv.outside ic.mem (by decide))) fun r ⟨rv, rm, rg, _, rwr⟩ => ?_)
+  obtain hr : Scr r b false := scr_of ic.scr (by rw [rg]) rwr
+  obtain svc : SavedW b s.gpr r.mem := by rw [rm]; exact savedW_outside ic.mem (by decide) sva
+  suffices h : WP isa (.seq Divstep.invert (.block VG.Impl.X25519.AArch64.Word.finish)) r fun t =>
+      (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ Spec.X25519.bytesAt t.mem (s.gpr .x0) 32 =
+        Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) (Spec.X25519.bytesAt s.mem (s.gpr .x2) 32) by
+    refine WP.mono (WP.preservedV h (by lit_decide)) fun t ⟨⟨tg, tb⟩, tv⟩ => ⟨⟨tg, fun q hq => ?_⟩, tb⟩
+    obtain ⟨k, hk, rfl⟩ : ∃ k, k < 8 ∧ q = vsaved k := by
+      simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      exacts [⟨0, by decide⟩, ⟨1, by decide⟩, ⟨2, by decide⟩, ⟨3, by decide⟩, ⟨4, by decide⟩, ⟨5, by decide⟩, ⟨6, by decide⟩,
+        ⟨7, by decide⟩]
+    rw [tv _ hq, rv k hk]
+  refine WP.seq (WP.mono (Divstep.invert_ok hr) fun d ⟨dv, kd, d1, od⟩ => ?_)
   obtain svd := savedW_outside od (by decide) svc
-  obtain hd : Scr d b false := ⟨(kd.gpr _ (by decide)).trans ic.scr.x0, kd.wr ▸ ic.scr.wr, ic.scr.nowrap⟩
+  obtain hd : Scr d b false := ⟨(kd.gpr _ (by decide)).trans hr.x0, kd.wr ▸ hr.wr, hr.nowrap⟩
   simp only [VG.Impl.X25519.AArch64.Word.finish, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (mul_ok hd (slot_rangeWith (large := false) 1) (slot_rangeWith (large := false) 1)
@@ -397,9 +456,9 @@ theorem x25519_wp [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hp : LPr
   obtain sve := savedW_outside oe.mem (by decide) svd
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok he (slot_rangeWith (large := false) 1)) fun f ⟨fv, kf⟩ => ?_
-  obtain wrf : f.wr = s.wr := by rw [kf.wr, oe.wr, kd.wr, ic.wr, awr]
+  obtain wrf : f.wr = s.wr := by rw [kf.wr, oe.wr, kd.wr, rwr, ic.wr, awr]
   obtain f1 : f.gpr .x1 = s.gpr .x0 := by
-    rw [kf.gpr _ (by decide), oe.gpr _ (by decide), d1, ic.gpr _ (by decide), a1]
+    rw [kf.gpr _ (by decide), oe.gpr _ (by decide), d1, rg, ic.gpr _ (by decide), a1]
   rw [WP.block_append_iff]
   refine WP.mono (out_ok f1 (by rw [wrf, hwr]; simp)) fun g hg => ?_
   obtain og : Outside (s.gpr .x0) 0 32 f.mem g.mem := by subst hg; exact st4_outside _ _ (by decide) _ _ _ _
@@ -426,7 +485,7 @@ theorem x25519_wp [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hp : LPr
     · exact tr (.x24, 40) (by decide)
     all_goals
       rw [kt.gpr _ (by decide), show g.gpr = f.gpr by subst hg; rfl, kf.gpr _ (by decide), oe.gpr _ (by decide),
-        kd.gpr _ (by decide), ic.gpr _ (by decide), ag _ (by decide)]
+        kd.gpr _ (by decide), rg, ic.gpr _ (by decide), ag _ (by decide)]
   · rw [kt.mem]
     subst hg
     show Spec.X25519.bytesAt (st4 _ _ _ _ _ _ _) _ 32 = _
@@ -436,10 +495,10 @@ theorem x25519_wp [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hp : LPr
       show bit _ 0 = 0
       rw [scalar_bit (length_bytesAt _ _ _) (by decide)]
       rfl
-    obtain e1 : F d.mem b (offset 1) = env c.mem b 1 := congrArg toFe (od.fe (by decide) (by decide))
+    obtain e1 : F d.mem b (offset 1) = env r.mem b 1 := congrArg toFe (od.fe (by decide) (by decide))
     rw [bytesAt_st4, fv, x25519_eq]
     simp only [z, Spec.X25519.cswap, show (0 : Nat) ≠ 1 from by decide, ite_false]
-    rw [encodeUCoordinate_eq, ← h2, ← h3, ← e1, ← dv, show env d.mem b 15 = F d.mem b (offset 15) from rfl, ← ev,
+    rw [encodeUCoordinate_eq, ← h2, ← h3, ← rm, ← e1, ← dv, show env d.mem b 15 = F d.mem b (offset 15) from rfl, ← ev,
       F, toFe_val]
 
 /-- `vg_x25519`'s contract by register, an internal function's. -/
@@ -456,8 +515,8 @@ def local25519 : Contract isa where
 theorem x25519_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : local25519.pre s) :
     ∃ t s', Exec isa x25519 s t s' ∧ abiPreserved s s' ∧ local25519.post s s' := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hs
-  obtain ⟨t, s', he, hg, hp⟩ := x25519_wp ⟨⟨h1, h2, h3, h4, h5⟩, h6⟩
-  exact ⟨t, s', he, ⟨hg, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, hp⟩
+  obtain ⟨t, s', he, ⟨hg, hv⟩, hp⟩ := x25519_wp ⟨⟨h1, h2, h3, h4, h5⟩, h6⟩
+  exact ⟨t, s', he, ⟨hg, Exec.sp he, hv⟩, hp⟩
 
 theorem x25519_ct : ConstantTime isa local25519.pre local25519.pub x25519 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) ?_ (by taint_decide)

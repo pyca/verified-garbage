@@ -411,16 +411,6 @@ theorem squareTo_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gp
   refine WP.mono (toSlot_ok (hs.of_keeps k (by decide)) ((k.gpr _ (by decide)).trans hz) o ho) fun t ⟨p, h, b⟩ => ?_
   exact ⟨Put.of_keeps k (by decide) p, by rw [h, e]; exact toFe_mul rfl, b⟩
 
-theorem sqrSlots_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0) (o a : Slot)
-    (ho : o.val < 14) (ha : a.val < 14) :
-    WP isa (.block (sqrSlots o a)) s fun t => Put base o s t ∧
-      F t.mem base (offset o) = env s.mem base a * env s.mem base a ∧
-      fe t.mem base (offset o) < 2 ^ 255 + 2 ^ 135 := by
-  rw [sqrSlots, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (getPairs_ok hs a ha (by decide)) fun u ⟨e, k⟩ => ?_
-  refine WP.mono (squareTo_ok (hs.of_keeps k (by decide)) ((k.gpr _ (by decide)).trans hz) o ho) fun t ⟨p, h, l⟩ => ?_
-  exact ⟨Put.of_keeps k (by decide) p, by rw [h, e]; rfl, l⟩
-
 /-! ## The sums of an iteration's products -/
 
 /-- Elements below this fold once. -/
@@ -480,16 +470,5 @@ theorem LF.scr {base : Addr} {s t : State} (h : LF base s t) (hs : Scr s base la
 
 theorem LF.zero {base : Addr} {s t : State} (h : LF base s t) (hz : s.gpr .x10 = 0) : t.gpr .x10 = 0 :=
   (h.gpr _ (by decide)).trans hz
-
-theorem movs_ok (s : State) :
-    WP isa (.block [mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7]) s fun t =>
-      v4 t .x12 .x13 .x14 .x15 = v4 s .x4 .x5 .x6 .x7 ∧ Keeps [.x12, .x13, .x14, .x15] s t := by
-  apply WP.of_runBlock
-  simp only [mov, v4, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, show (0 : Nat) < 4096 by decide,
-    BitVec.add_zero, RegUpd.gpr_write, BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [RegUpd.gpr_write, hr, ite_false]
 
 end VG.Proof.Ed25519.AArch64.Pairs

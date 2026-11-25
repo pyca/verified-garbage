@@ -36,8 +36,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 `vg_x25519_exchange` runs the ladder in a 16-byte frame, which the analysis of
 the window's bytes (`rtaintG`) finds may differ between the two runs on
-return. It clears the registers the ladder leaves secret, the upper half of
-`x0` (`withRet 32`) and the flags, then zeroes that granule
+return. It clears the registers the ladder leaves secret, the high halves of
+`v8`–`v15`, the upper half of `x0` (`withRet 32`) and the flags, then zeroes that granule
 (`scrubSel 16 [0]`). Its postcondition reads the memory on return only
 within `out` (`exchangePost_local`).
 -/
