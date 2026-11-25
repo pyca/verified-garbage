@@ -6,7 +6,10 @@ public import VerifiedGarbage.Proof.Gcm.Slots
 public import VerifiedGarbage.Proof.Gcm.Spread32
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Gcm.X86.Lit
+public import VerifiedGarbage.Proof.Gcm.X86.Lanes
 import VerifiedGarbage.Proof.Gcm.X86.Rev
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Exec
@@ -35,6 +38,8 @@ namespace VG.Proof.Gcm.X86
 
 open VG VG.X86
 open VG.Impl.Gcm.X86
+open Polynomial (X)
+open VG.Proof.Gcm.Spread (lp lp_xor keyW0 keyW1)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
 
 /-! ## The abstract machine -/
@@ -42,16 +47,41 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
 structure A where
   g : Reg → BitVec 32
   m : Nat → BitVec 32
+  x : XReg → BitVec 128
 
 namespace A
 
-def set (a : A) (d : Reg) (v : BitVec 32) : A := ⟨fun r => if r = d then v else a.g r, a.m⟩
-def put (a : A) (k : Nat) (v : BitVec 32) : A := ⟨a.g, fun j => if j = k then v else a.m j⟩
+def set (a : A) (d : Reg) (v : BitVec 32) : A := ⟨fun r => if r = d then v else a.g r, a.m, a.x⟩
+def put (a : A) (k : Nat) (v : BitVec 32) : A := ⟨a.g, fun j => if j = k then v else a.m j, a.x⟩
+def setX (a : A) (d : XReg) (v : BitVec 128) : A := ⟨a.g, a.m, fun r => if r = d then v else a.x r⟩
+/-- Vector `j` of `scratch`. -/
+def putV (a : A) (j : Nat) (v : BitVec 128) : A := ⟨a.g, fun k => if k / 4 = j then dword v (k % 4) else a.m k, a.x⟩
+/-- The vector of words `4 j` to `4 j + 3`. -/
+def vec (a : A) (j : Nat) : BitVec 128 := ofDwords (a.m (4 * j)) (a.m (4 * j + 1)) (a.m (4 * j + 2)) (a.m (4 * j + 3))
 
 theorem g_set (a : A) (d : Reg) (v : BitVec 32) (r : Reg) : (a.set d v).g r = if r = d then v else a.g r := rfl
 theorem m_set (a : A) (d : Reg) (v : BitVec 32) : (a.set d v).m = a.m := rfl
 theorem g_put (a : A) (k : Nat) (v : BitVec 32) : (a.put k v).g = a.g := rfl
 theorem m_put (a : A) (k : Nat) (v : BitVec 32) (j : Nat) : (a.put k v).m j = if j = k then v else a.m j := rfl
+
+theorem x_set (a : A) (d : Reg) (v : BitVec 32) : (a.set d v).x = a.x := rfl
+theorem x_put (a : A) (k : Nat) (v : BitVec 32) : (a.put k v).x = a.x := rfl
+theorem g_setX (a : A) (d : XReg) (v : BitVec 128) : (a.setX d v).g = a.g := rfl
+theorem m_setX (a : A) (d : XReg) (v : BitVec 128) : (a.setX d v).m = a.m := rfl
+theorem x_setX (a : A) (d : XReg) (v : BitVec 128) (r : XReg) : (a.setX d v).x r = if r = d then v else a.x r := rfl
+theorem g_putV (a : A) (j : Nat) (v : BitVec 128) : (a.putV j v).g = a.g := rfl
+theorem x_putV (a : A) (j : Nat) (v : BitVec 128) : (a.putV j v).x = a.x := rfl
+theorem m_putV (a : A) (j : Nat) (v : BitVec 128) (k : Nat) :
+    (a.putV j v).m k = if k / 4 = j then dword v (k % 4) else a.m k := rfl
+theorem vec_setX (a : A) (d : XReg) (v : BitVec 128) (j : Nat) : (a.setX d v).vec j = a.vec j := rfl
+
+theorem vec_putV (a : A) (j : Nat) (v : BitVec 128) (i : Nat) : (a.putV j v).vec i = if i = j then v else a.vec i := by
+  simp only [vec, m_putV, show 4 * i / 4 = i by omega, show (4 * i + 1) / 4 = i by omega, show (4 * i + 2) / 4 = i by omega,
+    show (4 * i + 3) / 4 = i by omega, show 4 * i % 4 = 0 by omega, show (4 * i + 1) % 4 = 1 by omega,
+    show (4 * i + 2) % 4 = 2 by omega, show (4 * i + 3) % 4 = 3 by omega]
+  split
+  · exact ofDwords_dword v
+  · rfl
 
 end A
 
@@ -62,6 +92,23 @@ def slotOf (m : MemOp) : Option Nat :=
 theorem slotOf_slot {k : Nat} (hk : k < 64) : slotOf (slot k) = some k := by
   rw [slotOf, slot, at_, ite_eq_left ⟨rfl, by show 4 * k % 4 = 0; omega, by show 4 * k < 256; omega⟩]
   exact congrArg some (Nat.mul_div_cancel_left k (by decide))
+
+/-- The vector of `scratch` an operand is. -/
+def vslotOf (m : MemOp) : Option Nat :=
+  if m.base = .ecx ∧ m.disp % 16 = 0 ∧ m.disp < 256 then some (m.disp / 16) else none
+
+theorem vslotOf_vslot {j : Nat} (hj : j < 16) : vslotOf (vslot j) = some j := by
+  rw [vslotOf, vslot, at_, ite_eq_left ⟨rfl, by show 16 * j % 16 = 0; omega, by show 16 * j < 256; omega⟩]
+  exact congrArg some (Nat.mul_div_cancel_left j (by decide))
+
+def xopA (a : A) : XOp → Option A
+  | .bin o d r => some (a.setX d (o.eval (a.x d) (a.x r)))
+  | .shift o d n => some (a.setX d (o.eval (a.x d) n))
+  | .pshufd d r o => some (a.setX d (shufDwords (a.x r) o))
+  | .pshuflw d r o => some (a.setX d (shufLowWords (a.x r) o))
+  | .pshufhw d r o => some (a.setX d (shufHighWords (a.x r) o))
+  | .movd d r => some (a.setX d ((0 : BitVec 96) ++ a.g r))
+  | _ => none
 
 def srcA (a : A) : Src → Option (BitVec 32)
   | .reg r => some (a.g r)
@@ -82,6 +129,9 @@ def stepA : Instr → A → Option A
     let p := (a.g .eax).toNat * (a.g r).toNat
     some ((a.set .eax (BitVec.ofNat 32 p)).set .edx (BitVec.ofNat 32 (p / 2 ^ 32)))
   | .store m r, a => (slotOf m).map fun k => a.put k (a.g r)
+  | .xop op, a => xopA a op
+  | .movdquLoad d m, a => (vslotOf m).map fun j => a.setX d (a.vec j)
+  | .movdquStore m r, a => (vslotOf m).map fun j => a.putV j (a.x r)
   | _, _ => none
 
 def evalA : List Instr → A → Option A
@@ -104,6 +154,7 @@ structure Rel (s₀ : State) (s : State) (a : A) : Prop where
   esp : a.g .esp = s₀.gpr .esp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  x : s.xmm = a.x
 
 /-- What of the state at entry the abstract machine's steps need. -/
 structure Scr (s₀ : State) : Prop where
@@ -117,10 +168,49 @@ variable {s₀ s : State} {a : A}
 theorem set (h : Rel s₀ s a) {d : Reg} (hd : ¬ (d = .ecx ∨ d = .esp)) (v : BitVec 32) : Rel s₀ (s.setReg d v) (a.set d v) :=
   ⟨by funext r; show (if r = d then v else s.gpr r) = _; rw [h.g]; rfl, h.m,
     by rw [A.g_set, ite_eq_right (fun e => hd (.inl e.symm))]; exact h.ecx,
-    by rw [A.g_set, ite_eq_right (fun e => hd (.inr e.symm))]; exact h.esp, h.rd, h.wr⟩
+    by rw [A.g_set, ite_eq_right (fun e => hd (.inr e.symm))]; exact h.esp, h.rd, h.wr, h.x⟩
 
 theorem flags (h : Rel s₀ s a) (c o z f : Option Bool) : Rel s₀ (s.setFlags c o z f) a :=
-  ⟨h.g, h.m, h.ecx, h.esp, h.rd, h.wr⟩
+  ⟨h.g, h.m, h.ecx, h.esp, h.rd, h.wr, h.x⟩
+
+theorem setX (h : Rel s₀ s a) (d : XReg) (v : BitVec 128) : Rel s₀ (s.setXmm d v) (a.setX d v) :=
+  ⟨h.g, h.m, h.ecx, h.esp, h.rd, h.wr, by funext r; show (if r = d then v else s.xmm r) = _; rw [h.x]; rfl⟩
+
+theorem vslot (h : Rel s₀ s a) (hw : Scr s₀) {m : MemOp} {j : Nat} (hj : vslotOf m = some j) :
+    j < 16 ∧ s.ea m = (sP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j) ∧
+      InRegions s.wr ((sP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j)) 16 := by
+  have hf := hw.fit
+  rw [vslotOf] at hj
+  split at hj
+  · rename_i hc
+    obtain ⟨h1, h2, h3⟩ := hc
+    cases hj
+    refine ⟨by omega, ?_, sR s₀, by rw [h.wr]; exact hw.mem, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [State.ea, h1, h.g, h.ecx]
+    exact (addr_eq (by omega)).trans (by rw [show 16 * (m.disp / 16) = m.disp by omega])
+  · cases hj
+
+/-- A vector of `scratch`, as loaded. -/
+theorem load128 (h : Rel s₀ s a) {j : Nat} (hj : j < 16) :
+    s.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j)) 128 = a.vec j := by
+  have hd : ∀ i < 4, dword (s.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j)) 128) i = a.m (4 * j + i) :=
+    fun i hi => by
+      rw [dword_readW _ _ hi, Offset.add_add, show 16 * j + 4 * i = 4 * (4 * j + i) by omega, h.m.get _ (by omega)]
+  rw [← ofDwords_dword (s.mem.readW _ 128), hd 0 (by decide), hd 1 (by decide), hd 2 (by decide), hd 3 (by decide)]
+  rfl
+
+theorem store128 (h : Rel s₀ s a) {j : Nat} (hj : j < 16) (v : BitVec 128) :
+    Slots32 s₀.mem (s.mem.writeW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j)) v) ((sP s₀).setWidth 64) 64
+      (a.putV j v).m := by
+  refine ⟨fun k hk => ?_, h.m.frame.writeW (List.mem_singleton.mpr rfl) v
+    (Offset.contains_base _ (by omega) (by omega))⟩
+  rw [A.m_putV]
+  split
+  · rename_i e
+    rw [show 4 * k = 16 * j + 4 * (k % 4) by omega, ← Offset.add_add]
+    exact readW_writeW128 _ _ _ (by omega)
+  · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+    exact h.m.get k hk
 
 theorem slot (h : Rel s₀ s a) (hw : Scr s₀) {m : MemOp} {k : Nat} (hk : slotOf m = some k) :
     k < 64 ∧ s.ea m = (sP s₀).setWidth 64 + BitVec.ofNat 64 (4 * k) ∧
@@ -187,7 +277,24 @@ theorem step_sound {s₀ s : State} {a a' : A} (h : Rel s₀ s a) (hw : Scr s₀
     obtain ⟨hk, he, hin⟩ := h.slot hw hk
     refine ⟨_, by rw [show exec _ s = State.store32 _ _ _ from rfl, State.store32, he, ite_eq_left hin], ?_⟩
     rw [h.g]
-    exact ⟨rfl, h.m.store hk (by decide) _, h.ecx, h.esp, h.rd, h.wr⟩
+    exact ⟨rfl, h.m.store hk (by decide) _, h.ecx, h.esp, h.rd, h.wr, h.x⟩
+  · unfold xopA at hi
+    split at hi
+    iterate 5
+      · cases hi; refine ⟨_, rfl, ?_⟩; simp only [XOp.exec, h.x]; exact h.setX _ _
+    · cases hi; refine ⟨_, rfl, ?_⟩; simp only [XOp.exec, h.g]; exact h.setX _ _
+    · cases hi
+  · simp only [Option.map_eq_some_iff] at hi
+    obtain ⟨j, hj, rfl⟩ := hi
+    obtain ⟨hj, he, r, hr, hc⟩ := h.vslot hw hj
+    refine ⟨_, by rw [show exec _ s = (State.load128 _ _).map _ from rfl, State.load128, he,
+      ite_eq_left ⟨r, List.mem_append_right _ hr, hc⟩, h.load128 hj]; rfl, h.setX _ _⟩
+  · simp only [Option.map_eq_some_iff] at hi
+    obtain ⟨j, hj, rfl⟩ := hi
+    obtain ⟨hj, he, hin⟩ := h.vslot hw hj
+    refine ⟨_, by rw [show exec _ s = State.store128 _ _ _ from rfl, State.store128, he, ite_eq_left hin], ?_⟩
+    rw [h.x]
+    exact ⟨h.g, h.store128 hj _, h.ecx, h.esp, h.rd, h.wr, rfl⟩
   · cases hi
 
 /-- The machine runs what the abstract machine runs. -/
@@ -228,6 +335,69 @@ theorem Keeps.trans {rs : List Reg} {a b c : A} (h₁ : Keeps rs a b) (h₂ : Ke
 theorem Keeps.mono {rs rs' : List Reg} {a b : A} (h : Keeps rs a b) (hs : ∀ r ∈ rs, r ∈ rs') : Keeps rs' a b :=
   fun r hr => h r fun h' => hr (hs r h')
 
+/-- Vector registers other than `rs`, the others and the words are unchanged. -/
+structure VK (rs : List XReg) (a a' : A) : Prop where
+  x : ∀ r, r ∉ rs → a'.x r = a.x r
+  m : a'.m = a.m
+  g : a'.g = a.g
+
+theorem VK.trans {rs : List XReg} {a b c : A} (h₁ : VK rs a b) (h₂ : VK rs b c) : VK rs a c :=
+  ⟨fun r hr => (h₂.x r hr).trans (h₁.x r hr), h₂.m.trans h₁.m, h₂.g.trans h₁.g⟩
+
+theorem VK.mono {rs rs' : List XReg} {a b : A} (h : VK rs a b) (hs : ∀ r ∈ rs, r ∈ rs') : VK rs' a b :=
+  ⟨fun r hr => h.x r fun h' => hr (hs r h'), h.m, h.g⟩
+
+theorem VK.refl (rs : List XReg) (a : A) : VK rs a a := ⟨fun _ _ => rfl, rfl, rfl⟩
+
+theorem VK.setX {rs : List XReg} {a b : A} (h : VK rs a b) {r : XReg} (hr : r ∈ rs) (v : BitVec 128) :
+    VK rs a (b.setX r v) := by
+  refine ⟨fun q hq => ?_, h.m, h.g⟩
+  have : q ≠ r := fun e => hq (e ▸ hr)
+  rw [A.x_setX, ite_eq_right this]
+  exact h.x q hq
+
+/-- The writes of `VK`, then the fact before them. -/
+macro "vk " h:term : tactic => `(tactic| ((repeat refine VK.setX ?_ (by first | decide | simp) _); exact $h))
+
+/-- An equation the simplifier closed, or one by definition. -/
+macro "eqn" : tactic => `(tactic| first | exact True.intro | rfl)
+
+theorem VK.vec {rs : List XReg} {a b : A} (h : VK rs a b) (j : Nat) : b.vec j = a.vec j := by rw [A.vec, A.vec, h.m]
+
+/-- Instructions that write no vector register. -/
+def scalarI : Instr → Bool
+  | .xop _ | .movdquLoad .. => false
+  | _ => true
+
+theorem stepA_x {i : Instr} {a a' : A} (hi : scalarI i = true) (h : stepA i a = some a') : a'.x = a.x := by
+  unfold stepA at h
+  split at h
+  iterate 7
+    · split at h
+      · cases h
+      · first
+          | (cases h; rfl)
+          | (simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl)
+  · cases h; rfl
+  · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+  · cases hi
+  · cases hi
+  · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+  · cases h
+
+theorem evalA_x {is : List Instr} {a a' : A} (hi : is.all scalarI = true) (h : evalA is a = some a') : a'.x = a.x := by
+  induction is generalizing a with
+  | nil => cases h; rfl
+  | cons i is ih =>
+    simp only [evalA, Option.bind_eq_some_iff] at h
+    obtain ⟨a₁, h₁, h₂⟩ := h
+    rw [List.all_cons, Bool.and_eq_true] at hi
+    exact (ih hi.2 h₂).trans (stepA_x hi.1 h₁)
+
+theorem WA.x {is : List Instr} {a : A} {Q : A → Prop} (h : WA is a Q) (hi : is.all scalarI = true) :
+    WA is a fun a' => Q a' ∧ a'.x = a.x := by
+  obtain ⟨a', e, q⟩ := h; exact ⟨a', e, q, evalA_x hi e⟩
+
 open Spread (c4 m4 meet4 mul4 mul32x mulW4 W4 up32 dn32 redW4 mul_words32 setWidth_c4 m4_append append_halves)
 
 theorem mask_eq (r : Nat) : mask r = c4 r := rfl
@@ -252,10 +422,10 @@ def cp4 (a b : BitVec 32) (i j : Nat) : BitVec 64 := (a.setWidth 64 &&& m4 i) * 
 /-- The classes of `w` are at `b`. -/
 def Cls (a : A) (b : Nat) (w : BitVec 32) : Prop := ∀ j < 4, a.m (b + j) = w &&& c4 j
 
-theorem part_ok (t i j : Nat) (ht : t < 9) (hi : i < 4) (hj : j < 4) (w k : BitVec 32) (a : A) (hw : Cls a 36 w)
+theorem part_ok (t i j : Nat) (ht : t < 7) (hi : i < 4) (hj : j < 4) (w k : BitVec 32) (a : A) (hw : Cls a 28 w)
     (hk : Cls a (4 * t) k) :
     WA (part t i j) a fun a' => a'.g .edx ++ a'.g .eax = cp4 w k i j ∧ Keeps [.eax, .edx] a a' ∧ a'.m = a.m := by
-  simp only [WA, part, ld, wS, evalA, stepA, srcA, slotOf_slot (show 36 + i < 64 by omega),
+  simp only [WA, part, ld, wS, evalA, stepA, srcA, slotOf_slot (show 28 + i < 64 by omega),
     slotOf_slot (show 4 * t + j < 64 by omega), Option.map_some, Option.bind_some, A.g_set, A.m_set,
     reduceCtorEq, or_self, ite_false, ite_true, Option.some.injEq, exists_eq_left', hw i hi, hk j hj]
   refine ⟨?_, fun r hr => ?_, trivial⟩
@@ -278,7 +448,7 @@ abbrev cw : List Reg := [.eax, .edx, .ebx, .esi]
 theorem and_append' (a b c d : BitVec 32) : ((a ++ b : BitVec 64) &&& (c ++ d : BitVec 64)) = (a &&& c) ++ (b &&& d) :=
   BitVec.and_append
 
-theorem classSum_ok (t r : Nat) (ht : t < 9) (hr4 : r < 4) (w k : BitVec 32) (a : A) (hw : Cls a 36 w)
+theorem classSum_ok (t r : Nat) (ht : t < 7) (hr4 : r < 4) (w k : BitVec 32) (a : A) (hw : Cls a 28 w)
     (hk : Cls a (4 * t) k) :
     WA (classSum t r) a fun a' => a'.g .esi ++ a'.g .ebx = meet4 (w.setWidth 64) (k.setWidth 64) r &&& m4 r ∧
       Keeps cw a a' ∧ a'.m = a.m := by
@@ -394,19 +564,19 @@ theorem append_split {v : BitVec 64} {b c : BitVec 32} (h : b ++ c = v) : c = v.
   refine ⟨?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;> rw [BitVec.extractLsb'_toNat, toNat_append] <;>
     have := b.isLt <;> have := c.isLt <;> omega
 
-theorem mul32_ok (k : Nat) (ks : List Nat) (t : Nat) (hks : ∀ j ∈ k :: ks, j < 64) (ht : t < 9) (kw : BitVec 32) (a : A)
+theorem mul32_ok (k : Nat) (ks : List Nat) (t : Nat) (hks : ∀ j ∈ k :: ks, j < 64) (ht : t < 7) (kw : BitVec 32) (a : A)
     (hK : Cls a (4 * t) kw) :
     WA (mul32 (k :: ks) t) a fun a' =>
       a'.g .edi = (mul32x (sumOf a.m (k :: ks)) kw).1 ∧ a'.g .ebp = (mul32x (sumOf a.m (k :: ks)) kw).2 ∧
-      Keeps work a a' ∧ ∀ j, j < 36 ∨ 40 ≤ j → a'.m j = a.m j := by
+      Keeps work a a' ∧ ∀ j, j < 28 ∨ 32 ≤ j → a'.m j = a.m j := by
   generalize hw : sumOf a.m (k :: ks) = w
   rw [mul32]
   simp only [List.append_assoc]
   refine WA.append ((sumWords_ok k ks hks a).mono fun b ⟨e₁, g₁, m₁⟩ => ?_)
-  refine WA.append ((split_ok 36 .eax (by decide) (by decide) b).mono fun c ⟨C, m₂, g₂⟩ => ?_)
+  refine WA.append ((split_ok 28 .eax (by decide) (by decide) b).mono fun c ⟨C, m₂, g₂⟩ => ?_)
   rw [e₁, hw] at C
   have hKc : Cls c (4 * t) kw := fun j hj => by rw [m₂ _ (by omega), m₁, hK j hj]
-  have Mc : ∀ j, j < 36 ∨ 40 ≤ j → c.m j = a.m j := fun j hj => by rw [m₂ j hj, m₁]
+  have Mc : ∀ j, j < 28 ∨ 32 ≤ j → c.m j = a.m j := fun j hj => by rw [m₂ j hj, m₁]
   have kc : Keeps work a c := (g₁.mono (by decide)).trans (g₂.mono (by decide))
   have hC : ∀ r < 4, ∀ d : A, d.m = c.m → WA (classSum t r) d fun d' =>
       d'.g .esi ++ d'.g .ebx = meet4 (w.setWidth 64) (kw.setWidth 64) r &&& m4 r ∧ Keeps cw d d' ∧ d'.m = c.m :=
@@ -436,87 +606,7 @@ theorem mul32_ok (k : Nat) (ks : List Nat) (t : Nat) (hks : ∀ j ∈ k :: ks, j
       (g₉.mono (by decide)).trans <| g₁₀.mono (by decide)
   · rw [m₁₀, m₉, Mc j hj]
 
-theorem keep_ok (b : Nat) (hb : b + 1 < 64) (a : A) :
-    WA (keep b) a fun a' => a'.m b = a.g .edi ∧ a'.m (b + 1) = a.g .ebp ∧ (∀ j, j ≠ b → j ≠ b + 1 → a'.m j = a.m j) ∧
-      a'.g = a.g := by
-  simp only [WA, keep, st, evalA, stepA, slotOf_slot hb, slotOf_slot (Nat.lt_of_succ_lt hb), Option.map_some,
-    Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left', ite_true]
-  exact ⟨ite_eq_right (Nat.ne_of_lt (Nat.lt_succ_self b)), trivial,
-    fun j h1 h2 => by rw [ite_eq_right h2, ite_eq_right h1], trivial⟩
-
-/-- The four words at `b`. -/
-def At (a : A) (b : Nat) (w : W4) : Prop := a.m b = w.w0 ∧ a.m (b + 1) = w.w1 ∧ a.m (b + 2) = w.w2 ∧ a.m (b + 3) = w.w3
-
-theorem sumOf_congr {m m' : Nat → BitVec 32} {ks : List Nat} (h : ∀ k ∈ ks, m k = m' k) : sumOf m ks = sumOf m' ks := by
-  cases ks with
-  | nil => rfl
-  | cons k ks =>
-    have hl : ∀ (l : List Nat) (v : BitVec 32), (∀ k ∈ l, m k = m' k) →
-        l.foldl (fun v k => v ^^^ m k) v = l.foldl (fun v k => v ^^^ m' k) v := by
-      intro l
-      induction l with
-      | nil => exact fun _ _ => rfl
-      | cons k l ih =>
-        intro v h
-        rw [List.foldl_cons, List.foldl_cons, h k (List.mem_cons_self ..), ih _ fun j hj => h j (List.mem_cons_of_mem _ hj)]
-    rw [sumOf, sumOf, h k (List.mem_cons_self ..), hl _ _ fun j hj => h j (List.mem_cons_of_mem _ hj)]
-
-/-- Words multiplied: of `Y`'s. -/
-def Ys (ks : List Nat) : Prop := ∀ k ∈ ks, 40 ≤ k ∧ k < 44
-
-theorem mul64_ok (x₀ : Nat) (xs₀ : List Nat) (x₁ : Nat) (xs₁ : List Nat) (t b : Nat) (ht : t + 2 < 9)
-    (hb : b = 44 ∨ b = 48 ∨ b = 52) (k0 k1 : BitVec 32) (a : A) (h₀ : Ys (x₀ :: xs₀)) (h₁ : Ys (x₁ :: xs₁))
-    (hK : Cls a (4 * t) k0 ∧ Cls a (4 * (t + 1)) k1 ∧ Cls a (4 * (t + 2)) (k0 ^^^ k1))
-    (hS : sumOf a.m (x₀ :: xs₀ ++ x₁ :: xs₁) = sumOf a.m (x₀ :: xs₀) ^^^ sumOf a.m (x₁ :: xs₁)) :
-    WA (mul64 (x₀ :: xs₀) (x₁ :: xs₁) t b) a fun a' =>
-      At a' b (mulW4 mul32x (sumOf a.m (x₁ :: xs₁)) (sumOf a.m (x₀ :: xs₀)) k1 k0) ∧ Keeps work a a' ∧
-      ∀ j, j < 36 ∨ 40 ≤ j → (j < b ∨ b + 4 ≤ j) → a'.m j = a.m j := by
-  have lt : ∀ {ks : List Nat}, Ys ks → ∀ j ∈ ks, j < 64 := fun h j hj => by have := h j hj; omega
-  have h₂ : Ys (x₀ :: (xs₀ ++ x₁ :: xs₁)) := fun k hk => by
-    rw [← List.cons_append, List.mem_append] at hk
-    rcases hk with hk | hk
-    · exact h₀ k hk
-    · exact h₁ k hk
-  rw [mul64, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
-  refine WA.append ((mul32_ok x₀ xs₀ t (lt h₀) (by omega) k0 a hK.1).mono fun c ⟨p0, p1, kc, mc⟩ => ?_)
-  refine WA.append ((keep_ok b (by omega) c).mono fun d ⟨q0, q1, md, gd⟩ => ?_)
-  have kd : Keeps work a d := fun r hr => by rw [gd, kc r hr]
-  have Md : ∀ j, j < 36 ∨ 40 ≤ j → j ≠ b → j ≠ b + 1 → d.m j = a.m j := fun j hj h1 h2 => by rw [md j h1 h2, mc j hj]
-  have hKd : Cls d (4 * (t + 1)) k1 := fun j hj => by rw [Md _ (by omega) (by omega) (by omega), hK.2.1 j hj]
-  refine WA.append ((mul32_ok x₁ xs₁ (t + 1) (lt h₁) (by omega) k1 d hKd).mono fun e ⟨p2, p3, ke, me⟩ => ?_)
-  refine WA.append ((keep_ok (b + 2) (by omega) e).mono fun f ⟨q2, q3, mf, gf⟩ => ?_)
-  have kf : Keeps work a f := fun r hr => by rw [gf, ke r hr, kd r hr]
-  have Mf : ∀ j, j < 36 ∨ 40 ≤ j → (j < b ∨ b + 4 ≤ j) → f.m j = a.m j := fun j hj h => by
-    rw [mf j (by omega) (by omega), me j hj, Md j hj (by omega) (by omega)]
-  have hKf : Cls f (4 * (t + 2)) (k0 ^^^ k1) := fun j hj => by rw [Mf _ (by omega) (by omega), hK.2.2 j hj]
-  refine WA.append ((mul32_ok x₀ (xs₀ ++ x₁ :: xs₁) (t + 2) (lt h₂) (by omega) (k0 ^^^ k1) f hKf).mono
-    fun g ⟨p4, p5, kg, mg⟩ => ?_)
-  have s₁ : sumOf d.m (x₁ :: xs₁) = sumOf a.m (x₁ :: xs₁) := sumOf_congr fun k hk => by
-    have := h₁ k hk; exact Md k (by omega) (by omega) (by omega)
-  have s₂ : sumOf f.m (x₀ :: (xs₀ ++ x₁ :: xs₁)) = sumOf a.m (x₀ :: xs₀) ^^^ sumOf a.m (x₁ :: xs₁) :=
-    (sumOf_congr fun k hk => by have := h₂ k hk; exact Mf k (by omega) (by omega)).trans hS
-  rw [s₂] at p4 p5
-  rw [s₁] at p2 p3
-  have w0 : g.m b = (mul32x (sumOf a.m (x₀ :: xs₀)) k0).1 := by
-    rw [mg _ (by omega), mf _ (by omega) (by omega), me _ (by omega), q0, p0]
-  have w1 : g.m (b + 1) = (mul32x (sumOf a.m (x₀ :: xs₀)) k0).2 := by
-    rw [mg _ (by omega), mf _ (by omega) (by omega), me _ (by omega), q1, p1]
-  have w2 : g.m (b + 2) = (mul32x (sumOf a.m (x₁ :: xs₁)) k1).1 := by rw [mg _ (by omega), q2, p2]
-  have w3 : g.m (b + 3) = (mul32x (sumOf a.m (x₁ :: xs₁)) k1).2 := by
-    rw [mg _ (by omega), show f.m (b + 3) = e.g .ebp from q3, p3]
-  simp only [WA, ld, st, xorR, evalA, stepA, srcA, slotOf_slot (show b < 64 by omega),
-    slotOf_slot (show b + 1 < 64 by omega), slotOf_slot (show b + 2 < 64 by omega), slotOf_slot (show b + 3 < 64 by omega),
-    Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, reduceCtorEq, or_self,
-    Option.some.injEq, exists_eq_left', ite_true, ite_false, w0, w1, w2, w3, p4, p5, At, mulW4,
-    show ¬ b = b + 1 by omega, show ¬ b = b + 2 by omega, show ¬ b + 1 = b + 2 by omega,
-    show ¬ b + 3 = b + 1 by omega, show ¬ b + 3 = b + 2 by omega]
-  refine ⟨⟨trivial, trivial, trivial, trivial⟩, fun r hr => ?_, fun j hj h => ?_⟩
-  · have hk := (kf.trans kg) r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_put, A.g_set, hr, ite_false, hk]
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), mg j hj, Mf j hj h]
-
-/-! ## The reduction and the key -/
+/-! ## The key -/
 
 theorem ror_eq (z : BitVec 32) {k : Nat} (h0 : 0 < k) (hk : k < 32) : z.rotateRight k = z >>> k ^^^ z <<< (32 - k) := by
   apply BitVec.eq_of_getLsbD_eq
@@ -540,124 +630,6 @@ theorem ror_ror (z : BitVec 32) {k l : Nat} (hk : k < 32) (hl : l < 32) (h : k +
         show l + i - (32 - k) = i - (32 - (k + l)) by omega]
   · simp only [h1, ite_false, show ¬ i < 32 - (k + l) by omega, hi, show i - (32 - l) < 32 - k by omega, ite_true,
       decide_true, Bool.true_and, show k + (i - (32 - l)) = i - (32 - (k + l)) by omega]
-
-theorem fold_xor (p q r a b c : BitVec 32) : (p ^^^ a) ^^^ (q ^^^ b) ^^^ (r ^^^ c) ^^^ (p ^^^ q ^^^ r) = a ^^^ b ^^^ c := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i _
-  simp only [BitVec.getLsbD_xor]
-  cases p.getLsbD i <;> cases q.getLsbD i <;> cases r.getLsbD i <;> cases a.getLsbD i <;> cases b.getLsbD i <;>
-    cases c.getLsbD i <;> rfl
-
-theorem fold_ok (a : A) :
-    WA fold a fun a' => (a'.g .esi = up32 (a.g .eax) ∧ a'.g .ebx = dn32 (a.g .eax)) ∧ Keeps [.eax, .ebx, .esi] a a' ∧
-      a'.m = a.m := by
-  have e1 : ∀ v : BitVec 32, v >>> 1 >>> 1 = v >>> 2 := fun v => (BitVec.shiftRight_add v 1 1).symm
-  have e2 : ∀ v : BitVec 32, v >>> 2 >>> 5 = v >>> 7 := fun v => (BitVec.shiftRight_add v 2 5).symm
-  have r1 : ∀ v : BitVec 32, (v.rotateRight 1).rotateRight 1 = v.rotateRight 2 := fun v =>
-    ror_ror v (by decide) (by decide) (by decide)
-  have r2 : ∀ v : BitVec 32, (v.rotateRight 2).rotateRight 5 = v.rotateRight 7 := fun v =>
-    ror_ror v (by decide) (by decide) (by decide)
-  simp only [WA, fold, mv, shr, ror, xorR, evalA, stepA, srcA, Option.map_some, Option.bind_some, A.g_set, A.m_set,
-    reduceCtorEq, or_self, Nat.reduceLeDiff, and_self, not_true_eq_false, ite_false, ite_true, Option.some.injEq,
-    exists_eq_left', e1, e2, r1, r2]
-  refine ⟨⟨rfl, ?_⟩, fun r hr => ?_, trivial⟩
-  · rw [ror_eq _ (k := 1) (by decide) (by decide), ror_eq _ (k := 2) (by decide) (by decide),
-      ror_eq _ (k := 7) (by decide) (by decide), fold_xor, dn32]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_set, hr, ite_false]
-
-theorem reduce_ok {a : A} {l h c : W4} (hl : At a 44 l) (hh : At a 48 h) (hc : At a 52 c) :
-    WA reduce a fun a' => (a'.m 40 = (redW4 l h c).w0 ∧ a'.m 41 = (redW4 l h c).w1 ∧ a'.m 42 = (redW4 l h c).w2 ∧
-      a'.m 43 = (redW4 l h c).w3) ∧ (∀ k, k < 40 ∨ 44 ≤ k → a'.m k = a.m k) ∧ Keeps work a a' := by
-  obtain ⟨l0, l1, l2, l3⟩ := hl
-  obtain ⟨h0, h1, h2, h3⟩ := hh
-  obtain ⟨c0, c1, c2, c3⟩ := hc
-  simp only [Nat.reduceAdd] at l1 l2 l3 h1 h2 h3 c1 c2 c3
-  rw [reduce]
-  simp only [List.append_assoc]
-  refine WA.append (WA.mono (Q := fun b => b.g .eax = l.w0 ∧ Keeps work a b ∧ b.m = a.m) ?_ fun b₁ ⟨e₁, k₁, m₁⟩ => ?_)
-  · simp only [reduceCtorEq, Nat.reduceLT, or_self, ↓reduceIte, WA, ld, lS, evalA, stepA, srcA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', l0]
-    refine ⟨trivial, fun r hr => ?_, trivial⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_set, hr, ite_false]
-  refine WA.append ((fold_ok b₁).mono fun b₂ ⟨⟨u₂, d₂⟩, k₂, m₂⟩ => ?_)
-  rw [e₁] at u₂ d₂
-  have M₂ : b₂.m = a.m := m₂.trans m₁
-  refine WA.append (WA.mono (Q := fun b => (b.g .edx = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ^^^ dn32 l.w0 ∧
-      b.g .edi = h.w0 ^^^ c.w2 ^^^ l.w2 ^^^ h.w2 ^^^ l.w0 ^^^ up32 l.w0 ∧ b.g .eax = l.w1) ∧
-      Keeps work b₂ b ∧ b.m = a.m) ?_ fun b₃ ⟨⟨z₃, w₃, e₃⟩, k₃, m₃⟩ => ?_)
-  · simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, or_self, and_self, ↓reduceIte, WA, ld, xorM, xorR, lS, hS, cS, evalA, stepA, srcA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', M₂, l0, l1, l2, l3, h0, h1,
-      h2, c1, c2, u₂, d₂]
-    refine ⟨trivial, fun r hr => ?_, trivial⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_set, hr, ite_false]
-  refine WA.append ((fold_ok b₃).mono fun b₄ ⟨⟨u₄, d₄⟩, k₄, m₄⟩ => ?_)
-  rw [e₃] at u₄ d₄
-  have M₄ : b₄.m = a.m := m₄.trans m₃
-  have w₄ : b₄.g .edi = _ := (k₄ _ (by decide)).trans w₃
-  refine WA.append (WA.mono (Q := fun b => (b.m 40 = (redW4 l h c).w0 ∧
-      b.g .edi = h.w1 ^^^ c.w3 ^^^ l.w3 ^^^ h.w3 ^^^ l.w1 ^^^ up32 l.w1 ∧ b.g .eax = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 ∧
-      b.g .ebp = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2) ∧
-      Keeps [.eax, .ebx, .esi, .edi, .ebp] b₄ b ∧ ∀ k, k ≠ 40 → b.m k = a.m k) ?_ fun b₅ ⟨⟨o₅, w₅, e₅, p₅⟩, k₅, m₅⟩ => ?_)
-  · simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, or_self, and_self, ↓reduceIte, WA, ld, st, mv, xorM, xorR, yS, lS, hS, cS, evalA, stepA, srcA, slotOf_slot,
-      Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, Option.some.injEq,
-      exists_eq_left', M₄, l0, l1, l2, l3, h0, h1, h3, c0, c3, u₄, d₄, w₄]
-    refine ⟨⟨?_, trivial⟩, fun r hr => ?_, fun k hk => ite_eq_right hk⟩
-    · simp only [redW4, BitVec.xor_assoc]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [A.g_put, A.g_set, hr, ite_false]
-  refine WA.append ((fold_ok b₅).mono fun b₆ ⟨⟨u₆, d₆⟩, k₆, m₆⟩ => ?_)
-  rw [e₅] at u₆ d₆
-  have w₆ : b₆.g .edi = _ := (k₆ _ (by decide)).trans w₅
-  have p₆ : b₆.g .ebp = _ := (k₆ _ (by decide)).trans p₅
-  have z₆ : b₆.g .edx = _ := (k₆ _ (by decide)).trans ((k₅ _ (by decide)).trans ((k₄ _ (by decide)).trans z₃))
-  have H₆ : b₆.m 50 = h.w2 := by rw [m₆, m₅ _ (by decide), h2]
-  refine WA.append (WA.mono (Q := fun b => (b.m 41 = (redW4 l h c).w1 ∧
-      b.g .edi = h.w2 ^^^ (c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2) ^^^ up32 (c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2) ∧
-      b.g .eax = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ^^^ dn32 l.w0 ∧
-      b.g .edx = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ^^^ dn32 l.w0) ∧
-      Keeps work b₆ b ∧ ∀ k, k ≠ 41 → b.m k = b₆.m k) ?_ fun b₇ ⟨⟨o₇, w₇, e₇, z₇⟩, k₇, m₇⟩ => ?_)
-  · simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, or_self, and_self, ↓reduceIte, WA, ld, st, mv, xorR, yS, hS, evalA, stepA, srcA, slotOf_slot,
-      Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, Option.some.injEq,
-      exists_eq_left', H₆, u₆, d₆, w₆, p₆, z₆]
-    refine ⟨⟨?_, trivial⟩, fun r hr => ?_, fun k hk => ite_eq_right hk⟩
-    · simp only [redW4, BitVec.xor_assoc]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [A.g_put, A.g_set, hr, ite_false]
-  refine WA.append ((fold_ok b₇).mono fun b₈ ⟨⟨u₈, d₈⟩, k₈, m₈⟩ => ?_)
-  rw [e₇] at u₈ d₈
-  have w₈ : b₈.g .edi = _ := (k₈ _ (by decide)).trans w₇
-  have z₈ : b₈.g .edx = _ := (k₈ _ (by decide)).trans z₇
-  have H₈ : b₈.m 51 = h.w3 := by rw [m₈, m₇ _ (by decide), m₆, m₅ _ (by decide), h3]
-  have O₀ : b₈.m 40 = (redW4 l h c).w0 := by rw [m₈, m₇ _ (by decide), m₆, o₅]
-  have O₁ : b₈.m 41 = (redW4 l h c).w1 := by rw [m₈, o₇]
-  simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, or_self, ↓reduceIte, WA, ld, st, xorR, yS, hS, evalA, stepA, srcA, slotOf_slot,
-    Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, Option.some.injEq,
-    exists_eq_left', H₈, u₈, d₈, w₈, z₈, O₀, O₁]
-  refine ⟨⟨trivial, trivial, ?_, ?_⟩, fun k hk => ?_, fun r hr => ?_⟩
-  · simp only [redW4, BitVec.xor_assoc]
-  · simp only [redW4, BitVec.xor_assoc]
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), m₈, m₇ _ (by omega), m₆, m₅ _ (by omega)]
-  · have hk : Keeps work a b₈ := k₁.trans <| (k₂.mono (by decide)).trans <| k₃.trans <| (k₄.mono (by decide)).trans <|
-      (k₅.mono (by decide)).trans <| (k₆.mono (by decide)).trans <| k₇.trans (k₈.mono (by decide))
-    have hk := hk r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_put, A.g_set, hr, ite_false, hk]
-
-theorem addX_ok (a : A) :
-    WA addX a fun a' =>
-      (a'.m 43 = bswap (a.g .eax) ^^^ a.m 43 ∧ a'.m 42 = bswap (a.g .ebx) ^^^ a.m 42 ∧
-        a'.m 41 = bswap (a.g .esi) ^^^ a.m 41 ∧ a'.m 40 = bswap (a.g .edi) ^^^ a.m 40) ∧
-      (∀ k, k < 40 ∨ 44 ≤ k → a'.m k = a.m k) ∧ Keeps work a a' := by
-  simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, or_self, and_self, ↓reduceIte, WA, addX, revBlk, List.cons_append, List.nil_append, xorM, st, yS,
-    evalA, stepA, srcA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put,
-    Option.some.injEq, exists_eq_left', and_self]
-  refine ⟨trivial, fun k hk => ?_, fun r hr => ?_⟩
-  · simp only [show ¬ k = 40 by omega, show ¬ k = 41 by omega, show ¬ k = 42 by omega, show ¬ k = 43 by omega, ite_false]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_put, A.g_set, hr, ite_false]
 
 /-- The key's words, of which `h₃` is `H`'s first. -/
 def kws (h3 h2 h1 h0 : BitVec 32) : W4 :=
@@ -690,98 +662,470 @@ theorem adjust_ok (a : A) :
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
 
-theorem keyWord_ok (t : Nat) (r : Reg) (hr : r ≠ .edx) (ht : t < 9) (a : A) :
-    WA (keyWord t r) a fun a' => Cls a' (4 * t) (a.g r) ∧ (∀ k, k < 4 * t ∨ 4 * t + 4 ≤ k → a'.m k = a.m k) ∧
-      Keeps [.edx] a a' := split_ok (4 * t) r (by omega) hr a
+/-! ## The vectors' code -/
 
-/-- The words the code multiplies by. -/
-def kt (k : W4) (t : Nat) : BitVec 32 :=
-  match t with
-  | 0 => k.w0 | 1 => k.w1 | 2 => k.w0 ^^^ k.w1 | 3 => k.w2 | 4 => k.w3 | 5 => k.w2 ^^^ k.w3
-  | 6 => k.w0 ^^^ k.w2 | 7 => k.w1 ^^^ k.w3 | _ => (k.w0 ^^^ k.w2) ^^^ (k.w1 ^^^ k.w3)
+theorem steps_ok (y k a m : XReg) (h1 : a ≠ y) (h2 : m ≠ y) (h3 : k ≠ y) (h4 : k ≠ a) (h5 : k ≠ m) (h6 : a ≠ m) (n : Nat)
+    (b : A) :
+    WA (steps y k a m n) b fun c => c.x y = (st128 (b.x k) n (b.x y)).1 ∧ c.x a = (st128 (b.x k) n (b.x y)).2 ∧
+      VK [y, a, m] b c := by
+  induction n with
+  | zero =>
+    simp only [WA, steps, vmv, vsh, vand, evalA, stepA, xopA, Option.bind_some, A.x_setX, h1.symm, h4,
+      ite_false, ite_true, Option.some.injEq, exists_eq_left', eval_movdqa]
+    refine ⟨by eqn, by eqn, by vk (VK.refl _ _)⟩
+  | succ n ih =>
+    rw [steps]
+    refine WA.append (ih.mono fun c ⟨ey, ea, v⟩ => ?_)
+    have ek : c.x k = b.x k := v.x k (by simp [h3, h4, h5])
+    simp only [WA, step, vaddw, vmv, vsh, vand, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, h1,
+      h1.symm, h2.symm, h3, h5, h6, h6.symm, ite_false, ite_true, Option.some.injEq, exists_eq_left', eval_movdqa, ey, ea, ek]
+    refine ⟨by eqn, by eqn, by vk (v)⟩
 
-/-- The first `n` of them are in place. -/
-def KeysTo (a : A) (k : W4) (n : Nat) : Prop := ∀ t < n, Cls a (4 * t) (kt k t)
+abbrev v06 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6]
 
-theorem KeysTo.word {a b : A} {k : W4} {n : Nat} (h : KeysTo a k n) (hk : Cls b (4 * n) (kt k n))
-    (hm : ∀ j, j < 4 * n ∨ 4 * n + 4 ≤ j → b.m j = a.m j) : KeysTo b k (n + 1) := by
-  intro t ht
-  by_cases e : t = n
-  · subst e; exact hk
-  · exact fun j hj => by rw [hm _ (by omega), h t (by omega) j hj]
+theorem vecs_code (j : Nat) (hj : 2 * j + 1 < 16) (b : A) (hc : b.x .xmm7 = c00ff) :
+    WA (Impl.Gcm.X86.vecs j) b fun c =>
+      c.x .xmm4 = (vecs (b.x .xmm0) (b.vec (2 * j)) (b.vec (2 * j + 1))).a ∧
+      c.x .xmm3 = (vecs (b.x .xmm0) (b.vec (2 * j)) (b.vec (2 * j + 1))).b ∧ VK v06 b c := by
+  rw [Impl.Gcm.X86.vecs]
+  simp only [List.append_assoc]
+  generalize hkl : b.vec (2 * j) = kl
+  generalize hkh : b.vec (2 * j + 1) = kh
+  generalize hw : b.x .xmm0 = w
+  refine WA.append (WA.mono (Q := fun c => (c.x .xmm0 = w ∧ c.x .xmm1 = pxor (psllq w 8) w ∧ c.x .xmm4 = kh) ∧ VK v06 b c) ?_
+    fun c ⟨⟨c0, c1, c4⟩, vc⟩ => ?_)
+  · simp only [WA, vmv, vsh, vxor, vld, evalA, stepA, xopA, vslotOf_vslot hj, Option.map_some, Option.bind_some, A.x_setX,
+      A.vec_setX, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left', eval_movdqa, hw, hkh]
+    refine ⟨⟨by eqn, by eqn, by eqn⟩, by vk (VK.refl _ _)⟩
+  refine WA.append ((steps_ok .xmm0 .xmm4 .xmm2 .xmm6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 7
+    c).mono fun d ⟨d0, d2, vd⟩ => ?_)
+  rw [c0, c4] at d0 d2
+  have vd' : VK v06 b d := vc.trans (vd.mono (by decide))
+  refine WA.append (WA.mono (Q := fun e => (e.x .xmm0 = paddw (st128 kh 7 w).1 (st128 kh 7 w).1 ∧ e.x .xmm5 = kl) ∧
+    (e.x .xmm1 = pxor (psllq w 8) w ∧ e.x .xmm2 = (st128 kh 7 w).2 ∧ e.x .xmm4 = kh) ∧ VK v06 b e) ?_
+    fun e ⟨⟨e0, e5⟩, ⟨e1, e2, e4⟩, ve⟩ => ?_)
+  · have d1 : d.x .xmm1 = pxor (psllq w 8) w := (vd.x _ (by decide)).trans c1
+    have d4 : d.x .xmm4 = kh := (vd.x _ (by decide)).trans c4
+    have dk : d.vec (2 * j) = kl := (vd'.vec _).trans hkl
+    simp only [WA, vaddw, vld, evalA, stepA, xopA, vslotOf_vslot (show 2 * j < 16 by omega), Option.map_some,
+      Option.bind_some, A.x_setX, A.vec_setX, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left', d0, d1,
+      d2, d4, dk]
+    refine ⟨⟨by eqn, by eqn⟩, ⟨by eqn, by eqn, by eqn⟩, by vk (vd')⟩
+  refine WA.append ((steps_ok .xmm0 .xmm5 .xmm3 .xmm6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 7
+    e).mono fun f ⟨_, f3, vf⟩ => ?_)
+  rw [e0, e5] at f3
+  have vf' : VK v06 b f := ve.trans (vf.mono (by decide))
+  refine WA.append (WA.mono (Q := fun g => (g.x .xmm4 = pxor kh kl ∧ g.x .xmm1 = pxor (psllq w 8) w ∧
+    g.x .xmm2 = (st128 kh 7 w).2 ∧ g.x .xmm3 = f.x .xmm3) ∧ VK v06 b g) ?_ fun g ⟨⟨g4, g1, g2, g3⟩, vg⟩ => ?_)
+  · have f4 : f.x .xmm4 = kh := (vf.x _ (by decide)).trans e4
+    have f5 : f.x .xmm5 = kl := (vf.x _ (by decide)).trans e5
+    have f1 : f.x .xmm1 = _ := (vf.x _ (by decide)).trans e1
+    have f2 : f.x .xmm2 = _ := (vf.x _ (by decide)).trans e2
+    simp only [WA, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true, Option.some.injEq,
+      exists_eq_left', f4, f5, f1, f2]
+    refine ⟨⟨by eqn, by eqn, by eqn, by eqn⟩, by vk (vf')⟩
+  refine WA.append ((steps_ok .xmm1 .xmm4 .xmm5 .xmm6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 7
+    g).mono fun h ⟨_, h5, vh⟩ => ?_)
+  rw [g1, g4] at h5
+  have vh' : VK v06 b h := vg.trans (vh.mono (by decide))
+  have h2 : h.x .xmm2 = _ := (vh.x _ (by decide)).trans g2
+  have h3 : h.x .xmm3 = _ := (vh.x _ (by decide)).trans (g3.trans f3)
+  have h7 : h.x .xmm7 = c00ff := (vh'.x _ (by decide)).trans hc
+  simp only [WA, vmv, vsh, vxor, vand, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+    Option.some.injEq, exists_eq_left', eval_movdqa, h2, h3, h5, h7]
+  refine ⟨by eqn, by eqn, by vk (vh')⟩
 
-theorem KeysTo.mem {a b : A} {k : W4} {n : Nat} (h : KeysTo a k n) (hm : b.m = a.m) : KeysTo b k n := by
-  intro t ht; rw [Cls, hm]; exact h t ht
+theorem us_code (b : A) :
+    WA us b fun c => (c.x .xmm1 = u1F (b.x .xmm0) ∧ c.x .xmm2 = u2F (b.x .xmm0) (u1F (b.x .xmm0))) ∧
+      VK [.xmm1, .xmm2, .xmm3] b c := by
+  simp only [WA, us, vmv, vsh, vxor, vor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+    Option.some.injEq, exists_eq_left', eval_movdqa]
+  refine ⟨⟨by eqn, by eqn⟩, by vk (VK.refl _ _)⟩
 
-theorem step_key {a : A} {k : W4} {n : Nat} {r : Reg} {is : List Instr} {Q : A → Prop} (h : KeysTo a k n) (hn : n < 9)
-    (hr : r ≠ .edx) (hv : a.g r = kt k n)
-    (hq : ∀ b, KeysTo b k (n + 1) → Keeps [.edx] a b → (∀ j, 36 ≤ j → b.m j = a.m j) → WA is b Q) :
-    WA (keyWord n r ++ is) a Q :=
-  WA.append ((keyWord_ok n r hr hn a).mono fun b ⟨e, m, g⟩ =>
-    hq b (h.word (hv ▸ e) m) g fun j hj => m j (by omega))
+theorem fix_code (q s : XReg) (hq : q ≠ .xmm6) (hs : s ≠ .xmm6) (b : A) :
+    WA (Impl.Gcm.X86.fix q s) b fun c => c.x q = fix (b.x q) (b.x s) ∧ VK [q, .xmm6] b c := by
+  simp only [WA, Impl.Gcm.X86.fix, vmv, vsh, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, hq, hs, ite_false,
+    ite_true, Option.some.injEq, exists_eq_left', eval_movdqa]
+  refine ⟨by eqn, by vk (VK.refl _ _)⟩
 
-theorem step_sum {a : A} {is : List Instr} {Q : A → Prop} (n m : Reg) (hm : m ≠ .ebp)
-    (hq : ∀ b, b.g .ebp = a.g n ^^^ a.g m → Keeps [.ebp] a b → b.m = a.m → WA is b Q) : WA (keySum n m ++ is) a Q := by
-  refine WA.append (WA.mono (Q := fun b => b.g .ebp = a.g n ^^^ a.g m ∧ Keeps [.ebp] a b ∧ b.m = a.m) ?_
-    fun b ⟨e, g, m⟩ => hq b e g m)
-  simp only [WA, keySum, mv, xorR, evalA, stepA, srcA, Option.map_some, Option.bind_some, A.g_set, A.m_set, hm,
-    reduceCtorEq, or_self, ite_false, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun r hr => ?_, trivial⟩
+theorem vld_ok (d : XReg) (j : Nat) (hj : j < 16) (b : A) :
+    WA [vld d j] b fun c => c.x d = b.vec j ∧ VK [d] b c := by
+  simp only [WA, vld, evalA, stepA, vslotOf_vslot hj, Option.map_some, Option.bind_some, A.x_setX, ite_true,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨by eqn, by vk (VK.refl _ _)⟩
+
+theorem gather_code (b : A) :
+    WA gather b fun c => (c.x .xmm0 = fix (b.vec 9) (b.x .xmm4) ∧ c.x .xmm1 = fix (b.vec 10) (b.x .xmm3) ∧
+      c.x .xmm2 = fix (b.vec 11) (psrlq (b.x .xmm4) 32) ∧ c.x .xmm5 = fix (b.vec 15) (psrlq (b.x .xmm3) 32)) ∧
+      VK v06 b c := by
+  rw [gather]
+  simp only [List.append_assoc]
+  refine WA.append ((vld_ok .xmm0 9 (by decide) b).mono fun c ⟨c0, vc⟩ => ?_)
+  refine WA.append ((fix_code .xmm0 .xmm4 (by decide) (by decide) c).mono fun d ⟨d0, vd⟩ => ?_)
+  rw [c0, vc.x _ (by decide)] at d0
+  refine WA.append ((vld_ok .xmm1 10 (by decide) d).mono fun e ⟨e1, ve⟩ => ?_)
+  refine WA.append ((fix_code .xmm1 .xmm3 (by decide) (by decide) e).mono fun f ⟨f1, vf⟩ => ?_)
+  rw [e1, ve.x _ (by decide), vd.x _ (by decide), vc.x _ (by decide), vd.vec, vc.vec] at f1
+  have vf' : VK v06 b f := (vc.mono (by decide)).trans ((vd.mono (by decide)).trans ((ve.mono (by decide)).trans (vf.mono (by decide))))
+  have f0 : f.x .xmm0 = _ := (vf.x _ (by decide)).trans ((ve.x _ (by decide)).trans d0)
+  have f4 : f.x .xmm4 = b.x .xmm4 := by
+    rw [vf.x _ (by decide), ve.x _ (by decide), vd.x _ (by decide), vc.x _ (by decide)]
+  have f3 : f.x .xmm3 = b.x .xmm3 := by
+    rw [vf.x _ (by decide), ve.x _ (by decide), vd.x _ (by decide), vc.x _ (by decide)]
+  refine WA.append (WA.mono (Q := fun g => (g.x .xmm4 = psrlq (b.x .xmm4) 32 ∧ g.x .xmm3 = psrlq (b.x .xmm3) 32 ∧
+    g.x .xmm2 = b.vec 11) ∧ VK [.xmm4, .xmm3, .xmm2] f g) ?_ fun g ⟨⟨g4, g3, g2⟩, vg⟩ => ?_)
+  · have hk : f.vec 11 = b.vec 11 := vf'.vec 11
+    simp only [WA, vsh, vld, zV, evalA, stepA, xopA, vslotOf_vslot (show 11 < 16 by decide), Option.map_some, Option.bind_some,
+      A.x_setX, A.vec_setX, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left', f4, f3, hk]
+    refine ⟨⟨by eqn, by eqn, by eqn⟩, by vk (VK.refl _ _)⟩
+  refine WA.append ((fix_code .xmm2 .xmm4 (by decide) (by decide) g).mono fun h ⟨h2, vh⟩ => ?_)
+  rw [g2, g4] at h2
+  refine WA.append ((vld_ok .xmm5 15 (by decide) h).mono fun i ⟨i5, vi⟩ => ?_)
+  refine (fix_code .xmm5 .xmm3 (by decide) (by decide) i).mono fun l ⟨l5, vl⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [vl.x _ (by decide), vi.x _ (by decide), vh.x _ (by decide), vg.x _ (by decide), f0]
+  · rw [vl.x _ (by decide), vi.x _ (by decide), vh.x _ (by decide), vg.x _ (by decide), f1]
+  · rw [vl.x _ (by decide), vi.x _ (by decide), h2]
+  · rw [l5, i5, vi.x _ (by decide), vh.x _ (by decide), g3, vh.vec, vg.vec, vf'.vec]
+  · exact vf'.trans ((vg.mono (by decide)).trans ((vh.mono (by decide)).trans ((vi.mono (by decide)).trans (vl.mono (by decide)))))
+
+/-- The scalar product, in a vector. -/
+def scalarV (lo hi : BitVec 32) : BitVec 128 := XBinOp.eval .punpckldq ((0 : BitVec 96) ++ lo) ((0 : BitVec 96) ++ hi)
+
+theorem asm_code (b : A) :
+    WA Impl.Gcm.X86.asm b fun c =>
+      (let p := asm (b.x .xmm0) (b.x .xmm1) (b.x .xmm2) (b.x .xmm5) (scalarV (b.g .edi) (b.g .ebp))
+       c.x .xmm0 = p.a ∧ c.x .xmm1 = p.b) ∧ VK v06 b c := by
+  refine WA.append (l₁ := [.xop (.movd .xmm6 .edi), .xop (.movd .xmm3 .ebp), .xop (.bin .punpckldq .xmm6 .xmm3)]) ?_
+  refine WA.mono (Q := fun c => c.x .xmm6 = scalarV (b.g .edi) (b.g .ebp) ∧ VK [.xmm6, .xmm3] b c) ?_ fun c ⟨c6, vc⟩ => ?_
+  · refine ⟨_, by eqn, by eqn, by vk (VK.refl _ _)⟩
+  have c0 := vc.x .xmm0 (by decide)
+  have c1 := vc.x .xmm1 (by decide)
+  have c2 := vc.x .xmm2 (by decide)
+  have c5 := vc.x .xmm5 (by decide)
+  generalize scalarV (b.g .edi) (b.g .ebp) = v at c6 ⊢
+  generalize b.x .xmm0 = x at c0 ⊢
+  generalize b.x .xmm1 = y at c1 ⊢
+  generalize b.x .xmm2 = z at c2 ⊢
+  generalize b.x .xmm5 = w at c5 ⊢
+  refine WA.append (l₁ := [.xop (.pshufd .xmm3 .xmm0 0x4e), vxor .xmm3 .xmm0, .xop (.pshufd .xmm4 .xmm1 0x4e),
+    vxor .xmm4 .xmm1, .xop (.bin .punpcklqdq .xmm3 .xmm4), vxor .xmm5 .xmm3]) ?_
+  refine WA.mono (Q := fun d => (d.x .xmm5 = pxor w (lqdq (pxor (shufDwords x 0x4e) x) (pxor (shufDwords y 0x4e) y)) ∧
+    d.x .xmm0 = x ∧ d.x .xmm1 = y ∧ d.x .xmm2 = z ∧ d.x .xmm6 = v) ∧ VK [.xmm3, .xmm4, .xmm5] c d) ?_
+    fun d ⟨⟨d5, d0, d1, d2, d6⟩, vd⟩ => ?_
+  · simp only [WA, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+      Option.some.injEq, exists_eq_left', c0, c1, c2, c5, c6]
+    refine ⟨⟨by eqn, by eqn, by eqn, by eqn, by eqn⟩, by vk (VK.refl _ _)⟩
+  simp only [asm]
+  generalize pxor w (lqdq (pxor (shufDwords x 0x4e) x) (pxor (shufDwords y 0x4e) y)) = t at d5 ⊢
+  simp only [WA, vmv, vsh, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+    Option.some.injEq, exists_eq_left', eval_movdqa, d0, d1, d2, d5, d6]
+  refine ⟨⟨by eqn, by eqn⟩, by vk ((vc.mono (by decide)).trans (vd.mono (by decide)))⟩
+
+theorem dn_code (b : A) : WA dn b fun c => c.x .xmm3 = dnV (b.x .xmm0) ∧ VK [.xmm3, .xmm4] b c := by
+  simp only [WA, dn, vmv, vsh, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+    Option.some.injEq, exists_eq_left', eval_movdqa]
+  refine ⟨by eqn, by vk (VK.refl _ _)⟩
+
+theorem reduce_code (b : A) :
+    WA reduce b fun c => c.x .xmm1 = redV ⟨b.x .xmm0, b.x .xmm1⟩ ∧ VK v06 b c := by
+  rw [reduce]
+  simp only [List.append_assoc]
+  refine WA.append ((dn_code b).mono fun c ⟨c3, vc⟩ => ?_)
+  refine WA.append (WA.mono (Q := fun d => d.x .xmm0 = pxor (b.x .xmm0) (pslldq (dnV (b.x .xmm0)) 8) ∧
+    VK [.xmm0, .xmm3] c d) ?_ fun d ⟨d0, vd⟩ => ?_)
+  · have c0 := vc.x .xmm0 (by decide)
+    simp only [WA, vsh, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+      Option.some.injEq, exists_eq_left', c3, c0]
+    refine ⟨by eqn, by vk (VK.refl _ _)⟩
+  refine WA.append ((dn_code d).mono fun e ⟨e3, ve⟩ => ?_)
+  rw [d0] at e3
+  have e0 : e.x .xmm0 = _ := (ve.x _ (by decide)).trans d0
+  have e1 : e.x .xmm1 = b.x .xmm1 := by rw [ve.x _ (by decide), vd.x _ (by decide), vc.x _ (by decide)]
+  have ve' : VK v06 b e := (vc.mono (by decide)).trans ((vd.mono (by decide)).trans (ve.mono (by decide)))
+  simp only [redV]
+  generalize pxor (b.x .xmm0) (pslldq (dnV (b.x .xmm0)) 8) = r at e3 e0 ⊢
+  simp only [WA, vmv, vsh, vxor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false, ite_true,
+    Option.some.injEq, exists_eq_left', eval_movdqa, e3, e0, e1]
+  refine ⟨by eqn, by vk (ve')⟩
+
+/-- Stores of two vectors, then a load of one. -/
+theorem vst2_ok (j i : Nat) (hj : j < 16) (hi : i < 16) (r q : XReg) (b : A) :
+    WA [vst j r, vst i q] b fun c => c.x = b.x ∧ c.g = b.g ∧ (∀ k, c.vec k = if k = i then b.x q else if k = j then b.x r else b.vec k) ∧
+      ∀ k, k / 4 ≠ j → k / 4 ≠ i → c.m k = b.m k := by
+  simp only [WA, vst, evalA, stepA, vslotOf_vslot hj, vslotOf_vslot hi, Option.map_some, Option.bind_some, A.x_putV,
+    Option.some.injEq, exists_eq_left', A.vec_putV, A.m_putV]
+  exact ⟨by eqn, by eqn, fun k => by eqn, fun k h1 h2 => by rw [ite_eq_right h2, ite_eq_right h1]⟩
+
+/-- Two stores of vectors, then a load of one. -/
+theorem vst2ld_ok (j i l : Nat) (hj : j < 16) (hi : i < 16) (hl : l < 16) (r q d : XReg) (b : A) :
+    WA [vst j r, vst i q, vld d l] b fun c => (c.x d = if l = i then b.x q else if l = j then b.x r else b.vec l) ∧
+      (∀ x, x ≠ d → c.x x = b.x x) ∧ c.g = b.g ∧
+      (∀ k, c.vec k = if k = i then b.x q else if k = j then b.x r else b.vec k) ∧
+      ∀ k, k / 4 ≠ j → k / 4 ≠ i → c.m k = b.m k := by
+  refine WA.append (l₁ := [vst j r, vst i q]) ((vst2_ok j i hj hi r q b).mono fun c ⟨cx, cg, cv, cm⟩ => ?_)
+  refine (vld_ok d l hl c).mono fun e ⟨ed, v⟩ => ⟨by rw [ed, cv], fun x hx => ?_, v.g.trans cg, fun k => ?_, fun k h1 h2 => ?_⟩
+  · rw [v.x x (by simpa using hx), cx]
+  · rw [v.vec, cv]
+  · rw [v.m, cm k h1 h2]
+
+theorem vst_ok (j : Nat) (hj : j < 16) (r : XReg) (b : A) :
+    WA [vst j r] b fun c => c.x = b.x ∧ c.g = b.g ∧ (∀ k, c.vec k = if k = j then b.x r else b.vec k) ∧
+      ∀ k, k / 4 ≠ j → c.m k = b.m k := by
+  refine ⟨b.putV j (b.x r), ?_, rfl, rfl, fun k => A.vec_putV .., fun k h => ite_eq_right h⟩
+  simp only [vst, evalA, stepA, vslotOf_vslot hj, Option.map_some, Option.bind_some]
+
+/-- The key's vectors. -/
+structure KeyV (a : A) (K : BitVec 128) : Prop where
+  l0 : a.vec 0 = kbl K
+  h0 : a.vec 1 = kbh K
+  l1 : a.vec 2 = kbl (u1F K)
+  h1 : a.vec 3 = kbh (u1F K)
+  l2 : a.vec 4 = kbl (u2F K (u1F K))
+  h2 : a.vec 5 = kbh (u2F K (u1F K))
+
+theorem KeyV.mem {a b : A} {K : BitVec 128} (h : KeyV a K) (hm : ∀ k < 24, b.m k = a.m k) : KeyV b K := by
+  have e : ∀ j < 6, b.vec j = a.vec j := fun j hj => by
+    rw [A.vec, A.vec, hm _ (by omega), hm _ (by omega), hm _ (by omega), hm _ (by omega)]
+  exact ⟨(e 0 (by decide)).trans h.l0, (e 1 (by decide)).trans h.h0, (e 2 (by decide)).trans h.l1,
+    (e 3 (by decide)).trans h.h1, (e 4 (by decide)).trans h.l2, (e 5 (by decide)).trans h.h2⟩
+
+/-- The products of a block's lanes. -/
+def prods : List Instr :=
+  us ++ (([vst zV .xmm1, vst uV .xmm2] : List Instr) ++ (Impl.Gcm.X86.vecs 0 ++
+    (([vst xV .xmm4, vst y'V .xmm3, vld .xmm0 zV] : List Instr) ++ (Impl.Gcm.X86.vecs 1 ++
+    (([vst zV .xmm4, vst wV .xmm3, vld .xmm0 uV] : List Instr) ++ Impl.Gcm.X86.vecs 2)))))
+
+theorem prods_ok {a : A} {K : BitVec 128} (hK : KeyV a K) (hc : a.x .xmm7 = c00ff) :
+    WA prods a fun a' =>
+      (let y := a.x .xmm0
+       let p0 := vecs y (kbl K) (kbh K)
+       let p1 := vecs (u1F y) (kbl (u1F K)) (kbh (u1F K))
+       let p2 := vecs (u2F y (u1F y)) (kbl (u2F K (u1F K))) (kbh (u2F K (u1F K)))
+       (a'.vec 9 = p0.a ∧ a'.vec 10 = p0.b ∧ a'.vec 11 = p1.a ∧ a'.vec 15 = p1.b) ∧
+         a'.x .xmm4 = p2.a ∧ a'.x .xmm3 = p2.b) ∧
+      a'.x .xmm7 = c00ff ∧ (∀ k, k < 32 ∨ 52 ≤ k ∧ k < 60 → a'.m k = a.m k) ∧ a'.g = a.g := by
+  have keep : ∀ {b c : A} {i j : Nat}, 8 ≤ i → 8 ≤ j → (∀ k, k / 4 ≠ j → k / 4 ≠ i → c.m k = b.m k) →
+      ∀ k < 24, c.m k = b.m k := fun hi hj h k hk => h k (by omega) (by omega)
+  refine WA.append ((us_code a).mono fun b ⟨⟨b1, b2⟩, vb⟩ => ?_)
+  refine WA.append ((vst2_ok 11 12 (by decide) (by decide) .xmm1 .xmm2 b).mono fun c ⟨cx, cg, cv, cm⟩ => ?_)
+  rw [b1, b2] at cv
+  have Kc : KeyV c K := hK.mem fun k hk => by rw [keep (by decide) (by decide) cm k hk, vb.m]
+  have c0 : c.x .xmm0 = a.x .xmm0 := by rw [cx, vb.x _ (by decide)]
+  have c7 : c.x .xmm7 = c00ff := by rw [cx, vb.x _ (by decide), hc]
+  dsimp only
+  generalize a.x .xmm0 = y at c0 cv ⊢
+  refine WA.append ((vecs_code 0 (by decide) c c7).mono fun d ⟨d4, d3, vd⟩ => ?_)
+  simp only [Nat.reduceMul, Nat.reduceAdd, c0, Kc.l0, Kc.h0] at d4 d3
+  generalize vecs y (kbl K) (kbh K) = p0 at d4 d3 ⊢
+  refine WA.append ((vst2ld_ok 9 10 11 (by decide) (by decide) (by decide) .xmm4 .xmm3 .xmm0 d).mono
+    fun e ⟨e0, ex, eg, ev, em⟩ => ?_)
+  rw [d4, d3] at ev
+  simp only [Nat.reduceEqDiff, ite_false, vd.vec, cv, ite_true] at e0
+  have e7 : e.x .xmm7 = c00ff := by rw [ex _ (by decide), vd.x _ (by decide), c7]
+  have Ke : KeyV e K := Kc.mem fun k hk => by rw [keep (by decide) (by decide) em k hk, vd.m]
+  refine WA.append ((vecs_code 1 (by decide) e e7).mono fun f ⟨f4, f3, vf⟩ => ?_)
+  simp only [Nat.reduceMul, Nat.reduceAdd, e0, Ke.l1, Ke.h1] at f4 f3
+  generalize vecs (u1F y) (kbl (u1F K)) (kbh (u1F K)) = p1 at f4 f3 ⊢
+  refine WA.append ((vst2ld_ok 11 15 12 (by decide) (by decide) (by decide) .xmm4 .xmm3 .xmm0 f).mono
+    fun g ⟨g0, gx, gg, gv, gm⟩ => ?_)
+  rw [f4, f3] at gv
+  simp only [Nat.reduceEqDiff, ite_false, vf.vec, ev, vd.vec, cv, ite_true] at g0
+  have g7 : g.x .xmm7 = c00ff := by rw [gx _ (by decide), vf.x _ (by decide), e7]
+  have Kg : KeyV g K := Ke.mem fun k hk => by rw [keep (by decide) (by decide) gm k hk, vf.m]
+  refine (vecs_code 2 (by decide) g g7).mono fun h ⟨h4, h3, vh⟩ => ?_
+  simp only [Nat.reduceMul, Nat.reduceAdd, g0, Kg.l2, Kg.h2] at h4 h3
+  refine ⟨⟨⟨?_, ?_, ?_, ?_⟩, h4, h3⟩, (vh.x _ (by decide)).trans g7, fun k hk => ?_, ?_⟩
+  · simp only [vh.vec, gv, vf.vec, ev, Nat.reduceEqDiff, ite_false, ite_true]
+  · simp only [vh.vec, gv, vf.vec, ev, Nat.reduceEqDiff, ite_false, ite_true]
+  · simp only [vh.vec, gv, Nat.reduceEqDiff, ite_false, ite_true]
+  · simp only [vh.vec, gv, Nat.reduceEqDiff, ite_false, ite_true]
+  · rw [vh.m, gm k (by omega) (by omega), vf.m, em k (by omega) (by omega), vd.m, cm k (by omega) (by omega), vb.m]
+  · rw [vh.g, gg, vf.g, eg, vd.g, cg, vb.g]
+
+theorem vpart_ok {a : A} {K : BitVec 128} (hK : KeyV a K) (hc : a.x .xmm7 = c00ff) :
+    WA vpart a fun a' =>
+      a'.vec 8 = prodV (a.x .xmm0) (kbl K) (kbh K) (kbl (u1F K)) (kbh (u1F K)) (kbl (u2F K (u1F K)))
+        (kbh (u2F K (u1F K))) (scalarV (a.g .edi) (a.g .ebp)) ∧
+      a'.x .xmm7 = c00ff ∧ (∀ k, k < 32 ∨ 52 ≤ k ∧ k < 60 → a'.m k = a.m k) ∧ a'.g = a.g := by
+  have hv : vpart = prods ++ (gather ++ (Impl.Gcm.X86.asm ++ (reduce ++ [vst yV .xmm1]))) := by
+    simp only [vpart, prods, List.append_assoc]
+  rw [hv]
+  refine WA.append ((prods_ok hK hc).mono fun h ⟨⟨⟨v9, v10, v11, v15⟩, h4, h3⟩, h7, hm, hg⟩ => ?_)
+  simp only [prodV]
+  generalize vecs (a.x .xmm0) (kbl K) (kbh K) = p0 at v9 v10 ⊢
+  generalize vecs (u1F (a.x .xmm0)) (kbl (u1F K)) (kbh (u1F K)) = p1 at v11 v15 ⊢
+  generalize vecs (u2F (a.x .xmm0) (u1F (a.x .xmm0))) (kbl (u2F K (u1F K))) (kbh (u2F K (u1F K))) = p2 at h4 h3 ⊢
+  refine WA.append ((gather_code h).mono fun i ⟨⟨i0, i1, i2, i5⟩, vi⟩ => ?_)
+  rw [v9, h4] at i0
+  rw [v10, h3] at i1
+  rw [v11, h4] at i2
+  rw [v15, h3] at i5
+  refine WA.append ((asm_code i).mono fun l ⟨⟨l0, l1⟩, vl⟩ => ?_)
+  rw [i0, i1, i2, i5, vi.g, hg] at l0 l1
+  refine WA.append ((reduce_code l).mono fun n ⟨n1, vn⟩ => ?_)
+  rw [l0, l1] at n1
+  refine (vst_ok 8 (by decide) .xmm1 n).mono fun o ⟨ox, og, ov, om⟩ => ⟨?_, ?_, fun k hk => ?_, ?_⟩
+  · rw [ov, ite_eq_left rfl, n1]
+  · rw [ox, vn.x _ (by decide), vl.x _ (by decide), vi.x _ (by decide), h7]
+  · rw [om k (by omega), vn.m, vl.m, vi.m, hm k hk]
+  · rw [og, vn.g, vl.g, vi.g, hg]
+
+/-! ## The key's vectors -/
+
+theorem bytes_ok (r : XReg) (j : Nat) (hj : 2 * j + 1 < 16) (hr : r ≠ .xmm3) (a : A) (hc : a.x .xmm7 = c00ff) :
+    WA (bytes r j) a fun a' =>
+      (∀ k, a'.vec k = if k = 2 * j + 1 then kbh (a.x r) else if k = 2 * j then kbl (a.x r) else a.vec k) ∧
+      (∀ q, q ≠ r → q ≠ .xmm3 → a'.x q = a.x q) ∧ (∀ k, k / 4 ≠ 2 * j → k / 4 ≠ 2 * j + 1 → a'.m k = a.m k) ∧ a'.g = a.g := by
+  refine WA.append (l₁ := [vmv .xmm3 r, vand .xmm3 .xmm7, vxor r .xmm3, vsh .psrlq r 8])
+    (WA.mono (Q := fun c => (c.x .xmm3 = kbl (a.x r) ∧ c.x r = kbh (a.x r)) ∧ VK [r, .xmm3] a c) ?_
+      fun c ⟨⟨c3, cr⟩, vc⟩ => ?_)
+  · simp only [WA, vmv, vsh, vxor, vand, evalA, stepA, xopA, Option.bind_some, A.x_setX, hr, hr.symm, reduceCtorEq, ite_false,
+      ite_true, Option.some.injEq, exists_eq_left', eval_movdqa, hc]
+    refine ⟨⟨by eqn, by eqn⟩, by vk (VK.refl _ _)⟩
+  refine (vst2_ok (2 * j) (2 * j + 1) (by omega) hj .xmm3 r c).mono fun d ⟨dx, dg, dv, dm⟩ =>
+    ⟨fun k => ?_, fun q h1 h2 => ?_, fun k h1 h2 => ?_, ?_⟩
+  · rw [dv, c3, cr, vc.vec]
+  · rw [dx, vc.x q (by simp [h1, h2])]
+  · rw [dm k h1 h2, vc.m]
+  · rw [dg, vc.g]
+
+theorem setC_ok (a : A) : WA setC a fun a' => a'.x .xmm7 = c00ff ∧ a'.m = a.m ∧ Keeps [.eax] a a' := by
+  refine ⟨_, rfl, ?_, rfl, fun r hr => ?_⟩
+  · simp only [A.x_setX, A.g_set, ite_true]
+    decide
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [A.g_set, hr, ite_false]
+  simp only [A.g_setX, A.g_set, hr, ite_false]
+
+theorem keyVecs_ok (a : A) (hc : a.x .xmm7 = c00ff) :
+    WA keyVecs a fun a' => KeyV a' (a.vec 8) ∧ a'.x .xmm7 = c00ff ∧ (∀ k, 24 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
+  rw [keyVecs]
+  simp only [List.append_assoc]
+  refine WA.append ((vld_ok .xmm0 8 (by decide) a).mono fun b ⟨b0, vb⟩ => ?_)
+  generalize a.vec 8 = K at b0 ⊢
+  refine WA.append ((us_code b).mono fun c ⟨⟨c1, c2⟩, vc⟩ => ?_)
+  rw [b0] at c1 c2
+  have c0 : c.x .xmm0 = K := (vc.x _ (by decide)).trans b0
+  have c7 : c.x .xmm7 = c00ff := by rw [vc.x _ (by decide), vb.x _ (by decide), hc]
+  refine WA.append ((bytes_ok .xmm0 0 (by decide) (by decide) c c7).mono fun d ⟨dv, dx, dm, dg⟩ => ?_)
+  rw [c0] at dv
+  refine WA.append ((bytes_ok .xmm1 1 (by decide) (by decide) d ((dx _ (by decide) (by decide)).trans c7)).mono
+    fun e ⟨ev, ex, em, eg⟩ => ?_)
+  rw [dx _ (by decide) (by decide), c1] at ev
+  refine (bytes_ok .xmm2 2 (by decide) (by decide) e (by rw [ex _ (by decide) (by decide), dx _ (by decide) (by decide), c7])).mono
+    fun f ⟨fv, fx, fm, fg⟩ => ⟨?_, ?_, fun k hk => ?_, ?_⟩
+  · rw [ex _ (by decide) (by decide), dx _ (by decide) (by decide), c2] at fv
+    constructor <;> simp [fv, ev, dv]
+  · rw [fx _ (by decide) (by decide), ex _ (by decide) (by decide), dx _ (by decide) (by decide), c7]
+  · rw [fm k (by omega) (by omega), em k (by omega) (by omega), dm k (by omega) (by omega), vc.m, vb.m]
+  · rw [fg, eg, dg, vc.g, vb.g]
+
+/-- The sum of a vector's doublewords. -/
+def xsum (v : BitVec 128) : BitVec 32 := sumOf (dword v) [0, 1, 2, 3]
+
+theorem sum_y (a : A) : sumOf a.m [32, 33, 34, 35] = xsum (a.vec 8) := by
+  simp only [xsum, sumOf, List.foldl, A.vec, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+
+theorem storeYs_ok (a : A) :
+    WA storeYs a fun a' => a'.vec 8 = ofDwords (a.g .edi) (a.g .esi) (a.g .ebx) (a.g .eax) ∧
+      (∀ k, k < 32 ∨ 36 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
+  simp only [Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, Nat.reduceMul, ↓reduceIte, WA, storeYs, st, yS, evalA, stepA,
+    slotOf_slot, Option.map_some, Option.bind_some, A.vec, A.g_put, A.m_put, Option.some.injEq, exists_eq_left']
+  refine ⟨by eqn, fun k hk => ?_, by eqn⟩
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+
+/-- What the key's words of `scratch` hold, and the constant's register. -/
+structure KeysV (a : A) (K : BitVec 128) : Prop where
+  v : KeyV a K
+  s : Cls a 24 (xsum K)
+  c : a.x .xmm7 = c00ff
+
+theorem KeysV.mem {a b : A} {K : BitVec 128} (h : KeysV a K) (hm : ∀ k < 28, b.m k = a.m k) (hx : b.x .xmm7 = a.x .xmm7) :
+    KeysV b K :=
+  ⟨h.v.mem fun k hk => hm k (by omega), fun j hj => by rw [hm _ (by omega), h.s j hj], hx.trans h.c⟩
 
 theorem keyCode_ok (a : A) :
-    WA keyCode a fun a' => KeysTo a' (kws (a.g .eax) (a.g .ebx) (a.g .esi) (a.g .edi)) 9 ∧
-      (∀ j, 36 ≤ j → a'.m j = a.m j) ∧ Keeps work a a' := by
+    WA keyCode a fun a' => (let k := kws (a.g .eax) (a.g .ebx) (a.g .esi) (a.g .edi)
+      KeysV a' (ofDwords k.w0 k.w1 k.w2 k.w3)) ∧ (∀ j, 52 ≤ j → a'.m j = a.m j) ∧ Keeps work a a' := by
   rw [keyCode]
   simp only [List.append_assoc]
   refine WA.append ((adjust_ok a).mono fun b ⟨⟨e3, e2, e1, e0⟩, gb, mb⟩ => ?_)
   generalize hk : kws (a.g .eax) (a.g .ebx) (a.g .esi) (a.g .edi) = k at e3 e2 e1 e0 ⊢
-  refine step_key (k := k) (n := 0) (fun t ht => absurd ht (Nat.not_lt_zero t)) (by decide) (by decide) e0 fun b₀ K₀ g₀ m₀ => ?_
-  refine step_key K₀ (by decide) (by decide) (by rw [g₀ _ (by decide), e1]; rfl) fun b₁ K₁ g₁ m₁ => ?_
-  have G₁ := g₀.trans g₁
-  refine step_sum _ _ (by decide) fun b₂ e₂ g₂ m₂ => ?_
-  rw [G₁ _ (by decide), G₁ _ (by decide), e0, e1] at e₂
-  have G₂ : Keeps [.edx, .ebp] b b₂ := (G₁.mono (by decide)).trans (g₂.mono (by decide))
-  refine step_key (K₁.mem m₂) (by decide) (by decide) (by rw [e₂]; rfl) fun b₃ K₃ g₃ m₃ => ?_
-  have G₃ : Keeps [.edx, .ebp] b b₃ := G₂.trans (g₃.mono (by decide))
-  refine step_key K₃ (by decide) (by decide) (by rw [G₃ _ (by decide), e2]; rfl) fun b₄ K₄ g₄ m₄ => ?_
-  have G₄ : Keeps [.edx, .ebp] b b₄ := G₃.trans (g₄.mono (by decide))
-  refine step_key K₄ (by decide) (by decide) (by rw [G₄ _ (by decide), e3]; rfl) fun b₅ K₅ g₅ m₅ => ?_
-  have G₅ : Keeps [.edx, .ebp] b b₅ := G₄.trans (g₅.mono (by decide))
-  refine step_sum _ _ (by decide) fun b₆ e₆ g₆ m₆ => ?_
-  rw [G₅ _ (by decide), G₅ _ (by decide), e2, e3] at e₆
-  have G₆ : Keeps [.edx, .ebp] b b₆ := G₅.trans (g₆.mono (by decide))
-  refine step_key (K₅.mem m₆) (by decide) (by decide) (by rw [e₆]; rfl) fun b₇ K₇ g₇ m₇ => ?_
-  have G₇ : Keeps [.edx, .ebp] b b₇ := G₆.trans (g₇.mono (by decide))
-  refine step_sum _ _ (by decide) fun b₈ e₈ g₈ m₈ => ?_
-  rw [G₇ _ (by decide), G₇ _ (by decide), e0, e2] at e₈
-  have G₈ : Keeps [.edx, .ebp] b b₈ := G₇.trans (g₈.mono (by decide))
-  refine step_key (K₇.mem m₈) (by decide) (by decide) (by rw [e₈]; rfl) fun b₉ K₉ g₉ m₉ => ?_
-  have G₉ : Keeps [.edx, .ebp] b b₉ := G₈.trans (g₉.mono (by decide))
-  refine WA.append (WA.mono (Q := fun c => c.g .edi = k.w0 ^^^ k.w2 ∧ Keeps [.edi] b₉ c ∧ c.m = b₉.m) ?_
-    fun c₀ ⟨f₀, h₀, n₀⟩ => ?_)
-  · refine ⟨_, rfl, ?_, fun r hr => ?_, rfl⟩
-    · simp only [A.g_set, ite_true]; rw [g₉ _ (by decide), e₈]
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [A.g_set, hr, ite_false]
-  have H₀ : Keeps [.edx, .ebp, .edi] b c₀ := (G₉.mono (by decide)).trans (h₀.mono (by decide))
-  refine step_sum _ _ (by decide) fun c₁ f₁ h₁ n₁ => ?_
-  rw [H₀ _ (by decide), H₀ _ (by decide), e1, e3] at f₁
-  refine step_key ((K₉.mem n₀).mem n₁) (by decide) (by decide) (by rw [f₁]; rfl) fun c₂ L₂ h₂ n₂ => ?_
-  refine WA.append (WA.mono (Q := fun c => c.g .ebp = kt k 8 ∧ Keeps [.ebp] c₂ c ∧ c.m = c₂.m) ?_
-    fun c₃ ⟨f₃, h₃, n₃⟩ => ?_)
-  · refine ⟨_, rfl, ?_, fun r hr => ?_, rfl⟩
-    · simp only [A.g_set, ite_true]
-      rw [h₂ _ (by decide), f₁, h₂ _ (by decide), h₁ _ (by decide), f₀, BitVec.xor_comm]; rfl
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [A.g_set, hr, ite_false]
-  refine (keyWord_ok 8 .ebp (by decide) (by decide) c₃).mono fun c₄ ⟨f₄, n₄, h₄⟩ => ⟨?_, fun j hj => ?_, ?_⟩
-  · exact (L₂.mem n₃).word ((congrArg (Cls c₄ (4 * 8)) f₃).mp f₄) n₄
-  · rw [n₄ j (by omega), n₃, n₂ j hj, n₁, n₀, m₉ j hj, m₈, m₇ j hj, m₆, m₅ j hj, m₄ j hj, m₃ j hj, m₂, m₁ j hj,
-      m₀ j hj, mb]
-  · exact gb.trans <| (H₀.mono (by decide)).trans <| (h₁.mono (by decide)).trans <| (h₂.mono (by decide)).trans <|
-      (h₃.mono (by decide)).trans (h₄.mono (by decide))
+  refine WA.append ((storeYs_ok b).mono fun c ⟨yc, mc, gc⟩ => ?_)
+  rw [e3, e2, e1, e0] at yc
+  generalize ofDwords k.w0 k.w1 k.w2 k.w3 = K at yc ⊢
+  refine WA.append ((sumWords_ok 32 [33, 34, 35] (by decide) c).mono fun d ⟨ed, gd, md⟩ => ?_)
+  rw [sum_y, yc] at ed
+  refine WA.append ((split_ok 24 .eax (by decide) (by decide) d).mono fun e ⟨ce, me, ge⟩ => ?_)
+  rw [ed] at ce
+  refine WA.append ((setC_ok e).mono fun f ⟨f7, mf, gf⟩ => ?_)
+  refine (keyVecs_ok f f7).mono fun g ⟨vg, g7, mg, gg⟩ => ⟨⟨?_, fun j hj => ?_, g7⟩, fun j hj => ?_, fun r hr => ?_⟩
+  · have : f.vec 8 = K := by
+      rw [← yc, A.vec, A.vec, mf, me _ (by decide), me _ (by decide), me _ (by decide), me _ (by decide), md]
+    rwa [this] at vg
+  · rw [mg _ (by omega), mf, ce j hj]
+  · rw [mg _ (by omega), mf, me _ (by omega), md, mc _ (by omega), mb]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [gg, gf r (by simp [hr]), ge r (by simp [hr]), gd r (by simp [hr]), gc, gb r (by simp [hr])]
+
+/-! ## A block -/
+
+theorem qword_scalarV (lo hi : BitVec 32) :
+    lp (qword (scalarV lo hi) 0) = lp lo + X ^ 32 * lp hi := by
+  have e : ∀ v : BitVec 32, dword ((0 : BitVec 96) ++ v : BitVec 128) 0 = v := fun v => by
+    apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    rw [getLsbD_dword, BitVec.getLsbD_append]
+    simp [hi]
+  rw [lp_qword, scalarV, punpckldq_eq, e, e, dword_ofDwords_0, dword_ofDwords_1]
+
+theorem lp_xsum (v : BitVec 128) : lp (xsum v) = lp (dword v 0) + lp (dword v 2) + lp (dword v 1) + lp (dword v 3) := by
+  show lp (dword v 0 ^^^ dword v 1 ^^^ dword v 2 ^^^ dword v 3) = _
+  rw [lp_xor, lp_xor, lp_xor, add_right_comm (lp (dword v 0))]
+
+theorem revx_ok (a : A) (hc : a.x .xmm7 = c00ff) :
+    WA rev a fun a' => a'.x .xmm0 = revV (a.x .xmm0) ∧ VK [.xmm0, .xmm1] a a' := by
+  simp only [WA, rev, vmv, vsh, vxor, vand, vor, evalA, stepA, xopA, Option.bind_some, A.x_setX, reduceCtorEq, ite_false,
+    ite_true, Option.some.injEq, exists_eq_left', eval_movdqa, hc]
+  refine ⟨by eqn, by vk (VK.refl _ _)⟩
+
+theorem addX_ok (a : A) (hc : a.x .xmm7 = c00ff) :
+    WA addX a fun a' => a'.x .xmm0 = pxor (revV (a.x .xmm0)) (a.vec 8) ∧ a'.vec 8 = pxor (revV (a.x .xmm0)) (a.vec 8) ∧
+      a'.x .xmm7 = c00ff ∧ (∀ k, k < 32 ∨ 36 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
+  refine WA.append ((revx_ok a hc).mono fun b ⟨b0, vb⟩ => ?_)
+  refine WA.append (l₁ := [vld .xmm1 yV, vxor .xmm0 .xmm1]) (WA.mono
+    (Q := fun c => c.x .xmm0 = pxor (revV (a.x .xmm0)) (a.vec 8) ∧ VK [.xmm0, .xmm1] b c) ?_ fun c ⟨c0, vc⟩ => ?_)
+  · have e : b.vec 8 = a.vec 8 := vb.vec 8
+    simp only [WA, vld, vxor, yV, evalA, stepA, xopA, vslotOf_vslot (show 8 < 16 by decide), Option.map_some, Option.bind_some,
+      A.x_setX, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left', b0, e]
+    refine ⟨by eqn, by vk (VK.refl _ _)⟩
+  refine (vst_ok 8 (by decide) .xmm0 c).mono fun d ⟨dx, dg, dv, dm⟩ => ⟨?_, ?_, ?_, fun k hk => ?_, ?_⟩
+  · rw [dx, c0]
+  · rw [dv, ite_eq_left rfl, c0]
+  · rw [dx, vc.x _ (by decide), vb.x _ (by decide), hc]
+  · rw [dm k (by omega), vc.m, vb.m]
+  · rw [dg, vc.g, vb.g]
+
+/-- A block's arithmetic, its bytes in `xmm0`. -/
+def core : List Instr := addX ++ (mul32 yWords allT ++ vpart)
+
+theorem core_ok {a : A} {K : BitVec 128} {h1 h0 : BitVec 64} (hK : KeysV a K) (hk : K = keyW1 h1 h0 ++ keyW0 h1 h0) :
+    WA core a fun a' =>
+      a'.vec 8 = Spec.Gcm.mul (revV (a.x .xmm0) ^^^ a.vec 8) (h1 ++ h0 : BitVec 128) ∧
+      (∀ k, k < 28 ∨ 52 ≤ k ∧ k < 60 → a'.m k = a.m k) ∧ a'.x .xmm7 = a.x .xmm7 ∧ Keeps work a a' := by
+  refine WA.append ((addX_ok a hK.c).mono fun b ⟨b0, bv, b7, bm, bg⟩ => ?_)
+  rw [show pxor (revV (a.x .xmm0)) (a.vec 8) = revV (a.x .xmm0) ^^^ a.vec 8 from rfl] at b0 bv
+  generalize revV (a.x .xmm0) ^^^ a.vec 8 = y at b0 bv ⊢
+  have Kb : KeysV b K := hK.mem (fun k hk => bm k (.inl (by omega))) (b7.trans hK.c.symm)
+  refine WA.append (((mul32_ok 32 [33, 34, 35] allT (by decide) (by decide) (xsum K) b Kb.s).x (by decide)).mono
+    fun c ⟨⟨e0, e1, gc, mc⟩, xc⟩ => ?_)
+  rw [sum_y, bv] at e0 e1
+  have Kc : KeysV c K := Kb.mem (fun k hk => mc k (.inl hk)) (by rw [xc])
+  refine (vpart_ok Kc.v Kc.c).mono fun d ⟨dv, d7, dm, dg⟩ => ⟨?_, fun k hk => ?_, d7.trans hK.c.symm, ?_⟩
+  · rw [dv, xc, b0, e0, e1, ← append_qword y]
+    refine prodV_ok rfl hk ?_
+    rw [qword_scalarV, Spread.isMul_mul32x, lp_xsum, lp_xsum, append_qword]
+  · rw [dm k (by omega), mc k (by omega), bm k (by omega)]
+  · exact fun r hr => by rw [dg, gc r hr, bg]
 
 /-! ## The whole function -/
 
@@ -877,6 +1221,7 @@ structure Blk (s₀ : State) (p : Addr) (a a' : A) : Prop where
   w0 : bswap (a'.g .edi) = wd s₀ p 12
   k : Keeps [.eax, .ebx, .esi, .edi] a a'
   m : a'.m = a.m
+  x : a'.x = a.x
 
 theorem loadBlk_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {R : Region}
     {p : BitVec 32} (hR : R ∈ s₀.rd ++ s₀.wr) (hdis : R.Disjoint (sR s₀)) (hp : a.g .edx = p) (hf : p.toNat + 16 ≤ 2 ^ 32)
@@ -890,7 +1235,7 @@ theorem loadBlk_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {R : Region}
   refine ext_ok r₂ (by decide) (at_ .edx 8) hR hdis (he 8 (by decide) r₂ hp) (hc 8 (by decide)) fun s₃ r₃ => ?_
   refine ext_ok r₃ (by decide) (at_ .edx 12) hR hdis (he 12 (by decide) r₃ hp) (hc 12 (by decide))
     fun s₄ r₄ => WP.block_nil ⟨_, r₄, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl⟩
   · simp only [A.g_set, reduceCtorEq, ite_false, ite_true]
   · simp only [A.g_set, reduceCtorEq, ite_false, ite_true]
   · simp only [A.g_set, reduceCtorEq, ite_false, ite_true]
@@ -900,70 +1245,38 @@ theorem loadBlk_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {R : Region}
 
 /-! ### The invariant -/
 
-/-- The block of the words `y₃` to `y₀` in `scratch`. -/
-def yOf (a : A) : BitVec 128 := w4 (a.m 43) (a.m 42) (a.m 41) (a.m 40)
+/-- The key's vector. -/
+abbrev kV (s₀ : State) (p : Addr) : BitVec 128 :=
+  let k := kws (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12)
+  ofDwords k.w0 k.w1 k.w2 k.w3
+
+theorem kV_eq (s₀ : State) (p : Addr) :
+    kV s₀ p = (keyW1 (wd s₀ p 0 ++ wd s₀ p 4) (wd s₀ p 8 ++ wd s₀ p 12) ++
+      keyW0 (wd s₀ p 0 ++ wd s₀ p 4) (wd s₀ p 8 ++ wd s₀ p 12) : BitVec 128) := by
+  rw [Spread.keyW1_append, Spread.keyW0_append]
+  exact w4_eq ..
 
 structure InvA (s₀ : State) (i : Nat) (a : A) : Prop where
-  key : KeysTo a (kws (wd s₀ (hA s₀) 0) (wd s₀ (hA s₀) 4) (wd s₀ (hA s₀) 8) (wd s₀ (hA s₀) 12)) 9
+  key : KeysV a (kV s₀ (hA s₀))
   sav : ∀ q ∈ saved, a.m q.2 = s₀.gpr q.1
-  y : yOf a = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dA s₀) i)
+  y : a.vec 8 = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dA s₀) i)
   dp : a.m dpS = blk s₀ i
   n : a.m nS = BitVec.ofNat 32 (nBlk s₀ - i)
 
 def Inv (s₀ : State) (i : Nat) (s : State) : Prop := i ≤ nBlk s₀ ∧ ∃ a, Rel s₀ s a ∧ InvA s₀ i a
 
-/-- A block's arithmetic, its words in registers. -/
-def core : List Instr :=
-  addX ++ mul64 [yS] [yS + 1] 0 lS ++ mul64 [yS + 2] [yS + 3] 3 hS ++ mul64 [yS, yS + 2] [yS + 1, yS + 3] 6 cS ++ reduce
-
-theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hK : KeysTo a (kws h3 h2 h1 h0) 9) :
-    WA core a fun a' =>
-      yOf a' = Spec.Gcm.mul (w4 (bswap (a.g .eax) ^^^ a.m 43) (bswap (a.g .ebx) ^^^ a.m 42) (bswap (a.g .esi) ^^^ a.m 41)
-        (bswap (a.g .edi) ^^^ a.m 40)) (w4 h3 h2 h1 h0) ∧
-      (∀ k, k < 36 ∨ 56 ≤ k → a'.m k = a.m k) ∧ Keeps work a a' := by
-  have hKm : ∀ {b : A}, (∀ k < 36, b.m k = a.m k) → KeysTo b (kws h3 h2 h1 h0) 9 := fun {b} hb t ht j hj => by
-    rw [hb _ (by omega), hK t ht j hj]
-  have ys : ∀ x : Nat, 40 ≤ x ∧ x < 44 → Ys [x] := fun x hx k hk => by
-    rw [List.mem_singleton] at hk; subst hk; exact hx
-  have ys2 : ∀ x y : Nat, 40 ≤ x ∧ x < 44 → 40 ≤ y ∧ y < 44 → Ys [x, y] := fun x y hx hy k hk => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl
-    · exact hx
-    · exact hy
-  rw [core, List.append_assoc, List.append_assoc, List.append_assoc]
-  refine WA.append ((addX_ok a).mono fun b ⟨⟨x3, x2, x1, x0⟩, mb, gb⟩ => ?_)
-  have Kb := hKm (b := b) fun k hk => mb k (.inl (by omega))
-  refine WA.append ((mul64_ok 40 [] 41 [] 0 44 (by decide) (.inl rfl) _ _ b (ys 40 (by decide)) (ys 41 (by decide))
-    ⟨Kb 0 (by decide), Kb 1 (by decide), Kb 2 (by decide)⟩ rfl).mono fun c ⟨pc, gc, mc⟩ => ?_)
-  have Kc := hKm (b := c) fun k hk => by rw [mc k (by omega) (by omega), mb k (by omega)]
-  refine WA.append ((mul64_ok 42 [] 43 [] 3 48 (by decide) (.inr (.inl rfl)) _ _ c (ys 42 (by decide)) (ys 43 (by decide))
-    ⟨Kc 3 (by decide), Kc 4 (by decide), Kc 5 (by decide)⟩ rfl).mono fun d ⟨pd, gd, md⟩ => ?_)
-  have Kd := hKm (b := d) fun k hk => by rw [md k (by omega) (by omega), mc k (by omega) (by omega), mb k (by omega)]
-  have Md : ∀ k, 40 ≤ k → k < 44 → d.m k = b.m k := fun k h h' => by
-    rw [md k (by omega) (by omega), mc k (by omega) (by omega)]
-  refine WA.append ((mul64_ok 40 [42] 41 [43] 6 52 (by decide) (.inr (.inr rfl)) _ _ d (ys2 40 42 (by decide) (by decide))
-    (ys2 41 43 (by decide) (by decide)) ⟨Kd 6 (by decide), Kd 7 (by decide), Kd 8 (by decide)⟩
-    (BitVec.xor_assoc (d.m 40 ^^^ d.m 42) (d.m 41) (d.m 43))).mono fun e ⟨pe, ge, me⟩ => ?_)
-  have pc' : At e 44 _ := ⟨by rw [me _ (by decide) (by decide), md _ (by decide) (by decide)]; exact pc.1,
-    by rw [me _ (by decide) (by decide), md _ (by decide) (by decide)]; exact pc.2.1,
-    by rw [me _ (by decide) (by decide), md _ (by decide) (by decide)]; exact pc.2.2.1,
-    by rw [me _ (by decide) (by decide), md _ (by decide) (by decide)]; exact pc.2.2.2⟩
-  have pd' : At e 48 _ := ⟨by rw [me _ (by decide) (by decide)]; exact pd.1, by rw [me _ (by decide) (by decide)]; exact pd.2.1,
-    by rw [me _ (by decide) (by decide)]; exact pd.2.2.1, by rw [me _ (by decide) (by decide)]; exact pd.2.2.2⟩
-  refine (reduce_ok pc' pd' pe).mono fun f ⟨⟨z0, z1, z2, z3⟩, mf, gf⟩ => ⟨?_, fun k hk => ?_, ?_⟩
-  · have y42 : sumOf c.m [42] = b.m 42 := mc _ (by decide) (by decide)
-    have y43 : sumOf c.m [43] = b.m 43 := mc _ (by decide) (by decide)
-    have y4 : sumOf d.m [40, 42] = b.m 40 ^^^ b.m 42 := by
-      show d.m 40 ^^^ d.m 42 = _
-      rw [Md _ (by decide) (by decide), Md _ (by decide) (by decide)]
-    have y5 : sumOf d.m [41, 43] = b.m 41 ^^^ b.m 43 := by
-      show d.m 41 ^^^ d.m 43 = _
-      rw [Md _ (by decide) (by decide), Md _ (by decide) (by decide)]
-    rw [y42, y43, y4, y5] at z0 z1 z2 z3
-    rw [yOf, z0, z1, z2, z3, ← x3, ← x2, ← x1, ← x0, w4_eq, w4_eq, w4_eq]
-    exact mul_words32 Spread.isMul_mul32x ..
-  · rw [mf k (by omega), me k (by omega) (by omega), md k (by omega) (by omega), mc k (by omega) (by omega), mb k (by omega)]
-  · exact gb.trans (gc.trans (gd.trans (ge.trans gf)))
+/-- A load of a block of the data. -/
+theorem loadX_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {R : Region}
+    {p : BitVec 32} (hR : R ∈ s₀.rd ++ s₀.wr) (hdis : R.Disjoint (sR s₀)) (hp : a.g .edx = p)
+    (hc : R.Contains (p.setWidth 64) 16) :
+    WP isa (.block loadX) s fun s' => Rel s₀ s' (a.setX .xmm0 (s₀.mem.readW (p.setWidth 64) 128)) := by
+  have he : s.ea (at_ .edx 0) = p.setWidth 64 := by
+    rw [State.ea, at_, h.g, hp]; exact congrArg _ (BitVec.add_zero _)
+  refine WP.block_cons_iff.mpr ⟨_, ?_, WP.block_nil (h.setX .xmm0 _)⟩
+  show (State.load128 _ _).map _ = _
+  rw [State.load128, he, ite_eq_left ⟨R, by rw [h.rd, h.wr]; exact hR, hc⟩,
+    h.m.frame.readW hc (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hdis) (by decide)]
+  rfl
 
 /-- A test of `eax`. -/
 theorem test_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {k : Nat} (hk : k < 2 ^ 32) (hn : a.g .eax = BitVec.ofNat 32 k) :
@@ -981,9 +1294,9 @@ theorem load_ok (d : Reg) (hd : ¬ (d = .ecx ∨ d = .esp)) (k : Nat) (hk : k < 
   simp only [A.g_set, hr, ite_false]
 
 theorem advance_ok (a : A) :
-    WA [.alu .add .edx (.imm 16), st dpS .edx] a fun a' => a'.m dpS = a.g .edx + 16 ∧
+    WA advance a fun a' => a'.m dpS = a.g .edx + 16 ∧
       (∀ k, k ≠ dpS → a'.m k = a.m k) ∧ Keeps [.edx] a a' := by
-  simp only [WA, st, dpS, evalA, stepA, srcA, slotOf_slot (show 60 < 64 by decide), reduceCtorEq, or_self, Option.map_some,
+  simp only [WA, advance, st, dpS, evalA, stepA, srcA, slotOf_slot (show 56 < 64 by decide), reduceCtorEq, or_self, Option.map_some,
     Option.bind_some, A.g_set, A.m_set, A.m_put, ite_false, ite_true, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun k hk => ite_eq_right hk, fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -992,7 +1305,7 @@ theorem advance_ok (a : A) :
 theorem next_ok (a : A) :
     WA next a fun a' => a'.m nS = a.m nS + 0xffffffff ∧ a'.g .eax = a.m nS + 0xffffffff ∧
       (∀ k, k ≠ nS → a'.m k = a.m k) ∧ Keeps [.eax] a a' := by
-  simp only [WA, next, ld, st, nS, evalA, stepA, srcA, slotOf_slot (show 61 < 64 by decide), reduceCtorEq, or_self,
+  simp only [WA, next, ld, st, nS, evalA, stepA, srcA, slotOf_slot (show 57 < 64 by decide), reduceCtorEq, or_self,
     Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, ite_false, ite_true, Option.some.injEq,
     exists_eq_left']
   refine ⟨trivial, trivial, fun k hk => ite_eq_right hk, fun r hr => ?_⟩
@@ -1009,47 +1322,46 @@ theorem body_ok {s₀ : State} (hp : GPre s₀) {i : Nat} (hi : i < nBlk s₀) {
   have hf := hp.fD
   have hn : nBlk s₀ < 2 ^ 32 := (arg s₀ 3).isLt
   obtain ⟨-, a, hr, ha⟩ := hI
-  have hbody : body = [ld .edx dpS] ++ (loadBlk ++ ([.alu .add .edx (.imm 16), st dpS .edx] ++
-      (core ++ (next ++ test)))) := by simp only [body, core, loadX, List.append_assoc]
-  obtain ⟨hba, hbf⟩ : (blk s₀ i).setWidth 64 = dA s₀ + BitVec.ofNat 64 (16 * i) ∧ (blk s₀ i).toNat + 16 ≤ 2 ^ 32 := by
+  have hbody : body = [ld .edx dpS] ++ (loadX ++ (advance ++ (core ++ (next ++ test)))) := by
+    simp only [body, core, List.append_assoc]
+  have hba : (blk s₀ i).setWidth 64 = dA s₀ + BitVec.ofNat 64 (16 * i) := by
     have e : (blk s₀ i).toNat = (dP s₀).toNat + 16 * i := by
       rw [blk, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * i) (by omega), Nat.mod_eq_of_lt (by omega)]
-    exact ⟨addr_eq (by omega), by omega⟩
+    exact addr_eq (by omega)
   rw [hbody, WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr hr (load_ok .edx (by decide) dpS (by decide) a)) fun s₁ ⟨a₁, r₁, e₁, k₁, m₁⟩ => ?_
+  refine WP.mono (WA.sound hp.toScr hr ((load_ok .edx (by decide) dpS (by decide) a).x (by decide)))
+    fun s₁ ⟨a₁, r₁, ⟨e₁, k₁, m₁⟩, x₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadBlk_ok r₁ hp.mem_d hp.dDS (e₁.trans ha.dp) hbf (fun o ho => by
-    rw [hba, Offset.add_add]
-    exact Offset.contains_base _ (by omega) (by omega))) fun s₂ ⟨a₂, r₂, B⟩ => ?_
+  refine WP.mono (loadX_ok r₁ hp.mem_d hp.dDS (e₁.trans ha.dp) (by
+    rw [hba]
+    exact Offset.contains_base _ (by omega) (by omega))) fun s₂ r₂ => ?_
+  rw [hba] at r₂
   rw [WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr r₂ (advance_ok a₂)) fun s₃ ⟨a₃, r₃, e₃, m₃, k₃⟩ => ?_
-  have m₃' : ∀ k, k ≠ dpS → a₃.m k = a.m k := fun k hk => by rw [m₃ k hk, B.m, m₁]
-  have key₃ : KeysTo a₃ _ 9 := fun t ht j hj => by
-    rw [m₃' _ (by unfold dpS; omega), ha.key t ht j hj]
+  refine WP.mono (WA.sound hp.toScr r₂ ((advance_ok _).x (by decide))) fun s₃ ⟨a₃, r₃, ⟨e₃, m₃, k₃⟩, x₃⟩ => ?_
+  have m₃' : ∀ k, k ≠ dpS → a₃.m k = a.m k := fun k hk => by rw [m₃ k hk, A.m_setX, m₁]
+  have x0 : a₃.x .xmm0 = s₀.mem.readW (dA s₀ + BitVec.ofNat 64 (16 * i)) 128 := by
+    rw [x₃, A.x_setX, ite_eq_left rfl]
+  have x7 : a₃.x .xmm7 = a.x .xmm7 := by rw [x₃, A.x_setX, ite_eq_right (by decide), x₁]
+  have y₃ : a₃.vec 8 = a.vec 8 := by
+    rw [A.vec, A.vec, m₃' _ (by decide), m₃' _ (by decide), m₃' _ (by decide), m₃' _ (by decide)]
+  have key₃ : KeysV a₃ _ := ha.key.mem (fun k hk => m₃' k (by unfold dpS; omega)) x7
   rw [WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr r₃ (core_ok key₃)) fun s₄ ⟨a₄, r₄, y₄, m₄, k₄⟩ => ?_
+  refine WP.mono (WA.sound hp.toScr r₃ (core_ok key₃ (kV_eq s₀ (hA s₀)))) fun s₄ ⟨a₄, r₄, y₄, m₄, x₄, k₄⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr r₄ (next_ok a₄)) fun s₅ ⟨a₅, r₅, n₅, n₅', m₅, k₅⟩ => ?_
+  refine WP.mono (WA.sound hp.toScr r₄ ((next_ok a₄).x (by decide))) fun s₅ ⟨a₅, r₅, ⟨n₅, n₅', m₅, k₅⟩, x₅⟩ => ?_
   have hcnt : a₄.m nS + 0xffffffff = BitVec.ofNat 32 (nBlk s₀ - (i + 1)) := by
     rw [m₄ nS (by decide), m₃' nS (by decide), ha.n]
     exact ofNat_dec (by omega) (by omega)
-  have m₅' : ∀ k, 56 ≤ k → k ≠ dpS → k ≠ nS → a₅.m k = a.m k := fun k h1 h2 h3 => by
-    rw [m₅ k h3, m₄ k (.inr h1), m₃' k h2]
-  have m₅'' : ∀ k, k < 36 → a₅.m k = a.m k := fun k h => by
-    rw [m₅ k (by unfold nS; omega), m₄ k (.inl h), m₃' k (by unfold dpS; omega)]
   refine WP.mono (test_ok r₅ (by omega) (n₅'.trans hcnt)) fun s₆ ⟨r₆, z₆⟩ => ⟨⟨hi, a₅, r₆, ?_⟩, z₆⟩
-  refine ⟨fun t ht j hj => ?_, fun q hq => ?_, ?_, ?_, n₅.trans hcnt⟩
-  · rw [m₅'' _ (by omega), ha.key t ht j hj]
-  · have hq' : ∀ q ∈ saved, 56 ≤ q.2 ∧ q.2 ≠ dpS ∧ q.2 ≠ nS := by decide
+  refine ⟨ha.key.mem (fun k hk => ?_) (by rw [x₅, x₄, x7]), fun q hq => ?_, ?_, ?_, n₅.trans hcnt⟩
+  · rw [m₅ k (by unfold nS; omega), m₄ k (.inl hk), m₃' k (by unfold dpS; omega)]
+  · have hq' : ∀ q ∈ saved, (52 ≤ q.2 ∧ q.2 < 60) ∧ q.2 ≠ dpS ∧ q.2 ≠ nS := by decide
     obtain ⟨h1, h2, h3⟩ := hq' q hq
-    rw [m₅' _ h1 h2 h3, ha.sav q hq]
-  · have e : yOf a₅ = yOf a₄ := by
-      rw [yOf, m₅ 43 (by decide), m₅ 42 (by decide), m₅ 41 (by decide), m₅ 40 (by decide)]; rfl
-    rw [e, y₄, m₃' 43 (by decide), m₃' 42 (by decide), m₃' 41 (by decide), m₃' 40 (by decide), k₃ _ (by decide),
-      k₃ _ (by decide), k₃ _ (by decide), k₃ _ (by decide), B.w3, B.w2, B.w1, B.w0, w4_xor, wd_block, wd_block, hba,
-      ghashFrom_blocksAt_succ, ← ha.y, BitVec.xor_comm]
-    rfl
-  · rw [m₅ dpS (by decide), m₄ dpS (by decide), e₃, B.k _ (by decide), e₁, ha.dp, blk, blk, BitVec.add_assoc, Nat.mul_succ,
+    rw [m₅ _ h3, m₄ _ (.inr h1), m₃' _ h2, ha.sav q hq]
+  · have e : a₅.vec 8 = a₄.vec 8 := by
+      rw [A.vec, A.vec, m₅ _ (by decide), m₅ _ (by decide), m₅ _ (by decide), m₅ _ (by decide)]
+    rw [e, y₄, x0, revV_block, y₃, ghashFrom_blocksAt_succ, ← ha.y, BitVec.xor_comm, ← w4_eq, wd_block]
+  · rw [m₅ dpS (by decide), m₄ dpS (by decide), e₃, A.g_setX, e₁, ha.dp, blk, blk, BitVec.add_assoc, Nat.mul_succ,
       BitVec.ofNat_add]
     rfl
 
@@ -1075,29 +1387,21 @@ theorem rev_ok (a : A) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem storeYs_ok (a : A) :
-    WA storeYs a fun a' => yOf a' = w4 (a.g .eax) (a.g .ebx) (a.g .esi) (a.g .edi) ∧
-      (∀ k, k < 40 ∨ 44 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
-  simp only [Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, ↓reduceIte, WA, storeYs, yOf, st, yS, evalA, stepA, slotOf_slot,
-    Option.map_some, Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun k hk => ?_, trivial⟩
-  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
-
 theorem revKey_ok {s₀ : State} {a₁ a : A} {p : Addr} (B : Blk s₀ p a₁ a) :
-    WA (revBlk ++ keyCode) a fun a' => KeysTo a' (kws (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12)) 9 ∧
-      (∀ j, 36 ≤ j → a'.m j = a.m j) ∧ Keeps work a a' := by
+    WA (revBlk ++ keyCode) a fun a' => KeysV a' (kV s₀ p) ∧ (∀ j, 52 ≤ j → a'.m j = a.m j) ∧ Keeps work a a' := by
   refine WA.append ((rev_ok a).mono fun b ⟨⟨e3, e2, e1, e0⟩, gb, mb⟩ => ?_)
   refine (keyCode_ok b).mono fun c ⟨K, mc, gc⟩ => ⟨?_, fun j hj => by rw [mc j hj, mb], (gb.mono (by decide)).trans gc⟩
   rwa [e3, e2, e1, e0, B.w3, B.w2, B.w1, B.w0] at K
 
 theorem revY_ok {s₀ : State} {a₁ a : A} {p : Addr} (B : Blk s₀ p a₁ a) :
-    WA (revBlk ++ (storeYs ++ [ld .eax nS])) a fun a' => yOf a' = w4 (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12) ∧
-      (∀ k, k < 40 ∨ 44 ≤ k → a'.m k = a.m k) ∧ a'.g .eax = a.m nS := by
+    WA (revBlk ++ (storeYs ++ [ld .eax nS])) a fun a' => a'.vec 8 = blockAt s₀.mem p ∧
+      (∀ k, k < 32 ∨ 36 ≤ k → a'.m k = a.m k) ∧ a'.g .eax = a.m nS := by
   refine WA.append ((rev_ok a).mono fun b ⟨⟨e3, e2, e1, e0⟩, _, mb⟩ => ?_)
   refine WA.append ((storeYs_ok b).mono fun c ⟨y, mc, _⟩ => ?_)
   refine (load_ok .eax (by decide) nS (by decide) c).mono fun d ⟨e, _, md⟩ => ⟨?_, fun k hk => by rw [md, mc k hk, mb], ?_⟩
-  · rw [yOf, md]; refine Eq.trans y ?_
+  · rw [← wd_block, A.vec, md]; refine Eq.trans y ?_
     rw [e3, e2, e1, e0, B.w3, B.w2, B.w1, B.w0]
+    rfl
   · rw [e, mc _ (by decide), mb]
 
 theorem prologue_ok {s₀ : State} (hp : GPre s₀) :
@@ -1112,8 +1416,8 @@ theorem prologue_ok {s₀ : State} (hp : GPre s₀) :
       ite_eq_left ⟨aR s₀, hp.mem_a, hp.arg_in (by decide)⟩]
     rfl
   have r₀ : Rel s₀ (s₀.setReg .ecx (sP s₀)) ⟨(s₀.setReg .ecx (sP s₀)).gpr,
-      fun k => s₀.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (4 * k)) 32⟩ :=
-    ⟨rfl, Slots32.init _ _ _, rfl, rfl, rfl, rfl⟩
+      fun k => s₀.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (4 * k)) 32, s₀.xmm⟩ :=
+    ⟨rfl, Slots32.init _ _ _, rfl, rfl, rfl, rfl, rfl⟩
   have gs : ∀ r, r ≠ .ecx → (s₀.setReg .ecx (sP s₀)).gpr r = s₀.gpr r := fun r hr => ite_eq_right hr
   rw [hpr]
   refine WP.block_cons_iff.mpr ⟨_, h0, ?_⟩
@@ -1141,26 +1445,26 @@ theorem prologue_ok {s₀ : State} (hp : GPre s₀) :
   refine WP.mono (loadBlk_ok r₉ hp.mem_y hp.dYS (p := yP s₀) rfl hp.fY
     (fun o ho => Offset.contains_base _ (by omega) (by omega))) fun s₁₀ ⟨a₁₀, r₁₀, C⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr r₁₀ (revY_ok C)) fun s₁₁ ⟨a₁₁, r₁₁, y₁₁, m₁₁, n₁₁⟩ => ?_
+  refine WP.mono (WA.sound hp.toScr r₁₀ ((revY_ok C).x (by decide))) fun s₁₁ ⟨a₁₁, r₁₁, ⟨y₁₁, m₁₁, n₁₁⟩, x₁₁⟩ => ?_
   rw [C.m] at m₁₁ n₁₁
-  have hm : ∀ k, 44 ≤ k → a₁₁.m k = a₅.m k := fun k hk => (m₁₁ k (.inr hk)).trans (m₈ k (by omega))
+  have hm : ∀ k, 52 ≤ k → a₁₁.m k = a₅.m k := fun k hk => (m₁₁ k (.inr (by omega))).trans (m₈ k (by omega))
   have hn₅ : a₅.m nS = BitVec.ofNat 32 (nBlk s₀) := by
     rw [n₅, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl
   refine WP.mono (test_ok r₁₁ (arg s₀ 3).isLt (n₁₁.trans ((m₈ nS (by decide)).trans hn₅))) fun s₁₂ ⟨r₁₂, z₁₂⟩ =>
-    ⟨⟨Nat.zero_le _, a₁₁, r₁₂, fun t ht j hj => ?_, fun q hq => ?_, ?_, ?_, (hm _ (by decide)).trans hn₅⟩, z₁₂⟩
-  · exact (m₁₁ _ (by omega)).trans (K₈ t ht j hj)
-  · have hq' : ∀ q ∈ saved, 44 ≤ q.2 ∧ q.1 ≠ .ecx ∧ q.2 ≠ nS ∧ q.2 ≠ dpS := by decide
+    ⟨⟨Nat.zero_le _, a₁₁, r₁₂, K₈.mem (fun k hk => m₁₁ k (.inl (by omega))) (by rw [x₁₁, C.x]; rfl), fun q hq => ?_, ?_, ?_,
+      (hm _ (by decide)).trans hn₅⟩, z₁₂⟩
+  · have hq' : ∀ q ∈ saved, 52 ≤ q.2 ∧ q.1 ≠ .ecx ∧ q.2 ≠ nS ∧ q.2 ≠ dpS := by decide
     obtain ⟨h1, h2, h3, h4⟩ := hq' q hq
     rw [hm _ h1, m₅ _ h3]
     refine (m₃ _ h4).trans ((hs q hq).trans (gs _ h2))
-  · rw [ghashFrom_blocksAt_zero]; exact y₁₁.trans (wd_block s₀ (yA s₀))
+  · rw [ghashFrom_blocksAt_zero]; exact y₁₁
   · rw [hm _ (by decide), m₅ _ (by decide)]
     refine Eq.trans d₃ ?_
     rw [blk, Nat.mul_zero]; exact (BitVec.add_zero _).symm
 
 theorem finish_ok (a : A) :
-    WA finish a fun a' => (a'.m 40 = bswap (a.m 43) ∧ a'.m 41 = bswap (a.m 42) ∧ a'.m 42 = bswap (a.m 41) ∧
-        a'.m 43 = bswap (a.m 40)) ∧ (∀ q ∈ saved, a'.g q.1 = a.m q.2) ∧ Keeps work a a' := by
+    WA finish a fun a' => (a'.m 32 = bswap (a.m 35) ∧ a'.m 33 = bswap (a.m 34) ∧ a'.m 34 = bswap (a.m 33) ∧
+        a'.m 35 = bswap (a.m 32)) ∧ (∀ q ∈ saved, a'.g q.1 = a.m q.2) ∧ Keeps work a a' := by
   simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, or_self, and_self, ↓reduceIte, WA, finish, revBlk, restore, saved, ld, st, yS, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, evalA, stepA, srcA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set,
     A.g_put, A.m_put, Option.some.injEq, exists_eq_left', List.mem_cons, List.not_mem_nil, or_false,
@@ -1179,16 +1483,16 @@ theorem epilogue_ok {s₀ : State} (hp : GPre s₀) {s : State} (hI : Inv s₀ (
   refine WP.mono (WA.sound hp.toScr r (finish_ok a)) fun s₁ ⟨a₁, r₁, ⟨m0, m1, m2, m3⟩, hs, hk⟩ => ?_
   refine (WP.block_append_iff (l₁ := [_])).mpr ?_
   refine WP.mono (arg_ok hp r₁ 1 (by decide)) fun s₂ r₂ => ?_
-  have hsc : s₂.ea (slot yS) = (sP s₀).setWidth 64 + BitVec.ofNat 64 160 := by
-    rw [State.ea, slot, at_, r₂.g, r₂.ecx]; exact addr_eq (x := sP s₀) (k := 160) (by omega)
+  have hsc : s₂.ea (slot yS) = (sP s₀).setWidth 64 + BitVec.ofNat 64 128 := by
+    rw [State.ea, slot, at_, r₂.g, r₂.ecx]; exact addr_eq (x := sP s₀) (k := 128) (by omega)
   have hl : exec (.movdquLoad .xmm0 (slot yS)) s₂ = some (s₂.setXmm .xmm0
-      (s₂.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 160) 128)) := by
+      (s₂.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 128) 128)) := by
     show (State.load128 _ _).map _ = _
     rw [State.load128, hsc, ite_eq_left ⟨sR s₀, List.mem_append_right _ (by rw [r₂.wr]; exact hp.toScr.mem),
       Offset.contains_base _ (by decide) (by decide)⟩]
     rfl
   refine WP.block_cons_iff.mpr ⟨_, hl, ?_⟩
-  generalize hv : s₂.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 160) 128 = v
+  generalize hv : s₂.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 128) 128 = v
   have hst : exec (.movdquStore (at_ .edx 0) .xmm0) (s₂.setXmm .xmm0 v) =
       some { s₂.setXmm .xmm0 v with mem := s₂.mem.writeW (yA s₀) v } := by
     show State.store128 _ _ _ = _
@@ -1215,8 +1519,8 @@ theorem epilogue_ok {s₀ : State} (hp : GPre s₀) {s : State} (hI : Inv s₀ (
       Offset.add_add]
     have bb : ∀ v : BitVec 32, bswap (bswap v) = v := Proof.Cmac.byteRev32_byteRev32
     have g : ∀ k < 64, s₂.mem.readW ((sP s₀).setWidth 64 + BitVec.ofNat 64 (4 * k)) 32 = a₁.m k := r₂.m.get
-    rw [show 160 + 0 = 4 * 40 from rfl, show 160 + 4 = 4 * 41 from rfl, show 160 + 8 = 4 * 42 from rfl,
-      show 160 + 12 = 4 * 43 from rfl, g 40 (by decide), g 41 (by decide), g 42 (by decide), g 43 (by decide), m0, m1, m2, m3,
+    rw [show 128 + 0 = 4 * 32 from rfl, show 128 + 4 = 4 * 33 from rfl, show 128 + 8 = 4 * 34 from rfl,
+      show 128 + 12 = 4 * 35 from rfl, g 32 (by decide), g 33 (by decide), g 34 (by decide), g 35 (by decide), m0, m1, m2, m3,
       bb, bb, bb, bb]
     exact ha.y
 
