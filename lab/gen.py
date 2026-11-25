@@ -467,17 +467,62 @@ KC = ['mov x2, #0xffff','movk x2, #0xffff, lsl #16','movk x2, #0xffff, lsl #32',
 B['sq2'] = sq2(NS['AA'], NS['A'], NS['BB'], NS['B'])
 B['mu2'] = mu2(NS['x2'], NS['A'], NS['B'], NS['z2'], NS['C'], NS['D'])
 B['sn1'] = ldstfix(['mov x19, #100'] + st_neon()); B['sn0'] = ldstfix(['mov x19, #100'] + st_neon(False))
+
+# ---- scheduled four-word steps ----
+import slist as sched
+def step_src(order):
+    """The step (as step_order), the constants 19 and 38 in x26 and x27, the sums of DA and CB from one load."""
+    D = ['x12','x13','x14','x15']
+    ops = {
+      'SD': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + add3(['x5n'] and ['x16','x17','x20','x24'], R1, R2)[:] ,
+    }
+    body = FR + step_order(order)
+    out = []
+    for l in minflags(body):
+        if l in ('mov w11, #38', 'mov w11, #19', 'movz w11, #38, lsl #0', 'movz w11, #19, lsl #0', 'mov w2, #38', 'movz w2, #38, lsl #0'):
+            out.append(l); continue
+        out.append(l)
+    # rename constants: uses of x11 / x2 after those movs
+    res, c11, c2 = [], None, None
+    for l in out:
+        op, _, r = l.partition(' ')
+        m = re_.match(r'(?:mov|movz) w(11|2), #(38|19)', l)
+        if m:
+            if m[1] == '11': c11 = 'x27' if m[2] == '38' else 'x26'
+            else: c2 = 'x27'
+            continue
+        o = [x.strip() for x in r.split(',')]
+        for c, name in ((c11, 'x11'), (c2, 'x2')):
+            if c:
+                st = 1 if op not in ('str', 'stp') else 0
+                o = [(c if (x == name and q >= st) else x) for q, x in enumerate(o)]
+        if op not in ('str','stp'):
+            defs = o[:2] if op == 'ldp' else o[:1]
+            if 'x11' in defs: c11 = None
+            if 'x2' in defs: c2 = None
+        res.append(op + ' ' + ', '.join(o))
+    return res
+import re as re_
+SRC = step_src(ORD['o3'])
+PRE = ['mov w10, #0', 'mov x19, #100', 'mov w26, #19', 'mov w27, #38']
+B['src'] = PRE + SRC
+REGS = [f'x{r}' for r in list(range(1, 10)) + list(range(11, 18)) + [20, 21, 22, 23, 24, 25, 28]]
+for lim in (18, 20, 22):
+  for od in ('o1', 'o3'):
+    for wd in (3.0, 5.0):
+        r = sched.schedule(step_src(ORD[od]), {0, 10, 19, 26, 27}, REGS, lim, wd)
+        if r: B[f'sc_{od}_{lim}_{int(wd)}'] = PRE + r[0]
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1'): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
 out = ['//! Lab.', 'use criterion::{BenchmarkId, Criterion};', 'use crate::{BenchDyn, VG};', 'pub const USES: &[&str] = &["x25519"];']
 asm = []
 for n, body in B.items():
-    asm.append(f'.p2align 6\n.globl lab_{n}\nlab_{n}:\nstp x19, x20, [sp, #-144]!\nstp x21, x22, [sp, #16]\nstp x23, x24, [sp, #32]\nstp x25, x26, [sp, #48]\nstp d8, d9, [sp, #64]\nstp d10, d11, [sp, #80]\nstp d12, d13, [sp, #96]\nstp d14, d15, [sp, #112]\n'
-      'mov x25, x1\nmov x26, x1\nmov x2, #12345\nmovk x2, #54321, lsl #48\nmov x3, #777\nmovk x3, #999, lsl #32\n2:\n' + '\n'.join(body) +
-      '\nsub x25, x25, #1\ncbnz x25, 2b\nldp d8, d9, [sp, #64]\nldp d10, d11, [sp, #80]\nldp d12, d13, [sp, #96]\nldp d14, d15, [sp, #112]\nldp x25, x26, [sp, #48]\nldp x23, x24, [sp, #32]\nldp x21, x22, [sp, #16]\nldp x19, x20, [sp], #144\nret\n')
+    asm.append(f'.p2align 6\n.globl lab_{n}\nlab_{n}:\nstp x19, x20, [sp, #-160]!\nstp x21, x22, [sp, #16]\nstp x23, x24, [sp, #32]\nstp x25, x26, [sp, #48]\nstp x27, x28, [sp, #136]\nstp d8, d9, [sp, #64]\nstp d10, d11, [sp, #80]\nstp d12, d13, [sp, #96]\nstp d14, d15, [sp, #112]\n'
+      'str x1, [sp, #128]\nmov x2, #12345\nmovk x2, #54321, lsl #48\nmov x3, #777\nmovk x3, #999, lsl #32\n2:\n' + '\n'.join(body) +
+      '\nldr x25, [sp, #128]\nsub x25, x25, #1\nstr x25, [sp, #128]\ncbnz x25, 2b\nldp d8, d9, [sp, #64]\nldp d10, d11, [sp, #80]\nldp d12, d13, [sp, #96]\nldp d14, d15, [sp, #112]\nldp x25, x26, [sp, #48]\nldp x27, x28, [sp, #136]\nldp x23, x24, [sp, #32]\nldp x21, x22, [sp, #16]\nldp x19, x20, [sp], #160\nret\n')
 out.append('core::arch::global_asm!(r"' + '\n'.join(asm) + '");')
 out.append('unsafe extern "C" {\n' + ''.join(f'fn lab_{n}(p: *mut u64, n: u64);' for n in B) + '}')
 out.append('pub fn bench(c: &mut Criterion) { let mut buf = vec![0x1234_5678_9abc_def1u64; 2048]; let p = buf.as_mut_ptr();')

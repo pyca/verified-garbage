@@ -20,7 +20,7 @@ for _ in range(100):
     m = bytearray(8192); m[0:4000] = random.randbytes(4000)
     for k in range(2000, 2300): m[k] = random.getrandbits(1)
     res = []
-    for name in ('step', 'step_min', 'step_tree', 'st_o0', 'st_o1', 'st_o2', 'st_o3', 'st_o1n'):
+    for name in ('step', 'step_min', 'step_tree', 'st_o0', 'st_o1', 'st_o2', 'st_o3', 'st_o1n', 'src') + tuple(k for k in gen.ALL if k.startswith('sc_')):
         mm = bytearray(m); emu.run(gen.ALL[name], {i: 0 for i in range(31)}, mm)
         res.append([ld(mm, o) % P for o in (96, 128, 160, 192)])
     assert res[0] == res[1], 'min'
