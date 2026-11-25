@@ -290,3 +290,20 @@ riscv64, the registers of the key's preparation, from this code's own allocation
 product; `H` in t1 and t2, its key in t4, t2 and t3, carries and halves in t5, t6,
 t0 (the registers of the product's classes, all free before it); the temporary
 is the product's first, a6.
+
+## arm, third round (before its code)
+
+Measured (run 45705935970): the plain shifts made it slower, 1.030 (16 KiB) where
+the first code was 1.017. 27 instructions cost about 8 cycles a block: the width
+(about 3 a cycle in A32) is the bound, not the multiplier. Back to the shifted
+operands, and fewer instructions; the deficit, 11 cycles, is about 33 of them:
+
+* The product of 32 bits: low, then sum, then high. The high half's product can
+  be made in `lr`, which its classes read first, and the sum's stays in r0:
+  2 fewer (a store and a load), nine times.
+* The third product of doublewords (Karatsuba's outer middle) goes to the
+  reduction in r6-r9: 2 stores and 4 loads fewer.
+* Y stays in registers from the reduction (r0, lr, r10, r11) to the next block's
+  addition: 4 stores and 4 loads fewer.
+
+32 fewer in all.
