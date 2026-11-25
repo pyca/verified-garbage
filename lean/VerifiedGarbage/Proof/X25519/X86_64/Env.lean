@@ -187,22 +187,3 @@ theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (
 
 include hf in
 theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (ho : LSlot o) :
-    WP isa (.block (fld.a24add (32 * o.val) (32 * b.val) (32 * a.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opA24Add o b a (E s.mem base) ∧
-        Outside base (32 * o.val) 32 s.mem s'.mem :=
-  WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
-
-theorem muxEB {s : State} {base : Addr} (hs : Scr s base) (o x y : Fin 128) (ho : LSlot o)
-    {zf : Bool} (hz : s.zf = some zf) :
-    WP isa (.block (mux (32 * o.val) (32 * x.val) (32 * y.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opMux o x y zf (E s.mem base) ∧
-        Outside base (32 * o.val) 32 s.mem s'.mem ∧
-        fe s'.mem base (32 * o.val) =
-          (if zf then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
-        s'.zf = s.zf :=
-  WP.mono (mux_ok hs (by omega_arith) (by omega_arith) (by omega_arith) hz) fun _ ⟨h, f, z⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem]; simp only [F, f]; cases zf <;> rfl,
-      h.mem, f, z⟩
-
-end VG.Proof.X25519.X86_64
