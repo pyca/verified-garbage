@@ -132,6 +132,10 @@ open VG.Spec.Gcm (blockAt inc32 toBytes Block)
 theorem icb_lo (m : Mem) (ctr : Addr) :
     bswap32 (m.readW (ctr + BitVec.ofNat 64 12) 32) = (Spec.Gcm.blockAt m ctr).extractLsb' 0 32 := Sse.icb_lo m ctr
 
+theorem writeW_apply {m : Mem} {a x : Addr} {w : Nat} (v : BitVec w) :
+    m.writeW a v x = if (x - a).toNat < w / 8 then
+      (v.setWidth (8 * (w / 8))).extractLsb' (8 * (x - a).toNat) 8 else m x := rfl
+
 theorem ctr_after {m m' : Mem} {ctr : Addr} {n : Nat}
     (h : ∀ k < 16, m' (ctr + BitVec.ofNat 64 k) = if k < 12 then m (ctr + BitVec.ofNat 64 k)
       else (bswap32 (bswap32 (m.readW (ctr + BitVec.ofNat 64 12) 32) +

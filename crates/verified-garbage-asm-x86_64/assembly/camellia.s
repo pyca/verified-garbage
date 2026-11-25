@@ -301,33 +301,33 @@ vg_camellia_expand_key:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -357,33 +357,33 @@ vg_camellia_expand_key:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+576], rax
 	mov QWORD PTR [r9+584], rbx
 	mov QWORD PTR [r9+592], rcx
@@ -523,33 +523,33 @@ vg_camellia_expand_key:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -579,33 +579,33 @@ vg_camellia_expand_key:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+512], rax
 	mov QWORD PTR [r9+520], rbx
 	mov QWORD PTR [r9+528], rcx
@@ -1773,33 +1773,33 @@ vg_camellia_expand_key:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -1829,33 +1829,33 @@ vg_camellia_expand_key:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -1988,33 +1988,33 @@ vg_camellia_expand_key:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -2044,33 +2044,33 @@ vg_camellia_expand_key:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -3028,33 +3028,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -3084,33 +3084,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -3262,33 +3262,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -3318,33 +3318,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -3520,33 +3520,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -3576,33 +3576,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+576], rax
 	mov QWORD PTR [r9+584], rbx
 	mov QWORD PTR [r9+592], rcx
@@ -3742,33 +3742,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -3798,33 +3798,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	xor rax, QWORD PTR [rsi]
 	xor rbx, QWORD PTR [rsi+8]
 	xor rcx, QWORD PTR [rsi+16]
@@ -5244,33 +5244,33 @@ vg_camellia_ecb_encrypt:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -5300,33 +5300,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -5474,33 +5474,33 @@ vg_camellia_ecb_encrypt:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -5530,33 +5530,33 @@ vg_camellia_ecb_encrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -6112,33 +6112,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -6168,33 +6168,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -6335,33 +6335,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -6391,33 +6391,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -6561,33 +6561,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -6617,33 +6617,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -6788,33 +6788,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -6844,33 +6844,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -7011,33 +7011,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -7067,33 +7067,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -7241,33 +7241,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -7297,33 +7297,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -7464,33 +7464,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -7520,33 +7520,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -7690,33 +7690,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -7746,33 +7746,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -7917,33 +7917,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -7973,33 +7973,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -8140,33 +8140,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -8196,33 +8196,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [rsi], rax
 	mov QWORD PTR [rsi+8], rbx
 	mov QWORD PTR [rsi+16], rcx
@@ -8395,33 +8395,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -8451,33 +8451,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov QWORD PTR [r9+576], rax
 	mov QWORD PTR [r9+584], rbx
 	mov QWORD PTR [r9+592], rcx
@@ -8617,33 +8617,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 56
 	xor r13, r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -8673,33 +8673,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	xor rax, QWORD PTR [rsi]
 	xor rbx, QWORD PTR [rsi+8]
 	xor rcx, QWORD PTR [rsi+16]
@@ -10119,33 +10119,33 @@ vg_camellia_ecb_decrypt:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -10175,33 +10175,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
@@ -10349,33 +10349,33 @@ vg_camellia_ecb_decrypt:
 	movabs r14, 1085102592571150095
 	mov QWORD PTR [r9+48], r14
 	mov r14, rax
-	shr r14, 1
-	xor r14, rbx
-	and r14, QWORD PTR [r9+32]
-	xor rbx, r14
-	ror r14, 63
-	xor rax, r14
-	mov r14, rcx
-	shr r14, 1
-	xor r14, rbp
-	and r14, QWORD PTR [r9+32]
-	xor rbp, r14
-	ror r14, 63
-	xor rcx, r14
-	mov r14, r10
-	shr r14, 1
-	xor r14, r11
-	and r14, QWORD PTR [r9+32]
-	xor r11, r14
-	ror r14, 63
+	shr r14, 4
+	xor r14, r10
+	and r14, QWORD PTR [r9+48]
 	xor r10, r14
-	mov r14, r12
-	shr r14, 1
-	xor r14, r13
-	and r14, QWORD PTR [r9+32]
-	xor r13, r14
-	ror r14, 63
+	ror r14, 60
+	xor rax, r14
+	mov r14, rbx
+	shr r14, 4
+	xor r14, r11
+	and r14, QWORD PTR [r9+48]
+	xor r11, r14
+	ror r14, 60
+	xor rbx, r14
+	mov r14, rcx
+	shr r14, 4
+	xor r14, r12
+	and r14, QWORD PTR [r9+48]
 	xor r12, r14
+	ror r14, 60
+	xor rcx, r14
+	mov r14, rbp
+	shr r14, 4
+	xor r14, r13
+	and r14, QWORD PTR [r9+48]
+	xor r13, r14
+	ror r14, 60
+	xor rbp, r14
 	mov r14, rax
 	shr r14, 2
 	xor r14, rcx
@@ -10405,33 +10405,33 @@ vg_camellia_ecb_decrypt:
 	ror r14, 62
 	xor r11, r14
 	mov r14, rax
-	shr r14, 4
-	xor r14, r10
-	and r14, QWORD PTR [r9+48]
-	xor r10, r14
-	ror r14, 60
-	xor rax, r14
-	mov r14, rbx
-	shr r14, 4
-	xor r14, r11
-	and r14, QWORD PTR [r9+48]
-	xor r11, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbx
+	and r14, QWORD PTR [r9+32]
 	xor rbx, r14
+	ror r14, 63
+	xor rax, r14
 	mov r14, rcx
-	shr r14, 4
-	xor r14, r12
-	and r14, QWORD PTR [r9+48]
-	xor r12, r14
-	ror r14, 60
-	xor rcx, r14
-	mov r14, rbp
-	shr r14, 4
-	xor r14, r13
-	and r14, QWORD PTR [r9+48]
-	xor r13, r14
-	ror r14, 60
+	shr r14, 1
+	xor r14, rbp
+	and r14, QWORD PTR [r9+32]
 	xor rbp, r14
+	ror r14, 63
+	xor rcx, r14
+	mov r14, r10
+	shr r14, 1
+	xor r14, r11
+	and r14, QWORD PTR [r9+32]
+	xor r11, r14
+	ror r14, 63
+	xor r10, r14
+	mov r14, r12
+	shr r14, 1
+	xor r14, r13
+	and r14, QWORD PTR [r9+32]
+	xor r13, r14
+	ror r14, 63
+	xor r12, r14
 	mov r14, rax
 	shr r14, 8
 	xor r14, rax
