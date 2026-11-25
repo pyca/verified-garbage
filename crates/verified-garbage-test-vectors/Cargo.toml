@@ -6,7 +6,9 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-publish.workspace = true
+# Only the tests use it, which are not published: a development dependency
+# without a version, which Cargo leaves out of the published manifest.
+publish = false
 build = false
 
 [lints]
