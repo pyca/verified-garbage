@@ -305,4 +305,41 @@ def preparedVerifyApi (p : Params) (module name : String) : Api where
       changed since.",
     keyScratchSafety]
 
+/-- `vg_mldsa44_prepare_verifying_key` on every target. -/
+def preparePublicKey44Api : Api := preparePublicKeyApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_prepare_verifying_key` on every target. -/
+def preparePublicKey65Api : Api := preparePublicKeyApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_prepare_verifying_key` on every target. -/
+def preparePublicKey87Api : Api := preparePublicKeyApi mlDsa87 "mldsa87" "ML-DSA-87"
+/-- `vg_mldsa44_prepare_signing_key` on every target. -/
+def prepareSecretKey44Api : Api := prepareSecretKeyApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_prepare_signing_key` on every target. -/
+def prepareSecretKey65Api : Api := prepareSecretKeyApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_prepare_signing_key` on every target. -/
+def prepareSecretKey87Api : Api := prepareSecretKeyApi mlDsa87 "mldsa87" "ML-DSA-87"
+/-- `vg_mldsa44_sign_message_prepared` on every target. -/
+def preparedSignMessage44Api : Api := preparedSignMessageApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_sign_message_prepared` on every target. -/
+def preparedSignMessage65Api : Api := preparedSignMessageApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_sign_message_prepared` on every target. -/
+def preparedSignMessage87Api : Api := preparedSignMessageApi mlDsa87 "mldsa87" "ML-DSA-87"
+/-- `vg_mldsa44_verify_message_prepared` on every target. -/
+def preparedVerifyMessage44Api : Api := preparedVerifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_verify_message_prepared` on every target. -/
+def preparedVerifyMessage65Api : Api := preparedVerifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_verify_message_prepared` on every target. -/
+def preparedVerifyMessage87Api : Api := preparedVerifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87"
+/-- `vg_mldsa44_sign_prepared` on every target. -/
+def preparedSign44Api : Api := preparedSignApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_sign_prepared` on every target. -/
+def preparedSign65Api : Api := preparedSignApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_sign_prepared` on every target. -/
+def preparedSign87Api : Api := preparedSignApi mlDsa87 "mldsa87" "ML-DSA-87"
+/-- `vg_mldsa44_verify_prepared` on every target. -/
+def preparedVerify44Api : Api := preparedVerifyApi mlDsa44 "mldsa44" "ML-DSA-44"
+/-- `vg_mldsa65_verify_prepared` on every target. -/
+def preparedVerify65Api : Api := preparedVerifyApi mlDsa65 "mldsa65" "ML-DSA-65"
+/-- `vg_mldsa87_verify_prepared` on every target. -/
+def preparedVerify87Api : Api := preparedVerifyApi mlDsa87 "mldsa87" "ML-DSA-87"
+
 end VG.Spec.MlDsa
