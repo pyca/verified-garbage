@@ -511,12 +511,9 @@ theorem low_disj (b : Addr) : ∀ r ∈ [(⟨b, 288⟩ : Region)],
   rw [List.mem_singleton.mp hr]
   exact Offset.disjoint_base _ (by decide) (by decide)
 
-theorem RS.step {s₁ s : State} {cnt : BitVec 64} {i : Nat} {f f' : Bool} {r r' : Nat → XReg}
-    {S S' : Nat → Spec.Aes.State} (h : RS s₁ b nr w cnt i f r S s) {is : List Instr}
-    (hs : ∃ s', runBlock isa is s = some s' ∧ Keep s s' ∧ Holds f' r' s' S') :
-    WP isa (.block is) s (RS s₁ b nr w cnt i f' r' S') := by
-  obtain ⟨s', e, k, hh⟩ := hs
-  refine WP.of_runBlock ⟨s', e, ?_⟩
+theorem RS.keep {s₁ s s' : State} {cnt : BitVec 64} {i : Nat} {f f' : Bool} {r r' : Nat → XReg}
+    {S S' : Nat → Spec.Aes.State} (h : RS s₁ b nr w cnt i f r S s) (k : Keep s s') (hh : Holds f' r' s' S') :
+    RS s₁ b nr w cnt i f' r' S' s' := by
   have hf : Frame [⟨b, 288⟩] s.mem s'.mem := by
     have := k.frame
     rwa [slotRegion, show s.gpr cfg.base = b from h.r9] at this
@@ -530,6 +527,13 @@ theorem RS.step {s₁ s : State} {cnt : BitVec 64} {i : Nat} {f f' : Bool} {r r'
     exact Offset.contains _ (by simp only [keysOff]; omega) (by simp only [keysOff]; omega) (by decide)
   · have := k.env.masks
     rwa [k.gpr, h.r9] at this
+
+theorem RS.step {s₁ s : State} {cnt : BitVec 64} {i : Nat} {f f' : Bool} {r r' : Nat → XReg}
+    {S S' : Nat → Spec.Aes.State} (h : RS s₁ b nr w cnt i f r S s) {is : List Instr}
+    (hs : ∃ s', runBlock isa is s = some s' ∧ Keep s s' ∧ Holds f' r' s' S') :
+    WP isa (.block is) s (RS s₁ b nr w cnt i f' r' S') := by
+  obtain ⟨s', e, k, hh⟩ := hs
+  exact WP.of_runBlock ⟨s', e, h.keep k hh⟩
 
 theorem RS.congr {s₁ s : State} {cnt : BitVec 64} {i : Nat} {f : Bool} {r : Nat → XReg}
     {S S' : Nat → Spec.Aes.State} (h : RS s₁ b nr w cnt i f r S s) (hS : ∀ k < 8, S k = S' k) :
@@ -908,10 +912,10 @@ theorem sh1 : ∀ n, n = 10 ∨ n = 12 ∨ n = 14 →
 theorem keyAddr_zero (b : Addr) : keyAddr b 0 = b + BitVec.signExtend 64 (BitVec.ofNat 32 keysOff) := rfl
 
 /-- The registers a batch's setup writes. -/
-theorem setup_ok {S : Nat → Spec.Aes.State} {s s1 : State} (h : BatchPre b nr w S s) (k : Keep s s1)
-    (hh : Holds false q s1 S) :
+theorem setup_ok {S T : Nat → Spec.Aes.State} {s s1 : State} (h : BatchPre b nr w S s) (k : Keep s s1)
+    (hh : Holds false q s1 T) :
     WP isa (.block (pairs ++ ([.mov kp (.reg .r9), .alu .add kp (.imm (BitVec.ofNat 32 keysOff))] : List Instr))) s1
-      (RS s b nr w (BitVec.ofNat 64 (nr / 2 - 1)) 0 false q S) := by
+      (RS s b nr w (BitVec.ofNat 64 (nr / 2 - 1)) 0 false q T) := by
   have hsi : s1.gpr .rsi = BitVec.ofNat 64 nr := by rw [k.gpr, h.rsi]
   have h9 : s1.gpr .r9 = b := by rw [k.gpr, h.r9]
   have hf : Frame [⟨b, 288⟩] s.mem s1.mem := by
@@ -982,37 +986,36 @@ theorem moveBack_ok {s₁ s : State} {cnt : BitVec 64} {i : Nat} {S : Nat → Sp
   rw [hb l hl j hj x hx]
   simp [termsXor, idT]
 
-theorem encLast_ok {s₁ s : State} {cnt : BitVec 64} {S : Nat → Spec.Aes.State}
+/-- The last two rounds. -/
+theorem encFin_ok {s₁ s : State} {cnt : BitVec 64} {S : Nat → Spec.Aes.State}
     (h : RS s₁ b nr w cnt (nr - 1) false q (fun k => encMid w (nr - 2) (S k)) s) :
-    WP isa (.block (roundA ++ lastB ++ fromBs ++ storeBuf)) s (BatchPost b nr w (fun k => Spec.Aes.cipher nr w (S k)) s₁) := by
+    WP isa (.block (roundA ++ lastB)) s (RS s₁ b nr w cnt nr false q fun k => Spec.Aes.cipher nr w (S k)) := by
   have hn := h.ready.nrs
-  rw [List.append_assoc, List.append_assoc]
   refine WP.block_append (WP.mono (roundA_ok (by omega) (by omega) h) fun s2 h2 => ?_)
-  refine WP.block_append (WP.block_append (WP.block_append (WP.block_append ?_)))
+  refine WP.block_append (WP.block_append (WP.block_append ?_))
   refine WP.mono (h2.step (sub_holds h2.env h2.holds)) fun s3 h3 => ?_
   refine WP.mono (h3.step (sr2_holds h3.env h3.holds)) fun s4 h4 => ?_
   rw [show nr - 1 + 1 = nr by omega] at h4
   refine WP.mono (h4.ark regs_p (by rcases hn with rfl | rfl | rfl <;> rfl) (Nat.le_refl _)) fun s5 h5 => ?_
-  refine WP.mono (moveBack_ok h5) fun s6 h6 => ?_
-  refine storeBuf_ok (h6.congr fun k _ => ?_)
+  refine WP.mono (moveBack_ok h5) fun s6 h6 => h6.congr fun k _ => ?_
   rw [kr, ite_eq_right (by omega), lastRound63 _ (h.ready.len nr (Nat.le_refl _)), cipher_encMid,
     show nr - 1 = (nr - 2) + 1 by omega, encMid_succ]
 
-theorem encrypt8_ok {S : Nat → Spec.Aes.State} {s : State} (h : BatchPre b nr w S s) :
-    WP isa encrypt8 s (BatchPost b nr w (fun k => Spec.Aes.cipher nr w (S k)) s) := by
+theorem encLast_ok {s₁ s : State} {cnt : BitVec 64} {S : Nat → Spec.Aes.State}
+    (h : RS s₁ b nr w cnt (nr - 1) false q (fun k => encMid w (nr - 2) (S k)) s) :
+    WP isa (.block (roundA ++ lastB ++ fromBs ++ storeBuf)) s (BatchPost b nr w (fun k => Spec.Aes.cipher nr w (S k)) s₁) := by
+  rw [List.append_assoc]
+  exact WP.block_append (WP.mono (encFin_ok h) fun _ h6 => storeBuf_ok h6)
+
+/-- The pairs of rounds before the last, from the first round key on. -/
+theorem encLoop_ok {s₁ s : State} {S : Nat → Spec.Aes.State}
+    (h : RS s₁ b nr w (BitVec.ofNat 64 (nr / 2 - 1)) 1 false q (fun k => Spec.Aes.addRoundKey (S k) (kr w 0)) s) :
+    WP isa (.loop (.block (roundA ++ roundB ++ ([.alu .sub .r10 (.imm 1)] : List Instr))) .ne) s
+      (RS s₁ b nr w 0 (nr - 1) false q fun k => encMid w (nr - 2) (S k)) := by
   have hn := h.ready.nrs
-  refine WP.seq ?_
-  rw [List.append_assoc (loadBuf ++ toBs) pairs]
-  refine WP.block_append (WP.block_append (WP.block_append ?_))
-  refine WP.mono (loadBuf_ok h) fun s1 ⟨k1, h1⟩ => ?_
-  refine WP.mono (setup_ok h k1 h1) fun s2 h2 => ?_
-  refine WP.mono (h2.ark regs_q rfl (Nat.zero_le _)) fun s3 h3 => ?_
-  refine WP.mono h3.next fun s4 h4 => ?_
-  refine WP.seq (WP.mono (Q := RS s b nr w 0 (nr - 1) false q fun k => encMid w (nr - 2) (S k)) ?_
-    fun s5 h5 => encLast_ok h5)
   let I : Nat → State → Prop := fun c s' => ∃ m, c = nr / 2 - 1 - m ∧ m < nr / 2 - 1 ∧
-    RS s b nr w (BitVec.ofNat 64 (nr / 2 - 1 - m)) (2 * m + 1) false q (fun k => encMid w (2 * m) (S k)) s'
-  refine WP.loop (M := isa) I ?_ (nr / 2 - 1) s4 ⟨0, rfl, by omega, h4.congr fun k _ => rfl⟩
+    RS s₁ b nr w (BitVec.ofNat 64 (nr / 2 - 1 - m)) (2 * m + 1) false q (fun k => encMid w (2 * m) (S k)) s'
+  refine WP.loop (M := isa) I ?_ (nr / 2 - 1) s ⟨0, rfl, by omega, h.congr fun k _ => rfl⟩
   rintro c s' ⟨m, rfl, hm, hs'⟩
   refine WP.block_append (WP.mono (encPair_ok (by omega) hs') fun s6 h6 => ?_)
   rw [show nr / 2 - 1 - m = (nr / 2 - 1 - (m + 1)) + 1 by omega] at h6
@@ -1024,6 +1027,17 @@ theorem encrypt8_ok {S : Nat → Spec.Aes.State} {s : State} (h : BatchPre b nr 
     rw [hl, e1, e2] at h7
     exact h7
   · exact .inr ⟨by rw [show isa.eval = X86_64.eval from rfl, hz]; simp [hl], _, by omega, m + 1, rfl, by omega, h7⟩
+
+theorem encrypt8_ok {S : Nat → Spec.Aes.State} {s : State} (h : BatchPre b nr w S s) :
+    WP isa encrypt8 s (BatchPost b nr w (fun k => Spec.Aes.cipher nr w (S k)) s) := by
+  refine WP.seq ?_
+  rw [List.append_assoc (loadBuf ++ toBs) pairs]
+  refine WP.block_append (WP.block_append (WP.block_append ?_))
+  refine WP.mono (loadBuf_ok h) fun s1 ⟨k1, h1⟩ => ?_
+  refine WP.mono (setup_ok h k1 h1) fun s2 h2 => ?_
+  refine WP.mono (h2.ark regs_q rfl (Nat.zero_le _)) fun s3 h3 => ?_
+  refine WP.mono h3.next fun s4 h4 => ?_
+  exact WP.seq (WP.mono (encLoop_ok h4) fun s5 h5 => encLast_ok h5)
 
 /-! ## The inverse cipher on the buffer -/
 
