@@ -185,6 +185,14 @@ structure Api where
   /-- The function's contract on every target, `fun A stack => fooContract A
   stack`. The emitter refuses an artifact without one (`Rust.checkApi`). -/
   contracts : Option Contracts := none
+  /-- For a function that exists to change the mode its target's timing rests
+  on (`Abi.mode`), what it does to it and returns: `some q` if every run of it
+  must satisfy `q before after result`, for the mode before and after it and
+  the register(s) its result is returned in (`Abi.ret`, of which a narrower
+  result is the low bits). A contract cannot say it (its postcondition sees
+  only the arguments, the memory and the result). An `Artifact` made from the
+  `Api` proves it (`Artifact.modeOk`). -/
+  mode : Option (BitVec 64 → BitVec 64 → BitVec 64 → Prop) := none
   /-- The documentation, up to its `# Safety` section. -/
   summary : String
   /-- The items of the `# Safety` section, but for those `Sig.validDoc` and

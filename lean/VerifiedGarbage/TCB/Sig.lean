@@ -229,6 +229,11 @@ structure Abi (M : ISA) where
   doublewords fault unless aligned (RISC-V), where those are the types'
   alignments, and on no other, whose contracts it leaves as they are. -/
   alignsBufs : Bool := false
+  /-- The mode the timing of the code's instructions rests on, as 64 bits, on
+  a target that has one and whose model has it: what a function does to it
+  is for its `Api` to say (`Api.mode`), as neither the arguments nor the
+  memory, all a postcondition sees, hold it. 0 on the others. -/
+  mode : M.State → BitVec 64 := fun _ => 0
 
 /-! ## Tables of constants
 
