@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
 import VerifiedGarbage.Proof.MlKem.CoeffW
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Pair
@@ -403,7 +402,7 @@ theorem readonly_out_okW {s : State} {off ns buf : Nat} {b f w : Addr} (transfor
  (hbf : (Region.mk b 128).Disjoint ⟨f,1024⟩) (hfw : (polyRegion f).Disjoint (polyRegion w))
  (hc : Covers [⟨b,128⟩,⟨f,1024⟩] (s.rd++s.wr))
  (hcw : Covers [⟨f,1024⟩,⟨w,1024⟩] s.wr)
- (ht : NttR.FastReady s f w) :
+ (ht : Ntt16.FwdReady s f w) :
  WP isa (outCodeWith Ntt16.Readonly.nttAtWithW off ns buf transform) s fun t=>
    Kept [⟨f,1024⟩,⟨w,1024⟩] s t ∧
    PolyIsW (cw true) t.mem f (if transform then ntt (samplePolyCBD 2 (bytesAt s.mem b 128))
@@ -415,20 +414,15 @@ theorem readonly_out_okW {s : State} {off ns buf : Nat} {b f w : Addr} (transfor
    rcases hr with rfl|rfl
    · exact ht.output.symm
    · exact ht.scratch.symm)
- obtain sub : ∀ x ∈ [Region.mk f 512, ⟨w,512⟩], ∃ r ∈ [Region.mk f 1024, ⟨w,1024⟩], Region.Sub x r := by
+ obtain sub : ∀ x ∈ [Region.mk f 512], ∃ r ∈ [Region.mk f 1024, ⟨w,1024⟩], Region.Sub x r := by
    intro x hx
-   simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
-   rcases hx with rfl|rfl
-   · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
-   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by decide : 512 ≤ 1024)⟩
- refine WP.mono (Ntt16.W.nttAtWithW_ok hoff hns
+   rw [List.mem_singleton.1 hx]
+   exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
+ refine WP.mono (Ntt16.nttAtWithW_ok hoff
    (by rw [kv.cs .x28 (by decide) (by decide)]; exact hf)
-   (by rw [kv.cs .x28 (by decide) (by decide)]; exact hw)
-   (hfw.sub_left (Region.sub_prefix (by decide : 512 ≤ 1024)) |>.sub_right (Region.sub_prefix (by decide : 512 ≤ 1024)))
    pv (by
      rw [kv.wr]
-     exact Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head hcw))
-       (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head (Covers.tail hcw))) Covers.nil))
+     exact covers_prefix (by decide : 512 ≤ 1024) (Covers.head hcw))
    table) fun t ⟨kt,pt⟩ => ⟨Kept.sub kt sub, pt⟩
 end VG.Proof.MlKem.AArch64.Noise
 end
@@ -452,9 +446,9 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (hw : s.gpr .x28+BitVec.ofNat 64 ns=w)
     (hs : TailSetup s p f g w)
     (hpair : PairAt s.mem p (seedState initial.mem a n) (seedState initial.mem a (n+1)))
-    (ht0 : NttR.FastReady s f w)
-    (ht1 : NttR.FastReady s g w)
-    (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
+    (ht0 : Ntt16.FwdReady s f w)
+    (ht1 : Ntt16.FwdReady s g w)
+    (hfar : ∀r∈pairWrites p f g w,(Ntt16.fwdRegion s).Disjoint r) :
     WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair sha3,outCodeWith Ntt16.Readonly.nttAtWithW off0 ns 400 tr0,outCodeWith Ntt16.Readonly.nttAtWithW off1 ns 528 tr1,
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]) s fun t =>
       Kept (pairWrites p f g w) initial t ∧
@@ -501,7 +495,7 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (Proof.MlKem.bytesAt_frame kv.frame hs.next (by decide)).trans r1
   obtain tab1v := tab1.frame vuSym kv.rd kv.wr kv.frame (by
     intro r hr
-    simp only [NttR.sRegion, su]
+    rw [su]
     exact hfar r (by simp only [pairWrites,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; grind))
   refine WP.seq (WP.mono (readonly_out_okW tr1 h1 hns (by decide)
     (by rw [kv.cs .x19 (by decide) (by decide),ku.gpr .x19 (by decide),hp]; rfl)
@@ -554,9 +548,9 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (has : (Region.mk a 32).Disjoint (savedR p))
     (hap : (Region.mk a 32).Disjoint (pairR p))
     (hs : TailSetup s p f g w)
-    (ht0 : NttR.FastReady s f w)
-    (ht1 : NttR.FastReady s g w)
-    (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
+    (ht0 : Ntt16.FwdReady s f w)
+    (ht1 : Ntt16.FwdReady s g w)
+    (hfar : ∀r∈pairWrites p f g w,(Ntt16.fwdRegion s).Disjoint r) :
     WP isa (Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites p f g w) s t ∧
       PolyIsW (cw true) t.mem f (sampled s.mem a n (transformed L kg n)) ∧
@@ -581,7 +575,7 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (by rw [ku.gpr .x28 (by decide)]; exact hf)
     (by rw [ku.gpr .x28 (by decide)]; exact hg)
     (by rw [ku.gpr .x28 (by decide)]; exact hw)
-    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [NttR.fastRegion, NttR.sRegion, us] using hfar)
+    (hs.regions ku.rd ku.wr) pair t0 t1 (by simpa only [Ntt16.fwdRegion, us] using hfar)
 
 end VG.Proof.MlKem.AArch64.Noise
 end
@@ -600,13 +594,13 @@ open VG.Proof.Sha3.AArch64.Neon
 theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
     {B : Addr} {n : Nat} (hn : n+1<2*L.k) (hB : s.gpr .x28=B)
     (hc : Covers [⟨B,L.scl⟩] s.wr)
-    (ht0 : NttR.FastReady s
+    (ht0 : Ntt16.FwdReady s
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (nttOff kg)))
-    (ht1 : NttR.FastReady s
+    (ht1 : Ntt16.FwdReady s
       (B+BitVec.ofNat 64 (outOff L kg (n+1))) (B+BitVec.ofNat 64 (nttOff kg)))
     (hfar : ∀r∈pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
-      (B+BitVec.ofNat 64 (nttOff kg)), (NttR.fastRegion s).Disjoint r) :
+      (B+BitVec.ofNat 64 (nttOff kg)), (Ntt16.fwdRegion s).Disjoint r) :
     WP isa (Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
@@ -804,17 +798,11 @@ theorem kgOut_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (h : KB 
   obtain tv := htr.frame sv' kv.rd kv.wr kv.sp kv.frame cT
   obtain cv : Covers [polyRegion (kA s₀ 3 + BitVec.ofNat 64 T), polyRegion (kA s₀ 3 + BitVec.ofNat 64 KG.NS)] v.wr := by
     rw [kv.wr]; exact Covers.cons (Covers.head cT) (Covers.cons (Covers.head cN) Covers.nil)
-  refine WP.mono_syms (Ntt16.W.nttAtWithW_ok t64 (by decide) (by rw [kbv.x28]) (by rw [kbv.x28])
-    (dTN.sub_left (Region.sub_prefix (by decide : 512 ≤ 1024)) |>.sub_right
-      (Region.sub_prefix (by decide : 512 ≤ 1024))) pv
-    (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
-      (Covers.cons (covers_prefix (by decide : 512 ≤ 1024) (Covers.head (Covers.tail cv))) Covers.nil))
-    (tv.fast.ready cv)) fun t ⟨kt, pt⟩ st => ?_
+  refine WP.mono_syms (Ntt16.nttAtWithW_ok t64 (by rw [kbv.x28]) pv (covers_prefix (by decide : 512 ≤ 1024) (Covers.head cv))
+    (tv.forward.ready cv)) fun t ⟨kt, pt⟩ st => ?_
   obtain kt' : Kept [R (kA s₀) 3 T 1024, R (kA s₀) 3 KG.NS 1024] v t := kt.sub fun x hx => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by decide : 512 ≤ 1024)⟩
+    rw [List.mem_singleton.1 hx]
+    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide : 512 ≤ 1024)⟩
   refine ⟨kbv.call kt' fun r hr => ?_, (kv.frame.mono (by simp)).trans kt'.frame,
     (kt'.cs .x24 (by decide) (by decide)).trans (kv.cs .x24 (by decide) (by decide)), st.trans sv', pt⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -939,21 +927,17 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
   obtain fN : KG.NS + 1024 ≤ kL P 3 := by kl
   have cvs {o l : Nat} (h : o + l ≤ P.scl) := Noise.coversScratch hc h
   have rdy (m : Nat) (hm : m < 2 * P.k) :=
-    H.tt.fast.ready (Noise.coversTwo (cvs (Noise.outOff_fits hw hr true hm)) (cvs (o := KG.NS) (l := 1024) (by omega_using [fN, kl3])))
+    H.tt.forward.ready (Noise.coversTwo (cvs (Noise.outOff_fits hw hr true hm)) (cvs (o := KG.NS) (l := 1024) (by omega_using [fN, kl3])))
   -- Every region apart from the pair's working space, `NS` and both outputs misses its writes.
   have away {r : Region} (h1 : r.Disjoint (R (kA s₀) 3 KG.SS 2048)) (h2 : r.Disjoint (R (kA s₀) 3 KG.NS 1024))
       (h3 : r.Disjoint (R (kA s₀) 3 (Noise.outOff P true n) 1024))
       (h4 : r.Disjoint (R (kA s₀) 3 (Noise.outOff P true (n + 1)) 1024)) :
       ∀ q ∈ Noise.writes P true (kA s₀ 3) n, r.Disjoint q :=
     writes_apartK (P := P) h1 h2 h3 h4
-  have tfar (sym : String) (H' : List Nat) (tt : Optimized.TransformTable t sym H') :
-      ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (Region.mk (t.syms sym) 512).Disjoint q :=
-    away (tt.apart (cov_w hp kb (b := 3) (by decide) fS)) (tt.apart (cov_w hp kb (b := 3) (by decide) fN))
-      (tt.apart (cov_w hp kb (b := 3) (by decide) fO)) (tt.apart (cov_w hp kb (b := 3) (by decide) fO'))
-  obtain ffar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (NttR.fastRegion t).Disjoint q :=
-    away (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fN))
-      (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.fast.apart (cov_w hp kb (b := 3) (by decide) fO'))
-  obtain ifar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (NttR.fastInvRegion t).Disjoint q :=
+  obtain ffar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (Ntt16.fwdRegion t).Disjoint q :=
+    away (H.tt.forward.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.forward.apart (cov_w hp kb (b := 3) (by decide) fN))
+      (H.tt.forward.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.forward.apart (cov_w hp kb (b := 3) (by decide) fO'))
+  obtain ifar : ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (Ntt16.invRegion t).Disjoint q :=
     away (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fS)) (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fN))
       (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fO)) (H.tt.inverse.apart (cov_w hp kb (b := 3) (by decide) fO'))
   have sc (o l : Nat) (hf : o + l ≤ kL P 3) (hs : o + l ≤ KG.SS) :
@@ -991,7 +975,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
     ?_, ?_, fun N hN => ?_, fun N hN => ?_⟩
   · rw [sy]; exact H.syms
   · exact H.tt.frameFar sy ku.rd ku.wr ku.sp ku.frame fun r hr' =>
-      ⟨tfar _ _ H.tt.forward r hr', ifar r hr', ffar r hr'⟩
+      ⟨ffar r hr', ifar r hr'⟩
   · rw [bytesAt_frame ku.frame (hi (TP P + 168 * N) 128 (by omega_using [hsv, sv, hN]) (by omega_using [tp, sh, cst])
       (by omega_using [oB, oH, sv, tp, hN]) (by omega_using [oB', oH', sv, tp, hN])) (by decide)]
     exact H.buf N hN

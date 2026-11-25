@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
@@ -695,15 +695,12 @@ theorem nttW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
       PolyIsW 16 t.mem (sA L s₀ off) (ntt F) ∧ t.gpr .x24 = s.gpr .x24 := by
   have hw := hp.wf
   obtain hc := covers_cons (cov_s hp hk ho.le) (cov_s hp hk (o:=NS) (l:=1024) (by kom))
-  obtain hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this]))
-    (cov_s hp hk (o:=NS) (l:=512) (by kom))
-  refine WP.mono (Ntt16.W.nttAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom) (by decide)
-    (by rw [e28 hk]) (by rw [e28 hk]) (((ho.ns hp).sub_left (half_sub _)).sub_right (half_sub _))
-    pf hc' (ht.fast.ready hc)) fun t ⟨kt,pt⟩ => ?_
+  obtain hc' := cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this])
+  refine WP.mono (Ntt16.nttAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom)
+    (by rw [e28 hk]) pf hc' (ht.forward.ready hc)) fun t ⟨kt,pt⟩ => ?_
   obtain kt' : Kept [R (kA s₀) L.sc off 1024,R (kA s₀) L.sc NS 1024] s t := kt.sub fun r hh => by
-    rcases mem2' hh with rfl|rfl
-    · exact ⟨_, List.mem_cons_self .., half_sub _⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), half_sub _⟩
+    rw [List.mem_singleton.1 hh]
+    exact ⟨_, List.mem_cons_self .., half_sub _⟩
   refine ⟨hk.call kt' ?_,kt'.frame,pt,kt.cs _ (by decide) (by decide)⟩
   intro r hh
   rcases mem2' hh with rfl|rfl
@@ -718,15 +715,12 @@ theorem invW_ok {s₀ s : State} (hp : Pre P L s₀) {off : Nat} (ho : PO P off)
       t.gpr .x24 = s.gpr .x24 := by
   have hw := hp.wf
   obtain hc := covers_cons (cov_s hp hk ho.le) (cov_s hp hk (o:=NS) (l:=1024) (by kom))
-  obtain hc' := covers_cons (cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this]))
-    (cov_s hp hk (o:=NS) (l:=512) (by kom))
-  refine WP.mono (Ntt16.W.nttInvAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom) (by decide)
-    (by rw [e28 hk]) (by rw [e28 hk]) (((ho.ns hp).sub_left (half_sub _)).sub_right (half_sub _))
-    ⟨hr,rfl⟩ hc' (ht.inverse.ready hc)) fun t ⟨kt,pt⟩ => ?_
+  obtain hc' := cov_s hp hk (o:=off) (l:=512) (by have := ho.le; omega_using [this])
+  refine WP.mono (Ntt16.nttInvAtWithW_ok (by obtain ⟨_,hh⟩:=ho; kom)
+    (by rw [e28 hk]) ⟨hr,rfl⟩ hc' (ht.inverse.ready hc)) fun t ⟨kt,pt⟩ => ?_
   obtain kt' : Kept [R (kA s₀) L.sc off 1024,R (kA s₀) L.sc NS 1024] s t := kt.sub fun r hh => by
-    rcases mem2' hh with rfl|rfl
-    · exact ⟨_, List.mem_cons_self .., half_sub _⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), half_sub _⟩
+    rw [List.mem_singleton.1 hh]
+    exact ⟨_, List.mem_cons_self .., half_sub _⟩
   refine ⟨hk.call kt' ?_,kt'.frame,pt,kt.cs _ (by decide) (by decide)⟩
   intro r hh
   rcases mem2' hh with rfl|rfl
@@ -862,20 +856,19 @@ variable {P : KemLay} {L : Layout}
 theorem transform_enc_far {s₀ s : State} (hp : Pre P L s₀) {kE eo kC co : Nat}
     (A : EncArgs P L kE eo kC co) (hk : KB P L s₀ s) (ht : TransformTables s) :
     ∀r∈encW P L s₀ kC co,
-      (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r ∧
-      (NttR.fastInvRegion s).Disjoint r ∧ (NttR.fastRegion s).Disjoint r := by
+      (Ntt16.fwdRegion s).Disjoint r ∧ (Ntt16.invRegion s).Disjoint r := by
   have hw := hp.wf
   have cover {o n : Nat} (h : o+n≤SV P+48) : Covers [R (kA s₀) L.sc o n] s.wr :=
     cov_w hp hk ⟨hp.scw,hp.scb⟩ (hp.fs h)
   have far {r : Region} (hc : Covers [r] s.wr) :=
-    And.intro (ht.forward.apart hc) (And.intro (ht.inverse.apart hc) (ht.fast.apart hc))
+    And.intro (ht.forward.apart hc) (ht.inverse.apart hc)
   intro r hr
   simp only [encW,List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl|rfl|rfl|rfl|rfl
   · exact far (cover (by lom))
   · exact far (cover (by lom))
   · exact far (cover (by lom))
-  · simpa only [hk.sp] using And.intro ht.forwardStack (And.intro ht.inverseStack ht.fastStack)
+  · simpa only [hk.sp] using And.intro ht.forwardStack ht.inverseStack
   · exact far (cov_w hp hk ⟨A.wC,hp.slots _ A.hkC⟩ A.fC)
 
 theorem transform_enc_frame {s₀ s t : State} (hp : Pre P L s₀) {kE eo kC co : Nat}

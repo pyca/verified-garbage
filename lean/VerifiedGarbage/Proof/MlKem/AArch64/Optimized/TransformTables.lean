@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Call
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
@@ -55,7 +56,7 @@ theorem TransformTables.frame {s t : State} {rs : List Region} (h : TransformTab
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem) (hc : Covers rs s.wr) : TransformTables t :=
  ⟨h.forward.frame hs hr hw hf hc,h.inverse.frame hs hr hw hf hc,
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [hs,hsp] using h.inverseStack⟩
+   by simpa only [Ntt16.fwdRegion,hs,hsp] using h.forwardStack,by simpa only [Ntt16.invRegion,hs,hsp] using h.inverseStack⟩
 theorem TransformTables.frameFar {s t : State} {rs : List Region} (h : TransformTables s)
  (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr) (hsp : t.sp=s.sp)
  (hf : Frame rs s.mem t.mem)
@@ -63,6 +64,6 @@ theorem TransformTables.frameFar {s t : State} {rs : List Region} (h : Transform
  TransformTables t :=
  ⟨h.forward.frameFar hs hr hw hf (fun r hr=>(hd r hr).1),
    h.inverse.frameFar hs hr hw hf (fun r hr=>(hd r hr).2),
-   by simpa only [hs,hsp] using h.forwardStack,by simpa only [hs,hsp] using h.inverseStack⟩
+   by simpa only [Ntt16.fwdRegion,hs,hsp] using h.forwardStack,by simpa only [Ntt16.invRegion,hs,hsp] using h.inverseStack⟩
 
 end VG.Proof.MlKem.AArch64.Optimized
