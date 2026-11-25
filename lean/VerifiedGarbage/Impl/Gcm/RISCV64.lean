@@ -104,6 +104,11 @@ def classes (x : Reg) (i : Nat) : List Instr :=
    .load .d .t4 .a0 (8 * (4 * i + 0)), .load .d .t5 .a0 (8 * (4 * i + 1)),
    .load .d .t6 .a0 (8 * (4 * i + 2)), .load .d .a5 .a0 (8 * (4 * i + 3))]
 
+/-- The first class of the product, in `d`. -/
+def classFirst (d : Reg) : List Instr :=
+  [.mul d .t0 .t4, .mul .a7 .t1 .a5, xorI d d .a7, .mul .a7 .t2 .t6, xorI d d .a7, .mul .a7 .t3 .t5, xorI d d .a7,
+   andI d d .s0]
+
 /-- The class `r` of the product, added to `d`. -/
 def classSum (d : Reg) (r : Nat) : List Instr :=
   [.mul .a6 (wc 0) (kc (r % 4)), .mul .a7 (wc 1) (kc ((r + 3) % 4)), xorI .a6 .a6 .a7,
@@ -113,25 +118,29 @@ def classSum (d : Reg) (r : Nat) : List Instr :=
 /-- The carry-less product of the 32-bit word in `x` and the key's word `i`,
 in `d`. -/
 def clmul (d x : Reg) (i : Nat) : List Instr :=
-  classes x i ++ ([.li d 0] : List Instr) ++ classSum d 0 ++ classSum d 1 ++ classSum d 2 ++ classSum d 3
+  classes x i ++ classFirst d ++ classSum d 1 ++ classSum d 2 ++ classSum d 3
 
 /-- The carry-less product of the doubleword in `w` and the key's doubleword
-`t`, in `s7 : s6`. -/
-def mul (w : Reg) (t : Nat) : List Instr :=
-  ([sll .s10 w 32, srl .s10 .s10 32] : List Instr) ++ clmul .s6 .s10 (3 * t) ++ ([srl .s11 w 32] : List Instr) ++
-  clmul .s7 .s11 (3 * t + 1) ++ ([xorI .s10 .s10 .s11] : List Instr) ++ clmul .s8 .s10 (3 * t + 2) ++
-  ([xorI .s8 .s8 .s6, xorI .s8 .s8 .s7, sll .s10 .s8 32, xorI .s6 .s6 .s10, srl .s10 .s8 32, xorI .s7 .s7 .s10] : List Instr)
+`t`, in `hi : lo` (`hi` may be `w`). -/
+def mul (lo hi w : Reg) (t : Nat) : List Instr :=
+  ([sll .s10 w 32, srl .s10 .s10 32] : List Instr) ++ clmul lo .s10 (3 * t) ++ ([srl .s11 w 32] : List Instr) ++
+  clmul hi .s11 (3 * t + 1) ++ ([xorI .s10 .s10 .s11] : List Instr) ++ clmul .s8 .s10 (3 * t + 2) ++
+  ([xorI .s8 .s8 lo, xorI .s8 .s8 hi, sll .s10 .s8 32, xorI lo lo .s10, srl .s10 .s8 32, xorI hi hi .s10] : List Instr)
 
 /-! ## A block -/
+
+/-- `d = s ^ w ≪ 63 ^ w ≪ 62 ^ w ≪ 57`, through `t`. -/
+def foldDnTo (d s w t : Reg) : List Instr :=
+  [sll t w 63, xorI s s t, sll t w 62, xorI s s t, sll t w 57, xorI d s t]
 
 /-- The product of `y₁ : y₀` (`s4`, `s5`) and the key, reduced: the sums' product
 goes to `s9 : a4`, the first words' to them and `s4`, then the last words'. -/
 def core : List Instr :=
-  ([xorI .s9 .s4 .s5] : List Instr) ++ mul .s9 2 ++ ([mv .a4 .s6, mv .s9 .s7] : List Instr) ++
-  mul .s4 0 ++ ([xorI .a4 .a4 .s6, xorI .s9 .s9 .s7, xorI .s9 .s9 .s6, mv .s4 .s7] : List Instr) ++ mul .s5 1 ++
+  ([xorI .s9 .s4 .s5] : List Instr) ++ mul .a4 .s9 .s9 2 ++ mul .s6 .s4 .s4 0 ++
+  ([xorI .a4 .a4 .s6, xorI .s9 .s9 .s4, xorI .s9 .s9 .s6] : List Instr) ++ mul .s6 .s7 .s5 1 ++
   ([xorI .a4 .a4 .s6, xorI .a4 .a4 .s7, xorI .s9 .s9 .s7, xorI .s9 .s9 .s6] : List Instr) ++
   foldDn .a4 .s6 .t0 ++ foldUp .s9 .s6 .t0 ++ ([xorI .s4 .s4 .a4] : List Instr) ++ foldUp .s4 .a4 .t0 ++
-  foldDn .s9 .a4 .t0 ++ ([mv .s5 .s9] : List Instr)
+  foldDnTo .s5 .s9 .a4 .t0
 
 def loadX : List Instr := loadBE64 .s6 .t0 .a2 0 ++ loadBE64 .s7 .t0 .a2 8
 

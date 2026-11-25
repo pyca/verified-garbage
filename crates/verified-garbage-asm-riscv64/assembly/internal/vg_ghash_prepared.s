@@ -133,16 +133,14 @@ vg_ghash_prepared:
 	ld t5, 200(a0)
 	ld t6, 208(a0)
 	ld a5, 216(a0)
-	addi s6, zero, 0
-	mul a6, t0, t4
+	mul a4, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor a4, a4, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor a4, a4, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s6, s6, a6
+	xor a4, a4, a7
+	and a4, a4, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -151,7 +149,7 @@ vg_ghash_prepared:
 	mul a7, t3, t6
 	xor a6, a6, a7
 	and a6, a6, s1
-	xor s6, s6, a6
+	xor a4, a4, a6
 	mul a6, t0, t6
 	mul a7, t1, t5
 	xor a6, a6, a7
@@ -160,7 +158,7 @@ vg_ghash_prepared:
 	mul a7, t3, a5
 	xor a6, a6, a7
 	and a6, a6, s2
-	xor s6, s6, a6
+	xor a4, a4, a6
 	mul a6, t0, a5
 	mul a7, t1, t6
 	xor a6, a6, a7
@@ -169,7 +167,7 @@ vg_ghash_prepared:
 	mul a7, t3, t4
 	xor a6, a6, a7
 	and a6, a6, s3
-	xor s6, s6, a6
+	xor a4, a4, a6
 	srli s11, s9, 32
 	and t0, s11, s0
 	and t1, s11, s1
@@ -179,16 +177,14 @@ vg_ghash_prepared:
 	ld t5, 232(a0)
 	ld t6, 240(a0)
 	ld a5, 248(a0)
-	addi s7, zero, 0
-	mul a6, t0, t4
+	mul s9, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s9, s9, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s9, s9, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s7, s7, a6
+	xor s9, s9, a7
+	and s9, s9, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -197,7 +193,7 @@ vg_ghash_prepared:
 	mul a7, t3, t6
 	xor a6, a6, a7
 	and a6, a6, s1
-	xor s7, s7, a6
+	xor s9, s9, a6
 	mul a6, t0, t6
 	mul a7, t1, t5
 	xor a6, a6, a7
@@ -206,7 +202,7 @@ vg_ghash_prepared:
 	mul a7, t3, a5
 	xor a6, a6, a7
 	and a6, a6, s2
-	xor s7, s7, a6
+	xor s9, s9, a6
 	mul a6, t0, a5
 	mul a7, t1, t6
 	xor a6, a6, a7
@@ -215,7 +211,7 @@ vg_ghash_prepared:
 	mul a7, t3, t4
 	xor a6, a6, a7
 	and a6, a6, s3
-	xor s7, s7, a6
+	xor s9, s9, a6
 	xor s10, s10, s11
 	and t0, s10, s0
 	and t1, s10, s1
@@ -225,16 +221,14 @@ vg_ghash_prepared:
 	ld t5, 264(a0)
 	ld t6, 272(a0)
 	ld a5, 280(a0)
-	addi s8, zero, 0
-	mul a6, t0, t4
+	mul s8, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s8, s8, a6
+	xor s8, s8, a7
+	and s8, s8, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -262,14 +256,12 @@ vg_ghash_prepared:
 	xor a6, a6, a7
 	and a6, a6, s3
 	xor s8, s8, a6
-	xor s8, s8, s6
-	xor s8, s8, s7
+	xor s8, s8, a4
+	xor s8, s8, s9
 	slli s10, s8, 32
-	xor s6, s6, s10
+	xor a4, a4, s10
 	srli s10, s8, 32
-	xor s7, s7, s10
-	addi a4, s6, 0
-	addi s9, s7, 0
+	xor s9, s9, s10
 	slli s10, s4, 32
 	srli s10, s10, 32
 	and t0, s10, s0
@@ -280,16 +272,14 @@ vg_ghash_prepared:
 	ld t5, 8(a0)
 	ld t6, 16(a0)
 	ld a5, 24(a0)
-	addi s6, zero, 0
-	mul a6, t0, t4
+	mul s6, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s6, s6, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s6, s6, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s6, s6, a6
+	xor s6, s6, a7
+	and s6, s6, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -326,16 +316,14 @@ vg_ghash_prepared:
 	ld t5, 40(a0)
 	ld t6, 48(a0)
 	ld a5, 56(a0)
-	addi s7, zero, 0
-	mul a6, t0, t4
+	mul s4, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s4, s4, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s4, s4, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s7, s7, a6
+	xor s4, s4, a7
+	and s4, s4, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -344,7 +332,7 @@ vg_ghash_prepared:
 	mul a7, t3, t6
 	xor a6, a6, a7
 	and a6, a6, s1
-	xor s7, s7, a6
+	xor s4, s4, a6
 	mul a6, t0, t6
 	mul a7, t1, t5
 	xor a6, a6, a7
@@ -353,7 +341,7 @@ vg_ghash_prepared:
 	mul a7, t3, a5
 	xor a6, a6, a7
 	and a6, a6, s2
-	xor s7, s7, a6
+	xor s4, s4, a6
 	mul a6, t0, a5
 	mul a7, t1, t6
 	xor a6, a6, a7
@@ -362,7 +350,7 @@ vg_ghash_prepared:
 	mul a7, t3, t4
 	xor a6, a6, a7
 	and a6, a6, s3
-	xor s7, s7, a6
+	xor s4, s4, a6
 	xor s10, s10, s11
 	and t0, s10, s0
 	and t1, s10, s1
@@ -372,16 +360,14 @@ vg_ghash_prepared:
 	ld t5, 72(a0)
 	ld t6, 80(a0)
 	ld a5, 88(a0)
-	addi s8, zero, 0
-	mul a6, t0, t4
+	mul s8, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s8, s8, a6
+	xor s8, s8, a7
+	and s8, s8, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -410,15 +396,14 @@ vg_ghash_prepared:
 	and a6, a6, s3
 	xor s8, s8, a6
 	xor s8, s8, s6
-	xor s8, s8, s7
+	xor s8, s8, s4
 	slli s10, s8, 32
 	xor s6, s6, s10
 	srli s10, s8, 32
-	xor s7, s7, s10
+	xor s4, s4, s10
 	xor a4, a4, s6
-	xor s9, s9, s7
+	xor s9, s9, s4
 	xor s9, s9, s6
-	addi s4, s7, 0
 	slli s10, s5, 32
 	srli s10, s10, 32
 	and t0, s10, s0
@@ -429,16 +414,14 @@ vg_ghash_prepared:
 	ld t5, 104(a0)
 	ld t6, 112(a0)
 	ld a5, 120(a0)
-	addi s6, zero, 0
-	mul a6, t0, t4
+	mul s6, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s6, s6, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s6, s6, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s6, s6, a6
+	xor s6, s6, a7
+	and s6, s6, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -475,16 +458,14 @@ vg_ghash_prepared:
 	ld t5, 136(a0)
 	ld t6, 144(a0)
 	ld a5, 152(a0)
-	addi s7, zero, 0
-	mul a6, t0, t4
+	mul s7, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s7, s7, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s7, s7, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s7, s7, a6
+	xor s7, s7, a7
+	and s7, s7, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -521,16 +502,14 @@ vg_ghash_prepared:
 	ld t5, 168(a0)
 	ld t6, 176(a0)
 	ld a5, 184(a0)
-	addi s8, zero, 0
-	mul a6, t0, t4
+	mul s8, t0, t4
 	mul a7, t1, a5
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t2, t6
-	xor a6, a6, a7
+	xor s8, s8, a7
 	mul a7, t3, t5
-	xor a6, a6, a7
-	and a6, a6, s0
-	xor s8, s8, a6
+	xor s8, s8, a7
+	and s8, s8, s0
 	mul a6, t0, t5
 	mul a7, t1, t4
 	xor a6, a6, a7
@@ -592,8 +571,7 @@ vg_ghash_prepared:
 	slli t0, a4, 62
 	xor s9, s9, t0
 	slli t0, a4, 57
-	xor s9, s9, t0
-	addi s5, s9, 0
+	xor s5, s9, t0
 	addi a2, a2, 16
 	addi a3, a3, -1
 	bnez a3, 22b

@@ -291,6 +291,29 @@ theorem classSum_ok (d : Reg) (r : Nat) (hr : r < 4) (hd : d ∉ cmRegs) (hd0 : 
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [A.g_set, hq, ite_false]
 
+theorem classFirst_ok (d : Reg) (hd : d ∉ cmRegs) (hd0 : d ≠ .a0) (hds : Reg.s0 ≠ d) {x k : BitVec 64} {a : A}
+    (hM : Masks a) (hC : ∀ j < 4, a.g (wc j) = x &&& m4 j) (hK : ∀ j < 4, a.g (kc j) = k &&& m4 j) :
+    WA .a0 false (classFirst d) a fun a' => a'.g d = meet4 x k 0 &&& m4 0 ∧ Keeps [d, .a6, .a7] a a' ∧ a'.m = a.m := by
+  have c0 : a.g .t0 = _ := hC 0 (by decide)
+  have c1 : a.g .t1 = _ := hC 1 (by decide)
+  have c2 : a.g .t2 = _ := hC 2 (by decide)
+  have c3 : a.g .t3 = _ := hC 3 (by decide)
+  have k0 : a.g .t4 = _ := hK 0 (by decide)
+  have k1 : a.g .t5 = _ := hK 1 (by decide)
+  have k2 : a.g .t6 = _ := hK 2 (by decide)
+  have k3 : a.g .a5 = _ := hK 3 (by decide)
+  have hm : a.g .s0 = _ := hM 0 (by decide)
+  simp only [cmRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
+  have hd' : ∀ r ∈ [Reg.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a5, .a6, .a7], r ≠ d := by
+    intro r hr e; subst e; simp [hd] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hd'
+  simp only [WA, classFirst, xorI, andI, evalA, stepA, logicV, Option.bind_some, A.g_set, reduceCtorEq, hd, hd', hd0, hds,
+    ite_false, ite_true, Option.some.injEq, exists_eq_left', c0, c1, c2, c3, k0, k1, k2, k3, hm]
+  refine ⟨?_, fun q hq => ?_, by first | exact trivial | rfl⟩
+  · rw [meet4]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+    simp only [A.g_set, hq, ite_false]
+
 theorem clmul_ok (d x : Reg) (i : Nat) (hi : i < 9) (hx : x ∉ cmRegs) (hd : d ∉ cmRegs) (hd0 : d ≠ .a0)
     (hdm : ∀ j < 4, maskReg j ∉ [d, Reg.a6, .a7]) {kx : Nat → BitVec 64} {a : A}
     (hM : Masks a) (hK : Key kx a) :
@@ -309,13 +332,8 @@ theorem clmul_ok (d x : Reg) (i : Nat) (hi : i < 9) (hx : x ∉ cmRegs) (hd : d 
     rcases List.mem_cons.mp h with h | h
     · exact hd (h ▸ hcm j hj)
     · exact hk j hj h
-  rw [clmul, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+  rw [clmul, List.append_assoc, List.append_assoc, List.append_assoc]
   refine WA.append ((classes_ok x i hi hx hM hK).mono fun a₀ ⟨c₀, q₀, k₀, m₀⟩ => ?_)
-  have hz : WA .a0 false [.li d 0] a₀ fun a' => a'.g d = 0#64 ∧ Keeps [d, .a6, .a7] a₀ a' ∧ a'.m = a₀.m := by
-    simp only [WA, evalA, stepA, hd0, ne_eq, not_true_eq_false, or_self, ite_false, Option.bind_some, Option.some.injEq,
-      exists_eq_left']
-    refine ⟨by rw [A.g_set, ite_eq_left rfl], fun r hr => ?_, rfl⟩
-    rw [A.g_set, ite_eq_right fun e => hr (by simp [e])]
   have hM₀ : Masks a₀ := hM.keep k₀
   have hS : ∀ r < 4, ∀ c : A, Keeps [d, .a6, .a7] a₀ c → c.m = a₀.m →
       WA .a0 false (classSum d r) c fun c' => c'.g d = c.g d ^^^ (meet4 (a.g x) (kx i) r &&& m4 r) ∧
@@ -323,12 +341,12 @@ theorem clmul_ok (d x : Reg) (i : Nat) (hi : i < 9) (hx : x ∉ cmRegs) (hd : d 
     intro r hr c hkc hmc
     exact (classSum_ok d r hr hd hd0 (hM₀.keep hkc hdm) (fun j hj => by rw [hkc _ (hwd j hj), c₀ j hj])
       (fun j hj => by rw [hkc _ (hkd j hj), q₀ j hj])).mono fun c' ⟨e, k', m'⟩ => ⟨e, hkc.trans k', m'.trans hmc⟩
-  refine WA.append (hz.mono fun a₁ ⟨e₁, k₁, m₁⟩ => ?_)
-  refine WA.append ((hS 0 (by decide) a₁ k₁ m₁).mono fun a₂ ⟨e₂, k₂, m₂⟩ => ?_)
+  refine WA.append ((classFirst_ok d hd hd0 (fun e => hdm 0 (by decide) (by rw [← e]; exact List.mem_cons_self ..)) hM₀ c₀ q₀).mono
+    fun a₂ ⟨e₂, k₂, m₂⟩ => ?_)
   refine WA.append ((hS 1 (by decide) a₂ k₂ m₂).mono fun a₃ ⟨e₃, k₃, m₃⟩ => ?_)
   refine WA.append ((hS 2 (by decide) a₃ k₃ m₃).mono fun a₄ ⟨e₄, k₄, m₄⟩ => ?_)
   refine (hS 3 (by decide) a₄ k₄ m₄).mono fun a₅ ⟨e₅, k₅, m₅⟩ => ⟨?_, ?_, m₅.trans m₀⟩
-  · rw [e₅, e₄, e₃, e₂, e₁, BitVec.zero_xor, mul4]
+  · rw [e₅, e₄, e₃, e₂, mul4]
   · refine (k₀.mono fun r hr => List.mem_cons_of_mem _ hr).trans (k₅.mono fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -342,61 +360,133 @@ structure KeyOf (kx : Nat → BitVec 64) (kd : Nat → BitVec 64) : Prop where
   hi : ∀ t < 3, kx (3 * t + 1) = hi32 (kd t)
   sum : ∀ t < 3, kx (3 * t + 2) = lo32 (kd t) ^^^ hi32 (kd t)
 
-abbrev mulRegs : List Reg := [.s6, .s7, .s8, .s10, .s11] ++ cmRegs
+abbrev tmpRegs : List Reg := [.s8, .s10, .s11] ++ cmRegs
+abbrev mulRegs (lo hi : Reg) : List Reg := [lo, hi] ++ tmpRegs
 
-theorem mul_ok (r : Reg) (t : Nat) (ht : t < 3) (hr : r ∉ mulRegs) {kx kd : Nat → BitVec 64} (hk : KeyOf kx kd) {a : A}
-    (hM : Masks a) (hK : Key kx a) :
-    WA .a0 false (mul r t) a fun a' => a'.g .s6 = vdword (VectorCrypto.polyMul (a.g r) (kd t)) 0 ∧
-      a'.g .s7 = vdword (VectorCrypto.polyMul (a.g r) (kd t)) 1 ∧ Keeps mulRegs a a' ∧ a'.m = a.m := by
-  have hr' := hr
-  simp only [mulRegs, cmRegs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+/-- What a product's registers must be. -/
+structure MulRegs (lo hi r : Reg) : Prop where
+  rl : r ∉ lo :: tmpRegs
+  l : lo ∉ hi :: tmpRegs
+  h : hi ∉ tmpRegs
+  l0 : lo ≠ .a0
+  h0 : hi ≠ .a0
+  ml : ∀ j < 4, maskReg j ∉ lo :: tmpRegs
+  mh : ∀ j < 4, maskReg j ∉ hi :: tmpRegs
+
+theorem mul_ok (lo hi r : Reg) (hR : MulRegs lo hi r) (t : Nat) (ht : t < 3) {kx kd : Nat → BitVec 64} (hk : KeyOf kx kd)
+    {a : A} (hM : Masks a) (hK : Key kx a) :
+    WA .a0 false (mul lo hi r t) a fun a' => a'.g lo = vdword (VectorCrypto.polyMul (a.g r) (kd t)) 0 ∧
+      a'.g hi = vdword (VectorCrypto.polyMul (a.g r) (kd t)) 1 ∧ Keeps (mulRegs lo hi) a a' ∧ a'.m = a.m := by
+  have hcm : ∀ {q : Reg}, q ∉ tmpRegs → q ∉ cmRegs := fun h h' => h (List.mem_append_right _ h')
+  have hlt : lo ∉ tmpRegs := fun h => hR.l (List.mem_cons_of_mem _ h)
+  have hlh : lo ≠ hi := fun h => hR.l (h ▸ List.mem_cons_self ..)
+  have hs : ∀ {q : Reg}, q ∈ tmpRegs → q ∈ mulRegs lo hi := fun h => List.mem_append_right _ h
+  have hcm' : ∀ {q : Reg}, q ∈ cmRegs → q ∈ tmpRegs := fun h => List.mem_append_right _ h
+  have hcons : ∀ {d : Reg}, d ∈ mulRegs lo hi → ∀ q ∈ d :: cmRegs, q ∈ mulRegs lo hi := fun hd q hq => by
+    rcases List.mem_cons.mp hq with rfl | hq
+    · exact hd
+    · exact hs (hcm' hq)
+  have hml : lo ∈ mulRegs lo hi := List.mem_cons_self ..
+  have hmh : hi ∈ mulRegs lo hi := List.mem_cons_of_mem _ (List.mem_cons_self ..)
+  have hne : ∀ {q d : Reg}, q ∉ tmpRegs → d ∈ tmpRegs → q ≠ d ∧ d ≠ q := fun h h' =>
+    ⟨fun e => h (e ▸ h'), fun e => h (e ▸ h')⟩
+  have hmm : ∀ j < 4, maskReg j ∉ mulRegs lo hi := fun j hj h => by
+    rcases List.mem_cons.mp h with h | h
+    · exact hR.ml j hj (h ▸ List.mem_cons_self ..)
+    · exact hR.mh j hj h
+  have hdm : ∀ {d : Reg}, (∀ j < 4, maskReg j ∉ d :: tmpRegs) → ∀ j < 4, maskReg j ∉ [d, Reg.a6, .a7] := fun h j hj h' => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
+    rcases h' with h' | h' | h'
+    · exact h j hj (h' ▸ List.mem_cons_self ..)
+    · exact h j hj (h' ▸ List.mem_cons_of_mem _ (by decide))
+    · exact h j hj (h' ▸ List.mem_cons_of_mem _ (by decide))
+  have nl := fun {d : Reg} (h : d ∈ tmpRegs) => hne hlt h
+  have nh := fun {d : Reg} (h : d ∈ tmpRegs) => hne hR.h h
+  have l8 := nl (d := .s8) (by decide)
+  have l10 := nl (d := .s10) (by decide)
+  have l11 := nl (d := .s11) (by decide)
+  have h8 := nh (d := .s8) (by decide)
+  have h10 := nh (d := .s10) (by decide)
+  have h11 := nh (d := .s11) (by decide)
   rw [mul, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
-  refine WA.append (WA.mono (Q := fun a' => a'.g .s10 = lo32 (a.g r) ∧ Keeps mulRegs a a' ∧ a'.m = a.m) ?_ ?_)
+  refine WA.append (WA.mono (Q := fun a' => a'.g .s10 = lo32 (a.g r) ∧ Keeps [.s10] a a' ∧ a'.m = a.m) ?_ ?_)
   · simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, sll, srl, evalA, stepA, Option.bind_some, A.g_set,
       Option.some.injEq, exists_eq_left']
     refine ⟨rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
-    simp only [mulRegs, List.cons_append, List.mem_cons, not_or] at hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     simp only [A.g_set, hq, ite_false]
   · intro a₁ ⟨e₁, k₁, m₁⟩
-    refine WA.append ((clmul_ok .s6 .s10 (3 * t) (kx := kx) (by omega) (by decide) (by decide) (by decide) (by decide) (hM.keep k₁)
-      (fun i hi j hj => by rw [m₁]; exact hK i hi j hj)).mono fun a₂ ⟨e₂, k₂, m₂⟩ => ?_)
-    have K₂ : Keeps mulRegs a a₂ := k₁.trans (k₂.mono (by decide))
+    have K₁ : Keeps (mulRegs lo hi) a a₁ := k₁.mono fun q hq => hs (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; subst hq; decide)
+    refine WA.append ((clmul_ok lo .s10 (3 * t) (kx := kx) (by omega) (by decide) (hcm hlt) hR.l0 (hdm hR.ml)
+      (hM.keep K₁ hmm) (fun i hi j hj => by rw [m₁]; exact hK i hi j hj)).mono fun a₂ ⟨e₂, k₂, m₂⟩ => ?_)
+    have K₂ : Keeps (mulRegs lo hi) a a₂ := K₁.trans (k₂.mono (hcons hml))
+    have r₂ : a₂.g r = a.g r := by
+      rw [k₂ r fun h => hR.rl (by
+        rcases List.mem_cons.mp h with h | h
+        · exact h ▸ List.mem_cons_self ..
+        · exact List.mem_cons_of_mem _ (hcm' h)), k₁ r fun h => hR.rl (List.mem_cons_of_mem _ (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; decide))]
     refine WA.append (WA.mono (Q := fun a' => a'.g .s11 = hi32 (a.g r) ∧ Keeps [.s11] a₂ a' ∧ a'.m = a₂.m) ?_ ?_)
     · simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, srl, evalA, stepA, Option.bind_some, A.g_set,
         Option.some.injEq, exists_eq_left']
-      refine ⟨by rw [K₂ r hr]; rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
+      refine ⟨by rw [r₂]; rfl, fun q hq => ?_, by first | exact trivial | rfl⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       simp only [A.g_set, hq, ite_false]
     · intro a₃ ⟨e₃, k₃, m₃⟩
-      have K₃ : Keeps mulRegs a a₃ := K₂.trans (k₃.mono (by decide))
-      refine WA.append ((clmul_ok .s7 .s11 (3 * t + 1) (kx := kx) (by omega) (by decide) (by decide) (by decide) (by decide)
-        (hM.keep K₃) (fun i hi j hj => by rw [m₃, m₂, m₁]; exact hK i hi j hj)).mono fun a₄ ⟨e₄, k₄, m₄⟩ => ?_)
-      have K₄ : Keeps mulRegs a a₄ := K₃.trans (k₄.mono (by decide))
+      have K₃ : Keeps (mulRegs lo hi) a a₃ := K₂.trans (k₃.mono fun q hq => hs (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; subst hq; decide))
+      refine WA.append ((clmul_ok hi .s11 (3 * t + 1) (kx := kx) (by omega) (by decide) (hcm hR.h) hR.h0 (hdm hR.mh)
+        (hM.keep K₃ hmm) (fun i hi j hj => by rw [m₃, m₂, m₁]; exact hK i hi j hj)).mono fun a₄ ⟨e₄, k₄, m₄⟩ => ?_)
+      have K₄ : Keeps (mulRegs lo hi) a a₄ := K₃.trans (k₄.mono (hcons hmh))
+      have f10 : Reg.s10 ∉ hi :: cmRegs := fun h => by
+        rcases List.mem_cons.mp h with h | h
+        · exact h10.2 h
+        · exact absurd h (by decide)
+      have f11 : Reg.s11 ∉ hi :: cmRegs := fun h => by
+        rcases List.mem_cons.mp h with h | h
+        · exact h11.2 h
+        · exact absurd h (by decide)
+      have f10' : Reg.s10 ∉ lo :: cmRegs := fun h => by
+        rcases List.mem_cons.mp h with h | h
+        · exact l10.2 h
+        · exact absurd h (by decide)
       refine WA.append (WA.mono (Q := fun a' => a'.g .s10 = lo32 (a.g r) ^^^ hi32 (a.g r) ∧ Keeps [.s10] a₄ a' ∧
         a'.m = a₄.m) ?_ ?_)
       · simp only [reduceCtorEq, ↓reduceIte, WA, xorI, evalA, stepA, logicV, Option.bind_some, A.g_set,
           Option.some.injEq, exists_eq_left']
-        refine ⟨by rw [k₄ .s10 (by decide), k₃ .s10 (by decide), k₂ .s10 (by decide), e₁, k₄ .s11 (by decide), e₃],
+        refine ⟨by rw [k₄ .s10 f10, k₃ .s10 (by decide), k₂ .s10 f10', e₁, k₄ .s11 f11, e₃],
           fun q hq => ?_, by first | exact trivial | rfl⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
         simp only [A.g_set, hq, ite_false]
       · intro a₅ ⟨e₅, k₅, m₅⟩
-        have K₅ : Keeps mulRegs a a₅ := K₄.trans (k₅.mono (by decide))
+        have K₅ : Keeps (mulRegs lo hi) a a₅ := K₄.trans (k₅.mono fun q hq => hs (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; subst hq; decide))
         refine WA.append ((clmul_ok .s8 .s10 (3 * t + 2) (kx := kx) (by omega) (by decide) (by decide) (by decide) (by decide)
-          (hM.keep K₅) (fun i hi j hj => by rw [m₅, m₄, m₃, m₂, m₁]; exact hK i hi j hj)).mono
+          (hM.keep K₅ hmm) (fun i hi j hj => by rw [m₅, m₄, m₃, m₂, m₁]; exact hK i hi j hj)).mono
             fun a₆ ⟨e₆, k₆, m₆⟩ => ?_)
-        have K₆ : Keeps mulRegs a a₆ := K₅.trans (k₆.mono (by decide))
-        have p0 : a₆.g .s6 = mul4 (lo32 (a.g r)) (lo32 (kd t)) := by
-          rw [k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), e₂, e₁, hk.lo t ht]
-        have p1 : a₆.g .s7 = mul4 (hi32 (a.g r)) (hi32 (kd t)) := by
-          rw [k₆ _ (by decide), k₅ _ (by decide), e₄, e₃, hk.hi t ht]
+        have K₆ : Keeps (mulRegs lo hi) a a₆ := K₅.trans (k₆.mono (hcons (hs (by decide))))
+        have g8 : ∀ {q : Reg}, q ∉ tmpRegs → q ∉ Reg.s8 :: cmRegs := fun h h' => by
+          rcases List.mem_cons.mp h' with h' | h'
+          · exact h (h' ▸ List.mem_cons_self ..)
+          · exact h (hcm' h')
+        have glh : lo ∉ hi :: cmRegs := fun h => by
+          rcases List.mem_cons.mp h with h | h
+          · exact hlh h
+          · exact hlt (hcm' h)
+        have p0 : a₆.g lo = mul4 (lo32 (a.g r)) (lo32 (kd t)) := by
+          rw [k₆ _ (g8 hlt), k₅ _ (by simp only [List.mem_singleton]; exact l10.1), k₄ _ glh,
+            k₃ _ (by simp only [List.mem_singleton]; exact l11.1), e₂, e₁, hk.lo t ht]
+        have p1 : a₆.g hi = mul4 (hi32 (a.g r)) (hi32 (kd t)) := by
+          rw [k₆ _ (g8 hR.h), k₅ _ (by simp only [List.mem_singleton]; exact h10.1), e₄, e₃, hk.hi t ht]
         have p2 : a₆.g .s8 = mul4 (lo32 (a.g r) ^^^ hi32 (a.g r)) (lo32 (kd t) ^^^ hi32 (kd t)) := by
           rw [e₆, e₅, hk.sum t ht]
         have hres := Spread.mul64_eq (a.g r) (kd t)
-        simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, xorI, sll, srl, evalA, stepA, logicV, Option.bind_some, A.g_set,
+        simp only [reduceCtorEq, Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, xorI, sll, srl, evalA, stepA, logicV,
+          Option.bind_some, A.g_set, l8.1, l8.2, l10.1, h8.1, h10.1, hlh, hlh.symm, hR.l0, hR.h0,
           Option.some.injEq, exists_eq_left', p0, p1, p2]
         refine ⟨congrArg _root_.Prod.fst hres, congrArg _root_.Prod.snd hres, K₆.trans fun q hq => ?_, ?_⟩
-        · simp only [mulRegs, List.cons_append, List.mem_cons, not_or] at hq
+        · simp only [mulRegs, tmpRegs, List.cons_append, List.nil_append, List.mem_cons, not_or] at hq
           simp only [A.g_set, hq, ite_false]
         · show a₆.m = a.m
           rw [m₆, m₅, m₄, m₃, m₂, m₁]
@@ -410,7 +500,17 @@ def kdOf (h1 h0 : BitVec 64) (t : Nat) : BitVec 64 :=
   | 1 => keyW0 h1 h0
   | _ => keyW1 h1 h0 ^^^ keyW0 h1 h0
 
-abbrev coreRegs : List Reg := [.s4, .s5, .s9, .a4] ++ mulRegs
+/-- The last fold, to another register. -/
+theorem foldDnTo_ok (a : A) :
+    WA .a0 false (foldDnTo .s5 .s9 .a4 .t0) a fun a' => a'.g .s5 = a.g .s9 ^^^ dn (a.g .a4) ∧ Keeps [.s5, .s9, .t0] a a' ∧
+      a'.m = a.m := by
+  simp only [Nat.reduceLT, or_self, not_true_eq_false, ↓reduceIte, WA, foldDnTo, sll, xorI, evalA, stepA, logicV,
+    Option.bind_some, A.g_set, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨by simp only [dn, BitVec.xor_assoc], fun q hq => ?_, by first | exact trivial | rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+  simp only [A.g_set, hq, ite_false]
+
+abbrev coreRegs : List Reg := [.s4, .s5, .s9, .a4, .s6, .s7] ++ tmpRegs
 
 theorem xor_u (c0 l0 h0 l1 d : BitVec 64) :
     c0 ^^^ h0 ^^^ l0 ^^^ l1 ^^^ d = c0 ^^^ l0 ^^^ h0 ^^^ l1 ^^^ d := by ac_rfl
@@ -429,32 +529,30 @@ theorem core_ok (h1 h0 : BitVec 64) {kx : Nat → BitVec 64} (hk : KeyOf kx (kdO
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rw [A.g_set, ite_eq_right hq]
   intro a₁ ⟨e₁, k₁, m₁⟩
-  refine WA.append ((mul_ok .s9 2 (by decide) (by decide) hk (hM.keep k₁) (hKm m₁)).mono fun a₂ ⟨c0, c1, k₂, m₂⟩ => ?_)
-  rw [e₁] at c0 c1
-  refine WA.append (WA.mono (Q := fun a' => a'.g .a4 = a₂.g .s6 ∧ a'.g .s9 = a₂.g .s7 ∧ Keeps [.a4, .s9] a₂ a' ∧
-    a'.m = a₂.m) ?_ ?_)
+  refine WA.append ((mul_ok .a4 .s9 .s9 ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩ 2 (by decide)
+    hk (hM.keep k₁) (hKm m₁)).mono fun a₃ ⟨x₃, y₃, k₂, m₂⟩ => ?_)
+  rw [e₁] at x₃ y₃
+  have K₃ : Keeps coreRegs a a₃ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
+  have M₃ : a₃.m = a.m := by rw [m₂, m₁]
+  have y1₃ : a₃.g .s4 = a.g .s4 := by rw [k₂ _ (by decide), k₁ _ (by decide)]
+  have y0₃ : a₃.g .s5 = a.g .s5 := by rw [k₂ _ (by decide), k₁ _ (by decide)]
+  refine WA.append ((mul_ok .s6 .s4 .s4 ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩ 0 (by decide)
+    hk (hM.keep K₃) (hKm M₃)).mono fun a₄ ⟨hh0, hh1, k₄, m₄⟩ => ?_)
+  rw [y1₃] at hh0 hh1
+  refine WA.append (WA.mono (Q := fun a' => a'.g .a4 = a₄.g .a4 ^^^ a₄.g .s6 ∧
+    a'.g .s9 = a₄.g .s9 ^^^ a₄.g .s4 ^^^ a₄.g .s6 ∧ Keeps [.a4, .s9] a₄ a' ∧ a'.m = a₄.m) ?_ ?_)
   · refine ⟨_, rfl, rfl, rfl, fun q hq => ?_, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp only [A.g_set, hq, ite_false]
-  intro a₃ ⟨x₃, y₃, k₃, m₃⟩
-  have K₃ : Keeps coreRegs a a₃ := (k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans (k₃.mono (by decide)))
-  have M₃ : a₃.m = a.m := by rw [m₃, m₂, m₁]
-  have y1₃ : a₃.g .s4 = a.g .s4 := by rw [k₃ _ (by decide), k₂ _ (by decide), k₁ _ (by decide)]
-  have y0₃ : a₃.g .s5 = a.g .s5 := by rw [k₃ _ (by decide), k₂ _ (by decide), k₁ _ (by decide)]
-  refine WA.append ((mul_ok .s4 0 (by decide) (by decide) hk (hM.keep K₃) (hKm M₃)).mono fun a₄ ⟨hh0, hh1, k₄, m₄⟩ => ?_)
-  rw [y1₃] at hh0 hh1
-  refine WA.append (WA.mono (Q := fun a' => a'.g .a4 = a₄.g .a4 ^^^ a₄.g .s6 ∧
-    a'.g .s9 = a₄.g .s9 ^^^ a₄.g .s7 ^^^ a₄.g .s6 ∧ a'.g .s4 = a₄.g .s7 ∧ Keeps [.a4, .s9, .s4] a₄ a' ∧ a'.m = a₄.m) ?_ ?_)
-  · refine ⟨_, rfl, rfl, rfl, rfl, fun q hq => ?_, rfl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-    simp only [A.g_set, hq, ite_false]
-  intro a₅ ⟨x₅, y₅, z₅, k₅, m₅⟩
+  intro a₅ ⟨x₅, y₅, k₅, m₅⟩
   have K₅ : Keeps coreRegs a a₅ := K₃.trans ((k₄.mono (by decide)).trans (k₅.mono (by decide)))
   have M₅ : a₅.m = a.m := by rw [m₅, m₄, M₃]
   have y0₅ : a₅.g .s5 = a.g .s5 := by rw [k₅ _ (by decide), k₄ _ (by decide), y0₃]
-  refine WA.append ((mul_ok .s5 1 (by decide) (by decide) hk (hM.keep K₅) (hKm M₅)).mono fun a₆ ⟨l0, l1, k₆, m₆⟩ => ?_)
+  have z₅ : a₅.g .s4 = a₄.g .s4 := k₅ _ (by decide)
+  refine WA.append ((mul_ok .s6 .s7 .s5 ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩ 1 (by decide)
+    hk (hM.keep K₅) (hKm M₅)).mono fun a₆ ⟨l0, l1, k₆, m₆⟩ => ?_)
   rw [y0₅] at l0 l1
-  generalize hc : VectorCrypto.polyMul (a.g .s4 ^^^ a.g .s5) (kdOf h1 h0 2) = c at c0 c1
+  generalize hc : VectorCrypto.polyMul (a.g .s4 ^^^ a.g .s5) (kdOf h1 h0 2) = c at x₃ y₃
   generalize hh : VectorCrypto.polyMul (a.g .s4) (kdOf h1 h0 0) = h at hh0 hh1
   generalize hl : VectorCrypto.polyMul (a.g .s5) (kdOf h1 h0 1) = l at l0 l1
   refine WA.append (WA.mono (Q := fun a' => a'.g .a4 = a₆.g .a4 ^^^ a₆.g .s6 ^^^ a₆.g .s7 ∧
@@ -474,28 +572,24 @@ theorem core_ok (h1 h0 : BitVec 64) {kx : Nat → BitVec 64} (hk : KeyOf kx (kdO
   intro a₁₀ ⟨e₁₀, k₁₀, m₁₀⟩
   refine WA.append ((foldUp_ok .a0 false .s4 .a4 .t0 (by decide) (by decide) (by decide) (by decide) (by decide) a₁₀).mono
     fun a₁₁ ⟨e₁₁, k₁₁, m₁₁⟩ => ?_)
-  refine WA.append ((foldDn_ok .a0 false .s9 .a4 .t0 (by decide) (by decide) (by decide) (by decide) (by decide) a₁₁).mono
-    fun a₁₂ ⟨e₁₂, k₁₂, m₁₂⟩ => ?_)
+  refine (foldDnTo_ok a₁₁).mono fun a₁₂ ⟨e₁₂, k₁₂, m₁₂⟩ => ?_
   have hu : a₈.g .a4 = vdword (c ^^^ l ^^^ h) 0 ^^^ vdword l 1 ^^^ dn (vdword l 0) := by
-    rw [e₈, x₇, k₇ .s6 (by decide), k₆ .a4 (by decide), x₅, k₄ .a4 (by decide), x₃, c0, hh0, l0, l1, vdword_xor,
+    rw [e₈, x₇, k₇ .s6 (by decide), k₆ .a4 (by decide), x₅, k₄ .a4 (by decide), x₃, hh0, l0, l1, vdword_xor,
       vdword_xor, xor_u]
   have hr1 : a₁₂.g .s4 = (redW l h c).1 := by
     rw [k₁₂ _ (by decide), e₁₁, e₁₀, k₁₀ .a4 (by decide), k₉ .a4 (by decide), hu, k₉ .s4 (by decide),
       k₈ .s4 (by decide), k₇ .s4 (by decide), k₆ .s4 (by decide), z₅, hh1, redW]
-  have hr0 : a₁₂.g .s9 = (redW l h c).2 := by
+  have hr0 : a₁₂.g .s5 = (redW l h c).2 := by
     rw [e₁₂, k₁₁ .s9 (by decide), k₁₁ .a4 (by decide), k₁₀ .s9 (by decide), k₁₀ .a4 (by decide), e₉,
       k₉ .a4 (by decide), hu, k₈ .s9 (by decide), k₈ .s6 (by decide), k₇ .s6 (by decide), y₇, k₆ .s9 (by decide), y₅,
-      k₄ .s9 (by decide), y₃, c1, hh0, hh1, l0, l1, redW, vdword_xor _ _ 1, vdword_xor _ _ 1, xor_mid]
-  refine ⟨_, rfl, ?_, ?_, ?_⟩
-  · show (a₁₂.g .s4 ++ a₁₂.g .s9 : BitVec 128) = _
-    rw [hr1, hr0, ← Spread.mul_words, mulW, ← hl, ← hh, ← hc, BitVec.xor_comm (a.g .s4)]
+      k₄ .s9 (by decide), y₃, hh0, hh1, l0, l1, redW, vdword_xor _ _ 1, vdword_xor _ _ 1, xor_mid]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hr1, hr0, ← Spread.mul_words, mulW, ← hl, ← hh, ← hc, BitVec.xor_comm (a.g .s4)]
     simp only [kdOf, BitVec.xor_comm (keyW1 h1 h0)]
   · refine K₅.trans ((k₆.mono (by decide)).trans ((k₇.mono (by decide)).trans ((k₈.mono (by decide)).trans
       ((k₉.mono (by decide)).trans ((k₁₀.mono (by decide)).trans ((k₁₁.mono (by decide)).trans
-      ((k₁₂.mono (by decide)).trans fun q hq => ?_)))))))
-    rw [A.g_set, ite_eq_right fun e => hq (by rw [e]; decide)]
-  · show a₁₂.m = a.m
-    rw [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, M₅]
+      (k₁₂.mono (by decide))))))))
+  · rw [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, M₅]
 
 /-! ## The key -/
 
