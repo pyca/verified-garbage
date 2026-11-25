@@ -37,21 +37,6 @@ import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
 import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
@@ -69,7 +54,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
@@ -118,21 +102,6 @@ meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
@@ -150,7 +119,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep

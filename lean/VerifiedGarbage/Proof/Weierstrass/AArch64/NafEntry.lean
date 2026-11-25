@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.FoldOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd

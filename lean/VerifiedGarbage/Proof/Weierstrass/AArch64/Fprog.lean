@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-import VerifiedGarbage.Proof.Mont.AArch64.P521Linear
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
@@ -576,12 +574,6 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by simpa only [hn] using he⟩
   · exact mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
 
-private theorem linearKeep {M : Mod} {base : Addr} {o : Nat} {s t : State}
-    (hn : M.n = 9) (k : KeepRegs (clob 9) s t) (O : Outside base o 72 s.mem t.mem) :
-    OpKeep M base o s t :=
-  ⟨fun r hr => k.gpr r (by simpa only [hn] using hr),k.rd,k.wr,k.sp,
-    fun x hx _ => O x (by simpa only [hn] using hx)⟩
-
 theorem addOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat}
     (ho : o+8*M.n ≤ size) (ha : a+8*M.n ≤ size) (hb : b+8*M.n ≤ size)
@@ -590,13 +582,7 @@ theorem addOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     WP isa (.block (opCode M (.add o a b))) s fun t => OpKeep M base o s t ∧
       wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+wordsVal s.mem base b M.n)%m := by
   rw [opCode]
-  split
-  · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hAB ⊢
-    refine WP.mono (P521Linear.add_ok hs ho ha hb ho8 ha8 hb8 hm hAB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
-  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 hAB
+  exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 hAB
 
 theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat}
@@ -606,13 +592,7 @@ theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     WP isa (.block (opCode M (.sub o a b))) s fun t => OpKeep M base o s t ∧
       wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+m-wordsVal s.mem base b M.n)%m := by
   rw [opCode]
-  split
-  · rename_i h
-    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
-    simp only [hn] at ho ha hb hA hB ⊢
-    refine WP.mono (P521Linear.sub_ok hs ho ha hb ho8 ha8 hb8 hm hA hB)
-      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
-  · exact sub_ok hs hM hMA ho ha hb ho8 ha8 hb8 hA hB
+  exact sub_ok hs hM hMA ho ha hb ho8 ha8 hb8 hA hB
 
 /-- Hand-composed negation blocks use the general subtraction directly. -/
 theorem subRaw_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
@@ -730,20 +710,9 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         rw [toM_mul hm heq, hI.val a hR.1]
       · simp only [Bool.not_eq_true] at hsq
         simp only [hsq, Bool.false_eq_true, ↓reduceIte]
-        by_cases hsq521 : (a == b && sqr521Ok M.n m') = true
-        · simp only [Bool.and_eq_true, beq_iff_eq] at hsq521
-          obtain ⟨rfl, hsp⟩ := hsq521
-          obtain ⟨hn9, hm'⟩ := Mont.sqr521Ok_eq hsp
-          subst hm'
-          simp only [hsp, beq_self_eq_true, Bool.and_self, ↓reduceIte]
-          refine WP.mono (Mont.sqrCall521_ok hI.scr hI.mod hn9 ht hown.1 hown.2.1 (hI.lt a hR.1))
-            fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-          rw [toM_mul hm heq, hI.val a hR.1]
-        · simp only [Bool.not_eq_true] at hsq521
-          simp only [hsq521, Bool.false_eq_true, ↓reduceIte]
-          refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
-            (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-          rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+        refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
+          (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+        rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b => exact fop_ok hL hAl hm hI hS hR
   | sub o a b => exact fop_ok hL hAl hm hI hS hR
 
