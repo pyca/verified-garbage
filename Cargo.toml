@@ -85,7 +85,7 @@ members = ["crates/*"]
 # What every crate of the workspace shares, which each inherits
 # (`<key>.workspace = true`).
 [workspace.package]
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 # The generated code's `.base64` directive, which the assembler of LLVM 22
 # reads (`lean/VerifiedGarbage/TCB/Rust.lean`, `packRun`), is first in 1.95
@@ -102,14 +102,14 @@ publish = ["crates-io"]
 # each release's crates depend on that release's alone. These versions are
 # `[workspace.package]`'s.
 [workspace.dependencies]
-verified-garbage = { path = ".", version = "=0.0.0" }
-verified-garbage-cpu = { path = "crates/verified-garbage-cpu", version = "=0.0.0" }
-verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64", version = "=0.0.0" }
-verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm", version = "=0.0.0" }
-verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le", version = "=0.0.0" }
-verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64", version = "=0.0.0" }
-verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86", version = "=0.0.0" }
-verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64", version = "=0.0.0" }
+verified-garbage = { path = ".", version = "=0.1.0" }
+verified-garbage-cpu = { path = "crates/verified-garbage-cpu", version = "=0.1.0" }
+verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64", version = "=0.1.0" }
+verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm", version = "=0.1.0" }
+verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le", version = "=0.1.0" }
+verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64", version = "=0.1.0" }
+verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86", version = "=0.1.0" }
+verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64", version = "=0.1.0" }
 
 # The lints of every crate of the workspace (`lints.workspace = true`), the
 # generated ones too. Every import names what it imports: no glob imports

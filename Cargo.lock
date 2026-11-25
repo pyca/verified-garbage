@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "rustls-verified-garbage"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "asn1",
  "getrandom",
@@ -221,7 +221,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "verified-garbage"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "getrandom",
  "serde_json",
@@ -237,53 +237,53 @@ dependencies = [
 
 [[package]]
 name = "verified-garbage-asm-aarch64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-arm"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-powerpc64le"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-riscv64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-x86"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-asm-x86_64"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "verified-garbage-cpu",
 ]
 
 [[package]]
 name = "verified-garbage-cpu"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "verified-garbage-test-vectors"
-version = "0.0.0"
+version = "0.1.0"
 
 [[package]]
 name = "zeroize"
