@@ -110,3 +110,20 @@ setters, 300 cycles.
 Experiment 5: the step with every dead flag write removed (by liveness,
 `lab/gen.py: minflags`), alone, and with it the tree product's order. This
 touches no arithmetic.
+
+## 6. Experiment 5's result (run 45678967840)
+
+Cycles: step 396, `step_min` 375, `step_tree` 375; product 35.2 (`mulA` 35.4,
+`mulT` 34.6), square 28.0. Parts: 5 x 35 + 4 x 28 + 23 = 310, so 65 cycles
+are lost where an operation follows the one it needs (a dependent product costs
+53). The order AA BB E DA CB x3 t z3 x2 z2 has CB -> x3 and t -> z3 adjacent.
+
+Every step's swap needs all four results, so the loop has a bubble at its end:
+the last operation's latency beyond its share. The critical path is front, DA,
+(sum), t, z3: 20 + 53 + 8 + 44 + 53 = 178.
+
+Candidates, operations that depend on each other apart:
+ o1: DA CB AA BB t x3 z3 x2 z2
+ o2: DA CB AA BB t x3 x2 z3 z2
+ o3: AA BB DA CB x2 z2 t x3 z3
+Doubling a square's cross products with `extr` (no flags; 7 setters less).
