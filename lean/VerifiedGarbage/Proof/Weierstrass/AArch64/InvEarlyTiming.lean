@@ -233,7 +233,7 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
     intro i hi
     apply hu
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> change _<7104 ∨ 7680≤_ <;> left <;> omega_arith
+      rcases ha with rfl | rfl | rfl | rfl <;> refine ⟨?_,?_⟩ <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
       rcases ha with rfl | rfl | rfl | rfl <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha

@@ -3,12 +3,11 @@
 
 `Impl/P256/VerifyAllocatedCode.lean` and `Impl/P256/EcdhAllocatedCode.lean`
 hold literal instructions: the straight-line field programs of
-`VerifyAllocated.raw`, `EcdhDouble.raw` and `EcdhTable.raw`, scheduled and
-with their registers allocated. This writes them (all but the modular
-inversions' `inverseUpdate` and `update`, which it leaves as they are). It is
-untrusted: Lean checks each against its raw program.
+`VerifyAllocated.raw`, `EcdhDouble.raw` and `EcdhTable.raw`, and the inversions'
+update of `(f, g, a, b)`, scheduled and with their registers allocated. This
+writes them. It is untrusted: Lean checks each against its raw program.
 
-    python3 ci/p256_aarch64_schedule.py [--tries 700]
+    python3 ci/p256_aarch64_schedule.py [--tries 700] [name ...]
 
 needs the built Lean modules, with their private parts
 (`ci/lean_cache.py fill-private lean <Impl modules>`), and `llvm-mca` (LLVM
@@ -28,6 +27,7 @@ first). `P`, `K`, the width and a tie-breaking noise are searched at random.
 
 import collections, multiprocessing, os, random, re, subprocess, sys, tempfile
 FS={'adds','adcs','subs','sbcs'}; FU={'adcs','sbcs','adc','sbc','csel'}
+LEAF=('ldr','movz','in') # values that no instruction of the schedule computes
 LAT={'mul':2,'umulh':3,'extr':3,'ldr':4,'madd':2}
 REGS=[f'x{i}' for i in list(range(1,18))+list(range(20,29))+[30]]
 SPILL=list(range(7104,7680,8))
@@ -38,20 +38,21 @@ def parse(text):
     for l in text.splitlines():
         t=re.sub(r'VG\.AArch64\.\w+\.','',l); t=re.sub(r'[()]','',t).split()
         op=t[0]; t=t[1:]
+        if op=='logic': op,t=t[0],t[1:]; assert op=='and',l
         if op!='umulh': assert t[0]=='x',l; t=t[1:]
-        if op=='logic': raise Exception(l)
         out.append((op,t))
     return out
-def build(raw,observe):
+def build(raw,observe,inputs=()):
     nodes=[]; cse={}; reg={}; slot={}; fl=None
     def mk(op,imm=None,a=(),f=None,i=0):
         k=(op,imm,tuple(a),f)
         if op not in FS and k in cse: return cse[k]
         n=N(); n.op=op;n.imm=imm;n.a=tuple(a);n.f=f;n.raw=i;n.id=len(nodes);n.slot=None;nodes.append(n)
         cse[k]=n.id; return n.id
+    for r in inputs: reg[r]=mk('in',r)
     for i,(op,t) in enumerate(raw):
         if op=='ldr':
-            o=int(t[2]); 
+            o=int(t[2])
             if o not in slot: slot[o]=mk('ldr',o,i=i)
             reg[t[0]]=slot[o]
         elif op=='str': 
@@ -80,7 +81,7 @@ def schedule(nodes,stores,P,K,width,seed=0,full=True,lat=LAT,noise=0):
     live=prune(nodes,stores)
     L=lambda n: lat.get(n.op,1)
     # ops: node ids that are real (not ldr/movz), plus stores
-    ops=[v for v in live if nodes[v].op not in('ldr','movz')]
+    ops=[v for v in live if nodes[v].op not in LEAF]
     S=len(nodes); items=ops+[S+i for i in range(len(stores))]
     deps={}; succ=collections.defaultdict(list)
     uses=collections.Counter()
@@ -97,7 +98,7 @@ def schedule(nodes,stores,P,K,width,seed=0,full=True,lat=LAT,noise=0):
             if nodes[v2].op=='ldr' and nodes[v2].imm==o and j!=i: deps[S+i].add(S+j)
     rem={}
     for x in items:
-        d={y for y in deps[x] if y>=S or nodes[y].op not in('ldr','movz')}
+        d={y for y in deps[x] if y>=S or nodes[y].op not in LEAF}
         rem[x]=len(d)
         for y in d: succ[y].append(x)
     raw=lambda x: nodes[x].raw if x<S else nodes[stores[x-S][1]].raw
@@ -126,7 +127,7 @@ def schedule(nodes,stores,P,K,width,seed=0,full=True,lat=LAT,noise=0):
         stack=[a for m in ms for a in nodes[m].a]
         while stack:
             a=stack.pop()
-            if a in seen or a in s or nodes[a].op in('ldr','movz'): continue
+            if a in seen or a in s or nodes[a].op in LEAF: continue
             seen.add(a)
             stack+=[b for b in deps[a]]
         # which of seen depend on s?
@@ -216,6 +217,7 @@ def allocate(nodes,stores,sched,regs=REGS):
         return None
     for v,n in enumerate(nodes):
         if n.op=='ldr': home[v]=n.imm
+        if n.op=='in' and nu[v]: loc[v]=n.imm; free.remove(n.imm)
     def get(protect,avoid=()):
         if free:
             # least recently freed
@@ -287,12 +289,13 @@ def lean(out):
         if o[0] in('ldr','str'): L.append(f'.{o[0]} .x .{o[1]} .x0 {o[2]}')
         elif o[0] in('movz','movk'): L.append(f'.{o[0]} .x .{o[1]} {o[2][0]} {o[2][1]}')
         elif o[0]=='mov': L.append(f'.logic .orr .x .{o[1]} .{o[2]} .{o[2]}')
+        elif o[0]=='and': L.append('.logic .and .x '+' '.join('.'+r for r in o[1:]))
         elif o[0]=='umulh': L.append('.umulh '+' '.join('.'+r for r in o[1:]))
         else: L.append(f'.{o[0]} .x '+' '.join('.'+r if isinstance(r,str) else str(r) for r in o[1:]))
     return L
 M64=2**64-1
-def simulate(out,mem):
-    r={}; mem=dict(mem); c=0
+def simulate(out,mem,regs={}):
+    r=dict(regs); mem=dict(mem); c=0
     for o in out:
         op=o[0]
         if op=='ldr': r[o[1]]=mem[o[2]]
@@ -304,6 +307,7 @@ def simulate(out,mem):
             v=[r[y] for y in o[2:] if isinstance(y,str)]
             if op=='mul':x=v[0]*v[1]
             elif op=='umulh':x=v[0]*v[1]>>64
+            elif op=='and':x=v[0]&v[1]
             elif op=='add':x=v[0]+v[1]
             elif op=='sub':x=v[0]-v[1]
             elif op in('adds','adcs','adc'):
@@ -337,20 +341,29 @@ OBSERVED = {
     'double': lambda o: (o < 800 or o >= 992) and spillless(o),
     'dblu': lambda o: (o < 800 or o >= 992 or 864 <= o < 928) and spillless(o),
     'zaddu': lambda o: (o < 800 or o >= 992) and spillless(o),
+    'fieldUpdate': lambda o: 2272 <= o < 2424, 'orderUpdate': lambda o: 2272 <= o < 2424,
     'mixedHead': spillless, 'mixedTail': spillless, 'jacTail': spillless, 'cachedHead': spillless,
 }
-FILES = {'VerifyAllocatedCode': ['mixedHead', 'mixedTail', 'jacTail', 'cachedHead'],
-         'EcdhAllocatedCode': ['double', 'dblu', 'zaddu']}
+FILES = {'VerifyAllocatedCode': ['orderUpdate', 'mixedHead', 'mixedTail', 'jacTail', 'cachedHead'],
+         'EcdhAllocatedCode': ['fieldUpdate', 'double', 'dblu', 'zaddu']}
+# The inversions' updates: the divsteps' matrix in its registers, d and the batches' counter (and,
+# for ECDH, the output's pointer) kept.
+DEFS = {'orderUpdate': 'inverseUpdate', 'fieldUpdate': 'inverseUpdate'}
+INPUTS = {'orderUpdate': ['x4','x5','x6','x7'], 'fieldUpdate': ['x4','x5','x6','x7']}
+KEEP = {'orderUpdate': ['x1'], 'fieldUpdate': ['x1','x20']}
 DUMP = """import Lean
 import VerifiedGarbage.Impl.P256.VerifyAllocated
 import VerifiedGarbage.Impl.P256.EcdhDouble
 import VerifiedGarbage.Impl.P256.EcdhTable
+import VerifiedGarbage.Impl.P256.EcdhInverse
 open VG.AArch64 VG.Impl.P256
 deriving instance Repr for Instr
 run_cmd do
   let out (n : String) (l : List Instr) : IO Unit :=
     IO.FS.writeFile ("DIR/" ++ n) ("\\n".intercalate (l.map fun i => (toString (repr i)).replace "\\n" " "))
   out "double" EcdhDouble.raw
+  out "fieldUpdate" EcdhInverse.updateRaw
+  out "orderUpdate" (.movz .x .x12 0 0 :: VG.Impl.Ecdsa.AArch64.p256.invN.fgUpdate ++ VG.Impl.Ecdsa.AArch64.p256.invN.abUpdate)
   out "dblu" (EcdhTable.raw true)
   out "zaddu" (EcdhTable.raw false)
   out "mixedHead" (VerifyAllocated.raw .mixedHead)
@@ -362,8 +375,9 @@ run_cmd do
 def check(name, raw, out):
     """The slots observed, on random words (Lean proves it)."""
     mem = {o: random.getrandbits(64) for o in range(0, 8192, 8)}
-    a = simulate(rawout(raw), mem)
-    b = simulate(out, mem)
+    regs = {r: random.getrandbits(64) for r in INPUTS.get(name, [])}
+    a = simulate(rawout(raw), mem, regs)
+    b = simulate(out, mem, regs)
     assert all(a[o] == b[o] for o in a if OBSERVED[name](o)), name
 
 def cycles(out):
@@ -374,7 +388,8 @@ def cycles(out):
 
 def work(job):
     name, raw, tries, seed = job
-    nodes, stores = build(raw, OBSERVED[name])
+    nodes, stores = build(raw, OBSERVED[name], INPUTS.get(name, []))
+    regs = [r for r in REGS if r not in KEEP.get(name, [])]
     rnd = random.Random(seed)
     best = None
     for _ in range(tries):
@@ -384,7 +399,7 @@ def work(job):
         full = rnd.random() < .6
         nz = rnd.choice([0, 0, 1, 3, 8])
         try:
-            out = allocate(nodes, stores, schedule(nodes, stores, P, K, w, seed=rnd.random(), full=full, noise=nz))
+            out = allocate(nodes, stores, schedule(nodes, stores, P, K, w, seed=rnd.random(), full=full, noise=nz), regs)
         except IndexError:  # no spill slot left
             continue
         score = cycles(out) + 0.06 * len(out)
@@ -394,6 +409,7 @@ def work(job):
 
 def write(root, blocks):
     for f, names in FILES.items():
+        names = [n for n in names if n in blocks]
         path = os.path.join(root, 'lean/VerifiedGarbage/Impl/P256', f + '.lean')
         lines = open(path).read().split('\n')
         end = max(i for i, l in enumerate(lines) if l.startswith('end '))
@@ -401,7 +417,7 @@ def write(root, blocks):
         for l in lines[:end]:
             m = re.match(r'^def (\w+) ', l)
             if m:
-                skip = m.group(1) in names
+                skip = m.group(1) in names or m.group(1) in [DEFS.get(n) for n in names]
             if not skip:
                 keep.append(l)
         while keep and keep[-1] == '':
@@ -409,12 +425,14 @@ def write(root, blocks):
         out = []
         for n in names:
             c = lean(blocks[n])
-            out += ['', f'def {n} : List Instr :=', '  aarch64_instrs%', '   [' + c[0] + ',']
+            out += ['', f'def {DEFS.get(n, n)} : List Instr :=', '  aarch64_instrs%', '   [' + c[0] + ',']
             out += ['    ' + x + ',' for x in c[1:-1]] + ['    ' + c[-1] + ']']
         open(path, 'w').write('\n'.join(keep + out + [''] + lines[end:]))
 
 def main():
-    tries = int(sys.argv[2]) if sys.argv[1:2] == ['--tries'] else 700
+    args = sys.argv[1:]
+    tries = int(args[1]) if args[:1] == ['--tries'] else 700
+    only = args[2:] if args[:1] == ['--tries'] else args
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     blocks = {}
     with tempfile.TemporaryDirectory() as d:
@@ -426,6 +444,8 @@ def main():
             os.remove(dump)
         raws = {n: parse(open(os.path.join(d, n)).read()) for n in OBSERVED}
     for n, raw in raws.items():
+        if only and n not in only:
+            continue
         with multiprocessing.Pool(4) as pool:
             found = pool.map(work, [(n, raw, tries, s) for s in range(4)])
         best = min((b for b in found if b), key=lambda b: b[0])
