@@ -37,12 +37,12 @@ public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 import VerifiedGarbage.Proof.Aes.InvSboxSpec
-import VerifiedGarbage.Proof.Aes.InvBitsliced
+import VerifiedGarbage.Proof.Aes.Bitsliced
 meta import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 meta import VerifiedGarbage.Proof.Aes.InvSboxSpec
-meta import VerifiedGarbage.Proof.Aes.InvBitsliced
+meta import VerifiedGarbage.Proof.Aes.Bitsliced
 meta import VerifiedGarbage.Proof.Aes.Rounds
 
 /-! ### `Aes.AArch64.Blocks`, which this module and modules that import it used -/

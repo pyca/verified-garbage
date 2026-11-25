@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The bitsliced AES S-boxes in AdvSIMD registers
@@ -19,6 +19,9 @@ preserve, is written.
 namespace VG.Impl.Aes.AArch64.Neon
 
 open VG.AArch64
+
+/-- The scratch buffer's base. -/
+def sb : Reg := .x5
 
 /-- The slices before SubBytes, and the blocks a batch starts from. -/
 def A : Nat → VReg
