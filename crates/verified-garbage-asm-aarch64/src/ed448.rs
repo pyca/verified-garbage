@@ -564,6 +564,14 @@ pub(crate) mod vg_gf448_r56_mul;
 pub(crate) mod vg_gf448_r56_pow_p34;
 
 #[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_blocks.rs"]
+pub(crate) mod vg_keccak_absorb_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_absorb_blocks_sha3.rs"]
+pub(crate) mod vg_keccak_absorb_blocks_sha3;
+
+#[rustfmt::skip]
 #[path = "internal/vg_keccak_absorb_scratch.rs"]
 pub(crate) mod vg_keccak_absorb_scratch;
 
@@ -576,6 +584,10 @@ pub(crate) mod vg_keccak_absorb_scratch_sha3;
 pub(crate) mod vg_keccak_f1600;
 
 #[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_lanes.rs"]
+pub(crate) mod vg_keccak_f1600_lanes;
+
+#[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600_sha3.rs"]
 pub(crate) mod vg_keccak_f1600_sha3;
 
@@ -586,14 +598,6 @@ pub(crate) mod vg_keccak_pad_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_pad_scratch_sha3.rs"]
 pub(crate) mod vg_keccak_pad_scratch_sha3;
-
-#[rustfmt::skip]
-#[path = "internal/vg_keccak_scalar_absorb_blocks.rs"]
-pub(crate) mod vg_keccak_scalar_absorb_blocks;
-
-#[rustfmt::skip]
-#[path = "internal/vg_keccak_scalar_core.rs"]
-pub(crate) mod vg_keccak_scalar_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_squeeze_scratch.rs"]

@@ -67,6 +67,14 @@ mod vg_gcm_tail_idx;
 pub use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
 
 #[rustfmt::skip]
+mod vg_keccak_rc;
+pub use vg_keccak_rc::VG_KECCAK_RC;
+
+#[rustfmt::skip]
+mod vg_keccak_rc_pairs;
+pub use vg_keccak_rc_pairs::VG_KECCAK_RC_PAIRS;
+
+#[rustfmt::skip]
 mod vg_mldsa_inv_folded;
 pub use vg_mldsa_inv_folded::VG_MLDSA_INV_FOLDED;
 
