@@ -63,9 +63,16 @@ theorem invMc0_check : check (lanes 64 9) cfg (invMixColumns false) (env p)
 theorem invMc1_check : check (lanes 64 9) cfg (invMixColumns true) (env p)
     (post q (atoms (mixT invMcCoeffs 4 true))) = true := by decide +kernel
 
-/-- `form1`: the byte at a position is the one form 0 has ShiftRows back. -/
-def form1T (j p : Nat) : List (Nat × Nat) := [(j, posAt 4 false (byteAt 4 true p) (p % 4))]
-theorem form1_check : check (lanes 64 9) cfg form1 (env q) (post q (atoms form1T)) = true := by decide +kernel
+/-- A round key's bits between `keyMid` and `keyOut`: `h` of the slice's number, in form `f`. -/
+def midT (f : Bool) (h p : Nat) : List (Nat × Nat) :=
+  [(4 * (byteAt 4 f p / 8), 8 * (byteAt 4 f p % 8) + (4 * h + p % 4))]
+
+def keyMidT (j p : Nat) : List (Nat × Nat) :=
+  if j % 4 = 0 then midT false (j / 4) p else if j % 4 = 1 then midT true (j / 4) p else [(j, p)]
+theorem keyMid_check : check (lanes 64 9) cfg keyMid (env q) (post q (atoms keyMidT)) = true := by decide +kernel
+
+def keyOutT (j p : Nat) : List (Nat × Nat) := [(4 * (j / 4), p - p % 4 + j % 4)]
+theorem keyOut_check : check (lanes 64 9) cfg keyOut (env q) (post q (atoms keyOutT)) = true := by decide +kernel
 
 /-- `moveBack`: slices as they are. -/
 def idT (j p : Nat) : List (Nat × Nat) := [(j, p)]
