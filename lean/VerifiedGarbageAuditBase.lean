@@ -198,7 +198,6 @@ import Std.Data.DTreeMap.Internal.Balancing
 import Std.Data.DTreeMap.Internal.Operations
 import Std.Do.Triple.SpecLemmas
 import Std.Tactic.BVDecide.Normalize.BitVec
-import Std.Tactic.BVDecide.Normalize.Bool
 import Std.Tactic.BVDecide.Normalize.Prop
 
 /-!
