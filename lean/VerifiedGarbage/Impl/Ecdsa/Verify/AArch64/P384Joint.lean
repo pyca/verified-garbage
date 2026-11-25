@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
-public import VerifiedGarbage.Impl.P384.EcdhAllocatedCode
+public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Impl.P384.GTable9
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
 /-! # ECDSA verification over P-384 on AArch64: one loop for `[u]G + [v]Q`
 
 The public width-five NAF of `v` (`PubNaf`) and the width-nine NAF of `u`, as sixteen-bit words
-(`PubNafWide.prep9`), share their doublings (the register-allocated ones of ECDH's window); each
+(`PubNafWide.prep9`), share their doublings (those of ECDH's window); each
 digit of `u` other than 0 adds `[m]G` by a mixed addition, from the static `VG_P384_GTAB` of
 `[m]G` for `m = 1 … 256`, read directly at the digit. -/
 
@@ -46,7 +46,7 @@ def fixedDigit : Prog isa := .seq (.block (Joint.fixedRead cfg)) <|
  .ite (.nonzero .x .x2)
   (.seq fixedEntry <| .seq (jacMixedAdd K K.R K.E K.D) (.block (copyPt 6 K.R K.D))) (.block [])
 def digits : Prog isa := .seq (PubNaf.digit K) fixedDigit
-def double : Prog isa := .block Impl.P384.EcdhAllocatedCode.doubleRD
+def double : Prog isa := .block Impl.P384.EcdhDouble.doubleRD
 def step : Prog isa := .seq (.block [decCounter]) <| .seq double digits
 def window : Prog isa :=
  .seq (PubNaf.table K) <| .seq (PubNaf.cache K) <|

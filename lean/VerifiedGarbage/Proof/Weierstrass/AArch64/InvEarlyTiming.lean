@@ -47,9 +47,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
 meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes

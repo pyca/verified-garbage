@@ -31,7 +31,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass CombCfg
 
 /-- The callee-saved registers P-384's window may change besides `clob 6`
-(its allocated doublings, `Impl/P384/EcdhDouble.lean`), which ECDH and ECDSA
+(its doublings, `Impl/P384/EcdhDouble.lean`), which ECDH and ECDSA
 save on entry and restore on exit. -/
 def winSaved (n : Nat) : List Reg := if n = 6 then [.x21, .x22, .x23, .x24, .x25] else []
 
