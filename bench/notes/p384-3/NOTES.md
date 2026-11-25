@@ -136,3 +136,22 @@ accumulator (gen3.py's mulC) overflows a word (T < 2p and 2^128 (p) added pass
 Choice for the first version: plain schoolbook rows (S), the square as above
 (Q), the two-word rounds; simplest to prove. Fused later: final conditional
 subtractions (7 flag-setting), loads and stores, and linear steps.
+
+# First proven version (run 45679213310, against 5698282829)
+
+ec_p384_public_key -12.5%, ecdh -13.8% (165.3 to 142.5 us), sign -10.3%, verify -14.5%.
+
+# Then: the doubling's registers
+
+Cost of the doubling by the fit above (0.6 cycle for each flag-setting or
+multiplying instruction): 1496 of 2208. `alloc.py` (value numbering, then
+furthest-next-use allocation in the same order, spills to scratch) gives 2077
+instructions, the same arithmetic: 106 loads, 12 stores and 13 zeroings fewer.
+The model says little is to be had, since loads are nearly free; measured as an
+unproven prototype (bench/p384-cleanroom-3-alloc) before proving anything.
+
+Considered and not done, by counts: Z' = (Y+Z)^2 - g - d (-50 M+F for the
+square, +50 for the sums: a tie); skipping the conditional subtractions (a carry
+fold costs 6 against 7); 3vt - 8g^2 before one reduction (-39 of 1496, for a
+thirteen-word accumulator); not propagating each round's borrow to the top but
+taking it into the next round's D (-4 of 190 a product).
