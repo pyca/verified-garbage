@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
@@ -93,7 +93,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOk (stack : Nat) (hW : 0 < stack := by decide) :
-    ScrubAllOk (Spec.RsaKeyGen.keySearchContract abi stack) stack
+    ScrubAllOk (Proof.RsaKeyGen.keySearchAskedContract abi stack) stack
       (Spec.RsaKeyGen.keySearchSig.retBits abi.ptrBits) :=
   scrubAllOk_regs_pre (sig := Spec.RsaKeyGen.keySearchSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
@@ -172,7 +172,7 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
   cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
 
 theorem pkcs1EncryptRandomOk (stack : Nat) :
-    ScrubAllOk (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) stack (Spec.RsaPkcs1Enc.encryptRandomSig.retBits abi.ptrBits) :=
+    ScrubAllOk (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) stack (Spec.RsaPkcs1Enc.encryptRandomSig.retBits abi.ptrBits) :=
   scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.encryptRandomSig) fun
     | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

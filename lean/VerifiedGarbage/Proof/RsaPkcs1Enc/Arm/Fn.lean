@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.Arm.ScrubOut
@@ -46,7 +47,7 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
   cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
 
 theorem encryptRandomOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 32) :=
+    PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 32) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -68,16 +69,16 @@ theorem encryptRandomOut (stack : Nat) :
 
 /-! ## The stacks, at frame sizes of the model -/
 
-theorem randomSat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract abi 2368).pre s := by
+theorem randomSat : ∃ s, (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi 2368).pre s := by
   open Proof.RsaPkcs1Enc.Arm.Rnd in
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val, State.addr]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.RsaPkcs1Enc.padEntropy] using satState
 
 theorem randomVerified (encName : String) (c : Proof.RsaPkcs1Sig.Arm.PdImpl) :
     Verified target (Impl.RsaPkcs1Enc.Arm.Random.code encName (Impl.RsaPkcs1Enc.Arm.Precomputed.code c.name c.code))
-      (Spec.RsaPkcs1Enc.encryptRandomContract abi 2368) :=
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi 2368) :=
   Verified.stack_le (by decide) (Proof.RsaPkcs1Enc.Arm.Rnd.code_verified encName c) randomSat
 
 /-! ## What the cleanup needs of the code -/
@@ -115,15 +116,29 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Rsa.Arm VG.Proof.RsaPkcs1Enc.Arm.Scrub
 
 /-- `vg_rsa_pkcs1_encrypt_random`, calling `vg_rsa_pkcs1_encrypt_precomputed`
 over `v`'s public operation, by the name `encName`. -/
+theorem encryptRandom_asked (encName : String) (v : CrtImpl) :
+    VerifiedScrubbed target
+      (Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom encName
+        (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code))
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi 2368) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaPkcs1Enc.encryptRandomAskedApi)
+    { code := Impl.RsaPkcs1Enc.Arm.Random.code encName
+        (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code)
+      verified := randomVerified encName (pdOfCrt v) }
+    (encryptRandomOut _) (scrubSideF_of (random_ok (precomputed_ok v.pdOk)) frameOk_2320 _)
+
 theorem encryptRandom (encName : String) (v : CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom encName
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code))
       (Spec.RsaPkcs1Enc.encryptRandomContract abi 2368) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi)
-    { code := Impl.RsaPkcs1Enc.Arm.Random.code encName
-        (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code)
-      verified := randomVerified encName (pdOfCrt v) }
-    (encryptRandomOut _) (scrubSideF_of (random_ok (precomputed_ok v.pdOk)) frameOk_2320 _)
+  encryptRandom_imp (encryptRandom_asked encName v) id
+
+theorem encryptRandom_public (encName : String) (v : CrtImpl) :
+    Spec.RsaPkcs1Enc.encryptRandomOut.Of abi
+      (Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom encName
+        (Impl.RsaPkcs1Enc.Arm.Precomputed.code (pdOfCrt v).name (pdOfCrt v).code))
+      (Spec.RsaPkcs1Enc.encryptRandomContract abi 2368) :=
+  Proof.RsaPkcs1Enc.encryptRandom_public (encryptRandom_asked encName v)
 
 end VG.Proof.RsaPkcs1Enc.Arm.Fn

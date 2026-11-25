@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
@@ -123,8 +123,8 @@ structure RPre (s : State) : Prop where
   hsl : Spec.Rsa.publicScratchWords (s.gpr .r8).toNat ≤ (stackArg s 6).toNat
   hql : (stackArg s 8).toNat = Spec.Rsa.precomputedWords (s.gpr .r8).toNat
 
-theorem pre_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) : RPre s := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+theorem pre_of {s : State} (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) : RPre s := by
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
     abi, argRegs, stackArgs_nine, List.append_eq, List.range, List.range.loop] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr dOt dOn dOe dOm dOr dOs dOq dOa dTn dTe dTm dTr dTs dTq dTa

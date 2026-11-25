@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndAccept
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndReject
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -51,7 +52,7 @@ theorem body_noSp (encName : String) (c : Ver.PublicImpl) : NoSp (body encName (
 
 theorem spec_sp {s : State} (h : spec.pre s) :
     stackBytes ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 ≤ 2 ^ 32 := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
     argVal, argBytes, stackBelow] at h
   obtain ⟨hsp, hsa, -⟩ := h
   exact ⟨hsp, by omega_using [hsa]⟩
@@ -103,7 +104,7 @@ theorem code_ok (encName : String) (c : Ver.PublicImpl) {s : State} (h : spec.pr
       ro (R := (ep s).MSG) (by simp)
     unfold Res at res
     rw [hR, hM] at res
-    sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+    sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
       argVal, argBytes]
     rw [BitVec.setWidth_append_eq_right]
     exact res
@@ -113,7 +114,7 @@ theorem map_toNat_inj {w : Nat} {a b : List (BitVec w)} (h : a.map (·.toNat) = 
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+  sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
     argVal, argBytes] at hp
   obtain ⟨hsp, hl, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := hp
   have l1 : ((Spec.Rsa.bytesAt s₁.mem ((arg s₁ 3).setWidth 64) (arg s₁ 4).toNat ++
@@ -141,7 +142,7 @@ theorem code_ct (encName : String) (c : Ver.PublicImpl) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.gpr .esp = s₂.gpr .esp := by
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
       argVal, argBytes] at hp
     exact hp.1
   refine (wrap_ct (F := frameBytes) (body_noSp encName c) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -184,7 +185,7 @@ theorem sat : ∃ s, spec.pre s := by
   have a14 : arg satState 14 = 16 := by decide
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, e, esp, satState, stackBytes, frameBytes,
       roomC, Spec.Rsa.lenValid, Spec.Rsa.publicScratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords,

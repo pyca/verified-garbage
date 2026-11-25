@@ -27,6 +27,7 @@ def artifacts : List (Artifact RISCV64.target) :=
     Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
       suffix := v.suffix
       code := Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code
-      verified := Proof.RsaKeyGen.RISCV64.Fn.keySearch_scrubbed v }
+      verified := Proof.RsaKeyGen.RISCV64.Fn.keySearch_scrubbed v
+      publicOutOk := Proof.RsaKeyGen.RISCV64.Fn.keySearch_public v }
 
 end VG.Artifacts.RsaKeyGen.RISCV64

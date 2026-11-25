@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.CT
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Implies
 public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
@@ -18,7 +19,7 @@ open VG.Proof.Rsa.RISCV64 (InvLaw)
 /-- The controller, given the inverse's law (`InvLaw`, whose instance the
 registration file imports). -/
 theorem gen_verified [InvLaw] (v : RoundImpl) :
-    Verified target (genCode v) (Spec.RsaKeyGen.keySearchContract (abi.withConsts tables) stackUse) :=
+    Verified target (genCode v) (Proof.RsaKeyGen.keySearchAskedContract (abi.withConsts tables) stackUse) :=
   Verified.of_correct (gen_correct v) (gen_constantTime v) gen_implies
 
 end VG.Proof.RsaKeyGen.RISCV64.Generate

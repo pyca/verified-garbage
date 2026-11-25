@@ -1697,7 +1697,7 @@ structure AfterSearch (p : GenPublic) (original : State) (used : Nat) (st : KeyP
       | .accepted c => Spec.Rsa.i2osp c p.L
       | _ => List.replicate p.L 0)
   req : ∃ requested, word t.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-    (primeOf p.L p.eB st ((genRand original).drop used)).Requests (primeEntropy p.L) requested
+    Asked p.L (primeOf p.L p.eB st ((genRand original).drop used)) requested
   mem : Frame (searchChanges p st) s.mem t.mem
 
 section

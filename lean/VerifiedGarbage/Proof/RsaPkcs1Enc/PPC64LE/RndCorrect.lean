@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 -- separate module: its proofs build in parallel with `RndCT`'s, which `RndVerified` also imports
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndReject
 
@@ -78,7 +79,7 @@ theorem body_ok {s : State} (hp : RPre s) :
     have hm : (freed frameBytes w').mem = w.mem := by rw [freed_mem']; exact hw'.2.2
     exact post_congr hm h3 F.post
 
-theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) :
+theorem code_correct (s : State) (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ post s s' := by
   have hp := pre_of h
   show WP isa code s fun t => abiPreserved s t ∧ post s t

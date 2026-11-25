@@ -17,6 +17,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
     verified := Proof.RsaPkcs1Enc.PPC64LE.Front.front_scrubbed },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom
-    verified := Proof.RsaPkcs1Enc.PPC64LE.Scrub.encryptRandom_scrubbed }]
+    verified := Proof.RsaPkcs1Enc.PPC64LE.Scrub.encryptRandom_scrubbed
+    publicOutOk := Proof.RsaPkcs1Enc.PPC64LE.Scrub.encryptRandom_public }]
 
 end VG.Artifacts.RsaPkcs1Enc.PPC64LE

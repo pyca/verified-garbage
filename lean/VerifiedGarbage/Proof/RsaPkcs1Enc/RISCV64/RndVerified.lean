@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.RndScan
@@ -144,7 +145,7 @@ def post (s u : State) : Prop :=
   let res := Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)
   (∃ req, u.mem.readW (s.gpr .a2) 64 = BitVec.ofNat 64 res.used ∧
     u.mem.readW (s.gpr .a2 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧
-    res.Requests (Spec.RsaPkcs1Enc.padEntropy (psLen s)) req) ∧
+    Proof.RsaPkcs1Enc.PadAsked (psLen s) (randB s) req) ∧
   match res.outcome with
   | .accepted ps => PreOk s →
       Spec.RsaPkcs1Enc.writtenRandom u.mem (s.gpr .a0) (s.gpr .a4).toNat ((u.gpr .a0).setWidth 32)
@@ -164,9 +165,7 @@ theorem accept_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) {i : Nat
   obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_accepted hpre
   show (∃ req, _ ∧ _ ∧ _) ∧ _
   rw [ho, hu]
-  refine ⟨⟨0, ht0, ht1, ?_⟩, hres⟩
-  unfold Spec.Entropy.Result.Requests
-  rw [ho]
+  exact ⟨⟨0, ht0, ht1, VG.Proof.RsaPkcs1Enc.padAsked_accepted hpre⟩, hres⟩
 
 theorem kept_all (s : State) : kept s (stackArg s 2).toNat = VG.Proof.RsaPkcs1Enc.nz (randB s) := by
   simp only [kept]; rw [← randB_length, List.take_length]
@@ -234,21 +233,19 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
       exact outy
     obtain hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all, hcd]; exact hc
     show (∃ req, _ ∧ _ ∧ _) ∧ _
-    unfold Spec.Entropy.Result.Requests
     by_cases hge : Spec.RsaPkcs1Enc.padEntropy (psLen s) ≤ (stackArg s 2).toNat
     · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_exhausted hnz (by rw [randB_length]; exact hge)
       obtain ⟨h0, h1, hr⟩ := hex hge
       rw [ho, hu, randB_length]
-      exact ⟨⟨0, by rw [h0, ofNat_toNat], h1, rfl⟩, hr, outZ⟩
+      exact ⟨⟨0, by rw [h0, ofNat_toNat], h1,
+        VG.Proof.RsaPkcs1Enc.padAsked_exhausted hnz (by rw [randB_length]; exact hge)⟩, hr, outZ⟩
     · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hge])
       obtain ⟨h0, h1, hr⟩ := hen (by omega_using [hge])
       rw [ho, hu]
       refine ⟨⟨_, h0, h1, ?_⟩, hr, outZ⟩
-      rw [randB_length]
-      unfold Spec.RsaPkcs1Enc.padEntropy at *
-      constructor
-      · simp only [Nat.lt_min]; constructor <;> omega_arith
-      · exact Nat.min_le_left _ _
+      refine VG.Proof.RsaPkcs1Enc.padAsked_entropy hnz (by rw [randB_length]; omega_using [hge]) ?_
+      rw [randB_length, ← kept_all, hcd, Nat.add_comm (stackArg s 2).toNat]
+      rfl
   obtain a2w : w.gpr .a2 = s.gpr .a2 := by rw [Kw.get .a2, g .a2 (by decide)]
   obtain t4w : w.gpr .t4 = stackArg s 2 := by rw [Kw.get .t4, t4u]
   obtain s1w : w.gpr .s1 = BitVec.ofNat 64 (psLen s) := by rw [Kw.get .s1, s1u]
@@ -352,9 +349,9 @@ structure PubR (a s : State) : Prop where
   w : preW s = preW a
   tr : trace s = trace a
 
-theorem pubR_of {s₁ s₂ : State} (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pub s₁ s₂) :
+theorem pubR_of {s₁ s₂ : State} (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pub s₁ s₂) :
     PubR s₁ s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+  sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
     stackArgs_seven, List.append_eq] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hl, x0, x1, x2, x3, x4, x5, x6, x7, a0, a1, a2, a3, a4, a5, a6⟩ := h
@@ -731,8 +728,8 @@ theorem code_ct : RelCT isa (Two E) code fun _ _ => True := by
   exact tail_ct
 
 theorem code_constantTime :
-    ConstantTime isa (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre
-      (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pub code :=
+    ConstantTime isa (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pub code :=
   RelCT.constantTime (code_ct.mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
     ⟨s₁, ⟨rPre_of h₁, ⟨rfl, fun _ _ => rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩, rPre_of h₂, pubR_of hp⟩)
     fun _ _ h => h)
@@ -761,12 +758,12 @@ theorem wordsAt_two (m : Mem) (p : Addr) :
   simp [Spec.Rsa.wordsAt, List.range_succ]
 
 /-- The correctness of `vg_rsa_pkcs1_encrypt_random`, against its shared contract. -/
-theorem code_correct (s : State) (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) :
+theorem code_correct (s : State) (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧
-      (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).post s s' := by
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).post s s' := by
   obtain ⟨t, s', he, habi, hr⟩ := code_ok (rPre_of h)
   refine ⟨t, s', he, habi, ?_⟩
-  sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+  sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
     stackArgs_seven, List.append_eq, List.range, List.range.loop]
   obtain ⟨⟨req, h0, h1, hq⟩, hm⟩ := hr
   exact ⟨⟨req, by rw [wordsAt_two, h0, h1], hq⟩, hm⟩
@@ -793,11 +790,11 @@ theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x4000 ∧ 
     stackArg satState 6 = 16 := by
   decide
 
-theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s := by
+theorem sat : ∃ s, (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s := by
   refine ⟨satState, ?_⟩
   have e : rndStack = 4303 + 1 := rfl
   rw [e]
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
     stackArgs_seven, List.append_eq]
   obtain ⟨a0, a1, a2, a3, a4, a5, a6⟩ := sat_args
   have ha : stackArgAddr satState 0 = 0x10000000000 := by decide
@@ -817,7 +814,7 @@ theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s
     by unfold Spec.Rsa.lenValid; decide, by decide, by decide, by decide, by decide, by decide, by decide,
     by decide, by decide, by decide⟩
 
-theorem code_verified : Verified RISCV64.target code (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack) :=
+theorem code_verified : Verified RISCV64.target code (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack) :=
   ⟨code_correct, code_constantTime, sat⟩
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Rnd

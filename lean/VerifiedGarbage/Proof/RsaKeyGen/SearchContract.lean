@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Spec.RsaKeyGen.Generation
 public import VerifiedGarbage.Spec.Rsa.Contract
 
@@ -35,7 +36,7 @@ def primeSearchSig : Sig where
 /-- `primeSearch` on `rand`, from the candidates left in `state`: its status
 (`Entropy.Outcome.status`), the prime at `out` (zeros otherwise), the octets it
 consumed at `used`, and the state for the next call, whose last word is the
-next tape's length: any that `Entropy.Result.Requests` allows (0 if there is
+next tape's length: the one the code asks for (`Asked`, 0 if there is
 none). Its timing may depend on `e`, the state's words, the result's status,
 consumption and octets left, and the trace of its candidates. -/
 def primeSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
@@ -61,7 +62,7 @@ def primeSearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       ∃ requested, wordsAt m' state 4 = [BitVec.ofNat 64 result.remaining,
         BitVec.ofNat 64 outLen.toNat, BitVec.ofNat 64 (primeEntropy outLen.toNat),
         BitVec.ofNat 64 requested] ∧
-        result.Requests (primeEntropy outLen.toNat) requested)
+        Asked outLen.toNat result requested)
     (writeArgs := true) (stack := stack)
     (leak := some fun _out outLen _used e eLen p pLen rand randLen _scratch _scratchLen state m =>
       let result := primeSearch outLen.toNat (bytesAt m e eLen.toNat)

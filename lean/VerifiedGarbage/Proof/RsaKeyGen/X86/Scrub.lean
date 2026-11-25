@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Verified
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Fn
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -63,7 +63,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
-    PostOut (Spec.RsaKeyGen.keySearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.RsaKeyGen.keySearchAskedContract (abi.withConsts cs) stack)
       (Spec.RsaKeyGen.keySearchSig.retBits 32) :=
   postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
@@ -83,15 +83,27 @@ open VG.Proof.RsaKeyGen.X86.Generate (srchOf keyImpl genCode)
 
 /-- `vg_rsa_generate`, with its cleanup, returns without secret residue,
 whatever the implementation `v` of the Miller–Rabin round. -/
-theorem generate_scrubbed (v : RoundImpl) :
+theorem generate_asked (v : RoundImpl) :
     VerifiedScrubbed target (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call)
       Proof.RsaKeyGen.X86.Generate.contract 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keySearchAskedApi)
     { code := genCode v
       verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
       spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }
     (keySearchOut Impl.RsaKeyGen.TrialTable32.consts Proof.RsaKeyGen.X86.Generate.stack)
     (hs := Proof.RsaKeyGen.X86.GenScrub.gen_scrub v)
+
+theorem generate_scrubbed (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call)
+      (Spec.RsaKeyGen.keySearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts)
+        Proof.RsaKeyGen.X86.Generate.stack) 32 :=
+  keySearch_imp (generate_asked v) id
+
+theorem generate_public (v : RoundImpl) :
+    Spec.RsaKeyGen.keySearchOut.Of abi (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call)
+      (Spec.RsaKeyGen.keySearchContract (abi.withConsts Impl.RsaKeyGen.TrialTable32.consts)
+        Proof.RsaKeyGen.X86.Generate.stack) :=
+  keySearch_public (generate_asked v)
 
 /-- `vg_rsa_generate`, with its cleanup, writes `esp` only by its frames. -/
 theorem generate_spSafe (v : RoundImpl) :

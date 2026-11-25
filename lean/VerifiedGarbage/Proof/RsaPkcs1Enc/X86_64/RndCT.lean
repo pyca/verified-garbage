@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCTScan
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndHeads
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
@@ -369,7 +370,7 @@ theorem code_constantTime (v : PublicImpl) :
 /-- `vg_rsa_pkcs1_encrypt_random`, calling `vg_rsa_pkcs1_encrypt_precomputed` with the
 implementation `v` of the precomputed public operation, meets the shared contract. -/
 theorem code_verified (v : PublicImpl) :
-    Verified target (code (encName v) (encCode v)) (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack) :=
+    Verified target (code (encName v) (encCode v)) (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack) :=
   Verified.of_correct (k := contract) (code_correct v) (code_constantTime v) implies
 
 /-- It writes `rsp` only in its frame's push and pop. -/

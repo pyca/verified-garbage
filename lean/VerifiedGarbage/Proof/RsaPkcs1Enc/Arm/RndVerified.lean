@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndInvoke
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndTail
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -153,7 +154,7 @@ theorem entered_state {s : State} (h : spec.pre s) :
   ⟨in_of_pre h, ⟨(in_of_pre h).ok, (in_of_pre h).ok.sp, rfl, rfl, Frame.refl _ _⟩⟩
 
 theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   exact h.1
 
@@ -195,7 +196,7 @@ theorem code_ok (encName : String) (c : PdImpl) {s : State} (h : spec.pre s) :
       (ro := [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE])
       (rw := [(ep s).OUT, (ep s).TAPE, (ep s).SCR]) (C := callStack) hsp]
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  · sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
       argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ [(ep s).N, (ep s).E, (ep s).MSG, (ep s).RAND, (ep s).PRE]) =>
@@ -219,7 +220,7 @@ theorem wordsAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.wordsAt m p n)
 
 /-- Two entry states with the same public data have the same public parameters. -/
 theorem ep_eq {s₁ s₂ : State} (hp : spec.pub s₁ s₂) : ep s₁ = ep s₂ := by
-  sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val] at hp
   obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10⟩ := hp
   obtain ⟨hab, hc⟩ := List.append_inj hl (by simp [bytesAt_length, wordsAt_length, a0, a2, a10])
@@ -237,7 +238,7 @@ theorem code_ct (encName : String) (c : PdImpl) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂
   have hep := ep_eq hp
   have hsp : s₁.sp = s₂.sp := by
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
       argRegs, reduceClassify, Loc.val] at hp
     exact hp.1
   refine (VG.Proof.RsaPkcs1Sig.Arm.wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
@@ -273,7 +274,7 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x6200, 16⟩, ⟨0x4000, 8448⟩]
 
 theorem sat : ∃ s, spec.pre s := by
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val, State.addr]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.RsaPkcs1Enc.padEntropy] using satState

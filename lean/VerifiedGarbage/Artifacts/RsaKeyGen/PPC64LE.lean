@@ -24,6 +24,7 @@ def artifacts : List (Artifact PPC64LE.target) :=
     Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
       suffix := vh.1.suffix
       code := Impl.RsaKeyGen.PPC64LE.Fn.keySearch vh.1.suffix vh.1.code
-      verified := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed vh.1 vh.2 })
+      verified := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed vh.1 vh.2
+      publicOutOk := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_public vh.1 vh.2 })
 
 end VG.Artifacts.RsaKeyGen.PPC64LE

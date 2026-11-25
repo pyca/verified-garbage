@@ -1537,7 +1537,7 @@ structure AfterSearch (p : GenPublic) (o : State) (used : Nat) (st : KeyProgress
       | .accepted c => Spec.Rsa.i2osp c p.L
       | _ => List.replicate p.L 0)
   req : ∃ requested, t.mem.readW (off p.st 24) 64 = BitVec.ofNat 64 requested ∧
-    (primeOf p.L p.eB st ((genRand o).drop used)).Requests (primeEntropy p.L) requested
+    Asked p.L (primeOf p.L p.eB st ((genRand o).drop used)) requested
   mem : Frame (callChanges p st) s.mem t.mem
 
 namespace GenFrame
@@ -2618,7 +2618,7 @@ def GenDone (p : GenPublic) (o : State) (final : KeySearchResult) (s : State) : 
   GenFrame p o final.used final.progress s ∧ s.gpr .r11 = BitVec.ofNat 32 final.keyStatus ∧
     Spec.Rsa.bytesAt s.mem (State.addr p.kp) (9 * p.L) = keySearchBytes p.L final ∧
     ∃ requested, s.mem.readW (off p.st 24) 64 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested
+      Asked p.L final requested
 
 /-- What each step that goes on lowers: the octets left of the tape, then the
 generations left. -/
@@ -2641,7 +2641,7 @@ structure Mid (p : GenPublic) (o : State) (final : KeySearchResult) (used : Nat)
       | .q _ => outBytes p.L (rOf p o used st))
   high : Spec.Rsa.bytesAt u.mem (p.slot 6) (3 * p.L) = List.replicate (3 * p.L) 0
   req : ∃ requested, u.mem.readW (off p.st 24) 64 = BitVec.ofNat 64 requested ∧
-    (rOf p o used st).Requests (primeEntropy p.L) requested
+    Asked p.L (rOf p o used st) requested
 
 theorem bytesAt_add (m : Mem) (a : Addr) (x y : Nat) :
     Spec.Rsa.bytesAt m a (x + y) = Spec.Rsa.bytesAt m a x ++ Spec.Rsa.bytesAt m (a + BitVec.ofNat 64 x) y := by
@@ -2877,7 +2877,7 @@ theorem finish_done (h : GenFrame p o used st s) {final : KeySearchResult} {stat
     (hr0 : st.remaining = 0)
     (hkey : Spec.Rsa.bytesAt s.mem (State.addr p.kp) (9 * p.L) = keySearchBytes p.L final)
     (hreq : ∃ requested, s.mem.readW (off p.st 24) 64 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested) :
+      Asked p.L final requested) :
     WP isa (.block (finishWith status)) s (GenDone p o final) := by
   refine WP.mono (h.finishWith_ok hstat) fun t ⟨⟨h11, hm⟩, k⟩ => ?_
   obtain hf : Frame (stW p) s.mem t.mem := by
@@ -2906,7 +2906,7 @@ theorem fail_done (h : GenFrame p o used st s) {final : KeySearchResult} {status
     (hu : final.used = used) (hpr : final.progress = ⟨0, .p, 0⟩) (hs : final.keyStatus = status)
     (hr0 : st.remaining = 0) (hz : keySearchBytes p.L final = List.replicate (9 * p.L) 0)
     (hreq : ∃ requested, s.mem.readW (off p.st 24) 64 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested) :
+      Asked p.L final requested) :
     WP isa (fail status) s (GenDone p o final) := by
   have cf := h.input.cfacts
   unfold fail
@@ -3101,7 +3101,7 @@ theorem classify_entropy (hm : Mid p o final used st u) {k a : Nat}
     | q pB =>
       simp only [hout, keySearchBytes, List.append_assoc, List.replicate_append_replicate]
       congr 3; omega_using []
-  · simp only [Spec.Entropy.Result.Requests, ho] at hr ⊢
+  · simp only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho] at hr ⊢
     exact hr
 
 /-- An exhausted search, its generation the last: the key search is exhausted. -/
@@ -3113,9 +3113,9 @@ theorem classify_last (hm : Mid p o final used st u) (ho : (rOf p o used st).out
   obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw, hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hfinal
-  exact hm.frame.fail_done (by decide) rfl rfl rfl hrem rfl ⟨req, hw, by rw [hr0]; rfl⟩
+  exact hm.frame.fail_done (by decide) rfl rfl rfl hrem rfl ⟨req, hw, by rw [hr0]; exact ⟨rfl, rfl⟩⟩
 
 /-- A prime accepted having read nothing: the key search is exhausted. -/
 theorem classify_none (hm : Mid p o final used st u) {c : Nat}
@@ -3128,9 +3128,9 @@ theorem classify_none (hm : Mid p o final used st u) {c : Nat}
   obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw, hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hfinal
-  exact hm.frame.fail_done (by decide) rfl rfl rfl hrem rfl ⟨req, hw, by rw [hr0]; rfl⟩
+  exact hm.frame.fail_done (by decide) rfl rfl rfl hrem rfl ⟨req, hw, by rw [hr0]; exact ⟨rfl, rfl⟩⟩
 
 /-- `p` accepted: `q` next. -/
 theorem classify_p (hm : Mid p o final used st u) {c : Nat}
@@ -3157,7 +3157,7 @@ theorem classify_p (hm : Mid p o final used st u) {c : Nat}
       measure_lt p hpos hle (Nat.le_refl _), ?_, rfl, ?_, .inr (.inl ⟨c, ho, hph, rfl, rfl, rfl⟩)⟩
   · rw [hfin, tailOf, hks, tailOf, List.drop_drop, consume_consume]
   · obtain ⟨req, hw, hr⟩ := hm.req
-    have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+    have : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
     rw [h24, hw, this]
   · rw [tailOf, hks, tailOf, List.drop_drop]
 
@@ -3314,7 +3314,7 @@ theorem classify_next (hm : Mid p o final used st u) (ho : (rOf p o used st).out
       measure_le p (by simp only; omega_using [hl]), ?_, rfl, ?_, .inl ⟨ho, rfl, rfl, rfl⟩⟩
   · rw [hfin, tailOf, hks, tailOf, List.drop_drop, consume_consume]
   · obtain ⟨req, hw, hr⟩ := hm.req
-    have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+    have : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
     rw [h24, GenFrame.stW_req hf, hw, this]
   · rw [tailOf, hks, tailOf, List.drop_drop]
 
@@ -3375,7 +3375,7 @@ theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (P
   simp only [outBytes, ho] at hs5
   obtain hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
   obtain ⟨req, hw, hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hr0
   refine WP.seq (WP.mono (hm.frame.key_run name hv hks) fun v hk => ?_)
   obtain hkey : keyOf p u.mem = keyOp p.L p.eB pB (Spec.Rsa.i2osp c p.L) := by
@@ -3405,7 +3405,7 @@ theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (P
       simp only [keyOp, hkf, keyStatus] at he1 hout
       refine WP.ite true he1 (fun _ => ?_) (fun h => by cases h)
       refine WP.mono (hgw.finish_done (final := final) (by decide) (by rw [hks']; rfl) (by rw [hks']; rfl)
-        (by rw [hks']; rfl) hrem ?_ ⟨0, by rw [hmem1]; exact hwv, by rw [hks']; rfl⟩) fun _ h => .inr ⟨?_, h⟩
+        (by rw [hks']; rfl) hrem ?_ ⟨0, by rw [hmem1]; exact hwv, by rw [hks']; exact ⟨rfl, rfl⟩⟩) fun _ h => .inr ⟨?_, h⟩
       rw [hmem1, key_outs, hout, hks']
       · simp only [keySearchBytes, Spec.Entropy.Result.consume, keyBytes, List.flatten_cons, List.flatten_nil,
           List.append_nil, List.append_assoc]
@@ -3422,7 +3422,7 @@ theorem classify_key (name : String) {kc : Prog isa} (hv : Verified target kc (P
       refine WP.ite false he2 (fun h => by cases h) (fun _ => ?_)
       refine WP.mono (hgw2.fail_done (final := final) (by decide) (by rw [hks']; rfl) (by rw [hks']; rfl)
         (by rw [hks']; rfl) hrem (by rw [hks']; rfl)
-        ⟨0, by rw [hmem2, hmem1]; exact hwv, by rw [hks']; rfl⟩) fun _ h => .inr ⟨?_, h⟩
+        ⟨0, by rw [hmem2, hmem1]; exact hwv, by rw [hks']; exact ⟨rfl, rfl⟩⟩) fun _ h => .inr ⟨?_, h⟩
       rintro (⟨h, -⟩ | ⟨c', h, -, h' | ⟨pB', h', hk'⟩⟩)
       · rw [ho] at h; cases h
       · rw [hph] at h'; cases h'

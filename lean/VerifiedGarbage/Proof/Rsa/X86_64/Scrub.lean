@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -151,7 +151,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOut (stack : Nat) :
-    PostOut (Spec.RsaKeyGen.keySearchContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 64) :=
+    PostOut (Proof.RsaKeyGen.keySearchAskedContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaKeyGen.keySearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -192,7 +192,7 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
   cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
 
 theorem pkcs1EncryptRandomOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
+    PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,

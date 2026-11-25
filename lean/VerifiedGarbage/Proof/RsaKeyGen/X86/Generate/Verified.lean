@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Verified
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
@@ -2289,7 +2290,7 @@ theorem word_bytes {m₁ m₂ : Mem} {a : Addr} (h : m₁.readW a 64 = m₂.read
   exact congrArg (BitVec.extractLsb' (8 * j) 8) h
 
 theorem initial_point_eq {s t : State} (H : contract.pub s t) : initialPoint s = initialPoint t := by
-  sig_pub [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+  sig_pub [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at H
   obtain ⟨hsp, sy, L, a0, -, a2, a3, a4, a5, a6, a7⟩ := H
   obtain ⟨L₁, htr⟩ := List.append_inj L (by simp [Spec.Rsa.wordsAt])
@@ -2498,7 +2499,7 @@ theorem sat_table : Abi.constsHeld satState.mem (fun name => (satState.syms name
 
 theorem satisfiable : ∃ s, contract.pre s := by
   refine ⟨satState, ?_⟩
-  sig_pre [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi,
+  sig_pre [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi,
     argSlots, argVal, argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, stackBelow]
   simp only [sat_arguments 0 (by decide), sat_arguments 1 (by decide), sat_arguments 2 (by decide),
     sat_arguments 3 (by decide), sat_arguments 4 (by decide), sat_arguments 5 (by decide),

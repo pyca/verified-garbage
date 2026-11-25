@@ -24,7 +24,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Random
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -162,9 +162,9 @@ theorem stk_eq (P : Nat) (s : State) :
     (⟨s.sp - BitVec.ofNat 64 (P + 2191 + 1), P + 2191 + 1⟩ : Region) = stkR P s := rfl
 
 theorem pre_of {P : Nat} {s : State}
-    (h : (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack P)).pre s) : RPre P s := by
+    (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack P)).pre s) : RPre P s := by
   unfold rndStack at h
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, AArch64.abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, AArch64.abi,
     AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   obtain ⟨sp1, sp2, hrd, hwr, dOt, dOn, dOe, dOm, dOr, dOs, dOq, dOa, dTn, dTe, dTm, dTr, dTs, dTq, dTa,
     dNs, dEs, dMs, dRs, dSq, dSa, dKo, dKt, dKn, dKe, dKm, dKr, dKs, dKq, dKa,
@@ -1531,7 +1531,7 @@ def post (s u : State) : Prop :=
   let res := Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)
   (∃ req, u.mem.readW (s.gpr .x2) 64 = BitVec.ofNat 64 res.used ∧
     u.mem.readW (s.gpr .x2 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧
-    res.Requests (Spec.RsaPkcs1Enc.padEntropy (psLen s)) req) ∧
+    Proof.RsaPkcs1Enc.PadAsked (psLen s) (randB s) req) ∧
   match res.outcome with
   | .accepted ps => Spec.Rsa.publicPrecompute (nB s) = some (preW s) →
       Spec.RsaPkcs1Enc.writtenRandom u.mem (s.gpr .x0) (kOf s) ((u.gpr .x0).setWidth 32)
@@ -1712,12 +1712,11 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
   refine ⟨fin, ?_⟩
   have hcap : Spec.RsaPkcs1Enc.padEntropy (psLen s) = psLen s + 128 := rfl
   show (∃ req, _ ∧ _ ∧ _) ∧ _
-  unfold Spec.Entropy.Result.Requests
   by_cases hge : psLen s + 128 ≤ (stackArg s 2).toNat
   · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_exhausted hnz (by rw [randB_length, hcap]; exact hge)
     rw [ho, hu, randB_length]
     simp only [hge, ite_true] at mx hx0
-    refine ⟨⟨0, ?_, ?_, rfl⟩, ?_, outZ⟩
+    refine ⟨⟨0, ?_, ?_, VG.Proof.RsaPkcs1Enc.padAsked_exhausted hnz (by rw [randB_length, hcap]; exact hge)⟩, ?_, outZ⟩
     · rw [mx, rd_tape0]; exact hL
     · rw [mx, rd_tape1]; rfl
     · rw [hx0]; rfl
@@ -1740,8 +1739,8 @@ theorem reject_ok {P : Nat} {s t₀ u : State} (hp : RPre P s) (hb : Before s t�
       by_cases hm : psLen s + (stackArg s 2).toNat - c ≤ psLen s + 128
       · simp only [hm, ite_true, Nat.min_eq_left hm]
       · simp only [hm, ite_false, Nat.min_eq_right (show psLen s + 128 ≤ psLen s + (stackArg s 2).toNat - c by omega_using [hm])]
-    · rw [randB_length, hcap]
-      exact ⟨by simp only [Nat.lt_min]; omega_using [hc, hge], Nat.min_le_right _ _⟩
+    · refine VG.Proof.RsaPkcs1Enc.padAsked_entropy hnz (by rw [randB_length, hcap]; omega_using [hge]) ?_
+      rw [randB_length, ← kept_all, hcdef, Nat.min_comm, Nat.add_comm (psLen s) (stackArg s 2).toNat]
     · rw [hx0]; rfl
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Rnd
@@ -1792,9 +1791,8 @@ theorem accept_ok (c : PdChecked)
   refine WP.mono (accTail_ok hp hac) fun x ⟨hfin, ht0, ht1, hres⟩ => ⟨hfin, ?_⟩
   obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_accepted hpre
   show (∃ req, _ ∧ _ ∧ _) ∧ _
-  unfold Spec.Entropy.Result.Requests
   rw [ho, hu]
-  exact ⟨⟨0, ht0, ht1, rfl⟩, hres⟩
+  exact ⟨⟨0, ht0, ht1, VG.Proof.RsaPkcs1Enc.padAsked_accepted hpre⟩, hres⟩
 
 theorem body_ok (c : PdChecked)
     (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
@@ -1916,7 +1914,7 @@ def pub (a s : State) : Prop :=
     (∀ j < 7, stackArg a j = stackArg s j) ∧ nB a = nB s ∧ eB a = eB s ∧ preW a = preW s ∧ trace a = trace s
 
 def contract (P : Nat) : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack P)).pre
+  pre := (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack P)).pre
   post := post
   pub := pub
 
@@ -1941,23 +1939,23 @@ def satState : State where
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 16⟩, ⟨0x20000, 896⟩]
 
 /-- It meets the shared contract with 16 bytes of stack for the callee's call. -/
-theorem sat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack 16)).pre s := by
-  sig_implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+theorem sat : ∃ s, (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack 16)).pre s := by
+  sig_implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
     AArch64.abi, AArch64.argRegs, stackArgs_seven, List.append_eq, rndStack] [satState, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using satState
 
-theorem implies (P : Nat) (hsat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack P)).pre s) :
-    (contract P).Implies (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack P)) where
+theorem implies (P : Nat) (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack P)).pre s) :
+    (contract P).Implies (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack P)) where
   pre := fun _ h => h
   post := by
     intro s u _ h
-    sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       AArch64.abi, AArch64.argRegs, stackArgs_seven, List.append_eq]
     obtain ⟨⟨req, h0, h1, hr⟩, hm⟩ := h
     exact ⟨⟨req, by rw [wordsAt_two, h0, h1]; rfl, hr⟩, hm⟩
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       AArch64.abi, AArch64.argRegs, stackArgs_seven, List.append_eq, List.getD_cons_succ,
       List.getD_cons_zero] at h
     obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6⟩ := h
@@ -2359,9 +2357,9 @@ precomputed public operation `c`, meets the shared contract with `c.stack + 2192
 bytes of stack. -/
 theorem code_verified (c : PdChecked)
     (hsat : ∃ s, (Proof.RsaPkcs1Enc.encryptPrecomputedContract AArch64.abi (c.stack + 1088)).pre s)
-    (hsat' : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack c.stack)).pre s) :
+    (hsat' : ∃ s, (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack c.stack)).pre s) :
     Verified AArch64.target (code (encName c) (encCode c))
-      (Spec.RsaPkcs1Enc.encryptRandomContract AArch64.abi (rndStack c.stack)) :=
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract AArch64.abi (rndStack c.stack)) :=
   Verified.of_correct (k := contract c.stack) (fun _ h => by
     obtain ⟨t, s', he, hq⟩ := code_ok c hsat (pre_of h)
     exact ⟨t, s', he, hq⟩) (code_constantTime c hsat) (implies c.stack hsat')

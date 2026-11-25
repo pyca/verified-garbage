@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.ScrubOut
 public import VerifiedGarbage.Proof.Rsa.Arm.ScrubTab
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Verified
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -50,7 +50,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOut (stack : Nat) :
-    PostOut (Spec.RsaKeyGen.keySearchContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 32) :=
+    PostOut (Proof.RsaKeyGen.keySearchAskedContract abi stack) (Spec.RsaKeyGen.keySearchSig.retBits 32) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaKeyGen.keySearchSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -94,13 +94,27 @@ theorem generateInit :
     generateInit_noFrames
 
 /-- `vg_rsa_generate`, calling the prime search over the round `v`. -/
+theorem generate_asked [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
+    VerifiedScrubbed target
+      (Impl.RsaKeyGen.Arm.Fn.generate (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
+        (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code))
+      (Proof.RsaKeyGen.keySearchAskedContract abi 304) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keySearchAskedApi)
+    { code := Proof.RsaKeyGen.Arm.Generate.genCode v, verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }
+    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩ v.mont.mulOk v.mont.dblOk).toOk frameOk_304 _)
+
 theorem generate [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
     VerifiedScrubbed target
       (Impl.RsaKeyGen.Arm.Fn.generate (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
         (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code))
       (Spec.RsaKeyGen.keySearchContract abi 304) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
-    { code := Proof.RsaKeyGen.Arm.Generate.genCode v, verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }
-    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩ v.mont.mulOk v.mont.dblOk).toOk frameOk_304 _)
+  keySearch_imp (generate_asked v) id
+
+theorem generate_public [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
+    Spec.RsaKeyGen.keySearchOut.Of abi
+      (Impl.RsaKeyGen.Arm.Fn.generate (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
+        (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code))
+      (Spec.RsaKeyGen.keySearchContract abi 304) :=
+  keySearch_public (generate_asked v)
 
 end VG.Proof.RsaKeyGen.Arm.Fn

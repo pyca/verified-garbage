@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 import VerifiedGarbage.Proof.Framework.Sig
@@ -18,7 +18,7 @@ open VG VG.X86
 abbrev stack : Nat := 284
 
 abbrev contract : Contract isa :=
-  Spec.RsaKeyGen.keySearchContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
+  Proof.RsaKeyGen.keySearchAskedContract (abi.withConsts VG.Impl.RsaKeyGen.TrialTable32.consts) stack
 
 /-- The arguments' regions: `key`, `used`, `rand`, `scratch`, `state` and the arguments. -/
 abbrev kR (s : State) : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
@@ -93,7 +93,7 @@ structure GenABI (s : State) : Prop where
   randLen : (arg s 4).toNat ≤ Spec.RsaKeyGen.primeEntropy (genLen s)
 
 theorem genABI_of {s : State} (h : contract.pre s) : GenABI s := by
-  sig_pre [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+  sig_pre [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
     argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts, VG.Proof.RsaKeyGen.X86.Candidate.packed_length,
     stackBelow] at h
   sig_split h

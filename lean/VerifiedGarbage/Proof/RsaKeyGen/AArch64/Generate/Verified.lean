@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Generate.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -1463,7 +1464,7 @@ open VG VG.AArch64 VG.Proof.MillerRabin.AArch64
 /-- The controller, given the key's proof (`Key.keyProof`, which the
 registration file imports). -/
 theorem gen_verified [Key.KeyProof] (v : RoundImpl) :
-    Verified target (genCode v) (Spec.RsaKeyGen.keySearchContract abi stackUse) :=
+    Verified target (genCode v) (Proof.RsaKeyGen.keySearchAskedContract abi stackUse) :=
   Verified.of_correct (gen_correct v) (gen_constantTime v) gen_implies
 
 end VG.Proof.RsaKeyGen.AArch64.Generate

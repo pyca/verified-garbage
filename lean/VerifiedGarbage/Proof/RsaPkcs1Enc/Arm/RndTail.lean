@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 -- separate module: its proofs (the ends of both paths) build in parallel with `RndInvoke`'s, which `RndVerified` also imports
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.RndScan
@@ -33,7 +34,7 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_dp wp_str wp_cmp op2_imm 
 def Res (P : EP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
   (∃ req, Spec.Rsa.wordsAt m (State.addr P.tape) 2 =
       [BitVec.ofNat 64 (Spec.RsaPkcs1Enc.padSearch P.pl (randB P σ)).used, BitVec.ofNat 64 req] ∧
-    (Spec.RsaPkcs1Enc.padSearch P.pl (randB P σ)).Requests (Spec.RsaPkcs1Enc.padEntropy P.pl) req) ∧
+    Proof.RsaPkcs1Enc.PadAsked P.pl (randB P σ) req) ∧
   match (Spec.RsaPkcs1Enc.padSearch P.pl (randB P σ)).outcome with
   | .accepted ps =>
     Spec.Rsa.publicPrecompute P.nB = some P.pw →
@@ -212,7 +213,7 @@ theorem fin_wp (h : D3 P σ s) : WP isa (.block [.mov .r0 (.reg .r4)]) s (Fin P 
   refine wp_mov (op2_reg _ _) fun t u => WP.block_nil ⟨⟨hs.1, hs.2.of_rest (u.rest (ws := [.r0]) (by simp)) u.mem⟩,
     ⟨0, ?_, ?_⟩, ?_⟩
   · rw [u.mem, hu]; exact wordsAt_tape (by omega_using [hN, hrl, hpl]) (by decide) tw
-  · simp only [Spec.Entropy.Result.Requests, ho]
+  · exact VG.Proof.RsaPkcs1Enc.padAsked_accepted (accept_of hs.1 hf)
   · rw [ho, u.mem, u.gpr, r4]
     exact fun hq => written_random (cr hq)
 
@@ -413,7 +414,8 @@ theorem exhausted_wp (h : R5 P σ s) (he : P.rl = P.pl + 128) : WP isa (.block e
       randB_length]
     obtain ⟨e0, e1, e2, e3⟩ := e
     exact wordsAt_tape (by omega_using [he, hpl]) (by decide) ⟨e0.trans rj.2.2.2.2, e1, e2, e3⟩
-  · simp only [Spec.Entropy.Result.Requests, ho]
+  · exact VG.Proof.RsaPkcs1Enc.padAsked_exhausted (hs.1.rejected rj.2.1)
+      (by rw [randB_length]; simp only [Spec.RsaPkcs1Enc.padEntropy]; omega_using [he])
   · rw [ho]
     refine ⟨u6.gpr, ?_⟩
     rw [u6.mem, tape_frame hs (by rw [m5.mem, m4.mem, m3.mem, m2.mem, u1.mem])]
@@ -484,9 +486,12 @@ theorem request_wp (h : R5 P σ s) (he : P.rl ≠ P.pl + 128) : WP isa (.block r
     rw [ue.mem, md.mem, mc.mem, mb.mem, ma.mem, mc.gpr, mb.gpr, ma.gpr, q10, hu]
     obtain ⟨e0, e1, e2, e3⟩ := e
     exact wordsAt_tape (by decide) (by omega_using [hpl]) ⟨e0, e1, e2.trans q11, e3⟩
-  · simp only [Spec.Entropy.Result.Requests, ho, Spec.Entropy.RequestValid, randB_length,
-      Spec.RsaPkcs1Enc.padEntropy]
-    omega_using [he, hrl, hc]
+  · refine VG.Proof.RsaPkcs1Enc.padAsked_entropy (hs.1.rejected rj.2.1)
+      (by rw [randB_length]; simp only [Spec.RsaPkcs1Enc.padEntropy]; omega_using [he, hrl]) ?_
+    have hk : cnt P σ (N P) = (VG.Proof.RsaPkcs1Enc.nz (randB P σ)).length := by
+      simp only [cnt, kept]
+      rw [(reject_of hs.1 rj.2.1).2.1, List.take_of_length_le (Nat.le_of_eq (randB_length P σ))]
+    rw [Nat.min_comm, randB_length, hk, Nat.add_comm P.pl P.rl]
   · rw [ho]
     refine ⟨ue.gpr, ?_⟩
     rw [ue.mem, tape_frame hs (by rw [md.mem, mc.mem, mb.mem, ma.mem, mc.gpr, mb.gpr, ma.gpr, m9])]

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.RISCV64.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.DecPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RISCV64.RndVerified
@@ -23,11 +24,23 @@ namespace VG.Proof.RsaPkcs1Enc.RISCV64.Fn
 
 open VG.RISCV64 VG.RISCV64.Scrub
 
-theorem encryptRandom :
+theorem encryptRandom_asked :
     VerifiedScrubbed target Impl.RsaPkcs1Enc.RISCV64.Fn.encryptRandom
-      (Spec.RsaPkcs1Enc.encryptRandomContract abi 4304) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi) (W := 4304)
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi 4304) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaPkcs1Enc.encryptRandomAskedApi) (W := 4304)
     { code := Impl.RsaPkcs1Enc.RISCV64.Random.code, verified := Rnd.code_verified }
     (Proof.Rsa.RISCV64.Scrub.pkcs1EncryptRandomOut _) (by lit_decide)
+
+theorem encryptRandom :
+    VerifiedScrubbed target
+      Impl.RsaPkcs1Enc.RISCV64.Fn.encryptRandom
+      (Spec.RsaPkcs1Enc.encryptRandomContract abi 4304) 32 :=
+  encryptRandom_imp (encryptRandom_asked) id
+
+theorem encryptRandom_public :
+    Spec.RsaPkcs1Enc.encryptRandomOut.Of abi
+      Impl.RsaPkcs1Enc.RISCV64.Fn.encryptRandom
+      (Spec.RsaPkcs1Enc.encryptRandomContract abi 4304) :=
+  Proof.RsaPkcs1Enc.encryptRandom_public (encryptRandom_asked)
 
 end VG.Proof.RsaPkcs1Enc.RISCV64.Fn

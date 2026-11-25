@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
@@ -86,17 +87,29 @@ theorem rnd_stub :
     stubSide (Impl.RsaPkcs1Enc.X86_64.Random.code "enc" (Impl.RsaPkcs1Enc.X86_64.Precomputed.code "pub" (.block [])))
       VecLevel.sse.level pubStack 2288 [] = true := by lit_decide
 
-/-- `Spec.RsaPkcs1Enc.encryptRandomApi`'s function as emitted over `v` meets
-its contract in constant time and returns without secret residue. -/
-theorem rnd_scrubbed (v : PublicImpl) :
+/-- `vg_rsa_pkcs1_encrypt_random` as emitted over `v` meets
+`encryptRandomAskedContract` in constant time and returns without secret residue. -/
+theorem rnd_asked (v : PublicImpl) :
     VerifiedScrubbed target (Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v))
-      (Spec.RsaPkcs1Enc.encryptRandomApi.contract X86_64.abi 2288) 32 :=
-  verifiedScrubbedAllFill (api := Spec.RsaPkcs1Enc.encryptRandomApi)
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract X86_64.abi 2288) 32 :=
+  verifiedScrubbedAllFill (api := Proof.RsaPkcs1Enc.encryptRandomAskedApi)
     { code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
       verified := Rnd.code_verified v
       spSafe := Rnd.code_spSafe v } _ (Proof.Rsa.X86_64.Scrub.pkcs1EncryptRandomOut _)
     (by have := v.side; unfold Rnd.encCode; fill_calls)
     (Nat.zero_le _) (Nat.le_refl _) (ha := rnd_stub)
+
+theorem rnd_scrubbed (v : PublicImpl) :
+    VerifiedScrubbed target
+      (Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v))
+      (Spec.RsaPkcs1Enc.encryptRandomContract X86_64.abi 2288) 32 :=
+  encryptRandom_imp (rnd_asked v) id
+
+theorem rnd_public (v : PublicImpl) :
+    Spec.RsaPkcs1Enc.encryptRandomOut.Of X86_64.abi
+      (Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v))
+      (Spec.RsaPkcs1Enc.encryptRandomContract X86_64.abi 2288) :=
+  Proof.RsaPkcs1Enc.encryptRandom_public (rnd_asked v)
 
 theorem rnd_spSafe (v : PublicImpl) :
     (Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v)).all

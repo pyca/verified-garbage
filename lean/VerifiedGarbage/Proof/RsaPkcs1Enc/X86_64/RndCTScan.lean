@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 -- separate module: its proofs build in parallel with `RndHeads`
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -47,7 +48,7 @@ open VG.Proof.Rsa.X86_64 (PublicImpl)
 def post (s u : State) : Prop :=
   let res := Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)
   (∃ req, u.mem.readW (s.gpr .rdx) 64 = BitVec.ofNat 64 res.used ∧
-    u.mem.readW (s.gpr .rdx + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧ res.Requests (cap s) req) ∧
+    u.mem.readW (s.gpr .rdx + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧ Proof.RsaPkcs1Enc.PadAsked (psLen s) (randB s) req) ∧
   match res.outcome with
   | .accepted ps => Spec.Rsa.publicPrecompute (nB s) = some (preW s) →
       Spec.RsaPkcs1Enc.writtenRandom u.mem (s.gpr .rdi) (kOf s) ((u.gpr .rax).setWidth 32)
@@ -149,9 +150,7 @@ theorem accept_ok (v : PublicImpl) {s t₀ u : State} (hp : RPre s) (hb : Before
   refine ⟨⟨hsp, hrd, hwr, hfr⟩, ?_, fun r hr' => ?_, ?_⟩
   · show (∃ req, _ ∧ _ ∧ _) ∧ _
     rw [ho, hu]
-    refine ⟨⟨0, ht0, ht1, ?_⟩, hres⟩
-    unfold Spec.Entropy.Result.Requests
-    rw [ho]
+    exact ⟨⟨0, ht0, ht1, VG.Proof.RsaPkcs1Enc.padAsked_accepted hpre⟩, hres⟩
   · have hn : r ∉ [Reg.rax, .rcx, .rdi, .r10, .r11] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -232,21 +231,20 @@ theorem reject_ok {s t₀ u : State} (hp : RPre s) (hb : Before s t₀) (hI : At
     fun r hr' => ?_⟩
   · have hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
     show (∃ req, _ ∧ _ ∧ _) ∧ _
-    unfold Spec.Entropy.Result.Requests
     have hcap : cap s = Spec.RsaPkcs1Enc.padEntropy (psLen s) := rfl
     by_cases hge : cap s ≤ (stackArg s 4).toNat
     · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_exhausted hnz (by rw [randB_length]; exact hge)
       obtain ⟨h0, h1, hr⟩ := hex hge
       rw [ho, hu, randB_length]
-      exact ⟨⟨0, by rw [h0]; simp, h1, rfl⟩, hr, outZ⟩
+      exact ⟨⟨0, by rw [h0]; simp, h1,
+        VG.Proof.RsaPkcs1Enc.padAsked_exhausted hnz (by rw [randB_length]; exact hge)⟩, hr, outZ⟩
     · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hcap, hge])
       obtain ⟨h0, h1, hr⟩ := hen (by omega_using [hge])
       rw [ho, hu]
       refine ⟨⟨_, h0, h1, ?_⟩, hr, outZ⟩
-      rw [randB_length]
-      constructor
-      · simp only [Nat.lt_min]; constructor <;> unfold cap Spec.RsaPkcs1Enc.padEntropy at * <;> omega_arith
-      · exact Nat.min_le_left _ _
+      refine VG.Proof.RsaPkcs1Enc.padAsked_entropy hnz (by rw [randB_length]; omega_using [hcap, hge]) ?_
+      rw [randB_length, ← kept_all, Nat.add_comm (stackArg s 4).toNat]
+      rfl
   · have hn : r ∉ [Reg.rdi, .r10, .rax] ++ [Reg.rdi, .r10, .rcx, .rdx] ++ [Reg.rax, .r8, .r9, .r10, .r11] := by
       simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -325,7 +323,7 @@ theorem post_lost {s : State} (hp : RPre s) {u u' : State} (hg : u'.gpr = u.gpr)
   all_goals intro h4; rw [hb, hax]; exact h4
 
 theorem code_correct (v : PublicImpl) (s : State)
-    (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) :
+    (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) :
     ∃ t s', Exec isa (code (encName v) (encCode v)) s t s' ∧ abiPreserved s s' ∧ post s s' := by
   obtain hp := pre_of h
   suffices hw : WP isa (code (encName v) (encCode v)) s fun s' => abiPreserved s s' ∧ post s s' by
@@ -368,7 +366,7 @@ def pub (a s : State) : Prop :=
     (∀ j < 9, stackArg a j = stackArg s j) ∧ nB a = nB s ∧ eB a = eB s ∧ preW a = preW s ∧ trace a = trace s
 
 def contract : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre
+  pre := (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre
   post := post
   pub := pub
 
@@ -391,17 +389,17 @@ def satState : State where
   rd := [⟨0x3000, 64⟩, ⟨0x4000, 1⟩, ⟨0x5000, 0⟩, ⟨0x6000, 0⟩, ⟨0x7000, 128⟩, ⟨0x10008, 72⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 16⟩, ⟨0x20000, 896⟩]
 
-theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack) where
+theorem implies : contract.Implies (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack) where
   pre := fun _ h => h
   post := by
     intro s u _ h
-    sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       abi, argRegs, stackArgs_nine, List.append_eq, List.range, List.range.loop]
     obtain ⟨⟨req, h0, h1, hr⟩, hm⟩ := h
     exact ⟨⟨req, by rw [wordsAt_two, h0, h1]; rfl, hr⟩, hm⟩
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       abi, argRegs, stackArgs_nine, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8⟩ := h
     have hl' : (List.map BitVec.toNat (nB s₁ ++ eB s₁) ++ List.map BitVec.toNat (preW s₁)) ++ trace s₁ =
@@ -424,7 +422,7 @@ theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptRandomContract abi r
       | 0, _ => exact a0 | 1, _ => exact a1 | 2, _ => exact a2 | 3, _ => exact a3 | 4, _ => exact a4
       | 5, _ => exact a5 | 6, _ => exact a6 | 7, _ => exact a7 | 8, _ => exact a8
   sat := by
-    implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+    implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
       stackArgs_nine, List.append_eq, rndStack, frameBytes, VG.Proof.RsaPkcs1Enc.X86_64.encStack,
       Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes]
       [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState

@@ -93,7 +93,7 @@ def searchPost (s t : State) : Prop :=
     ∃ requested, wordsAt t.mem (State.addr (stackArg s 7)) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (searchLen s), BitVec.ofNat 64 (primeEntropy (searchLen s)),
       BitVec.ofNat 64 requested] ∧
-      (searchResult s).Requests (primeEntropy (searchLen s)) requested
+      Asked (searchLen s) (searchResult s) requested
 
 /-- What timing may depend on: the arguments but the octets of `p` and the
 tape, `e`, the state's public words, and the result's status, consumption,

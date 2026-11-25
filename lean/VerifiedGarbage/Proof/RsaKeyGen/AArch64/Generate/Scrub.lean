@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Fn
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Generate.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.SideFill
@@ -49,9 +50,9 @@ theorem controller_side_closed : sideAll (fun i => !i.writesDit)
     (Impl.RsaKeyGen.AArch64.Generate.code (.call "" (.block [])) keyCall) = true := by lit_decide
 
 /-- `vg_rsa_key_search`. -/
-theorem keySearch_scrubbed [Key.KeyProof] (v : RoundImpl) :
+theorem keySearch_asked [Key.KeyProof] (v : RoundImpl) :
     VerifiedScrubbed target (Impl.RsaKeyGen.AArch64.Fn.keySearch v.suffix v.mont.mm v.roundMont.mm)
-      (Spec.RsaKeyGen.keySearchContract abi stackUse) 32 := by
+      (Proof.RsaKeyGen.keySearchAskedContract abi stackUse) 32 := by
   obtain ⟨hs, -⟩ := side_depth_of_fill2 (d := 13)
     (c := Impl.RsaKeyGen.AArch64.Fn.primeSearch v.suffix v.mont.mm v.roundMont.mm)
     (a := .call ("vg_rsa_keygen_candidate" ++ v.suffix)
@@ -71,5 +72,16 @@ theorem keySearch_scrubbed [Key.KeyProof] (v : RoundImpl) :
     (Nat.le_of_ble_eq_true (by kernel_rfl))
   exact verifiedScrubbedOf (W := 416) (gen_verified v) (Proof.Rsa.AArch64.Scrub.keySearchOk stackUse) (by decide)
     (Nat.le_trans (Nat.mul_le_mul_left 16 hd') (by decide)) hs' (.inr (.inl rfl))
+
+theorem keySearch_scrubbed [Key.KeyProof] (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.RsaKeyGen.AArch64.Fn.keySearch v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.RsaKeyGen.keySearchContract abi stackUse) 32 :=
+  keySearch_imp (keySearch_asked v) id
+
+theorem keySearch_public [Key.KeyProof] (v : RoundImpl) :
+    Spec.RsaKeyGen.keySearchOut.Of abi
+      (Impl.RsaKeyGen.AArch64.Fn.keySearch v.suffix v.mont.mm v.roundMont.mm)
+      (Spec.RsaKeyGen.keySearchContract abi stackUse) :=
+  Proof.RsaKeyGen.keySearch_public (keySearch_asked v)
 
 end VG.Proof.RsaKeyGen.AArch64.Generate
