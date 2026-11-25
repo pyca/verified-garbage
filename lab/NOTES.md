@@ -93,3 +93,20 @@ depth about 4 + 5 + 6 against 8 chains after each other.
 Experiment 4: (i) two independent chains of 12 `umulh` (36 cycles) with N
 `adds` (or `add`) after each: 36 cycles while the window holds both, 72 when not:
 find N. (ii) `mulA`: rows as now with `adc` ends; `mulT`: the tree.
+
+## 5. Experiment 4's result (run 45678496885)
+
+Two independent 36-cycle `umulh` chains with N operations after each, cycles a
+body: `add` N = 10..60: 36 36 36 37 42 49. `adds`: 36 36 51 59 95 100. So H5 holds:
+some 40 flag writes may be in flight, and past that the machine is serial. `mulT`
+(34 setters): 34.6 cycles, dependent 52.8, against 38.4 for the product in use
+(45 setters) and 30.6 for the square (37). (`mulA`'s line fell outside the log read.)
+
+So the cost is nearly the number of flag setters: about 0.85 cycle each, and the
+step has 405. An instruction that sets flags nobody reads wastes a slot: `adcs`
+at the end of a chain becomes `adc`, or `adds` `add`. Predicted: about 100 fewer
+setters, 300 cycles.
+
+Experiment 5: the step with every dead flag write removed (by liveness,
+`lab/gen.py: minflags`), alone, and with it the tree product's order. This
+touches no arithmetic.
