@@ -181,3 +181,40 @@ fewest instructions (four words, 910), scheduled so that they run at about 3.1:
 910 / 3.1 = 293. Two ways to fill what is lost to dependent neighbours:
 schedule across operations (interleave at the granularity of carry chains), or
 run one pair of operations on NEON.
+
+## 10. NEON beside scalar code, both in five limbs of 51 bits
+
+(Recognised: running NEON beside scalar code for this function is known from
+libraries; here it follows from sections 4-9 - what is short is flag registers
+and integer issue, and vector code uses neither - and from this repository's
+own X448 code, `Impl/Curve448/AArch64/Neon.lean`, `AArch64Weave.lean`, which
+does it for another field. No library's arrangement is used: the format, the
+split of the step and the products below are worked out here.)
+
+Format shared by both: five limbs, so no conversion but a split of each limb
+into 26 low bits and the rest (<= 27 bits for limbs < 2^53). Weights: lo_k at
+2^(51 k), hi_k at 2^(51 k + 26). lo lo at 51(i+j); the two cross terms at
+51(i+j) + 26; hi hi at 51(i+j) + 52 = 2 x 2^(51 (i+j+1)). Wrapping: x 19.
+
+A vector holds [lo of element 1, lo of 2, hi of 1, hi of 2] of one limb:
+`umull`/`umlal` multiply the lows, `umull2` the highs, and with one operand's
+halves exchanged (`ext`) the cross terms. 4 a pair of limbs: 100 for a pair of
+products; 55 for a pair of squares. Bounds: hi < 2^27, 19 hi < 2^32; a column
+< 2^63 (5 x 19 x 2 x 2^54 = 2^61.6 for hi hi doubled, + lo lo).
+Columns E_m (lo lo and 2 hi hi), X_m (cross). Reduction: one parallel round on
+the 10 columns (26 and 25 bits), limbs E + 2^26 X < 2^64, one parallel round on
+51 bits. Carries times 19 as shifts.
+
+Cost (vector operations, 2 a cycle, multiplies 1 a cycle): products 100 + about
+70 + 50 = 220; squares 55 + 70 + 35 = 160. Which operations:
+ - one square pair and one product pair on NEON (190 cycles of it), the scalar
+   side 3 products and 2 squares (about 190) and the front: balanced.
+ - AA|BB and x2|z2 (the second needs the first; about 200 of latency) beside
+   DA, CB, x3, t, z3 (160): two independent branches of the step, joined only at
+   its ends. So the whole of the two branches can be woven.
+Dispatch: about 380 + 780 = 1160 operations, 232 cycles at 5. Predicted 235-250
+(the prediction for 51-bit scalar code alone was 10-40% optimistic).
+
+Slots 48 bytes apart for `ldr q`. Constants (masks, 19) in memory, loaded.
+Experiment 8: `sq2`, `mu2` alone, and the step with the two branches woven
+(`st_neon`), and unwoven (`st_neon_seq`).
