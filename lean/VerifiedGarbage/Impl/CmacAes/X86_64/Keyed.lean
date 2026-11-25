@@ -7,23 +7,16 @@ public import VerifiedGarbage.Impl.CmacAes.X86_64
 
 `vg_cmac_aes_update` (`Impl/CmacAes/X86_64.lean`) chains its blocks by
 calls of `vg_aes_ctr32` on one block at a time, and the bitsliced
-implementation bitslices the whole key schedule at every call, about a third
-of its work on one block. `updateK` bitslices it once, with
-`vg_aes_ctr32_keys` (`keys`: `vg_aes_ctr32`'s prologue and key loop), into the
-scratch buffer the calls share, then chains the blocks by calls of
-`vg_aes_ctr32_keyed` (`ctr32K`: `vg_aes_ctr32` without its key loop), which
-finds the bitsliced round keys there, the last at byte `lastKey`, and leaves
-them as they are. Both are given the working space 512 bytes into the scratch
-buffer, as `vg_aes_ctr32` is (`Ctr32.scrOff`), and so use the same 1480
-bytes of it.
+implementation puts the whole key schedule in slices at every call. `updateK`
+does that once, with `vg_aes_ctr32_keys` (`keys`, the bitsliced engine's),
+into the scratch buffer the calls share, then chains the blocks by calls of
+`vg_aes_ctr32_keyed` (`ctr32K`: `vg_aes_ctr32` without its key setup), which
+leaves the round keys as they are. Both are given the working space 512 bytes
+into the scratch buffer, as `vg_aes_ctr32` is (`Ctr32.scrOff`).
 
-* `keys(schedule = rdi, rounds = rsi, scratch = r9)` saves the callee-saved
-  registers in their slots of the scratch buffer, bitslices the round keys
-  and restores the registers.
+* `keys(schedule = rdi, rounds = rsi, scratch = r9)`.
 * `ctr32K(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8, scratch = r9)`
-  is `vg_aes_ctr32` with the key loop replaced by the address of the first
-  round key, `r9 + lastKey - 64 rounds`, where the loop leaves it; it does
-  not read `schedule`.
+  does not read `schedule`.
 -/
 
 @[expose] public section
@@ -33,22 +26,13 @@ namespace VG.Impl.CmacAes.X86_64
 open VG.X86_64
 open VG.Impl.Aes.X86_64
 
-/-- `vg_aes_ctr32_keys`: the round keys bitsliced into the scratch buffer. -/
-def keys : Prog isa :=
-  .seq (.block (saveRegs ++ keySetup)) (.seq (.loop (.block keyBody) .ae) (.block restoreRegs))
+/-- `vg_aes_ctr32_keys`: the round keys in slices, in the scratch buffer. -/
+def keys : Prog isa := Sse.keys
 
-/-- `rdi := r9 + lastKey - 64 rounds`, the first bitsliced round key (`rax`
-is clobbered). -/
-def keyAt : List Instr :=
-  [.mov .rax (.reg .rsi), .shift .shl .rax 6, .mov .rdi (.reg .r9),
-   .alu .add .rdi (.imm (BitVec.ofNat 32 lastKey)), .alu .sub .rdi (.reg .rax)]
-
-/-- `vg_aes_ctr32_keyed`: `vg_aes_ctr32` from round keys already bitsliced
-into the scratch buffer. -/
+/-- `vg_aes_ctr32_keyed`: `vg_aes_ctr32` from round keys already in the
+scratch buffer. -/
 def ctr32K : Prog isa :=
-  .seq (.block (saveRegs ++ ctrSetup ++ keyAt))
-    (.seq (.block (Sse.srSetup ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
-      (.seq (.ite .e (.block []) (.loop Sse.group .ne)) (.block restoreRegs)))
+  .seq (.block [.mov .r11 (.reg .rcx), .alu .test .r8 (.reg .r8)]) (.ite .e (.block []) Sse.ctrLoop)
 
 /-- `vg_aes_ctr32_keyed`, to call with its working space 512 bytes into the
 scratch buffer (`ctrCall`). -/

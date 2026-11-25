@@ -119,11 +119,6 @@ structure BI (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State) (s₀
   frame : Frame [⟨D, 16 * n⟩, ⟨b, 1480⟩] s₀.mem s.mem
   done : Processed s₀.mem s.mem D n k fun i => f nr w (Spec.Aes.stateAt s₀.mem (D + BitVec.ofNat 64 (16 * i)))
 
-theorem bufR_sub (b : Addr) : Region.Sub (bufR b) ⟨b, 1480⟩ := sub_scratch b (by decide)
-
-theorem low416_sub (b : Addr) : Region.Sub ⟨b, 416⟩ ⟨b, 1480⟩ := fun x hx => by
-  simp only [Region.Contains] at hx ⊢; omega
-
 theorem data_sub (D : Addr) {n k : Nat} (hn : 16 * n ≤ 2 ^ 64) (hk : k < n) :
     Region.Sub ⟨D + BitVec.ofNat 64 (16 * k), 16⟩ ⟨D, 16 * n⟩ := fun x hx => by
   simp only [Region.Contains] at hx ⊢

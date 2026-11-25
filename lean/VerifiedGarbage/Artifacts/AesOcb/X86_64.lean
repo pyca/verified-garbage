@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 public import VerifiedGarbage.Impl.Gcm.X86_64
 public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 public import VerifiedGarbage.Proof.AesCcm.Ctr
