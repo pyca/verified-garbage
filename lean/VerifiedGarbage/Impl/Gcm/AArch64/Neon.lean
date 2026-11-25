@@ -198,4 +198,25 @@ def ghash : Prog isa :=
   .ite (.zero .x .x3) (.block [])
     (.seq (.block prologue) (.seq (.loop (.block body) (.nonzero .x .x3)) (.block epilogue)))
 
+/-! ## The powers from a key context
+
+`vg_aes_gcm_store_powers(ctx = x0, pw = x1)`: the hash subkey `H`, bytes
+240–255 of the key context (`Spec.Gcm.ctxH`), and `H'` as above, the first
+power; each of the others is the one before it times the key. They are kept as
+loaded, in `Y`, and stored with their halves swapped. -/
+
+/- Where the powers are stored. -/
+export VG.Impl.Gcm.AArch64.Pmull (pwOff)
+
+/-- `Y`, `H'ᵏ`, stored. -/
+def keyStore (k : Nat) : List Instr := [.vop (.ext U Y Y 8), .strq U .x1 (pwOff k)]
+
+/-- The next power, `H'ᵏ`. -/
+def keyStep (k : Nat) : List Instr := ([.vop (.mov A Y)] : List Instr) ++ mul ++ keyStore k
+
+def keyPowers : Prog isa :=
+  .block (loadRev A .x0 240 ++ twist ++ sumKey ++ forms kReg ++ forms mReg ++
+    ([.vop (.mov Y (kReg 3))] : List Instr) ++ keyStore 1 ++ keyStep 2 ++ keyStep 3 ++ keyStep 4 ++ keyStep 5 ++
+    keyStep 6 ++ keyStep 7 ++ keyStep 8)
+
 end VG.Impl.Gcm.AArch64.Neon

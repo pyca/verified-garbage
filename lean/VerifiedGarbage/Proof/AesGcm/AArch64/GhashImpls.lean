@@ -47,18 +47,14 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.BasePw
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
-public import VerifiedGarbage.Proof.Gcm.AArch64.KeyPowers
 public import VerifiedGarbage.Proof.Framework.AArch64.SideFillN
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
-public import VerifiedGarbage.Proof.Gcm.AArch64.Holes
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
-import VerifiedGarbage.Proof.Gcm.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 public import VerifiedGarbage.Impl.Gcm.AArch64.Neon
-public import VerifiedGarbage.Impl.Gcm.AArch64
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -73,6 +69,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Impl.Gcm.AArch64.Neon
+meta import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.Clears
+import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -895,10 +895,10 @@ end
 end
 
 /-!
-# AES-GCM on AArch64: `vg_ghash`, `vg_ghash_neon`, `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
+# AES-GCM on AArch64: `vg_ghash_neon`, `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
 
 Untrusted: everything here is checked by Lean. The `GhashImpl`s of
-`vg_ghash`, `vg_ghash_neon` (with the arithmetic its proof takes as a
+`vg_ghash_neon` (with the arithmetic its proof takes as a
 hypothesis, `Neon.arith`) and `vg_ghash_aes` and the `GhashPreparedImpl` of
 `vg_ghash_prepared8_aes`, from their proofs, apart from `Callee.lean`: only
 the variants need them, and their proofs import the algebra of
@@ -1219,6 +1219,157 @@ theorem twistV_key (H : Spec.Gcm.Block) :
 theorem arith : Arith :=
   ⟨cl_polyMul, fun a b _ hi => msb_cl1 a b hi, mulN_eq, twistV_key, Pmull.mulV_keyV⟩
 
+/-! ## The powers -/
+
+open VG VG.AArch64
+open VG.Impl.Gcm.AArch64.Neon
+open VG.Proof.Gcm.AArch64.Pmull (v_setV gpr_setV mem_setV rd_setV wr_setV exec_strq loadRev_ok rev64b_read keyPowersAArch64 pp x_φ_pp x_cancel pwOff_mod pwOff_le pwOff_sep satStateK)
+
+/-- `H'ᴷ` in `Y`, as loaded, and the powers up to `K` stored. -/
+structure KN (s₀ : State) (H : Spec.Gcm.Block) (K : Nat) (s : State) : Prop where
+  key : ∃ sv, ext8 sv sv = Pmull.keyV H ∧ Keys kReg s sv ∧ Keys mReg s (sv ^^^ ext8 sv sv)
+  y : x * ρ (s.v Y) = φ H ^ K
+  x1 : s.gpr .x1 = s₀.gpr .x1
+  wr : s.wr = s₀.wr
+  pw : ∀ k, 1 ≤ k → k < K → s.mem.read (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k
+
+theorem keyStore_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Spec.Gcm.Block} {K : Nat} (h1 : 1 ≤ K) (hK : K ≤ 8)
+    {s : State} (h : KN s₀ H K s) :
+    WP isa (.block (keyStore K)) s fun s' => KN s₀ H K s' ∧
+      ∀ k, 1 ≤ k → k ≤ K → s'.mem.read (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k := by
+  obtain ⟨-, hwr, -⟩ := hp
+  obtain ⟨sv, hx, hk, hm⟩ := h.key
+  have hc : ∀ k, k ≤ 8 → Region.Contains ⟨s₀.gpr .x1, 128⟩ (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 :=
+    fun k hk => contains_offset (by have := pwOff_le k (by omega_using [hk]); omega_using [this])
+      (by have := pwOff_le k (by omega_using [hk]); omega_using [this])
+  have hout : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 (pwOff K)) 16 := by
+    rw [h.wr, hwr, h.x1]; exact ⟨⟨s₀.gpr .x1, 128⟩, by simp, hc K hK⟩
+  have ho' : pwOff K < 4096 * 16 := by have := pwOff_le K (by omega_using [hK]); omega_using [this]
+  have hv : ext8 (s.v Y) (s.v Y) = pp H K := by
+    apply φ_inj
+    apply x_cancel
+    rw [φ_ext8_self, h.y, x_φ_pp]
+  refine WP.block_cons_iff.mpr ⟨s.setV U (ext8 (s.v Y) (s.v Y)), rfl, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq (pwOff_mod K) ho' hout, WP.block_nil ?_⟩
+  have hmem : ∀ k, 1 ≤ k → k ≤ K →
+      (s.mem.write (s.gpr .x1 + BitVec.ofNat 64 (pwOff K)) 16 ((s.setV U (ext8 (s.v Y) (s.v Y))).v U)).read
+        (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k := by
+    intro k hk1 hkK
+    rw [h.x1]
+    rcases (by omega_using [hkK] : k = K ∨ k < K) with rfl | hkK'
+    · rw [read_write16, v_setV, ite_eq_left rfl, hv]
+    · rw [Mem.read_write_sep (Offset.sep _ (pwOff_sep k (by omega_using [hK, hkK]) K (by omega_using [hK]) hk1 h1
+          (by omega_using [hkK'])) (by have := pwOff_le k (by omega_using [hK, hkK]); omega_using [this])
+          (by have := pwOff_le K (by omega_using [hK]); omega_using [this])) (by decide)]
+      exact h.pw k hk1 hkK'
+  have hv' : ∀ r, r ≠ U → (s.setV U (ext8 (s.v Y) (s.v Y))).v r = s.v r := fun r hr => by
+    rw [v_setV, ite_eq_right hr]
+  refine ⟨⟨⟨sv, hx, fun c hc => (hv' _ (kReg_ne c)).trans (hk c hc), fun c hc => (hv' _ (mReg_ne c)).trans (hm c hc)⟩,
+    ?_, h.x1, h.wr, fun k hk1 hkK => hmem k hk1 (Nat.le_of_lt hkK)⟩, hmem⟩
+  show x * ρ ((s.setV U (ext8 (s.v Y) (s.v Y))).v Y) = _
+  rw [hv' Y (by decide)]; exact h.y
+
+theorem keyStep_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) {H : Spec.Gcm.Block} {K : Nat} (hK : K + 1 ≤ 8) {s : State}
+    (h : KN s₀ H K s) (hpw : ∀ k, 1 ≤ k → k ≤ K → s.mem.read (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k) :
+    WP isa (.block (keyStep (K + 1))) s fun s' => KN s₀ H (K + 1) s' ∧
+      ∀ k, 1 ≤ k → k ≤ K + 1 → s'.mem.read (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 16 = pp H k := by
+  obtain ⟨sv, hx, hk, hm⟩ := h.key
+  rw [keyStep, List.append_assoc, WP.block_append_iff]
+  refine WP.block_cons_iff.mpr ⟨s.setV A (s.v Y), rfl, WP.block_nil ?_⟩
+  have hv : ∀ r, r ≠ A → (s.setV A (s.v Y)).v r = s.v r := fun r hr => by rw [v_setV, ite_eq_right hr]
+  rw [WP.block_append_iff]
+  refine WP.mono (mul_ok arith (s := s.setV A (s.v Y)) (sv := sv) (fun c hc => (hv _ (kReg_ne c)).trans (hk c hc))
+    (fun c hc => (hv _ (mReg_ne c)).trans (hm c hc))) fun s₁ ⟨y₁, o⟩ => ?_
+  refine keyStore_ok hp (by omega_using []) hK ⟨⟨sv, hx, fun c hc => ?_, fun c hc => ?_⟩, ?_, ?_, ?_, fun k hk1 hkK => ?_⟩
+  · rw [o.v _ (kReg_nmem' c), hv _ (kReg_ne c)]; exact hk c hc
+  · rw [o.v _ (mReg_nmem' c), hv _ (mReg_ne c)]; exact hm c hc
+  · rw [y₁, v_setV, ite_eq_left rfl, hx, ρ_mulV]
+    have e : x * φ (Pmull.keyV H) = φ H := by
+      rw [Pmull.keyV, φ_ext8_self, ρ_mulV, ρ_ext8_self]
+      linear_combination (φ H) * x2_φ_xInv2
+    rw [pow_succ, ← h.y]
+    linear_combination (x * ρ (s.v Y)) * e
+  · rw [o.gpr, gpr_setV]; exact h.x1
+  · rw [o.wr, wr_setV]; exact h.wr
+  · rw [o.mem, mem_setV]; exact hpw k hk1 (by omega_using [hkK])
+
+theorem keyPowers_post {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
+    WP isa Impl.Gcm.AArch64.Neon.keyPowers s₀ (keyPowersAArch64.post s₀) := by
+  have hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 240) 16 :=
+    ⟨⟨s₀.gpr .x0, 256⟩, by simp [hp.1], contains_offset (by decide) (by decide)⟩
+  simp only [Impl.Gcm.AArch64.Neon.keyPowers, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (loadRev_ok A .x0 240 s₀ rfl (by decide) hin) fun s₁ ⟨l₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (twist_ok s₁) fun s₂ ⟨t₂, kv₂, kg₂, m₂, rd₂, wr₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (sumKey_ok s₂) fun s₃ ⟨m₃, o₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (forms_ok kReg (.inl rfl) s₃) fun s₄ ⟨k₄, o₄⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (forms_ok mReg (.inr rfl) s₄) fun s₅ ⟨k₅, o₅⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.block_cons_iff.mpr ⟨s₅.setV Y (s₅.v (kReg 3)), rfl, WP.block_nil ?_⟩
+  have hx : ext8 (s₂.v (kReg 3)) (s₂.v (kReg 3)) = Pmull.keyV (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) := by
+    rw [t₂, l₁, rev64b_read]; exact arith.key _
+  have hv : ∀ r, r ≠ Y → (s₅.setV Y (s₅.v (kReg 3))).v r = s₅.v r := fun r hr => by rw [v_setV, ite_eq_right hr]
+  have h3 : s₅.v (kReg 3) = s₂.v (kReg 3) := by rw [o₅.v _ (kReg_nmem_m 3), o₄.v _ (by decide), o₃.v _ (by decide)]
+  have i₁ : KN s₀ (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) 1 (s₅.setV Y (s₅.v (kReg 3))) := by
+    refine ⟨⟨_, hx, fun c hc => ?_, fun c hc => ?_⟩, ?_, ?_, ?_, fun k h1 h2 => absurd h2 (by omega_using [h1])⟩
+    · rw [hv _ (kReg_ne c), o₅.v _ (kReg_nmem_m c), k₄ c hc, o₃.v _ (by decide)]
+    · rw [hv _ (mReg_ne c), k₅ c hc, o₄.v _ (by decide), m₃]
+    · rw [v_setV, ite_eq_left rfl, h3, pow_one, t₂, twistV_ρ', l₁, rev64b_read, ρ_ext8_self]; rfl
+    · rw [gpr_setV, o₅.gpr, o₄.gpr, o₃.gpr, kg₂ .x1 (by decide), o₁.gpr]
+    · rw [wr_setV, o₅.wr, o₄.wr, o₃.wr, wr₂, o₁.wr]
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStore_ok hp (by decide) (by decide) i₁) fun t₁ ⟨i₁, p₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 1) (by decide) i₁ p₁) fun t₂ ⟨i₂, p₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 2) (by decide) i₂ p₂) fun t₃ ⟨i₃, p₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 3) (by decide) i₃ p₃) fun t₄ ⟨i₄, p₄⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 4) (by decide) i₄ p₄) fun t₅ ⟨i₅, p₅⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 5) (by decide) i₅ p₅) fun t₆ ⟨i₆, p₆⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (keyStep_ok hp (K := 6) (by decide) i₆ p₆) fun t₇ ⟨i₇, p₇⟩ => ?_
+  refine WP.mono (keyStep_ok hp (K := 7) (by decide) i₇ p₇) fun t ⟨_, p⟩ => ?_
+  intro j hj
+  have e : ∀ k, 1 ≤ k → k ≤ 8 → t.mem.readW (s₀.gpr .x1 + BitVec.ofNat 64 (pwOff k)) 128 =
+      pp (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) k := fun k h1 h8 => by rw [Mem.readW, ← p k h1 h8]; rfl
+  refine ⟨?_, ?_⟩
+  · have := e (2 * j + 2) (by omega_using []) (by omega_using [hj])
+    rw [show pwOff (2 * j + 2) = 32 * j by
+      simp only [pwOff, show (2 * j + 2) % 2 = 0 by omega_using [], ↓reduceIte]; omega_using []] at this
+    exact this
+  · have := e (2 * j + 1) (by omega_using []) (by omega_using [hj])
+    rw [show pwOff (2 * j + 1) = 16 + 32 * j by
+      simp only [pwOff, show (2 * j + 1) % 2 = 1 by omega_using [], Nat.one_ne_zero, ↓reduceIte]; omega_using []] at this
+    exact this
+
+theorem keyPowers_correct (s : State) (hs : keyPowersAArch64.pre s) :
+    ∃ t s', Exec isa Impl.Gcm.AArch64.Neon.keyPowers s t s' ∧ abiPreserved s s' ∧ keyPowersAArch64.post s s' := by
+  obtain ⟨t, s', he, h₁, h₂⟩ := WP.gprs (rs := preserved) (keyPowers_post hs) (by decide +kernel) (by decide +kernel)
+  exact ⟨t, s', he, ⟨h₂, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₁⟩
+
+theorem keyPowers_ct : ConstantTime isa keyPowersAArch64.pre keyPowersAArch64.pub Impl.Gcm.AArch64.Neon.keyPowers := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h1
+  · exact h2
+
+theorem keyPowers_verified :
+    Verified AArch64.target Impl.Gcm.AArch64.Neon.keyPowers (Spec.Gcm.storePowersContract AArch64.abi) :=
+  Verified.of_correct keyPowers_correct keyPowers_ct (by
+    sig_implies [Spec.Gcm.storePowersContract, Spec.Gcm.storePowersSig, Spec.Gcm.storePowersParam,
+      Spec.Gcm.storePowersPost, keyPowersAArch64, AArch64.abi, AArch64.argRegs]
+      [satStateK, Proof.Gcm.AArch64.satState] using satStateK)
+
 end VG.Proof.Gcm.AArch64.Neon
 
 namespace VG.Proof.AesGcm.AArch64
@@ -1243,17 +1394,6 @@ def GhashWithImpl.aes : GhashWithImpl where
   side := by lit_decide
 
 namespace GhashImpl
-
-/-- `vg_ghash`, in the baseline ISA. -/
-def scalar : GhashImpl where
-  fn := ⟨"vg_ghash", Impl.Gcm.AArch64.ghash⟩
-  noFrames := by lit_decide
-  ok := Proof.Gcm.AArch64.ghash_correct
-  ct := Proof.Gcm.AArch64.ghash_ct
-  keepsV := by lit_decide
-  side := by lit_decide
-  suffix := ""
-  features := []
 
 /-- `vg_ghash_aes`, with PMULL (which Rust's `aes` feature stands for, with
 the AES instructions). -/
@@ -1281,6 +1421,10 @@ def neon : GhashImpl where
   side := by lit_decide
   suffix := "_neon"
   features := []
+
+/-- `vg_ghash_neon`, for the variants whose other functions need no CPU
+feature and whose names have no suffix. -/
+def scalar : GhashImpl := { neon with suffix := "" }
 
 end GhashImpl
 
@@ -1608,10 +1752,6 @@ theorem openToWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
   · exact side_of_holes hc hw (withStackArgScratch (768 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
 
-theorem storePowers_side :
-    scrubSide (withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers) 80 0 own [] = true := by
-  kernel_rfl
-
 end Scrubbed
 
 open Scrubbed
@@ -1749,12 +1889,12 @@ theorem openToWithPowersBase_scrubbed (g : GcmVariant) :
   exact verifiedScrubbedAll (api := Spec.Gcm.openToWithPowersApi) { code := _, verified := hv } own
     (Scrub.openToWithPowersOk _) (openToWithPowersBase_side g.impl.callsOk)
 
-/-- `vg_aes_gcm_store_powers` in the baseline ISA, as emitted, cleanup included. -/
+/-- `vg_aes_gcm_store_powers` in the baseline ISA, as emitted: its code, then
+the key and the powers it leaves in vector registers cleared. -/
 theorem storePowers_scrubbed :
-    VerifiedScrubbed AArch64.target Impl.AesGcm.AArch64.Fn.storePowers (Spec.Gcm.storePowersContract AArch64.abi 80) 0 :=
-  verifiedScrubbedAll (api := Spec.Gcm.storePowersApi)
-    { code := withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers
-      verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_framed } own Scrub.storePowersOk80 storePowers_side
+    VerifiedScrubbed AArch64.target Impl.AesGcm.AArch64.Fn.storePowers (Spec.Gcm.storePowersContract AArch64.abi) 0 :=
+  ⟨VG.AArch64.Clears.Verified.withClears Proof.Gcm.AArch64.Neon.keyPowers_verified (by decide),
+    VG.AArch64.RTaint.noResidue_of_check ⟨_, by taint_decide⟩ _, fun ty _ h => by cases ty <;> cases h⟩
 
 /-- `vg_aes_gcm_store_powers_aes`, with PMULL, as emitted: its code, then the
 powers of the hash key it leaves in vector registers cleared. -/
@@ -1770,7 +1910,7 @@ The postconditions read the memory on return only within the buffers
 (`Proof.Sm4Gcm.*PostOut_local`). -/
 
 namespace VG.Proof.Gcm.AArch64.Stitch
-open VG VG.AArch64 VG.AArch64.RegUpd
+open VG VG.AArch64
 open VG.Proof.Gcm.AArch64.Pmull
 open VG.Proof.AesGcm.AArch64.Stitch (PT tblR tbl_ok)
 open VG.Impl.Gcm.AArch64.Pmull (tReg sReg)
@@ -1784,7 +1924,7 @@ private theorem tableFromKey_ok {s : State}
   rw [WP.block_append_iff]
   refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil ?_⟩
   let u := s.write .x .x0 (s.read .x .x21 + BitVec.ofNat 64 0)
-  have hctx : u.gpr .x0 = s.gpr .x21 := by simp [u, State.read, gpr_write_self]
+  have hctx : u.gpr .x0 = s.gpr .x21 := by simp [u, State.read, VG.AArch64.RegUpd.gpr_write_self]
   have hu : InRegions (u.rd ++ u.wr) (u.gpr .x0 + BitVec.ofNat 64 240) 16 := by
     rw [hctx]; exact hin
   rw [WP.block_append_iff]
