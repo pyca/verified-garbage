@@ -240,7 +240,7 @@ theorem top_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.T}
       (.ite .ae (.block [.mov .eax (.imm 2)]) (.seq (enter si p) rest))))
     (hr : Piece Pre Pub (CtxO lay) (fun s₀ s => LeafEnd s₀ (W s₀) s ∧ B s₀ s) rest) :
     Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (fun s => (256 ≤ (arg s₀ 4).toNat ∧
-      s.gpr .eax = 2) ∨ B s₀ s) s₀ s') (top (enter si p) rest) := by
+      s.gpr .eax = 2 ∧ s.mem = (P0 s₀).mem) ∨ B s₀ s) s₀ s') (top (enter si p) rest) := by
   refine Piece.leaf W hsp hS.e16 hW hS.pubE ?_
   refine Piece.seq (chk_piece hS) (Piece.ite (fun s₀ => !decide ((arg s₀ 4).toNat < 256))
     (fun s₀ s h₀ h => ?_) (fun s₀ s₀' h₀ h₀' hq => ?_) (ret2_piece fun s₀ s h₀ o hc h2 => ?_)
@@ -248,7 +248,7 @@ theorem top_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.T}
   · show s.cf.map (!·) = _
     rw [h.2]; rfl
   · rw [(hS.pubA s₀ s₀' h₀ h₀' hq).1]
-  · exact ⟨⟨by rw [o.mem]; exact Frame.refl _ _, o.gpr _ (by decide), o.rd, o.wr⟩, .inl ⟨hc, h2⟩⟩
+  · exact ⟨⟨by rw [o.mem]; exact Frame.refl _ _, o.gpr _ (by decide), o.rd, o.wr⟩, .inl ⟨hc, h2, o.mem⟩⟩
 
 /-- `LeafEnd`, from `Ctx` and a frame of the memory from it. -/
 theorem CtxO.leafEnd (hS : Shape Pre Pub lay si p) {s₀ s s' : State} (h₀ : Pre s₀) (hc : CtxO lay s₀ s)
@@ -391,7 +391,7 @@ def signMessageKContract (p : Params) (K : KeyArg) {M : ISA} (A : Abi M) (stack 
     (pre := fun sk _msg _msgLen _ctx _ctxLen _rnd _sig _scratch m => K.pre m sk)
     (post := fun sk msg msgLen ctx ctxLen rnd sig _scratch m m' r =>
       match formatMessage (Spec.Sha3.bytesAt m ctx ctxLen.toNat) (Spec.Sha3.bytesAt m msg msgLen.toNat) with
-      | none => r = 2
+      | none => r = 2 ∧ Spec.Sha3.bytesAt m' sig p.sigLen = Spec.Sha3.bytesAt m sig p.sigLen
       | some M' =>
         Outcome (fun b => signInternal p b (Spec.Sha3.bytesAt m sk p.skLen) M' (Spec.Sha3.bytesAt m rnd 32)) r
           (Spec.Sha3.bytesAt m' sig p.sigLen))
@@ -1333,7 +1333,7 @@ theorem signMessage_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : 
     (tt : (VG.X86.taint.check (τr [.esp]) (.block [.mov .esi (.mem (argAt 7)),
       .alu .add .esi (.imm (BitVec.ofNat 32 (oE p)))]) ht).isSome = true) :
     Piece (SPre p K) (SPub p) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (fun s => (256 ≤ (arg s₀ 4).toNat ∧
-      s.gpr .eax = 2) ∨ SB p K s₀ s) s₀ s') (signMessage n f p) :=
+      s.gpr .eax = 2 ∧ s.mem = (P0 s₀).mem) ∨ SB p K s₀ s) s₀ s') (signMessage n f p) :=
   top_piece (sShape hK) tt (sW p K) sign_hW (topBody_nosp 7 p (signRest_nosp hf.nosp)) (signRest_piece hK hf)
 
 theorem signMessage_verified (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : SignFn p K f)
@@ -1352,8 +1352,9 @@ theorem signMessage_verified (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf
     (r := ⟨(arg s₀ 6).setWidth 64, p.sigLen⟩) hm
     (sign_hW s₀ h₀' _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self))).1
     (by dsimp only; have := h₀'.nSig; omega_arith))]
-  rcases hB with ⟨h8, h2⟩ | ⟨h8, hout⟩
-  · rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; exact h8)]; exact h2
+  rcases hB with ⟨h8, h2, hP⟩ | ⟨h8, hout⟩
+  · rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; exact h8), hP]
+    exact ⟨h2, p0_bytes (by decide) h₀'.sp h₀'.kSig (by dsimp only; have := h₀'.nSig; omega_arith)⟩
   · rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
     simp only [signInternal]
     rw [sMu_eq h₀' hK]

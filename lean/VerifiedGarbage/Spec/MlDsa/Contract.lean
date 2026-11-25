@@ -285,8 +285,8 @@ def signMessageSig (p : Params) : Sig where
 /-- With the private key at `sk`, the message `M` of `msg_len` bytes at
 `msg`, the context string `ctx` of `ctx_len` bytes at `ctx` and the 32 bytes
 of randomness at `rnd`: returns 2 if `ctx` is longer than 255 bytes
-(`ML-DSA.Sign(sk, M, ctx)`, Algorithm 2, lines 1–3, returns `⊥`), and `sig`
-is unspecified; otherwise writes the signature
+(`ML-DSA.Sign(sk, M, ctx)`, Algorithm 2, lines 1–3, returns `⊥`), and leaves
+`sig` as it was; otherwise writes the signature
 `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7) of the parameter set `p`,
 for the formatted message `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` (`formatMessage`,
 Algorithm 2, line 10), to `sig`, and returns 1; or returns 0 (see
@@ -295,7 +295,7 @@ def signMessageContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : 
   (signMessageSig p).contract A
     (post := fun sk msg msgLen ctx ctxLen rnd sig _scratch m m' r =>
       match formatMessage (bytesAt m ctx ctxLen.toNat) (bytesAt m msg msgLen.toNat) with
-      | none => r = 2
+      | none => r = 2 ∧ bytesAt m' sig p.sigLen = bytesAt m sig p.sigLen
       | some M' =>
         Outcome (fun b => signInternal p b (bytesAt m sk p.skLen) M' (bytesAt m rnd 32)) r
           (bytesAt m' sig p.sigLen))
@@ -396,7 +396,7 @@ def signMessageApi (p : Params) (module name : String) : Api where
     at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of \
     the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), \
     `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. " ++ outcomeDoc ++ " " ++
-    contextDoc ++ ": `*sig` is then unspecified." ++ "\n\n\
+    contextDoc ++ ": `*sig` is then unchanged." ++ "\n\n\
     Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection \
     sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first \
     32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash \

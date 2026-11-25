@@ -276,6 +276,7 @@ macro_rules! ml_dsa {
                 $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 match r {
                     1 => Ok(sig),
+                    // The contract leaves `sig` as it was: zeros.
                     2 => Err(MlDsaError::ContextTooLong),
                     // A loop reaches its bound with probability about 2^-256
                     // or less.
@@ -534,6 +535,7 @@ macro_rules! ml_dsa {
                 $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 match r {
                     1 => Ok(sig),
+                    // The contract leaves `sig` as it was: zeros.
                     2 => Err(MlDsaError::ContextTooLong),
                     // A loop reaches its bound with probability about 2^-256
                     // or less.

@@ -166,7 +166,7 @@ def preparedSignMessageContract (p : Params) {M : ISA} (A : Abi M)
     (pre := fun sk _msg _msgLen _ctx _ctxLen _rnd _sig _scratch m => PreparedSecretKey p m sk)
     (post := fun sk msg msgLen ctx ctxLen rnd sig _scratch m m' r =>
       match formatMessage (bytesAt m ctx ctxLen.toNat) (bytesAt m msg msgLen.toNat) with
-      | none => r = 2
+      | none => r = 2 ∧ bytesAt m' sig p.sigLen = bytesAt m sig p.sigLen
       | some M' =>
         Outcome (fun b => signInternal p b (bytesAt m sk p.skLen) M' (bytesAt m rnd 32)) r
           (bytesAt m' sig p.sigLen))

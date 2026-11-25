@@ -179,7 +179,7 @@ theorem signMessageOut : PostOut (signMessageContract p RISCV64.abi stack) ((sig
       have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.2.1
       show match formatMessage (Spec.Sha3.bytesAt m ctx ((ArgWord.int RISCV64.abi.ptrBits).ofRaw cl).toNat)
           (Spec.Sha3.bytesAt m msg ((ArgWord.int RISCV64.abi.ptrBits).ofRaw ml).toNat) with
-        | none => r = 2
+        | none => r = 2 ∧ Spec.Sha3.bytesAt m₂ sig p.sigLen = Spec.Sha3.bytesAt m sig p.sigLen
         | some M' => Outcome (fun b => signInternal p b (Spec.Sha3.bytesAt m sk p.skLen) M'
             (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
       rw [e]
@@ -195,7 +195,7 @@ theorem preparedSignMessageOut :
       have e := bytesAt_of (n := p.sigLen) (Nat.le_refl _) hb.2.2.2.2.1
       show match formatMessage (Spec.Sha3.bytesAt m ctx ((ArgWord.int RISCV64.abi.ptrBits).ofRaw cl).toNat)
           (Spec.Sha3.bytesAt m msg ((ArgWord.int RISCV64.abi.ptrBits).ofRaw ml).toNat) with
-        | none => r = 2
+        | none => r = 2 ∧ Spec.Sha3.bytesAt m₂ sig p.sigLen = Spec.Sha3.bytesAt m sig p.sigLen
         | some M' => Outcome (fun b => signInternal p b (Spec.Sha3.bytesAt m sk p.skLen) M'
             (Spec.Sha3.bytesAt m rnd 32)) r (Spec.Sha3.bytesAt m₂ sig p.sigLen)
       rw [e]

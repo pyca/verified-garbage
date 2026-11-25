@@ -1100,5 +1100,6 @@ theorem signMessage_wp {p : Params} {prepared : Bool} {n : String} {c : Prog isa
       rw [o2.gpr r h0, o1.gpr r h12]
     · sig_post [signMessageContract, signMessageSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
       rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8]), Proof.MlKem.Arm.setWidth_append32, e2]
+      exact ⟨rfl, by rw [o2.mem, o1.mem]⟩
 
 end VG.Proof.MlDsa.Arm.Message

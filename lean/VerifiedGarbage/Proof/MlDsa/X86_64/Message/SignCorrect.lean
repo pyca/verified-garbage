@@ -208,7 +208,8 @@ theorem signRegs_vals {p : Params} {prep : Bool} {ys : List Addr} {s s2 : State}
 /-- The postcondition of `signMessageContract` and `preparedSignMessageContract`, spelled out. -/
 def SPost (p : Params) (s s' : State) : Prop :=
   match formatMessage (bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) (bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat) with
-  | none => (s'.gpr .rax).setWidth 32 = 2
+  | none => (s'.gpr .rax).setWidth 32 = 2 ∧
+    bytesAt s'.mem (stackArg s 0) p.sigLen = bytesAt s.mem (stackArg s 0) p.sigLen
   | some M' =>
     Outcome (fun b => signInternal p b (bytesAt s.mem (s.gpr .rdi) p.skLen) M' (bytesAt s.mem (s.gpr .r9) 32))
       ((s'.gpr .rax).setWidth 32) (bytesAt s'.mem (stackArg s 0) p.sigLen)
@@ -304,7 +305,7 @@ theorem signMessage_wp {p : Params} {prep : Bool} {N : List String} {n : String}
     · rw [RegUpd.gpr_setReg_of_ne _ _ (fun e => by subst e; revert hr; decide), hg1]
     · unfold SPost
       rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; omega_using [h8])]
-      rfl
+      exact ⟨rfl, by rw [RegUpd.mem_setReg, hm1]⟩
 
 theorem sPost_of {p : Params} {s s' : State} (h : SPost p s s') : (signMessageContract p X86_64.abi 224).post s s' := by
   sig_post [signMessageContract, signMessageSig, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]

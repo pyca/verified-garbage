@@ -436,7 +436,7 @@ theorem verifyMessageCached_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa
     (tt : (VG.X86.taint.check (τr [.esp]) (.block [.mov .esi (.mem (argAt 6)),
       .alu .add .esi (.imm (BitVec.ofNat 32 (oE p)))]) ht).isSome = true) :
     Piece (CPre p K) (VPub p 8) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (fun s => (256 ≤ (arg s₀ 4).toNat ∧
-      s.gpr .eax = 2) ∨ VB p K 8 s₀ s) s₀ s') (verifyMessageCached n f p) :=
+      s.gpr .eax = 2 ∧ s.mem = (P0 s₀).mem) ∨ VB p K 8 s₀ s) s₀ s') (verifyMessageCached n f p) :=
   top_piece ((vShape hK).pre_mono fun _ h => h.toVPre) tt (vW p K 8) (fun s₀ h₀ => verify_hW s₀ h₀.toVPre)
     (topBody_nosp 6 p (cachedRest_nosp hf.nosp)) (cachedRest_piece hK hf)
 
@@ -496,7 +496,7 @@ theorem verifyMessageCached_verified (hK : K.Ok p.pkLen) {VP : Mem → Addr → 
   refine ⟨habi, ?_⟩
   sig_post [verifyMessageKContract, verifyMessageKSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
   rw [Proof.MlKem.X86.setWidth_append32, hax]
-  rcases hB with ⟨h8, h2⟩ | ⟨h8, hout⟩
+  rcases hB with ⟨h8, h2, -⟩ | ⟨h8, hout⟩
   · rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length]; exact h8)]; exact h2
   · rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
     simp only [verifyInternal, messageRep, pkTr, Proof.MlKem.bytesAt_length]
