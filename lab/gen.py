@@ -609,8 +609,51 @@ def st_n3():
     return front_p() + weave(s1, sq2k(NS['AA'], NS['A'], NS['BB'], NS['B'])) + weave(m51s, sq2k(NS['x3'], None, NS['z3'], None, sc_x3t_pre())) + mul51(NS['z3'], NS['x1'], NS['z3'])
 B['sq2k'] = sq2k(NS['AA'], NS['A'], NS['BB'], NS['B']); B['mu2k'] = mu2k(NS['x2'], NS['A'], NS['B'], NS['z2'], NS['C'], NS['D'])
 B['sn2'] = ldstfix(['mov x19, #100'] + st_n2(False, True)); B['sn3'] = ldstfix(['mov x19, #100'] + st_n2(True, True)); B['sn4'] = ldstfix(['mov x19, #100'] + st_n3())
+
+# ---- experiment 11: x25 = 2^51 - 1, x26 = 19, x27 = 2^52 - 2, x28 = 2^52 - 38 ----
+KREG = ['mov x25, #0xffff','movk x25, #0xffff, lsl #16','movk x25, #0xffff, lsl #32','movk x25, #7, lsl #48','mov w26, #19','mov x27, #0xfffe','movk x27, #0xffff, lsl #16','movk x27, #0xffff, lsl #32','movk x27, #0xf, lsl #48','sub x28, x27, #36']
+P2K = ['x28', 'x27', 'x27', 'x27', 'x27']
+def carryK(o, seq):
+    C = ['x2','x3','x4','x5','x6']
+    if seq:
+        r = []
+        for k in range(4):
+            r += [f'extr x2, {HI[k]}, {LO[k]}, #51', f'and {LO[k]}, {LO[k]}, x25', f'adds {LO[k+1]}, {LO[k+1]}, x2', f'adc {HI[k+1]}, {HI[k+1]}, x3']
+            r[-1] = f'adc {HI[k+1]}, {HI[k+1]}, x3'
+        r = ['mov w3, #0'] + r + [f'extr x2, {HI[4]}, {LO[4]}, #51', f'and {LO[4]}, {LO[4]}, x25', 'mul x2, x2, x26', f'add {LO[0]}, {LO[0]}, x2', f'lsr x2, {LO[0]}, #51', f'and {LO[0]}, {LO[0]}, x25', f'add {LO[1]}, {LO[1]}, x2']
+        return r + st5(o, LO)
+    r = [f'extr {C[k]}, {HI[k]}, {LO[k]}, #51' for k in range(5)] + [f'and {LO[k]}, {LO[k]}, x25' for k in range(5)] + ['mul x6, x6, x26'] + [f'add {LO[k]}, {LO[k]}, {C[(k+4)%5]}' for k in range(5)]
+    r += [f'lsr {C[k]}, {LO[k]}, #51' for k in range(5)] + [f'and {LO[k]}, {LO[k]}, x25' for k in range(5)] + ['mul x6, x6, x26'] + [f'add {LO[k]}, {LO[k]}, {C[(k+4)%5]}' for k in range(5)]
+    return r + st5(o, LO)
+def mulK(o, a, b, seq=False):
+    r = mul51regs(a)
+    r = [l.replace('x22', 'x26') if l.startswith('mul x') and l.endswith('x22') and l.split()[1] in ('x6,','x7,','x8,','x9,') else l for l in r if l != 'mov w22, #19']
+    return ld5(b, B5) + r + carryK(o, seq)
+def midK():
+    O = ['x6','x7','x8','x9','x10']; H = ['x11','x12','x13','x14','x15']
+    r = ld5(NS['AA'], B5) + ld5(NS['BB'], O) + [x for k in range(5) for x in (f'sub {O[k]}, {B5[k]}, {O[k]}', f'add {O[k]}, {O[k]}, {P2K[k]}')] + st5(NS['E'], O)
+    r += ['mov w16, #0xdb41', 'movk w16, #1, lsl #16'] + [f'umulh {H[k]}, {O[k]}, x16' for k in range(5)] + [f'mul {O[k]}, {O[k]}, x16' for k in range(5)]
+    r += [f'extr {H[k]}, {H[k]}, {O[k]}, #51' for k in range(5)] + [f'and {O[k]}, {O[k]}, x25' for k in range(5)] + ['mul x15, x15, x26']
+    return r + [f'add {B5[k]}, {B5[k]}, {O[k]}' for k in range(5)] + [f'add {B5[k]}, {B5[k]}, {H[(k+4)%5]}' for k in range(5)] + st5(NS['F'], B5)
+def frontK():
+    return [l for l in front_p()[:6]] + [l.replace('x23', 'x28').replace('x24', 'x27') for l in front_p()[6 + len(p2()):]]
+def st_n6(sq, K, seq):
+    if not K: 
+        s1, _ = sbranch(); m2 = mid() + mul51(NS['x2'], NS['AA'], NS['BB']) + mul51(NS['z2'], NS['E'], NS['F']); last = mul51(NS['z3'], NS['x1'], NS['z3']); f = front_p()
+    else:
+        s1 = mulK(NS['D'], NS['D'], NS['A'], seq) + mulK(NS['C'], NS['C'], NS['B'], seq)
+        m2 = midK() + mulK(NS['x2'], NS['AA'], NS['BB'], seq) + mulK(NS['z2'], NS['E'], NS['F'], seq); last = mulK(NS['z3'], NS['x1'], NS['z3'], seq); f = frontK()
+    return f + weave(s1, sq(NS['AA'], NS['A'], NS['BB'], NS['B'])) + weave(m2, sq(NS['x3'], None, NS['z3'], None, sc_x3t_pre())) + last
+def sq2(o1, a1, o2, a2, pre=None, _f=sq2):
+    if pre is None: return _f(o1, a1, o2, a2)
+    n = len([f'ldr q31'] + split(0, 0, [0,1,2,3,4])); r = _f(o1, 0, o2, 0)
+    return r[:1] + pre + r[n:]
+B['sn5'] = ldstfix(['mov x19, #100'] + st_n6(sq2, False, False))
+B['sn6'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2, True, False))
+B['sn6k'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2k, True, False))
+B['sn7'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2, True, True))
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}

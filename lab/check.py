@@ -56,7 +56,7 @@ for _ in range(200):
     mm = bytearray(m); emu.run(gen.KC + gen.ALL['sq2k'], reg(), mm); assert l5(mm, S_['AA']) % P == a*a % P and l5(mm, S_['BB']) % P == b*b % P
     mm = bytearray(m); emu.run(gen.KC + gen.ALL['mu2k'], reg(), mm); assert l5(mm, S_['x2']) % P == a*b % P and l5(mm, S_['z2']) % P == cc*d % P
     mm = bytearray(m); emu.run(gen.KC + gen.ALL['mu2'], reg(), mm); assert l5(mm, S_['x2']) % P == a*b % P and l5(mm, S_['z2']) % P == cc*d % P
-    for name in ('sn0', 'sn1', 'sn2', 'sn3', 'sn4'):
+    for name in ('sn0', 'sn1', 'sn2', 'sn3', 'sn4', 'sn5', 'sn6', 'sn6k', 'sn7'):
         m = bytearray(8192)
         for n in ('x1','x2','z2','x3','z3'): put5(m, S_[n], 2**51 + 2**20)
         for k in range(2000, 2300): m[k] = random.getrandbits(1)
