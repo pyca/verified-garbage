@@ -34,9 +34,12 @@ def m : Nat → Reg
 /-- One more temporary. -/
 def u7 : Reg := .a7
 
-/-- `d := n ⋙ k`, through `t4` (`RV64I` has no rotate; `n` is not `t4`). -/
+/-- The rotations' temporary. -/
+def rt : Reg := .t4
+
+/-- `d := n ⋙ k`, through `rt` (`RV64I` has no rotate; `n` is not `rt`). -/
 def rorI (d n : Reg) (k : Nat) : List Instr :=
-  [shrI .t4 n k, shlI d n (64 - k), xorR d d .t4]
+  [shrI rt n k, shlI d n (64 - k), xorR d d rt]
 
 /-- Constants into slots from `base` (mask `k` in slot `base + k - 1`),
 through `t0` and `t1`. -/
