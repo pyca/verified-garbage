@@ -187,3 +187,11 @@ theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (
 
 include hf in
 theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.a24add (32 * o.val) (32 * b.val) (32 * a.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opA24Add o b a (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (hf.a24add hs (by omega_arith) (by omega_arith) (by omega_arith)) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
+
+
+end VG.Proof.X25519.X86_64

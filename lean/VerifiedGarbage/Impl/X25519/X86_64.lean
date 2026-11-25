@@ -3,6 +3,16 @@ module
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Spec.X25519
 
+/-!
+# X25519: x86-64 implementation
+
+`vg_x25519(out = rdi, scalar = rsi, point = rdx, scratch = rcx)`, on four-word
+field elements in a working space of 4096 bytes: the scalar's bits spread to a
+byte each, the Montgomery ladder of RFC 7748 §5, and the inversion by divsteps.
+-/
+
+@[expose] public section
+
 namespace VG.Impl.X25519.X86_64
 
 open VG.X86_64
@@ -108,6 +118,7 @@ def reduceLoC : List Instr :=
 
 /-- `r8–r11 + 2²⁵⁶ r12` (`r12` small) folded at bit 255: bit 255 shifted out
 into CF (`shl`) and in as `q = 2 r12 + bit 255` (`adc`), `r11` shifted back
+(`shr`), and `19 q` added, where the sum is below `2²⁵⁵ + 19 q`. -/
 def fold19X : List Instr :=
   [.shift .shl .r11 1, .alu .adc .r12 (.reg .r12), .shift .shr .r11 1, .imul3 .rax .r12 19,
     .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),

@@ -270,3 +270,5 @@ theorem store4Z_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : S
     State.store64, w o (by omega), w (o + 8) (by omega), w (o + 16) (by omega),
     w (o + 24) (by omega), ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨rfl, fun _ => trivial, trivial, trivial, trivial⟩
+
+end VG.Proof.X25519.X86_64
