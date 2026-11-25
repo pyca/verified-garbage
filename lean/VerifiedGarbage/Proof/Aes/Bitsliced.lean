@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 Slice `j` (a word, `W j`) holds bit `j` of every byte. A word of `16 B` bits
 holds `B` states: the byte of row `r` and column `c` of state `k` is at
-position `k + B (c + 4 r)` (`at_`). In *form 1*, the form of states that
+position `k + B (c + 4 r)` (`posAt`). In *form 1*, the form of states that
 ShiftRows was left out of, the byte of column `c` is at column `c + r`
 instead. `BsRel B f W S` says that the slices `W` hold the states `S` in
 form `f`; the lemmas say what the layers do to it, the linear ones given as
@@ -57,7 +57,7 @@ theorem xorBits_map {w : Nat} (W : Nat → BitVec w) (l : List (Nat × Nat)) (h 
 /-! ## The layout -/
 
 /-- The position of byte `n` (`r + 4 c`) of state `k` in form `f`. -/
-def at_ (B : Nat) (f : Bool) (n k : Nat) : Nat :=
+def posAt (B : Nat) (f : Bool) (n k : Nat) : Nat :=
   k + B * ((if f then (n / 4 + n % 4) % 4 else n / 4) + 4 * (n % 4))
 
 /-- The byte at position `p` in form `f`, of state `p % B`. -/
@@ -65,7 +65,7 @@ def byteAt (B : Nat) (f : Bool) (p : Nat) : Nat :=
   p / B / 4 + 4 * (if f then (p / B % 4 + 4 - p / B / 4) % 4 else p / B % 4)
 
 def BsRel {w : Nat} (B : Nat) (f : Bool) (W : Nat → BitVec w) (S : Nat → Spec.Aes.State) : Prop :=
-  ∀ j < 8, ∀ n < 16, ∀ k < B, (W j).getLsbD (at_ B f n k) = ((S k).getD n 0).getLsbD j
+  ∀ j < 8, ∀ n < 16, ∀ k < B, (W j).getLsbD (posAt B f n k) = ((S k).getD n 0).getLsbD j
 
 /-- The grid's facts, which a finite check proves. -/
 theorem grid : ∀ f : Bool, ∀ n < 16,
@@ -73,24 +73,24 @@ theorem grid : ∀ f : Bool, ∀ n < 16,
     (let g := (if f then (n / 4 + n % 4) % 4 else n / 4) + 4 * (n % 4)
      g / 4 + 4 * (if f then (g % 4 + 4 - g / 4) % 4 else g % 4) = n) := by decide
 
-theorem at_lt {B : Nat} (f : Bool) {n k : Nat} (hn : n < 16) (hk : k < B) : at_ B f n k < 16 * B := by
+theorem posAt_lt {B : Nat} (f : Bool) {n k : Nat} (hn : n < 16) (hk : k < B) : posAt B f n k < 16 * B := by
   have h := (grid f n hn).1
-  unfold at_
+  unfold posAt
   generalize (if f then (n / 4 + n % 4) % 4 else n / 4) + 4 * (n % 4) = g at h ⊢
   have : B * (g + 1) ≤ B * 16 := Nat.mul_le_mul_left _ h
   rw [Nat.mul_add] at this
   omega
 
-theorem at_div {B : Nat} (f : Bool) (n : Nat) {k : Nat} (hk : k < B) :
-    at_ B f n k / B = (if f then (n / 4 + n % 4) % 4 else n / 4) + 4 * (n % 4) := by
-  rw [at_, Nat.add_comm, Nat.mul_add_div (Nat.zero_lt_of_lt hk), Nat.div_eq_of_lt hk, Nat.add_zero]
+theorem posAt_div {B : Nat} (f : Bool) (n : Nat) {k : Nat} (hk : k < B) :
+    posAt B f n k / B = (if f then (n / 4 + n % 4) % 4 else n / 4) + 4 * (n % 4) := by
+  rw [posAt, Nat.add_comm, Nat.mul_add_div (Nat.zero_lt_of_lt hk), Nat.div_eq_of_lt hk, Nat.add_zero]
 
-theorem at_mod {B : Nat} (f : Bool) (n : Nat) {k : Nat} (hk : k < B) : at_ B f n k % B = k := by
-  rw [at_, Nat.add_comm, Nat.mul_add_mod, Nat.mod_eq_of_lt hk]
+theorem posAt_mod {B : Nat} (f : Bool) (n : Nat) {k : Nat} (hk : k < B) : posAt B f n k % B = k := by
+  rw [posAt, Nat.add_comm, Nat.mul_add_mod, Nat.mod_eq_of_lt hk]
 
-theorem byteAt_at {B : Nat} (f : Bool) {n k : Nat} (hn : n < 16) (hk : k < B) :
-    byteAt B f (at_ B f n k) = n := by
-  simp only [byteAt, at_div f n hk]
+theorem byteAt_posAt {B : Nat} (f : Bool) {n k : Nat} (hn : n < 16) (hk : k < B) :
+    byteAt B f (posAt B f n k) = n := by
+  simp only [byteAt, posAt_div f n hk]
   exact (grid f n hn).2
 
 theorem BsRel.congr {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S S' : Nat → Spec.Aes.State}
@@ -103,7 +103,7 @@ theorem BsRel.congrW {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S : Nat �
 
 theorem BsRel.byte {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → Spec.Aes.State}
     (h : BsRel B f W S) {n k : Nat} (hn : n < 16) (hk : k < B) :
-    bsByte W (at_ B f n k) = (S k).getD n 0 :=
+    bsByte W (posAt B f n k) = (S k).getD n 0 :=
   byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, h j hj n hn k hk]
 
 /-- The bytes of a `Vector.ofFn` state. -/
@@ -127,7 +127,7 @@ theorem BsRel.map {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S : Nat → 
     (h : BsRel B f W S) (g : Byte → Byte)
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = (g (bsByte W p)).getLsbD j) :
     BsRel B f W' fun k => (S k).map g := fun j hj n hn k hk => by
-  rw [hW j hj _ (at_lt f hn hk), h.byte hn hk, getD_map g _ hn]
+  rw [hW j hj _ (posAt_lt f hn hk), h.byte hn hk, getD_map g _ hn]
 
 /-- ShiftRows, left out: form 0 of the states is form 1 of the shifted ones. -/
 theorem BsRel.skipShift {w B : Nat} {W : Nat → BitVec w} {S : Nat → Spec.Aes.State}
@@ -137,7 +137,7 @@ theorem BsRel.skipShift {w B : Nat} {W : Nat → BitVec w} {S : Nat → Spec.Aes
         (n % 4 + 4 * ((n / 4 + n % 4) % 4)) / 4 + 4 * ((n % 4 + 4 * ((n / 4 + n % 4) % 4)) % 4) ∧
         n % 4 + 4 * ((n / 4 + n % 4) % 4) < 16 := by decide
     have := h j hj (n % 4 + 4 * ((n / 4 + n % 4) % 4)) (e n hn).2 k hk
-    simp only [at_, Bool.false_eq_true, ite_false, ite_true] at this ⊢
+    simp only [posAt, Bool.false_eq_true, ite_false, ite_true] at this ⊢
     rw [(e n hn).1, this, Spec.Aes.shiftRows, getD_ofFn _ hn]
 
 /-- InvShiftRows, left out: form 1 of the states is form 0 of the unshifted ones. -/
@@ -149,7 +149,7 @@ theorem BsRel.skipInvShift {w B : Nat} {W : Nat → BitVec w} {S : Nat → Spec.
           4 * ((n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)) % 4) ∧
         n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4) < 16 := by decide
     have := h j hj (n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)) (e n hn).2 k hk
-    simp only [at_, Bool.false_eq_true, ite_false, ite_true] at this ⊢
+    simp only [posAt, Bool.false_eq_true, ite_false, ite_true] at this ⊢
     rw [(e n hn).1, this, Spec.Aes.invShiftRows, getD_ofFn _ hn]
 
 /-- The source, in a word's 16 groups, of ShiftRows done twice: the odd rows
@@ -166,11 +166,11 @@ theorem BsRel.sr2 {w B : Nat} {W W' : Nat → BitVec w} {S : Nat → Spec.Aes.St
   have e : ∀ n < 16, (((n / 4 + 4 * (n % 4)) % 4 + 2 * ((n / 4 + 4 * (n % 4)) / 4)) % 4 + 4 * ((n / 4 + 4 * (n % 4)) / 4)) =
       ((n % 4 + 4 * ((n / 4 + n % 4) % 4)) / 4 + (n % 4 + 4 * ((n / 4 + n % 4) % 4)) % 4) % 4 +
         4 * ((n % 4 + 4 * ((n / 4 + n % 4) % 4)) % 4) ∧ n % 4 + 4 * ((n / 4 + n % 4) % 4) < 16 := by decide
-  rw [hW j hj _ (at_lt false hn hk)]
-  simp only [sr2T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, sr2Src, at_mod false n hk,
-    at_div false n hk, Bool.false_eq_true, ite_false]
+  rw [hW j hj _ (posAt_lt false hn hk)]
+  simp only [sr2T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, sr2Src, posAt_mod false n hk,
+    posAt_div false n hk, Bool.false_eq_true, ite_false]
   have := h j hj (n % 4 + 4 * ((n / 4 + n % 4) % 4)) (e n hn).2 k hk
-  simp only [at_, ite_true] at this
+  simp only [posAt, ite_true] at this
   rw [(e n hn).1, this, Spec.Aes.shiftRows, getD_ofFn _ hn]
 
 theorem BsRel.invSr2 {w B : Nat} {W W' : Nat → BitVec w} {S : Nat → Spec.Aes.State}
@@ -181,11 +181,11 @@ theorem BsRel.invSr2 {w B : Nat} {W W' : Nat → BitVec w} {S : Nat → Spec.Aes
         4 * (((n / 4 + n % 4) % 4 + 4 * (n % 4)) / 4)) =
       (n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)) / 4 + 4 * ((n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)) % 4) ∧
       n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4) < 16 := by decide
-  rw [hW j hj _ (at_lt true hn hk)]
-  simp only [sr2T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, sr2Src, at_mod true n hk,
-    at_div true n hk, ite_true]
+  rw [hW j hj _ (posAt_lt true hn hk)]
+  simp only [sr2T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false, sr2Src, posAt_mod true n hk,
+    posAt_div true n hk, ite_true]
   have := h j hj (n % 4 + 4 * ((n / 4 + 4 - n % 4) % 4)) (e n hn).2 k hk
-  simp only [at_, Bool.false_eq_true, ite_false] at this
+  simp only [posAt, Bool.false_eq_true, ite_false] at this
   rw [(e n hn).1, this, Spec.Aes.invShiftRows, getD_ofFn _ hn]
 
 /-! ### MixColumns and its inverse -/
@@ -205,7 +205,7 @@ def down (n i : Nat) : Nat := (n % 4 + i) % 4 + 4 * (n / 4)
 rows': slice `j`, position `p`, of states in form `f`. -/
 def mixT (cs : List Nat) (B : Nat) (f : Bool) (j p : Nat) : List (Nat × Nat) :=
   (List.range 4).flatMap fun i =>
-    (mulTerms (cs.getD i 0) j).map fun b => (b, at_ B f (down (byteAt B f p) i) (p % B))
+    (mulTerms (cs.getD i 0) j).map fun b => (b, posAt B f (down (byteAt B f p) i) (p % B))
 
 def mcCoeffs : List Nat := [0x02, 0x03, 0x01, 0x01]
 def invMcCoeffs : List Nat := [0x0e, 0x0b, 0x0d, 0x09]
@@ -218,7 +218,7 @@ theorem termsXor_append {w : Nat} (W : Nat → BitVec w) (l l' : List (Nat × Na
 
 theorem termsXor_row {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → Spec.Aes.State} (h : BsRel B f W S)
     {m k : Nat} (hm : m < 16) (hk : k < B) (l : List Nat) (hl : ∀ b ∈ l, b < 8) :
-    termsXor W (l.map fun b => (b, at_ B f m k)) =
+    termsXor W (l.map fun b => (b, posAt B f m k)) =
       l.foldr (fun i b => ((S k).getD m 0).getLsbD i ^^ b) false := by
   induction l with
   | nil => rfl
@@ -235,13 +235,13 @@ theorem down_lt {n i : Nat} (hn : n < 16) : down n i < 16 := by unfold down; ome
 theorem mixT_bit {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → Spec.Aes.State} (h : BsRel B f W S)
     (cs : List Nat) (hc : ∀ i < 4, cs.getD i 0 ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09])
     {j n k : Nat} (hj : j < 8) (hn : n < 16) (hk : k < B) :
-    termsXor W (mixT cs B f j (at_ B f n k)) =
+    termsXor W (mixT cs B f j (posAt B f n k)) =
       (Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 0 0)) ((S k).getD (down n 0) 0) ^^^
        Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 1 0)) ((S k).getD (down n 1) 0) ^^^
        Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 2 0)) ((S k).getD (down n 2) 0) ^^^
        Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 3 0)) ((S k).getD (down n 3) 0)).getLsbD j := by
   simp only [mixT, show List.range 4 = [0, 1, 2, 3] from rfl, List.flatMap_cons, List.flatMap_nil,
-    List.append_nil, termsXor_append, byteAt_at f hn hk, at_mod f n hk, BitVec.getLsbD_xor]
+    List.append_nil, termsXor_append, byteAt_posAt f hn hk, posAt_mod f n hk, BitVec.getLsbD_xor]
   rw [termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _), termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _),
     termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _), termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _),
     mulTerms_ok _ (hc 0 (by decide)) _ j hj, mulTerms_ok _ (hc 1 (by decide)) _ j hj,
@@ -255,7 +255,7 @@ theorem BsRel.mixColumns {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S : N
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = termsXor W (mixT mcCoeffs B f j p)) :
     BsRel B f W' fun k => Spec.Aes.mixColumns (S k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.mixColumns (S k)).getD n 0).getLsbD j
-  rw [hW j hj _ (at_lt f hn hk), mixT_bit h mcCoeffs (by decide) hj hn hk, Spec.Aes.mixColumns, getD_ofFn _ hn]
+  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h mcCoeffs (by decide) hj hn hk, Spec.Aes.mixColumns, getD_ofFn _ hn]
   simp only [mcCoeffs, List.getD_cons_zero, List.getD_cons_succ, down, mul_one_byte,
     show (BitVec.ofNat 8 1) = (1 : Byte) from rfl]
   rfl
@@ -265,7 +265,7 @@ theorem BsRel.invMixColumns {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S 
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = termsXor W (mixT invMcCoeffs B f j p)) :
     BsRel B f W' fun k => Spec.Aes.invMixColumns (S k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.invMixColumns (S k)).getD n 0).getLsbD j
-  rw [hW j hj _ (at_lt f hn hk), mixT_bit h invMcCoeffs (by decide) hj hn hk, Spec.Aes.invMixColumns, getD_ofFn _ hn]
+  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h invMcCoeffs (by decide) hj hn hk, Spec.Aes.invMixColumns, getD_ofFn _ hn]
   rfl
 
 /-! ### Round keys -/
@@ -279,7 +279,7 @@ theorem BsRel.addRoundKey {w B : Nat} {f : Bool} {W K W' : Nat → BitVec w} {S 
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = ((W j).getLsbD p ^^ (K j).getLsbD p)) :
     BsRel B f W' fun k => Spec.Aes.addRoundKey (S k) (rk k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.addRoundKey (S k) (rk k)).getD n 0).getLsbD j
-  rw [hW j hj _ (at_lt f hn hk), h j hj n hn k hk, hK j hj n hn k hk, getD_rkState _ hn,
+  rw [hW j hj _ (posAt_lt f hn hk), h j hj n hn k hk, hK j hj n hn k hk, getD_rkState _ hn,
     Spec.Aes.addRoundKey, getD_ofFn _ hn, BitVec.getLsbD_xor]
 
 /-! ### The S-box's constant, added to the round keys -/
