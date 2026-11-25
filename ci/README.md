@@ -27,7 +27,7 @@ CI runs each of these, and fails if it does:
 | `check_vectors.py` | `vectors/sources/` describes the files under `vectors/` |
 | `cpu_tests.py lint` | `rust_matrix.toml`'s CPU-feature lines |
 | `merge_rust_coverage.py` | 100% line coverage, per architecture and merged (from `export_rust_coverage.py`'s files) |
-| `rust_lint.py` | rustfmt, Clippy and a release build for every target |
+| `rust_lint.py` | rustfmt, Clippy, a release build and the documentation for every target |
 
 `check_lean_public_imports.py` is a check that CI does not run, since it
 needs the edited modules built: run it before pushing, as CLAUDE.md says.

@@ -13,6 +13,17 @@ include = ["/src", "/LICENSE*", "/README.md"]
 # Every integration test is a module of the one test binary, `tests/main.rs`.
 autotests = false
 
+# docs.rs documents each architecture, whose modules differ.
+[package.metadata.docs.rs]
+default-target = "x86_64-unknown-linux-gnu"
+targets = [
+    "aarch64-unknown-linux-gnu",
+    "armv7-unknown-linux-gnueabihf",
+    "i686-unknown-linux-gnu",
+    "powerpc64le-unknown-linux-gnu",
+    "riscv64gc-unknown-linux-gnu",
+]
+
 [features]
 default = ["std"]
 # Everything that allocates, through the `alloc` crate: Argon2, scrypt, RSA,
