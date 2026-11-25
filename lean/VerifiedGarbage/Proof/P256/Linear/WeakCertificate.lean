@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.P256.Linear.WeakWords
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.P256.Linear.WeakWords
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.Ops
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
 meta import VerifiedGarbage.Proof.Framework.Block

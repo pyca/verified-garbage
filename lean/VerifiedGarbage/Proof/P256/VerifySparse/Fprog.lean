@@ -421,13 +421,12 @@ theorem square_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       wordsVal t.mem base o 4 < p ∧
       wordsVal t.mem base o 4 * R % p = wordsVal s.mem base a 4 * wordsVal s.mem base a 4 % p := by
   rw [sparseSquare,WP.block_append_iff]
-  refine WP.mono (core_ok hs ha ha8) fun s₁ ⟨⟨u,hu,e₁⟩,z₁,k₁⟩ => ?_
   obtain pe : P256Square.p=p := by decide
-  rw [pe] at e₁
+  refine WP.mono (core_ok hs ha ha8 (by rw [pe]; exact hB)) fun s₁ ⟨⟨hb,e₁⟩,z₁,k₁⟩ => ?_
+  rw [pe] at hb e₁
   obtain hs₁ := hs.of_keeps k₁ (by decide)
-  obtain hb := square_redc_bound hB hu e₁
   obtain hV : regsVal s₁ [.x8,.x9,.x10,.x11] + 2^(64*M.n)*(s₁.gpr .x12).toNat < 2*p := by
-    simpa only [low_regs,hN,pe] using hb
+    rw [hN]; exact hb
   rw [WP.block_append_iff]
   refine WP.mono (correctP_ok hs₁ (M:=M) hME (ts:=[.x8,.x9,.x10,.x11]) (top:=.x12)
     (by simpa only [List.length_cons,List.length_nil] using hN.symm) hM.n0 hM.n10
@@ -445,9 +444,8 @@ theorem square_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     k₃.rd.trans kp.rd,k₃.wr.trans kp.wr,k₃.sp.trans kp.sp,
     fun x hx => (o₃ x hx).trans (congrFun kp.mem x)⟩,?_,?_⟩
   · rw [e₃,e₂]; exact Nat.mod_lt _ (by decide)
-  · rw [e₃,e₂,low_regs,hN,Nat.mod_mul_mod,Nat.mul_comm]
-    change R*(lowValue s₁+R*(s₁.gpr .x12).toNat)%p = _
-    rw [e₁,Nat.add_mul_mod_self_right]
+  · rw [e₃,e₂,hN,Nat.mod_mul_mod]
+    exact e₁
 
 
 end VG.Proof.P256.VerifySparse
@@ -513,11 +511,11 @@ theorem op_mul (o a b : Nat) (hab : a≠b) : Impl.P256.VerifySparse.op (.mul o a
 theorem op_square (o a : Nat) : Impl.P256.VerifySparse.op (.mul o a a)=
     sparseSquare o a := by
   obtain h : P256Square.supported Impl.P256.VerifySparse.M=true := by decide
-  let pre := VG.Proof.Mont.AArch64.P256Square.core a
+  let pre := P256Square.core a
   let tail := csubR Impl.P256.VerifySparse.M [.x8,.x9,.x10,.x11] .x12 ++ stores [.x8,.x9,.x10,.x11] o
   obtain raw : opCode Impl.P256.VerifySparse.M (.mul o a a)=pre++tail := by
     simp only [opCode,BEq.rfl,Bool.true_and,h,ite_true]
-    simp only [P256Square.square,VG.Proof.Mont.AArch64.P256Square.core,pre,tail,List.append_assoc]
+    simp only [P256Square.square,P256Square.result,pre,tail]
   dsimp only [Impl.P256.VerifySparse.op]
   rw [show (a==a)=true from beq_self_eq_true a]
   rw [raw]
@@ -709,7 +707,7 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     refine WP.mono (square_ok hs hME hn hM hA (by simpa only [hn] using ho)
       (by simpa only [hn] using ha) ho8 ha8 (by simpa only [hn] using hB))
       fun t ⟨hk,hlt,he⟩ => ?_
-    exact ⟨hk.toOpKeep hn,by simpa only [hn] using hlt,by simpa only [hn] using he⟩
+    exact ⟨hk.toOpKeep hn,by simpa only [hn] using hlt,by rw [hn]; exact he⟩
   · rw [op_mul o a b hab]
     rw [←hME]
     exact mul_ok hs hME hM.toW hM.n10 hA ho ha hb ho8 ha8 hb8 hB
