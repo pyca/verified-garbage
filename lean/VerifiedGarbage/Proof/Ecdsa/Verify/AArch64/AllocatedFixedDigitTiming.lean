@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
 import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail

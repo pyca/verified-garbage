@@ -25,8 +25,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
@@ -52,21 +50,6 @@ meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
 meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
@@ -83,7 +66,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
@@ -226,14 +208,14 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine WP.mono (Forward.InvAllocated.refine hsb hsize qb) fun t ⟨u,qu,hu,kt,ut⟩ => ?_
   obtain ⟨iu,u19,ku,uu⟩ := qu
   have heq : ∀ a∈[invAllocatedCfg.sF,invAllocatedCfg.sG,invAllocatedCfg.sA,invAllocatedCfg.sB],
-      ∀ n≤5,wordsVal t.mem base a n=wordsVal u.mem base a n := by
-    intro a ha n hn
+      ∀ n≤5,a+8*n≤2416 → wordsVal t.mem base a n=wordsVal u.mem base a n := by
+    intro a ha n hn hb
     change a∈[2272,2312,2352,2384] at ha
     apply word_values
     intro i hi
     apply hu
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> change _<7104 ∨ 7680≤_ <;> left <;> omega_arith
+      rcases ha with rfl | rfl | rfl | rfl <;> refine ⟨?_,?_⟩ <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
       rcases ha with rfl | rfl | rfl | rfl <;> omega_arith
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
@@ -245,10 +227,10 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
   refine ⟨⟨?_,?_,?_,?_,?_⟩,?_,?_,?_⟩
   · rw [kt.gpr _ hnot1]
     simpa only [Divstep.batch] using bd
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.f
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.g
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.a
-  · rw [heq _ (by simp) _ (by decide)]; exact iu.b
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.f
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.g
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.a
+  · rw [heq _ (by simp) _ (by decide) (by decide)]; exact iu.b
   · rw [kt.gpr _ hnot19]; exact b19
   · exact (bkeep.mono (by decide)).trans (kt.mono fun r hr => List.mem_cons_of_mem _ (invAllocated_update_clob r hr))
   · have h := ut.cover invAllocated_update_writes

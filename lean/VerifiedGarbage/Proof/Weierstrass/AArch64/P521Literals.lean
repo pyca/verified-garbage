@@ -23,8 +23,8 @@ namespace VG.Proof.Weierstrass.AArch64.P521Literals
 open VG VG.Impl.Ecdsa.AArch64 VG.Impl.Mont.AArch64
 
 materialize_template mulPT := mul p521.MP'
-materialize_template addPT := add p521.MP'
-materialize_template subPT := sub p521.MP'
+materialize_template addPT := P521.add
+materialize_template subPT := P521.sub
 materialize_template mulNT := mul p521.MN'
 materialize_template addNT := add p521.MN'
 materialize_template subNT := sub p521.MN'
