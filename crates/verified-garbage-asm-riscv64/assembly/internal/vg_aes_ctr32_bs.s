@@ -94,6 +94,24 @@ vg_aes_ctr32_bs:
 	srli t1, t1, 32
 	or t0, t0, t1
 	sd t0, 520(a5)
+	lui t0, 65521
+	addiw t0, t0, -1
+	slli t0, t0, 32
+	lui t1, 65521
+	addiw t1, t1, -1
+	slli t1, t1, 32
+	srli t1, t1, 32
+	or t0, t0, t1
+	sd t0, 528(a5)
+	lui t0, 4080
+	addiw t0, t0, 0
+	slli t0, t0, 32
+	lui t1, 4080
+	addiw t1, t1, 0
+	slli t1, t1, 32
+	srli t1, t1, 32
+	or t0, t0, t1
+	sd t0, 536(a5)
 	lbu t0, 0(a2)
 	lbu t1, 1(a2)
 	slli t1, t1, 8
