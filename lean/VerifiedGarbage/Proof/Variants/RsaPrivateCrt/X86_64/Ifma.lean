@@ -126,8 +126,8 @@ kernel evaluates in one declaration, with one match for each instruction
 (`Proof/Framework/X86_64/InstrBits.lean`): their calls can be inlined, and no
 instruction writes `rsp`. -/
 theorem codeP_bits :
-    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm).InlineOkB (bSp + bNs) = true ∧
-    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm).InlineOkB (bSp + bNs) = true := by
+    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall).InlineOkB (bSp + bNs) = true ∧
+    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall).InlineOkB (bSp + bNs) = true := by
   lit_decide
 
 /-- No instruction of the code that `Mont.fnAdx`'s is inlined in loads MXCSR:
@@ -150,17 +150,17 @@ theorem codeP_inlined {l2 : CrtIfma.Lay} (h2 : Lay2 l2) :
     Ifma.codeP_constantTime Mont.fnAdx h2 codeP_noMx.2.1 codeP_noMx.2.2.1⟩
 
 theorem inline2048 :
-    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm).inline = CrtIfma.codeP CrtIfma.lay2048 Mont.fnAdx.mm := by
+    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall).inline = CrtIfma.codeP CrtIfma.lay2048 Mont.fnAdx.mm := by
   kernel_rfl
 
 theorem inline2048z :
-    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm).inline = CrtIfma.codeP CrtIfma.lay2048z Mont.fnAdx.mm := by
+    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall).inline = CrtIfma.codeP CrtIfma.lay2048z Mont.fnAdx.mm := by
   kernel_rfl
 
 def variant : CrtImpl where
   pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma"
-  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
+  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall
   depthP := by lit_decide
   okP := crtP_call_ok (Code.inlineOk_of_B codeP_bits.1) (inline2048 ▸ (codeP_inlined (.inl rfl)).1)
   ctP := crtP_call_ct (Code.inlineOk_of_B codeP_bits.1) (inline2048 ▸ (codeP_inlined (.inl rfl)).1)
@@ -179,7 +179,7 @@ where it is the faster. -/
 def variant512 : CrtImpl where
   pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma512"
-  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
+  codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm Impl.Rsa.X86_64.CrtIfma.wideCall
   depthP := by lit_decide
   okP := crtP_call_ok (Code.inlineOk_of_B codeP_bits.2) (inline2048z ▸ (codeP_inlined (.inr rfl)).1)
   ctP := crtP_call_ct (Code.inlineOk_of_B codeP_bits.2) (inline2048z ▸ (codeP_inlined (.inr rfl)).1)

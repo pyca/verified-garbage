@@ -904,24 +904,33 @@ def anySizes : Prog isa :=
   .seq (.block (sizes lay2048)) (.ite .e (.block [])
     (.seq (.block (sizes lay3072)) (.ite .e (.block []) (.block (sizes lay4096)))))
 
+/-- The complete conversion, exponentiation and result for a large key. -/
+def widePhase (_name : String) (l : Lay) : Prog isa := seqs (ifma l)
+
+/-- Share each large-key phase between the IFMA implementations. -/
+def wideCall (name : String) (l : Lay) : Prog isa :=
+  .call name (widePhase name l)
+
 /-- The vector code of the layout whose sizes the key has (one of them, by
 `anySizes`), with the layout `l2` for 2048-bit keys (`lay2048` or
 `lay2048z`, which have the same sizes). -/
-def ifmaAny (l2 : Lay) : Prog isa :=
+def ifmaAny (l2 : Lay) (wide : String → Lay → Prog isa := widePhase) : Prog isa :=
   .seq (.block (sizes lay2048)) (.ite .e (seqs (ifma l2))
-    (.seq (.block (sizes lay3072)) (.ite .e (seqs (ifma lay3072)) (seqs (ifma lay4096)))))
+    (.seq (.block (sizes lay3072)) (.ite .e (wide "vg_rsa_crt_ifma_3072" lay3072) (wide "vg_rsa_crt_ifma_4096" lay4096))))
 
 /-- `main` with `R² mod n` from the key's precomputed values (`nSetupP`). -/
-def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def mainP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa)
+    (wide : String → Lay → Prog isa := widePhase) : Prog isa :=
   seqs (nSetupP mul ++ primesSetup ++ checksP ++
-    [.seq anySizes (.ite .e (seqs (preP mul ++ [ifmaAny l2] ++ postP mul))
+    [.seq anySizes (.ite .e (seqs (preP mul ++ [ifmaAny l2 wide] ++ postP mul))
       (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
     finish)
 
 /-- `vg_rsa_private_crt_ifma_precomputed` and
 `vg_rsa_private_crt_ifma512_precomputed`: `code` with `mainP`. -/
-def codeP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def codeP (l2 : Lay) (mul : Nat → Nat → Nat → Prog isa)
+    (wide : String → Lay → Prog isa := widePhase) : Prog isa :=
   .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
-    (.ite .ne fail (mainP l2 mul))
+    (.ite .ne fail (mainP l2 mul wide))
 
 end VG.Impl.Rsa.X86_64.CrtIfma

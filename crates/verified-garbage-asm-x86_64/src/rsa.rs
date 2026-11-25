@@ -4425,6 +4425,14 @@ jmp 22f
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_crt_ifma_3072.rs"]
+pub(crate) mod vg_rsa_crt_ifma_3072;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_crt_ifma_4096.rs"]
+pub(crate) mod vg_rsa_crt_ifma_4096;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_lazy_mont_mul.rs"]
 pub(crate) mod vg_rsa_lazy_mont_mul;
 
