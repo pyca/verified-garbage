@@ -287,3 +287,12 @@ Experiment 12: `h1`: AA|BB on NEON beside DA, CB (and t, `h2`; and t, x3, `h3`),
 everything else four-word code in the order pack, E, x2, z2, (t, x3,) z3.
 `h4`: also x3|t on NEON (limbs of DA, CB added and subtracted as vectors, plus 4p
 in limbs) beside E, x2, z2.
+
+## 15. Experiment 12's result (run 45684660340)
+
+Cycles: h1 369, h1b 356, **h2 334**, h3 336, h4 340; src 356, sn5 319. One NEON
+pair beside DA, CB, t beats the base's 340 with the scalar code (and its
+proofs) kept; sn5 is 15 faster but needs every scalar proof again. h2's family
+is taken. Experiment 13 tunes it: constants 19 and 38 in registers (c), the
+order of the rest, the weave's ratio (the vector block ended earlier), and the
+Karatsuba pair.
