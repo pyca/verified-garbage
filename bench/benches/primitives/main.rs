@@ -89,6 +89,7 @@ mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
 mod ffdh;
+mod ffdh_parameters;
 mod hkdf;
 mod hmac_md5;
 mod hmac_sha1;
@@ -684,6 +685,7 @@ benches! {
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
     (ffdh::USES, ffdh::bench),
+    (ffdh_parameters::USES, ffdh_parameters::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
