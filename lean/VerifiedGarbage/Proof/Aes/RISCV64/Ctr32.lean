@@ -744,12 +744,11 @@ end Xor
 abbrev gRegions (b D : Addr) (n : Nat) : List Region :=
   [⟨b, 320⟩, ctrRegion b, ⟨D, 16 * n⟩]
 
-/-- What the group loop runs with, the round keys anywhere: `s₂` is the
-state after the setup, `X` the scratch buffer (rounded to `b`), `S` the source
-and `D` the destination (`n` blocks), `icb` the first counter block; round
-key `j` at `K0 + 64 j`, in `K`, which the groups may read and do not write,
-the last at byte `lastKey` from `kb`, which they do not write either. -/
-structure GSetupK (s₂ : State) (X b S D : Addr) (kb : Reg) (K : Region) (K0 : Addr) (n R : Nat)
+/-- What the group loop runs with: `s₂` is the state after the setup, `X` the
+scratch buffer (rounded to `b`), `S` the source and `D` the destination (`n`
+blocks), `icb` the first counter block; and `crypt` enciphers four blocks
+whatever the groups have written. -/
+structure GSetupK (crypt : Prog isa) (s₂ : State) (X b S D : Addr) (n R : Nat)
     (w : List Byte) (icb : Spec.Gcm.Block) : Prop where
   scr : Scr s₂ X 2048
   base : s₂.gpr sb = b
@@ -760,15 +759,10 @@ structure GSetupK (s₂ : State) (X b S D : Addr) (kb : Reg) (K : Region) (K0 : 
   hn : 16 * n < 2 ^ 64
   sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨X, 2048⟩
   ssep : Region.Disjoint ⟨S, 16 * n⟩ ⟨X, 2048⟩
-  rounds : R = 10 ∨ R = 12 ∨ R = 14
-  kbr : kb ∉ sboxWrites ∧ kb ≠ kp ∧ kb ≠ .a2 ∧ kb ≠ .a3 ∧ kb ≠ .a4
-  k0 : K0 = s₂.gpr kb + BitVec.ofNat 64 (1920 - 64 * R)
-  kin : ∀ j ≤ R, ∀ k < 8,
-    InRegions (s₂.rd ++ s₂.wr) (wordAddr (K0 + BitVec.ofNat 64 (64 * j)) k) 8
-  kal : K0.toNat % 8 = 0
-  kat : KeysIn K K0 R
-  kd : ∀ r ∈ gRegions b D n, K.Disjoint r
-  keys : KeysAt s₂.mem K0 R w
+  crypt_ok : ∀ s₁ : State, Scr s₁ X 2048 → s₁.gpr sb = b → MasksAt s₁.mem (s₁.gpr sb) allKs →
+    s₁.gpr .a0 = s₂.gpr .a0 → s₁.gpr .ra = s₂.gpr .ra → s₁.rd = s₂.rd → s₁.wr = s₂.wr →
+    Frame (gRegions b D n) s₂.mem s₁.mem → ∀ S, InRel (Q s₁) S →
+    WP isa crypt s₁ fun s => Ctx s₁ s ∧ InRel (Q s) fun c => Spec.Aes.cipher R w (S c)
   lo : ∀ i < 8, ∀ j < 8, (cloW s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (15 - i) + j)
   hi : ∀ i < 4, ∀ j < 8, (chiLo s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (7 - i) + j)
 
@@ -787,7 +781,7 @@ structure GSetup (s₂ : State) (X b S D : Addr) (n R : Nat) (w : List Byte) (ic
   sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨X, 2048⟩
   ssep : Region.Disjoint ⟨S, 16 * n⟩ ⟨X, 2048⟩
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  keys : KeysAt s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
+  keys : KeysAtF s₂.mem (b + BitVec.ofNat 64 (1920 - 64 * R)) R w
   lo : ∀ i < 8, ∀ j < 8, (cloW s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (15 - i) + j)
   hi : ∀ i < 4, ∀ j < 8, (chiLo s₂.mem b).getLsbD (8 * i + j) = icb.getLsbD (8 * (7 - i) + j)
 
@@ -808,16 +802,15 @@ structure GInv (o : Bool) (m₀ : Mem) (s₂ : State) (b S D : Addr) (n R : Nat)
   num : numW s.mem b = (icb.extractLsb' 0 32).setWidth 64 + BitVec.ofNat 64 (4 * g)
   data : DataInv m₀ s.mem S D n (4 * g) (keyStream R w icb)
 
-/-- Before group `g`, the round keys anywhere (`GSetupK`). -/
-structure GInvK (o : Bool) (m₀ : Mem) (s₂ : State) (b S D : Addr) (kb : Reg) (K0 : Addr) (n R : Nat)
+/-- Before group `g`, with the round keys wherever they are. -/
+structure GInvK (o : Bool) (m₀ : Mem) (s₂ : State) (b S D : Addr) (n R : Nat)
     (w : List Byte) (icb : Spec.Gcm.Block) (g : Nat) (s : State) : Prop where
   hg : 4 * g < n
   a3 : s.gpr .a3 = D + BitVec.ofNat 64 (64 * g)
   sr : s.gpr (srcReg o) = S + BitVec.ofNat 64 (64 * g)
   a4 : s.gpr .a4 = BitVec.ofNat 64 (n - 4 * g)
   base : s.gpr sb = b
-  a0 : s.gpr .a0 = K0
-  kbv : s.gpr kb = s₂.gpr kb
+  a0 : s.gpr .a0 = s₂.gpr .a0
   ra : s.gpr .ra = s₂.gpr .ra
   rd : s.rd = s₂.rd
   wr : s.wr = s₂.wr
@@ -894,29 +887,29 @@ theorem GSetup.masks_disj (hs : GSetup s₂ X b S D n R w icb) : ∀ r ∈ gRegi
 end
 
 section
-variable {s₂ : State} {X b S D : Addr} {kb : Reg} {K : Region} {K0 : Addr} {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
+variable {crypt : Prog isa} {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
 
-theorem GSetupK.dat_disj (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {x lx : Nat} (h : x + lx + 7 ≤ 2048) :
+theorem GSetupK.dat_disj (hs : GSetupK crypt s₂ X b S D n R w icb) {x lx : Nat} (h : x + lx + 7 ≤ 2048) :
     Region.Disjoint ⟨D, 16 * n⟩ ⟨b + BitVec.ofNat 64 x, lx⟩ := by
   refine hs.sep.sub_right ?_
   rw [← hs.base]; exact hs.scr.sub h
 
-theorem GSetupK.src_disj (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {x lx : Nat} (h : x + lx + 7 ≤ 2048) :
+theorem GSetupK.src_disj (hs : GSetupK crypt s₂ X b S D n R w icb) {x lx : Nat} (h : x + lx + 7 ≤ 2048) :
     Region.Disjoint ⟨S, 16 * n⟩ ⟨b + BitVec.ofNat 64 x, lx⟩ := by
   refine hs.ssep.sub_right ?_
   rw [← hs.base]; exact hs.scr.sub h
 
-theorem GSetupK.b320 (hs : GSetupK s₂ X b S D kb K K0 n R w icb) : Region.Sub ⟨b, 320⟩ ⟨X, 2048⟩ := by
+theorem GSetupK.b320 (hs : GSetupK crypt s₂ X b S D n R w icb) : Region.Sub ⟨b, 320⟩ ⟨X, 2048⟩ := by
   rw [← hs.base, hs.scr.base]
   exact Offset.sub_base X (by have := Align.pad_lt X; omega_using [this])
 
-theorem GSetupK.d320 (hs : GSetupK s₂ X b S D kb K K0 n R w icb) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ :=
+theorem GSetupK.d320 (hs : GSetupK crypt s₂ X b S D n R w icb) : Region.Disjoint ⟨D, 16 * n⟩ ⟨b, 320⟩ :=
   hs.sep.sub_right hs.b320
 
-theorem GSetupK.s320 (hs : GSetupK s₂ X b S D kb K K0 n R w icb) : Region.Disjoint ⟨S, 16 * n⟩ ⟨b, 320⟩ :=
+theorem GSetupK.s320 (hs : GSetupK crypt s₂ X b S D n R w icb) : Region.Disjoint ⟨S, 16 * n⟩ ⟨b, 320⟩ :=
   hs.ssep.sub_right hs.b320
 
-theorem GSetupK.slot_disj (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {x lx : Nat} (h1 : 320 ≤ x)
+theorem GSetupK.slot_disj (hs : GSetupK crypt s₂ X b S D n R w icb) {x lx : Nat} (h1 : 320 ≤ x)
     (h2 : x + lx ≤ 484 ∨ 496 ≤ x) (h3 : x + lx + 7 ≤ 2048) :
     ∀ r ∈ gRegions b D n, Region.Disjoint ⟨b + BitVec.ofNat 64 x, lx⟩ r := by
   intro r hr
@@ -926,7 +919,7 @@ theorem GSetupK.slot_disj (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {x lx : 
   · exact Offset.disjoint b (by omega_arith) (by omega_arith) (by omega_arith)
   · exact (hs.dat_disj h3).symm
 
-theorem GSetupK.masks_disj (hs : GSetupK s₂ X b S D kb K K0 n R w icb) : ∀ r ∈ gRegions b D n,
+theorem GSetupK.masks_disj (hs : GSetupK crypt s₂ X b S D n R w icb) : ∀ r ∈ gRegions b D n,
       Region.Disjoint ⟨b + BitVec.ofNat 64 416, 48⟩ r ∧
       Region.Disjoint ⟨b + BitVec.ofNat 64 512, 96⟩ r := fun r hr =>
   ⟨hs.slot_disj (by omega_using []) (by omega_using []) (by omega_using []) r hr, hs.slot_disj (by omega_using []) (by omega_using []) (by omega_using []) r hr⟩
@@ -959,32 +952,29 @@ theorem GInv.of_t0 {o : Bool} {m₀ : Mem} {s₂ : State} {b S D : Addr} {n R : 
     by rw [u.other _ (by decide)]; exact h.ra, u.rd.trans h.rd, u.wr.trans h.wr, u.sp.trans h.sp,
     u.mem ▸ h.frame, by rw [u.mem]; exact h.num, u.mem ▸ h.data⟩
 
-theorem GInvK.of_t0 {o : Bool} {m₀ : Mem} {s₂ : State} {b S D : Addr} {kb : Reg} {K0 : Addr}
+theorem GInvK.of_t0 {o : Bool} {m₀ : Mem} {s₂ : State} {b S D : Addr}
     {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block} {g : Nat} {s s' : State} {v : BitVec 64}
-    (hkb : kb ≠ t0) (h : GInvK o m₀ s₂ b S D kb K0 n R w icb g s) (u : Upd s s' t0 v) :
-    GInvK o m₀ s₂ b S D kb K0 n R w icb g s' :=
+    (h : GInvK o m₀ s₂ b S D n R w icb g s) (u : Upd s s' t0 v) :
+    GInvK o m₀ s₂ b S D n R w icb g s' :=
   ⟨h.hg, by rw [u.other _ (by decide)]; exact h.a3, by rw [u.other _ (srcReg_keep o).1]; exact h.sr,
     by rw [u.other _ (by decide)]; exact h.a4,
     by rw [u.other _ (by decide)]; exact h.base, by rw [u.other _ (by decide)]; exact h.a0,
-    by rw [u.other _ hkb]; exact h.kbv,
     by rw [u.other _ (by decide)]; exact h.ra, u.rd.trans h.rd, u.wr.trans h.wr, u.sp.trans h.sp,
     u.mem ▸ h.frame, by rw [u.mem]; exact h.num, u.mem ▸ h.data⟩
 
 /-- One group: from before group `g`, to after the last group (`a4 = 0`) or
 before group `g + 1`. -/
-theorem groupK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : Reg} {K : Region}
-    {K0 : Addr} {n R : Nat} {w : List Byte}
-    {icb : Spec.Gcm.Block} (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {wd : Bool}
+theorem groupK_ok {o : Bool} {m₀ : Mem} {crypt : Prog isa} {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte}
+    {icb : Spec.Gcm.Block} (hs : GSetupK crypt s₂ X b S D n R w icb) {wd : Bool}
     (hal : wd = true → D.toNat % 8 = 0 ∧ S.toNat % 8 = 0)
-    {g : Nat} {s : State} (hi : GInvK o m₀ s₂ b S D kb K0 n R w icb g s) :
-    WP isa (groupK kb o wd) s fun s' =>
+    {g : Nat} {s : State} (hi : GInvK o m₀ s₂ b S D n R w icb g s) :
+    WP isa (group crypt o wd) s fun s' =>
       (isa.eval (.nonzero .a4) s' = some false ∧ GDone m₀ s₂ b S D n R w icb s') ∨
-      (isa.eval (.nonzero .a4) s' = some true ∧ GInvK o m₀ s₂ b S D kb K0 n R w icb (g + 1) s') := by
-  obtain hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
+      (isa.eval (.nonzero .a4) s' = some true ∧ GInvK o m₀ s₂ b S D n R w icb (g + 1) s') := by
   have hn := hs.hn
   obtain hscr : Scr s X 2048 := hs.scr.congr hi.wr (by rw [hi.base, hs.base])
   obtain ⟨-, sk1, sk2⟩ := srcReg_keep o
-  unfold groupK
+  unfold group
   refine WP.seq (WP.mono (ctrBlocks_wp hscr hi.base) fun s₁ ⟨hq₁, o₁, f₁, num₁, rd₁, wr₁, sp₁⟩ => ?_)
   obtain hb₁ : s₁.gpr sb = b := (o₁ sb (by decide)).trans hi.base
   obtain hf₁ : Frame (gRegions b D n) s₂.mem s₁.mem :=
@@ -995,22 +985,13 @@ theorem groupK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : 
   obtain chi : chiLo s.mem b = chiLo s₂.mem b :=
     hi.frame.readW (Region.contains_self _ _)
       (hs.slot_disj (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)
-  obtain a0₁ : s₁.gpr .a0 = K0 := (o₁ .a0 (by decide)).trans hi.a0
-  obtain hp : EncPreK s₁ X kb K R w :=
-    { scr := hscr.congr wr₁ (by rw [hb₁, hi.base])
-      masks := by rw [hb₁]; exact masks_frame hf₁ hs.masks_disj hs.masks
-      rounds := hs.rounds
-      kbr := ⟨hs.kbr.1, hs.kbr.2.1⟩
-      k0 := by rw [a0₁, o₁ kb hs.kbr.1, hi.kbv]; exact hs.k0
-      kin := by rw [rd₁, wr₁, hi.rd, hi.wr, a0₁]; exact hs.kin
-      kal := by rw [a0₁]; exact hs.kal
-      kat := by rw [a0₁]; exact hs.kat
-      kd := by rw [hb₁]; exact hs.kd _ (by simp [gRegions])
-      keys := by rw [a0₁]; exact keysAt_frameK hf₁ hs.kd hs.kat hs.keys }
+  obtain a0₁ : s₁.gpr .a0 = s₂.gpr .a0 := (o₁ .a0 (by decide)).trans hi.a0
   obtain hin : InRel (Q s₁) (fun c => ctrState icb (4 * g + c)) :=
     ctr_inRel (by rw [clo]; exact hs.lo) (by rw [chi]; exact hs.hi) (by rw [hi.num]; exact num_lo icb g)
       hq₁
-  refine WP.seq (WP.mono (encrypt4K_ok hp hin) fun s₃ ⟨hc₃, hin₃⟩ => ?_)
+  refine WP.seq (WP.mono (hs.crypt_ok s₁ (hscr.congr wr₁ (by rw [hb₁, hi.base])) hb₁
+    (by rw [hb₁]; exact masks_frame hf₁ hs.masks_disj hs.masks) a0₁ ((o₁ .ra (by decide)).trans hi.ra)
+    (rd₁.trans hi.rd) (wr₁.trans hi.wr) hf₁ _ hin) fun s₃ ⟨hc₃, hin₃⟩ => ?_)
   have fr₃ := hc₃.frame
   rw [hb₁] at fr₃
   obtain hx : XPre o wd m₀ S D n g (keyStream R w icb) s₃ :=
@@ -1030,8 +1011,6 @@ theorem groupK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : 
       (fun h => h1 (h ▸ by decide)) h4 h5 h6).trans ((hc₃.keep r h1 h2).trans (o₁ r h1))
   obtain base' : s'.gpr sb = b :=
     (keep sb (by decide) (by decide) (by decide) (by decide) (by decide)).trans hi.base
-  obtain kb' : s'.gpr kb = s₂.gpr kb :=
-    (keep kb hs.kbr.1 hs.kbr.2.1 hs.kbr.2.2.2.1 hs.kbr.2.2.2.2 hs.kbr.2.2.1).trans hi.kbv
   obtain ra' : s'.gpr .ra = s₂.gpr .ra :=
     (keep .ra (by decide) (by decide) (by decide) (by decide) (by decide)).trans hi.ra
   obtain rd'' : s'.rd = s₂.rd := by rw [rd', hc₃.rd, rd₁, hi.rd]
@@ -1043,7 +1022,7 @@ theorem groupK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : 
   rcases hz with ⟨z, d⟩ | ⟨h4, d, r6', r7', sr'⟩
   · refine .inl ⟨by rw [eval_nonzero, z]; rfl, base', ra', rd'', wr'', sp'', frame', d⟩
   · refine .inr ⟨by rw [Steps.eval_nonzero_ofNat s' .a4 (by omega_arith) r7']; simp; omega_arith,
-      ⟨by omega_arith, r6', sr', r7', base', ?_, kb', ra', rd'', wr'', sp'', frame', ?_, d⟩⟩
+      ⟨by omega_arith, r6', sr', r7', base', ?_, ra', rd'', wr'', sp'', frame', ?_, d⟩⟩
     · rw [keep .a0 (by decide) (by decide) (by decide) (by decide) (by decide), hi.a0]
     · have e₁ : numW s'.mem b = numW s₃.mem b :=
         f'.readW (Region.contains_self _ _) (by simpa using (hs.dat_disj (by omega_arith)).symm)
@@ -1055,22 +1034,21 @@ theorem groupK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : 
       rw [e₁, e₂, num₁, hi.num, num_succ]
 
 /-- The loop over the groups. -/
-theorem groupsK_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {kb : Reg} {K : Region}
-    {K0 : Addr} {n R : Nat} {w : List Byte}
-    {icb : Spec.Gcm.Block} (hs : GSetupK s₂ X b S D kb K K0 n R w icb) {wd : Bool}
+theorem groupsK_ok {o : Bool} {m₀ : Mem} {crypt : Prog isa} {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte}
+    {icb : Spec.Gcm.Block} (hs : GSetupK crypt s₂ X b S D n R w icb) {wd : Bool}
     (hal : wd = true → D.toNat % 8 = 0 ∧ S.toNat % 8 = 0)
-    {s : State} (hi : GInvK o m₀ s₂ b S D kb K0 n R w icb 0 s) :
-    WP isa (.loop (groupK kb o wd) (.nonzero .a4)) s (GDone m₀ s₂ b S D n R w icb) := by
-  refine WP.loop (M := isa) (fun k s => ∃ g, k = n - 4 * g ∧ GInvK o m₀ s₂ b S D kb K0 n R w icb g s)
+    {s : State} (hi : GInvK o m₀ s₂ b S D n R w icb 0 s) :
+    WP isa (.loop (group crypt o wd) (.nonzero .a4)) s (GDone m₀ s₂ b S D n R w icb) := by
+  refine WP.loop (M := isa) (fun k s => ∃ g, k = n - 4 * g ∧ GInvK o m₀ s₂ b S D n R w icb g s)
     (fun k s ⟨g, hk, hg⟩ => WP.mono (groupK_ok hs hal hg) fun s' h => ?_) n s ⟨0, by omega_arith, hi⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨z, d⟩
   · exact .inr ⟨z, n - 4 * (g + 1), by have := hg.hg; omega_arith, g + 1, rfl, d⟩
 
-/-- The round keys in the scratch buffer, from byte `1920 - 64 R`. -/
+/-- `encrypt4`, with the round keys in the scratch buffer. -/
 theorem GSetup.toK {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte} {icb : Spec.Gcm.Block}
-    (hs : GSetup s₂ X b S D n R w icb) :
-    GSetupK s₂ X b S D sb ⟨b + 1024, 960⟩ (b + BitVec.ofNat 64 (1920 - 64 * R)) n R w icb where
+    (hs : GSetup s₂ X b S D n R w icb) (a0 : s₂.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R)) :
+    GSetupK encrypt4 s₂ X b S D n R w icb where
   scr := hs.scr
   base := hs.base
   masks := hs.masks
@@ -1080,29 +1058,20 @@ theorem GSetup.toK {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte} {
   hn := hs.hn
   sep := hs.sep
   ssep := hs.ssep
-  rounds := hs.rounds
-  kbr := by decide
-  k0 := by rw [hs.base]
-  kin j hj k hk := by
+  crypt_ok s₁ scr hb mk ha _ _ _ hf _ hin := by
     have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
-    refine ⟨_, List.mem_append_right _ hs.scr.wr, ?_⟩
-    rw [← hs.base, BitVec.add_assoc, ← BitVec.ofNat_add, wordAddr, Offset.add_add]
-    exact hs.scr.contains (by omega_arith) (by decide)
-  kal := by rw [← hs.base]; exact al_add hs.scr.al (by decide) (by omega_arith)
-  kat j hj k hk := by
-    have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
-    exact key_contains _ hR hj hk
-  kd := hs.keys_disj
-  keys := hs.keys
+    exact encrypt4_ok ⟨scr, mk, hs.rounds, by rw [ha, a0, hb],
+      by rw [ha, a0]; exact keysAt_frame hR hf hs.keys_disj hs.keys⟩ hin
   lo := hs.lo
   hi := hs.hi
 
 theorem groups_ok {o : Bool} {m₀ : Mem} {s₂ : State} {X b S D : Addr} {n R : Nat} {w : List Byte}
-    {icb : Spec.Gcm.Block} (hs : GSetup s₂ X b S D n R w icb) {wd : Bool}
+    {icb : Spec.Gcm.Block} (hs : GSetup s₂ X b S D n R w icb)
+    (a0 : s₂.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R)) {wd : Bool}
     (hal : wd = true → D.toNat % 8 = 0 ∧ S.toNat % 8 = 0)
     {s : State} (hi : GInv o m₀ s₂ b S D n R w icb 0 s) :
-    WP isa (.loop (group o wd) (.nonzero .a4)) s (GDone m₀ s₂ b S D n R w icb) :=
-  groupsK_ok hs.toK hal ⟨hi.hg, hi.a3, hi.sr, hi.a4, hi.base, hi.a0, hi.base.trans hs.base.symm,
+    WP isa (.loop (group encrypt4 o wd) (.nonzero .a4)) s (GDone m₀ s₂ b S D n R w icb) :=
+  groupsK_ok (hs.toK a0) hal ⟨hi.hg, hi.a3, hi.sr, hi.a4, hi.base, hi.a0.trans a0.symm,
     hi.ra, hi.rd, hi.wr, hi.sp, hi.frame, hi.num, hi.data⟩
 
 end VG.Proof.Aes.RISCV64
@@ -1684,7 +1653,7 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
         rcases hr with rfl | rfl
         · exact dSS
         · exact dSC }
-  obtain hi₄ : KInv s₄ b (s₀.gpr .a0) R w R s₄ :=
+  obtain hi₄ : FInv s₄ b (s₀.gpr .a0) R w R s₄ :=
     { hj := Nat.le_refl _
       a1 := a1₄
       a0 := by rw [a0₄, k₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]
@@ -1696,7 +1665,7 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
       frame := Frame.refl _ _
       done := fun i h1 h2 => absurd h2 (by omega_arith) }
   -- The key loop.
-  refine WP.seq (WP.mono (keyLoop_ok hk hi₄) fun s₅ d₅ => ?_)
+  refine WP.seq (WP.mono (fkLoop_ok hk hi₄) fun s₅ d₅ => ?_)
   refine WP.seq ?_
   unfold keyDone
   rw [List.singleton_append]
@@ -1786,7 +1755,7 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
       sep := dDS
       ssep := hp.sS
       rounds := hR
-      keys := fun j hj => keyRel_congr (d₅.keys j hj) fun k hk => by
+      keys := fun j hj => keyRelF_congr (d₅.keys j hj) fun k hk => by
         rw [mem₆, u₆.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
           1920 - 64 * (R - j) by omega_arith]
       lo := fun i hi j hj => by
@@ -1858,12 +1827,12 @@ theorem correctWith {o : Bool} {s₀ : State} {S : Addr} (hp : CPre o s₀ S) :
         ⟨by omega_arith, by rw [a3₆]; simp, by rw [hsr]; simp, by rw [a4₆]; simp [n], hb₆, hK0, rfl, rfl,
           rfl, rfl, Frame.refl _ _, by rw [num₆, icb_lo]; simp [icb], data₆⟩
       -- By doublewords if the data's addresses are aligned.
-      unfold ctrGroups ctrGroupsK
+      unfold ctrGroups
       refine WP.seq (alignTest_wp a3₆ hsr hp.inPlace fun s₇ v u₇ ev => ?_)
       obtain hi₇ := hi₆.of_t0 u₇
       exact WP.ite _ ev
-        (fun h => groups_ok hs (fun _ => by simpa using h) hi₇)
-        (fun _ => groups_ok hs (fun h => Bool.noConfusion h) hi₇)
+        (fun h => groups_ok hs hK0 (fun _ => by simpa using h) hi₇)
+        (fun _ => groups_ok hs hK0 (fun h => Bool.noConfusion h) hi₇)
   -- The epilogue.
   obtain sv : Spill.Saved b s₁.gpr savedOffs s₇.mem := by
     obtain dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],

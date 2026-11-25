@@ -70,7 +70,7 @@ loaded and `post` before it is stored. -/
 def chainFrame (body : Prog isa) (pre post : List Instr) : Prog isa :=
   .ite (.zero .a4) (.block [])
     (.seq (.block (roundSb ++ saveRegs ++ maskInit ++ [stS raSlot .ra, movR .ra .a2] ++ keySetup))
-      (.seq (.loop (.block keyBody) (.nonzero .a1))
+      (.seq (.loop fkBody (.nonzero .a1))
         (.seq (.block (keyDone ++ chainLoad ++ pre))
           (.seq (.loop body (.nonzero .a4))
             (.block (post ++ chainStore ++ restoreRegs))))))

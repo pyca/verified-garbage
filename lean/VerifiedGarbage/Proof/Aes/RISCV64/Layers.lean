@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.RISCV64.Rounds
+public import VerifiedGarbage.Impl.Aes.RISCV64.Fixed
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 public import VerifiedGarbage.Proof.Framework.RISCV64.Linear
 public import VerifiedGarbage.Proof.Aes.Sbox0
@@ -361,5 +361,126 @@ theorem bs_addRoundKey {W W' K : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
     (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = ((W j).getLsbD p ^^ (K j).getLsbD p)) (hS : BsRel W S)
     (hK : KeyRel K rk) : BsRel W' fun b => Spec.Aes.addRoundKey (S b) rk :=
   hS.addRoundKey hK h
+
+/-! ## With ShiftRows left out
+
+The layers of `Impl/Aes/RISCV64/Fixed.lean`: the states in form 0 or 1. -/
+
+def fxKs : List (Nat × BitVec 64) := ksOf fxSlot fxMasks
+
+/-- The masks of form 1's layers. -/
+def fx1Ks : List (Nat × BitVec 64) := bsKs ++ fxKs
+
+theorem sbox0_check : check (table 64 256) sboxCfg (fun _ => none) sbox0Code tabEnv (tabPost sbox0T) = true := by
+  decide +kernel
+
+theorem invSbox0_check :
+    check (table 64 256) sboxCfg (fun _ => none) invSbox0Code tabEnv (tabPost invSbox0T) = true := by
+  decide +kernel
+
+theorem sbox0_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa sbox0Code s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (sbox0 (bsByte (Q s) p)).getLsbD j) ∧ Rest sboxCfg s s' :=
+  tab_ok (fun _ _ => sbox0T_bit) sbox0_check (by decide +kernel) hok
+
+theorem invSbox0_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa invSbox0Code s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (invSbox0 (bsByte (Q s) p)).getLsbD j) ∧ Rest sboxCfg s s' :=
+  tab_ok (fun _ _ => invSbox0T_bit) invSbox0_check (by decide +kernel) hok
+
+theorem sr2_check :
+    check (lanes 64 9) srCfg (kExt fxKs) sr2 (linEnv qIns) (linPost 9 (qOuts (flat (sr2T 4)))) = true := by
+  decide +kernel
+
+theorem sr2_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fxKs) :
+    ∃ s', runBlock isa sr2 s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (sr2T 4 j p)) ∧ Rest srCfg s s' :=
+  lin_ok sr2_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl) (kExt_rel hks)
+
+theorem mixColumns1_check :
+    check (lanes 64 9) srCfg (kExt fx1Ks) mixColumns1 (linEnv qIns)
+      (linPost 9 (qOuts (flat (mixT mcCoeffs 4 true)))) = true := by
+  decide +kernel
+
+theorem mixColumns1_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fx1Ks) :
+    ∃ s', runBlock isa mixColumns1 s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT mcCoeffs 4 true j p)) ∧ Rest srCfg s s' :=
+  lin_ok mixColumns1_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+    (kExt_rel hks)
+
+theorem invMixColumns1_check :
+    check (lanes 64 9) srCfg (kExt fx1Ks) invMixColumns1 (linEnv qIns)
+      (linPost 9 (qOuts (flat (mixT invMcCoeffs 4 true)))) = true := by
+  decide +kernel
+
+theorem invMixColumns1_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fx1Ks) :
+    ∃ s', runBlock isa invMixColumns1 s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT invMcCoeffs 4 true j p)) ∧ Rest srCfg s s' :=
+  lin_ok invMixColumns1_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+    (kExt_rel hks)
+
+/-! ## The round keys with `{63}` added -/
+
+/-- Round key `j` as the fixed rounds take it: odd ones in form 1, and all but
+the first with `{63}` added. -/
+def KeyRelF (j : Nat) (W : Nat → BitVec 64) (rk : List Byte) : Prop :=
+  Proof.Aes.BsRel 4 (decide (j % 2 = 1)) W fun _ => if j = 0 then rkState rk else c63 (rkState rk)
+
+theorem keyRelF_congr {j : Nat} {K K' : Nat → BitVec 64} {rk : List Byte} (h : KeyRelF j K rk)
+    (he : ∀ k < 8, K' k = K k) : KeyRelF j K' rk :=
+  Proof.Aes.BsRel.congrW h fun i hi => (he i hi).symm
+
+/-- A round key that the slices' words add. -/
+theorem bs_ark {f : Bool} {W W' K : Nat → BitVec 64} {S : Nat → Spec.Aes.State} {rk : List Byte}
+    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = ((W j).getLsbD p ^^ (K j).getLsbD p))
+    (hS : Proof.Aes.BsRel 4 f W S) (hK : Proof.Aes.BsRel 4 f K fun _ => rkState rk) :
+    Proof.Aes.BsRel 4 f W' fun b => Spec.Aes.addRoundKey (S b) rk := hS.addRoundKey hK h
+
+/-- The same, with `{63}` added. -/
+theorem bs_ark63 {f : Bool} {W W' K : Nat → BitVec 64} {S : Nat → Spec.Aes.State} {rk : List Byte}
+    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = ((W j).getLsbD p ^^ (K j).getLsbD p))
+    (hS : Proof.Aes.BsRel 4 f W S) (hK : Proof.Aes.BsRel 4 f K fun _ => c63 (rkState rk)) :
+    Proof.Aes.BsRel 4 f W' fun b => c63 (Spec.Aes.addRoundKey (S b) rk) := fun j hj n hn k hk => by
+  rw [h j hj _ (at_lt f hn hk), hS j hj n hn k hk, hK j hj n hn k hk, getD_c63 _ hn, getD_c63 _ hn,
+    getD_rkState _ hn, Spec.Aes.addRoundKey, getD_ofFn _ hn, BitVec.xor_assoc]
+  simp only [BitVec.getLsbD_xor]
+
+theorem add63_check :
+    check (table 64 256) sboxCfg (fun _ => none) add63 tabEnv (tabPost (xorT sbIns k63)) = true := by
+  decide +kernel
+
+theorem add63_ok {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa add63 s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = (bsByte (Q s) p ^^^ 0x63).getLsbD j) ∧ Rest sboxCfg s s' :=
+  tab_ok (g := (· ^^^ 0x63)) (fun c j hc hj => by
+    rw [← getLsbD_row _ _ hj, row_xorT (by decide) (by decide), row_sbIns hc, row_k63 hc]) add63_check
+    (by decide +kernel) hok
+
+/-! ## One block to slices -/
+
+def slice1T (j p : Nat) : List (Nat × Nat) :=
+  [(4 * (byteAt 4 false p / 8), 8 * (byteAt 4 false p % 8) + j)]
+
+theorem slice1_check :
+    check (lanes 64 9) bsCfg (kExt bsKs) slice1 (linEnv qIns) (linPost 9 (qOuts (flat slice1T))) = true := by
+  decide +kernel
+
+theorem slice1_ok {s : State} (hok : Ok bsCfg s) (hks : MasksAt s.mem (s.gpr sb) bsKs) :
+    ∃ s', runBlock isa slice1 s = some s' ∧
+      (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (slice1T j p)) ∧ Rest bsCfg s s' :=
+  lin_ok slice1_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl) (kExt_rel hks)
+
+/-- The bytes of the state that `q 0` and `q 4` hold, at `n`'s place in form `f`. -/
+theorem bs_of_slice1 {f : Bool} {W W' : Nat → BitVec 64} {S : Spec.Aes.State}
+    (h : ∀ j < 8, ∀ p < 64, (W' j).getLsbD p = termsXor W (slice1T j p))
+    (hS : ∀ n < 16, ∀ j < 8, (W (4 * (byteAt 4 false (at_ 4 f n 0) / 8))).getLsbD
+      (8 * (byteAt 4 false (at_ 4 f n 0) % 8) + j) = (S.getD n 0).getLsbD j) :
+    Proof.Aes.BsRel 4 f W' fun _ => S := fun j hj n hn k hk => by
+  rw [h j hj _ (at_lt f hn hk)]
+  simp only [slice1T, termsXor, List.foldr_cons, List.foldr_nil, Bool.xor_false]
+  have e : byteAt 4 false (at_ 4 f n k) = byteAt 4 false (at_ 4 f n 0) := by
+    simp only [byteAt, at_div f n hk, at_div f n (show 0 < 4 by decide)]
+  rw [e]
+  exact hS n hn j hj
 
 end VG.Proof.Aes.RISCV64

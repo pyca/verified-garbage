@@ -89,14 +89,11 @@ def mixColumns : List Instr :=
 /-- Where `imcPre` keeps its sums. -/
 def ib : Nat → Reg
   | 0 => .t2 | 1 => .t3 | 2 => .t4 | 3 => .t5
-  | 4 => .t6 | 5 => .a6 | 6 => .a7 | _ => .s8
+  | 4 => .t6 | 5 => .a6 | 6 => .s9 | _ => .s8
 
-/-- `a ⊕ 4 (a ⊕ row2(a))`, whose MixColumns is InvMixColumns of `a`:
-`d(x) = a(x) (4 x² + 5) mod x⁴ + 1`. `ib j` holds slice `j` of `a ⊕ row2(a)`,
-and `t0` the sum of its slices 6 and 7, which the reduction needs twice. -/
-def imcPre : List Instr :=
-  ((List.range 8).flatMap fun j =>
-    [shrI t0 (q j) 32, shlI t1 (q j) 32, xorR t0 t0 t1, xorR (ib j) (q j) t0]) ++
+/-- `a ⊕ 4 b` for `b` in `ib`; `t0` the sum of its slices 6 and 7, which the
+reduction needs twice. -/
+def imcSum : List Instr :=
   [xorR t0 (ib 6) (ib 7),
    xorR (q 0) (q 0) (ib 6), xorR (q 1) (q 1) t0,
    xorR (q 2) (q 2) (ib 0), xorR (q 2) (q 2) (ib 7),
@@ -104,6 +101,12 @@ def imcPre : List Instr :=
    xorR (q 4) (q 4) (ib 2), xorR (q 4) (q 4) t0,
    xorR (q 5) (q 5) (ib 3), xorR (q 5) (q 5) (ib 7),
    xorR (q 6) (q 6) (ib 4), xorR (q 7) (q 7) (ib 5)]
+
+/-- `a ⊕ 4 (a ⊕ row2(a))`, whose MixColumns is InvMixColumns of `a`:
+`d(x) = a(x) (4 x² + 5) mod x⁴ + 1`. -/
+def imcPre : List Instr :=
+  ((List.range 8).flatMap fun j =>
+    [shrI t0 (q j) 32, shlI t1 (q j) 32, xorR t0 t0 t1, xorR (ib j) (q j) t0]) ++ imcSum
 
 def invMixColumns : List Instr := imcPre ++ mixColumns
 

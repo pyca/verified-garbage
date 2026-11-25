@@ -393,7 +393,18 @@ theorem correctBsWith {o : Bool} {s₀ : State} {S : Addr} {w : List Byte} (hp :
   obtain kc : KeysIn ⟨BK, 960⟩ BK R := fun j hj k hk => by
     rw [wordAddr, Offset.add_add]
     exact Offset.contains_base BK (by omega_arith) (by omega_arith)
-  obtain hs : GSetupK s₄ X b S D .ra ⟨BK, 960⟩ BK n R w icb :=
+  have kat₄ : KeysAt s₄.mem BK R w := keysAt_frameK f₀₄ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKC) kc hp.kw
+  have kd : ∀ r ∈ gRegions b D n, Region.Disjoint ⟨BK, 960⟩ r := fun r hr => by
+    simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact dKS.sub_right (scr_base X (by omega_using []))
+    · exact dKS.sub_right (scr_part X (by omega_using []))
+    · exact dKD
+  obtain hs : GSetupK (encrypt4K .ra) s₄ X b S D n R w icb :=
     { scr := hscr₄
       base := hb₄
       masks := mk₄
@@ -403,24 +414,19 @@ theorem correctBsWith {o : Bool} {s₀ : State} {S : Addr} {w : List Byte} (hp :
       hn := n16
       sep := dDS
       ssep := hp.sS
-      rounds := hR
-      kbr := by decide
-      k0 := by
-        rw [← kb₄, ok₃ _ (by decide), k₃ _ (by decide) (by decide) (by decide) (by decide)]
-      kin := fun j hj k hk => ⟨_, List.mem_append_left _ (by rw [rd₄']; exact hp.keys), kc j hj k hk⟩
-      kal := hp.kal
-      kat := kc
-      kd := fun r hr => by
-        simp only [gRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact dKS.sub_right (scr_base X (by omega_using []))
-        · exact dKS.sub_right (scr_part X (by omega_using []))
-        · exact dKD
-      keys := keysAt_frameK f₀₄ (fun r hr => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl
-          · exact dKS
-          · exact dKC) kc hp.kw
+      crypt_ok := fun s₁ scr hb mk ha hra hrd hwr hf _ hin => encrypt4K_ok (K := ⟨BK, 960⟩)
+        { scr := scr
+          masks := mk
+          rounds := hR
+          kbr := by decide
+          k0 := by
+            rw [ha, a0₄, hra, ← kb₄, ok₃ _ (by decide), k₃ _ (by decide) (by decide) (by decide) (by decide)]
+          kin := fun j hj k hk => ⟨_, List.mem_append_left _ (by rw [hrd, rd₄']; exact hp.keys),
+            by rw [ha, a0₄]; exact kc j hj k hk⟩
+          kal := by rw [ha, a0₄]; exact hp.kal
+          kat := by rw [ha, a0₄]; exact kc
+          kd := by rw [hb]; exact kd _ (by simp [gRegions])
+          keys := by rw [ha, a0₄]; exact keysAt_frameK hf kd kc kat₄ } hin
       lo := fun i hi j hj => by
         rw [clo₄, readW_bit _ _ hi hj, ← BitVec.add_zero ctr,
           blockAt_bit _ _ (by omega_arith) hj]
@@ -472,13 +478,13 @@ theorem correctBsWith {o : Bool} {s₀ : State} {S : Addr} {w : List Byte} (hp :
     · have hn0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨hb₄, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩
     · have hn0 : n ≠ 0 := by simpa using h0
-      obtain hi₄ : GInvK o s₀.mem s₄ b S D .ra BK n R w icb 0 s₄ :=
-        ⟨by omega_arith, by rw [a3₄]; simp, by rw [hsr]; simp, by rw [a4₄]; simp [n], hb₄, a0₄, rfl,
+      obtain hi₄ : GInvK o s₀.mem s₄ b S D n R w icb 0 s₄ :=
+        ⟨by omega_arith, by rw [a3₄]; simp, by rw [hsr]; simp, by rw [a4₄]; simp [n], hb₄, rfl,
           rfl, rfl, rfl, rfl, Frame.refl _ _, by rw [num₄, icb_lo]; simp [icb], data₄⟩
       -- By doublewords if the data's addresses are aligned.
-      unfold ctrGroupsK
+      unfold ctrGroups
       refine WP.seq (alignTest_wp a3₄ hsr hp.inPlace fun s₇ v u₇ ev => ?_)
-      obtain hi₇ := hi₄.of_t0 (by decide) u₇
+      obtain hi₇ := hi₄.of_t0 u₇
       exact WP.ite _ ev
         (fun h => groupsK_ok hs (fun _ => by simpa using h) hi₇)
         (fun _ => groupsK_ok hs (fun h => Bool.noConfusion h) hi₇)
