@@ -307,3 +307,9 @@ operands, and fewer instructions; the deficit, 11 cycles, is about 33 of them:
   addition: 4 stores and 4 loads fewer.
 
 32 fewer in all.
+
+riscv64, measured (run 45705935970, its earlier prep registers): the interleaved
+rounds' medians 1.026 at 16 KiB, single estimates 1.012; 64 B 1.00 to 1.03; 1 MiB
+0.995; GCM-SIV 0.999 to 1.034. Left: 64-bit words and five classes with `mulhu`
+(about 60 fewer of 493 instructions, but another 29 registers' allocation, and the
+prepared form's table is fixed as 32-bit words). Not done.
