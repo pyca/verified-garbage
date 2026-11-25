@@ -1589,7 +1589,7 @@ provider built on it.
 
 <td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL, SM4, NEON</td>
+<td>✅ AES, PMULL, SM4</td>
 
 <td>✅</td>
 

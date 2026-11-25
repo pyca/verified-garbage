@@ -4,8 +4,9 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
-public import VerifiedGarbage.Impl.Gcm.AArch64
+public import VerifiedGarbage.Impl.Gcm.AArch64.Neon
 public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 
@@ -169,10 +170,12 @@ def openWithPowersBase (v : Calls) : Prog isa :=
 def openToWithPowersBase (v : Calls) : Prog isa :=
   scrubAll 2608 32 own (withStackArgScratch 2608 4 (openToCode v))
 
-/-- `vg_aes_gcm_store_powers` in the baseline ISA: `Impl.Gcm.AArch64.keyPowers`
-with its working space in its frame. -/
+/-- `vg_aes_gcm_store_powers` in the baseline ISA: `Neon.keyPowers`, then the
+powers and the key it leaves in vector registers cleared. -/
 def storePowers : Prog isa :=
-  scrubAll 80 0 own (withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers)
+  VG.Impl.Scrub.AArch64.withClears []
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
+     .v27, .v28, .v29, .v30, .v31] none Impl.Gcm.AArch64.Neon.keyPowers
 
 /-! ## Calling the implementations by the addresses in d8, d9 and d10
 

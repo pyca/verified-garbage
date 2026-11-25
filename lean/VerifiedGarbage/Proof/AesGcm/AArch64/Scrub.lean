@@ -174,18 +174,6 @@ theorem openToWithPowersOk (stack : Nat) :
     rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]
     exact h key hk
 
-/-- `vg_aes_gcm_store_powers`: its postcondition reads the memory on return
-only within the powers. -/
-theorem storePowersOk (stack : Nat) (hW : 0 < stack) :
-    ScrubAllOk (Spec.Gcm.storePowersContract abi stack) stack (Spec.Gcm.storePowersSig.retBits abi.ptrBits) :=
-  scrubAllOk_regs (sig := Spec.Gcm.storePowersSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
-    (Proof.AesGcm.storePowersPostOut_local _)
-
-/-- `storePowersOk` in its frame of 80 bytes. -/
-theorem storePowersOk80 :
-    ScrubAllOk (Spec.Gcm.storePowersContract abi 80) 80 (Spec.Gcm.storePowersSig.retBits abi.ptrBits) :=
-  storePowersOk 80 (by decide)
-
 /-! ## The stream functions
 
 Their postconditions read the memory on return only within their buffers:

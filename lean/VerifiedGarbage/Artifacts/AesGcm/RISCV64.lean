@@ -61,6 +61,6 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.Gcm.sealContiguousBitslicedApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.Contiguous.code
     verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed
-      (Proof.AesGcm.RISCV64.preparedInvocation_wp Proof.Gcm.Holes.mulK_eq) }]
+      Proof.AesGcm.RISCV64.preparedInvocation_wp }]
 
 end VG.Artifacts.AesGcm.RISCV64

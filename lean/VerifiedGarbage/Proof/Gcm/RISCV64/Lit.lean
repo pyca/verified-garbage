@@ -12,10 +12,15 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 
-/-! # GHASH on RISC-V: the code as a literal, for the checks that evaluate it -/
+/-! # `vg_ghash` on RISC-V, as a literal
+
+For the checks of every instruction and the constant-time analyses that
+evaluate it. -/
 
 @[expose] public section
 
-namespace VG.Impl.Gcm.RISCV64
-materialize_code ghash
-end VG.Impl.Gcm.RISCV64
+namespace VG
+
+materialize_code Impl.Gcm.RISCV64.ghash
+
+end VG

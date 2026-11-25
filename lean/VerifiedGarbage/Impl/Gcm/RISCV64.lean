@@ -1,44 +1,31 @@
 module
 
-public import VerifiedGarbage.Impl.Words.RISCV64
+public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Impl.Words.RISCV64.Word64
-public import VerifiedGarbage.Impl.StackScratch.RISCV64
-public import VerifiedGarbage.Impl.Gcm.Clmul
 
 /-!
-# GHASH: RISC-V implementation
+# GHASH on RISC-V (RV64IM), with integer multiplications
 
 `vg_ghash(h = a0, y = a1, data = a2, n = a3, scratch = a4)`.
 
-For each of the `n` blocks `X` at `data`, `Y := (Y ⊕ X) • H` (SP 800-38D
-Algorithm 1, `Spec.Gcm.mul`), as the product of polynomials modulo
-`g = x¹²⁸ + x⁷ + x² + x + 1` (`Proof/Gcm/Poly.lean`).
+A block is two big-endian doublewords, the first `y₁`, whose bit `63 − i` is
+the coefficient of `xⁱ`. The key is used as `H · x⁻¹`, which makes up for the
+factor `x` of carry-less products of words read in this order.
 
-* A 128-bit value is two 64-bit words, loaded big-endian a byte at a time
-  (the buffers' alignment the contract does not state), the first holding
-  the terms of degree below 64, the bit of `x⁰` its most significant.
-* The base ISA has no carry-less multiplication, so the code computes it
-  with integer multiplications whose operands have holes (as BearSSL's
-  `ghash_ctmul64` does; Thomas Pornin, MIT licence): a 32-bit value is
-  split into its four classes of bits modulo 4 (`a ∧ Kᵢ`, `Kᵢ` the bits
-  `≡ i mod 4`), and each class `t` of the product is the sum of the four
-  integer products of classes adding up to `t`, which at most 8 pairs of
-  bits reach, so that no carry reaches the next bit of the class (`holes`).
-  A 64-bit product takes three (`pm`, Karatsuba) and a block's three
-  (`mulK`, Karatsuba again), then the 256-bit product is reduced modulo `g`
-  with shifts (`reduce`), as on x86-64.
-* The key is `H · x⁻¹` (`key0`, `key1`): the products of words are those of
-  polynomials times `x`. The halves of its two words and of their sum, each
-  split into its four classes, are the 36 doublewords at the start of the
-  frame, written once (`prep`), and read by every product.
-* The frame holds them, the two products a block keeps while it computes
-  the third (`spill`), and `s0`–`s9`; it is the 2048 bytes below the stack
-  pointer that the contract gives. The prepared key, the spills and the
-  saved registers (the caller's) are zeroed before the frame is popped.
-* The pointers and the block count are public, and so is everything
-  computed from them; no address and no branch depends on anything else.
-  The multiplications take secret operands: the M extension's `mul` has no
-  operand-dependent timing on the cores this code is for.
+* The carry-less product of two 32-bit words is the sum of 16 integer
+  products (`clmul`): each word is split into the four classes of its bit
+  positions modulo 4. The partial products of class `i` by class `j` lie at
+  positions of class `i + j`, at most 8 at each, which is less than 2⁴, so
+  that a position's sum does not carry into the next of its class. The four
+  products that meet in a class are added with XOR and masked once.
+* Karatsuba's method, twice, multiplies two blocks with nine of them.
+* The product is reduced with shifts: `x¹²⁸ = 1 + x + x² + x⁷`.
+
+The key's nine words in their four classes are 36 doublewords
+(`Spec/Gcm/Bitsliced.lean`), which `prep` writes, here in the function's
+frame; the loop (`loopCode`) reads them at `a0` and keeps everything else in
+registers. `scratch` is not used. Every branch and every address depends only
+on the pointers and `n`.
 -/
 
 @[expose] public section
@@ -46,164 +33,149 @@ Algorithm 1, `Spec.Gcm.mul`), as the product of polynomials modulo
 namespace VG.Impl.Gcm.RISCV64
 
 open VG.RISCV64
-open VG.Impl.Words.RISCV64 (loadBE64 storeBE)
+open VG.Impl.Words.RISCV64
 
-/-! ## Registers -/
+def xorI (d n m : Reg) : Instr := .logic .xor d n m
+def andI (d n m : Reg) : Instr := .logic .and d n m
+def sll (d n : Reg) (k : Nat) : Instr := .shift .sll .d d n k
+def srl (d n : Reg) (k : Nat) : Instr := .shift .srl .d d n k
+def mv (d n : Reg) : Instr := .addi d n 0
 
-def HP : Reg := .a0
-def YP : Reg := .a1
-def DP : Reg := .a2
-def N : Reg := .a3
-/-- `Y`, its two words. -/
-def Y0 : Reg := .a4
-def Y1 : Reg := .a5
-/-- The masks `Kᵢ` of the classes of bits. -/
-def K : Nat → Reg
+/-- The positions congruent to `j` modulo 4. -/
+def mask (j : Nat) : BitVec 64 := 0x1111111111111111#64 <<< j
+
+def maskReg (j : Nat) : Reg :=
+  match j with
   | 0 => .s0 | 1 => .s1 | 2 => .s2 | _ => .s3
-/-- A factor's classes. -/
-def Xc : Nat → Reg
-  | 0 => .t0 | 1 => .t1 | 2 => .t2 | _ => .t3
-/-- The product's classes. -/
-def Z : Nat → Reg
-  | 0 => .t4 | 1 => .t5 | 2 => .t6 | _ => .s8
-/-- The other factor's class, loaded. -/
-def B : Reg := .a6
-/-- A temporary. -/
-def T : Reg := .a7
-/-- The 32-bit factor of `holes`. -/
-def HA : Reg := .s4
-/-- The high half of a 64-bit factor. -/
-def XH : Reg := .s5
-/-- The low product of `pm`, then its low word. -/
-def PL : Reg := .s6
-/-- The middle product of `pm`. -/
-def PM : Reg := .s7
-/-- The frame. -/
-def FP : Reg := .s9
 
-/-! ## The frame -/
-
-/-- Doubleword `k` of the frame: `0`–`35` the prepared key (`4 i + j` class
-`j` of operand `i`), `36`–`39` the spills, `40`–`49` the saved registers. -/
-def slot (k : Nat) : Nat := 8 * k
-
-def saved : List (Reg × Nat) :=
-  [(.s0, slot 40), (.s1, slot 41), (.s2, slot 42), (.s3, slot 43), (.s4, slot 44),
-   (.s5, slot 45), (.s6, slot 46), (.s7, slot 47), (.s8, slot 48), (.s9, slot 49)]
-
-def frameBytes : Nat := 2048
-
-/-- `sd r, d(t0)` for each saved register. -/
-def saveRegs : List Instr := saved.map fun (r, d) => .store .d r .t0 d
-
-/-- `ld r, d(t0)` for each saved register. -/
-def restoreRegs : List Instr := saved.map fun (r, d) => .load .d r .t0 d
-
-/-! ## A 32-bit carry-less product -/
-
-/-- `Z₀ := (HA ⊗ b)`'s 64 bits, for the 32-bit `HA` and the 32-bit `b`
-whose four classes are at `off(FP)`: `Xᵢ := HA ∧ Kᵢ`, each class `j` of `b`
-loaded and multiplied by each `Xᵢ` into `Z_{i + j}`, then each `Zₜ` masked
-to its class and the four combined. -/
-def holesCode (off : Nat) : List Instr :=
-  (List.range 4).map (fun i => .logic .and (Xc i) HA (K i)) ++
-  .load .d B FP off :: (List.range 4).map (fun i => .mul (Z i) (Xc i) B) ++
-  ((List.range 3).flatMap fun j =>
-    .load .d B FP (off + 8 * (j + 1)) ::
-      (List.range 4).flatMap fun i => [.mul T (Xc i) B, .logic .xor (Z ((i + j + 1) % 4)) (Z ((i + j + 1) % 4)) T]) ++
-  (List.range 4).map (fun t => .logic .and (Z t) (Z t) (K t)) ++
-  [.logic .or (Z 0) (Z 0) (Z 1), .logic .or (Z 0) (Z 0) (Z 2), .logic .or (Z 0) (Z 0) (Z 3)]
-
-/-! ## A 64-bit carry-less product -/
-
-/-- `(PL, Z₀) :=` the low and high words of `x ⊗ k` for the 64-bit `x` in
-`X`, with `k`'s three operands prepared at `off(FP)`: its halves' products
-and Karatsuba's middle one. -/
-def pmCode (X : Reg) (off : Nat) : List Instr :=
-  [.shift .srl .d XH X 32, .shift .sll .d HA X 32, .shift .srl .d HA HA 32] ++
-  holesCode off ++ [.addi PL (Z 0) 0, .logic .xor HA HA XH] ++
-  holesCode (off + 64) ++ [.addi PM (Z 0) 0, .addi HA XH 0] ++
-  holesCode (off + 32) ++
-  [.logic .xor PM PM PL, .logic .xor PM PM (Z 0),
-   .shift .sll .d T PM 32, .logic .xor PL PL T, .shift .srl .d T PM 32, .logic .xor (Z 0) (Z 0) T]
+/-- The masks, the first built and the others shifted from it. -/
+def maskCode : List Instr :=
+  li64 .s0 .t0 (mask 0) ++ ([sll .s1 .s0 1, sll .s2 .s0 2, sll .s3 .s0 3] : List Instr)
 
 /-! ## The key -/
 
-/-- `t0, t1 := H`, then `t3 := key0` and `t5 := key1`. -/
-def keyCode : List Instr :=
-  loadBE64 .t0 .t2 HP 0 ++ loadBE64 .t1 .t2 HP 8 ++
-  [.shift .sll .d .t3 .t0 1, .shift .srl .d .t4 .t1 63, .logic .xor .t3 .t3 .t4,
-   .shift .srl .d .t4 .t0 63, .li .t2 0, .sub .t4 .t2 .t4,
-   .li .t5 (-62), .shift .sll .d .t5 .t5 56, .logic .and .t5 .t4 .t5, .logic .xor .t3 .t3 .t5,
-   .shift .sll .d .t5 .t1 1, .logicImm .and .t6 .t4 1, .logic .xor .t5 .t5 .t6]
+/-- The hash subkey's address, and the table's. -/
+abbrev HP : Reg := .a0
+abbrev FP : Reg := .s9
 
-/-- The masks: `K₀ = 0x1111…1`, `Kᵢ = K₀ << i`. -/
-def maskCode : List Instr :=
-  [.lui (K 0) 0x11111, .addi (K 0) (K 0) 0x111, .shift .sll .d T (K 0) 32, .logic .or (K 0) (K 0) T,
-   .shift .sll .d (K 1) (K 0) 1, .shift .sll .d (K 2) (K 0) 2, .shift .sll .d (K 3) (K 0) 3]
+/-- `d ^= s ≪ 63 ^ s ≪ 62 ^ s ≪ 57`, through `t`. -/
+def foldDn (d s t : Reg) : List Instr :=
+  [sll t s 63, xorI d d t, sll t s 62, xorI d d t, sll t s 57, xorI d d t]
 
-/-- The four classes of `v` to slots `4 i … 4 i + 3`. -/
-def splitStore (v : Reg) (i : Nat) : List Instr :=
-  (List.range 4).flatMap fun j => [.logic .and T v (K j), .store .d T FP (slot (4 * i + j))]
+/-- `d ^= s ≫ 1 ^ s ≫ 2 ^ s ≫ 7`, through `t`. -/
+def foldUp (d s t : Reg) : List Instr :=
+  [srl t s 1, xorI d d t, srl t s 2, xorI d d t, srl t s 7, xorI d d t]
 
-/-- Operand `p` (of 3) of the key word in `w`: its low half, its high half
-and their sum, each split into classes, as operands `3 p`, `3 p + 1` and `3 p + 2`. -/
-def prepWord (w : Reg) (p : Nat) : List Instr :=
-  [.shift .sll .d .t6 w 32, .shift .srl .d .t6 .t6 32, .shift .srl .d B w 32, .logic .xor HA .t6 B] ++
-  splitStore .t6 (3 * p) ++ splitStore B (3 * p + 1) ++ splitStore HA (3 * p + 2)
+/-- `H · x⁻¹`, from `H`'s words in `t1` and `t2`, in `t4` and `t2`, and the
+sum of its words in `t3`. -/
+def adjust : List Instr :=
+  ([srl .t5 .t1 63, srl .t6 .t2 63, sll .t4 .t1 1, xorI .t4 .t4 .t6, sll .t2 .t2 1, xorI .t2 .t2 .t5] : List Instr) ++
+  foldDn .t4 .t5 .t6 ++ ([xorI .t3 .t4 .t2] : List Instr)
 
-/-- The prepared key: `key0`, `key1` and their sum. -/
-def prep : List Instr :=
-  keyCode ++ maskCode ++ prepWord .t3 0 ++ prepWord .t5 1 ++ [.logic .xor .t4 .t3 .t5] ++ prepWord .t4 2
+def classStore (i : Nat) (r : Reg) (j : Nat) : List Instr :=
+  [andI .a6 r (maskReg j), .store .d .a6 FP (8 * (4 * i + j))]
+
+/-- The four classes of the word in `r`, the key's word `i` of 32 bits. -/
+def operand (i : Nat) (r : Reg) : List Instr := (List.range 4).flatMap (classStore i r)
+
+/-- The three operands of the doubleword in `r`. -/
+def operands (t : Nat) (r : Reg) : List Instr :=
+  ([sll .t5 r 32, srl .t5 .t5 32, srl .t6 r 32, xorI .t0 .t5 .t6] : List Instr) ++
+  operand (3 * t) .t5 ++ operand (3 * t + 1) .t6 ++ operand (3 * t + 2) .t0
+
+def keyCode : List Instr := maskCode ++ adjust ++ operands 0 .t4 ++ operands 1 .t2 ++ operands 2 .t3
+
+/-- The 36 doublewords at `FP` from the hash subkey at `HP`. -/
+def prep : List Instr := loadBE64 .t1 .t0 HP 0 ++ (loadBE64 .t2 .t0 HP 8 ++ keyCode)
+
+/-! ## The product of two 32-bit words -/
+
+/-- The classes of the word being multiplied, and of the key's. -/
+def wc (i : Nat) : Reg :=
+  match i with
+  | 0 => .t0 | 1 => .t1 | 2 => .t2 | _ => .t3
+
+def kc (i : Nat) : Reg :=
+  match i with
+  | 0 => .t4 | 1 => .t5 | 2 => .t6 | _ => .a5
+
+def classes (x : Reg) (i : Nat) : List Instr :=
+  [andI .t0 x .s0, andI .t1 x .s1, andI .t2 x .s2, andI .t3 x .s3,
+   .load .d .t4 .a0 (8 * (4 * i + 0)), .load .d .t5 .a0 (8 * (4 * i + 1)),
+   .load .d .t6 .a0 (8 * (4 * i + 2)), .load .d .a5 .a0 (8 * (4 * i + 3))]
+
+/-- The first class of the product, in `d`. -/
+def classFirst (d : Reg) : List Instr :=
+  [.mul d .t0 .t4, .mul .a7 .t1 .a5, xorI d d .a7, .mul .a7 .t2 .t6, xorI d d .a7, .mul .a7 .t3 .t5, xorI d d .a7,
+   andI d d .s0]
+
+/-- The class `r` of the product, added to `d`. -/
+def classSum (d : Reg) (r : Nat) : List Instr :=
+  [.mul .a6 (wc 0) (kc (r % 4)), .mul .a7 (wc 1) (kc ((r + 3) % 4)), xorI .a6 .a6 .a7,
+   .mul .a7 (wc 2) (kc ((r + 2) % 4)), xorI .a6 .a6 .a7, .mul .a7 (wc 3) (kc ((r + 1) % 4)), xorI .a6 .a6 .a7,
+   andI .a6 .a6 (maskReg r), xorI d d .a6]
+
+/-- The carry-less product of the 32-bit word in `x` and the key's word `i`,
+in `d`. -/
+def clmul (d x : Reg) (i : Nat) : List Instr :=
+  classes x i ++ classFirst d ++ classSum d 1 ++ classSum d 2 ++ classSum d 3
+
+/-- The carry-less product of the doubleword in `w` and the key's doubleword
+`t`, in `hi : lo` (`hi` may be `w`). -/
+def mul (lo hi w : Reg) (t : Nat) : List Instr :=
+  ([sll .s10 w 32, srl .s10 .s10 32] : List Instr) ++ clmul lo .s10 (3 * t) ++ ([srl .s11 w 32] : List Instr) ++
+  clmul hi .s11 (3 * t + 1) ++ ([xorI .s10 .s10 .s11] : List Instr) ++ clmul .s8 .s10 (3 * t + 2) ++
+  ([xorI .s8 .s8 lo, xorI .s8 .s8 hi, sll .s10 .s8 32, xorI lo lo .s10, srl .s10 .s8 32, xorI hi hi .s10] : List Instr)
 
 /-! ## A block -/
 
-/-- `Y := (Y ⊕ X) • H` for the block `X` at `data`: the three products,
-their sum and the reduction. -/
-def blockCodeWith (spill : Reg) (first : Nat) : List Instr :=
-  loadBE64 .t0 .t2 DP 0 ++ loadBE64 .t1 .t2 DP 8 ++
-  [.logic .xor Y0 Y0 .t0, .logic .xor Y1 Y1 .t1] ++
-  pmCode Y0 (slot 0) ++ [.store .d PL spill (slot (first + 0)), .store .d (Z 0) spill (slot (first + 1))] ++
-  pmCode Y1 (slot 12) ++ [.store .d PL spill (slot (first + 2)), .store .d (Z 0) spill (slot (first + 3))] ++
-  [.logic .xor Y0 Y0 Y1] ++ pmCode Y0 (slot 24) ++
-  [.load .d .t0 spill (slot (first + 0)), .load .d .t1 spill (slot (first + 1)), .load .d .t2 spill (slot (first + 2)), .load .d .t3 spill (slot (first + 3)),
-   -- `w₁`, `w₂`
-   .logic .xor B (Z 0) .t1, .logic .xor B B .t3, .logic .xor B .t0 B,
-   .logic .xor T PL .t0, .logic .xor T T .t2, .logic .xor T T .t3,
-   -- `A₂ := foldHi w₂ w₃`
-   .shift .sll .d .t4 .t2 63, .logic .xor T T .t4, .shift .sll .d .t4 .t2 62, .logic .xor T T .t4,
-   .shift .sll .d .t4 .t2 57, .logic .xor T T .t4,
-   -- `B₁ := foldLo w₁ w₃`
-   .logic .xor B B .t2, .shift .srl .d .t4 .t2 1, .logic .xor B B .t4, .shift .srl .d .t4 .t2 2,
-   .logic .xor B B .t4, .shift .srl .d .t4 .t2 7, .logic .xor B B .t4,
-   -- `Y₀ := foldLo w₀ A₂`
-   .logic .xor Y0 .t1 T, .shift .srl .d .t4 T 1, .logic .xor Y0 Y0 .t4, .shift .srl .d .t4 T 2,
-   .logic .xor Y0 Y0 .t4, .shift .srl .d .t4 T 7, .logic .xor Y0 Y0 .t4,
-   -- `Y₁ := foldHi B₁ A₂`
-   .shift .sll .d .t4 T 63, .logic .xor Y1 B .t4, .shift .sll .d .t4 T 62, .logic .xor Y1 Y1 .t4,
-   .shift .sll .d .t4 T 57, .logic .xor Y1 Y1 .t4,
-   .addi DP DP 16, .addi N N (-1)]
+/-- `d = s ^ w ≪ 63 ^ w ≪ 62 ^ w ≪ 57`, through `t`. -/
+def foldDnTo (d s w t : Reg) : List Instr :=
+  [sll t w 63, xorI s s t, sll t w 62, xorI s s t, sll t w 57, xorI d s t]
 
-/-- The public GHASH operation keeps its products in the frame following its prepared key. -/
-def blockCode : List Instr := blockCodeWith FP 36
+/-- The product of `y₁ : y₀` (`s4`, `s5`) and the key, reduced: the sums' product
+goes to `s9 : a4`, the first words' to them and `s4`, then the last words'. -/
+def core : List Instr :=
+  ([xorI .s9 .s4 .s5] : List Instr) ++ mul .a4 .s9 .s9 2 ++ mul .s6 .s4 .s4 0 ++
+  ([xorI .a4 .a4 .s6, xorI .s9 .s9 .s4, xorI .s9 .s9 .s6] : List Instr) ++ mul .s6 .s7 .s5 1 ++
+  ([xorI .a4 .a4 .s6, xorI .a4 .a4 .s7, xorI .s9 .s9 .s7, xorI .s9 .s9 .s6] : List Instr) ++
+  foldDn .a4 .s6 .t0 ++ foldUp .s9 .s6 .t0 ++ ([xorI .s4 .s4 .a4] : List Instr) ++ foldUp .s4 .a4 .t0 ++
+  foldDnTo .s5 .s9 .a4 .t0
 
-/-! ## The function -/
+def loadX : List Instr := loadBE64 .s6 .t0 .a2 0 ++ loadBE64 .s7 .t0 .a2 8
 
-/-- `Y` in. -/
-def loadY : List Instr := loadBE64 Y0 .t2 YP 0 ++ loadBE64 Y1 .t2 YP 8
+def body : List Instr :=
+  loadX ++ ([xorI .s4 .s4 .s6, xorI .s5 .s5 .s7] : List Instr) ++ core ++
+  ([.addi .a2 .a2 16, .addi .a3 .a3 (-1)] : List Instr)
 
-/-- `Y` out. -/
-def storeY : List Instr := storeBE 8 Y0 .t2 YP 0 ++ storeBE 8 Y1 .t2 YP 8
+def loopCode : Prog isa := .ite (.zero .a3) (.block []) (.loop (.block body) (.nonzero .a3))
 
-/-- The frame's body: the registers saved, the key prepared, `Y` in, the
-blocks, `Y` out, the registers restored, and the prepared key, the spills and
-the saved registers zeroed. -/
-def body : Prog isa :=
-  .seq (.block (.addSp .t0 0 :: saveRegs ++ [.addSp FP 0] ++ prep ++ loadY))
-    (.seq (.loop (.block blockCode) (.nonzero N))
-      (.block (storeY ++ (.addSp .t0 0 :: restoreRegs) ++ Impl.StackScratch.RISCV64.wipe 50)))
+/-! ## The functions -/
+
+/-- What the functions keep in their frames, in this order. -/
+def saved : List Reg := [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11]
+
+/-- The registers and their offsets, from `o`. -/
+def savedAt (o : Nat) : List (Reg × Nat) := saved.zipIdx.map fun p => (p.1, o + 8 * p.2)
+
+def saveAt (o : Nat) : List Instr := (savedAt o).map fun (r, d) => .store .d r .t0 d
+def restoreAt (o : Nat) : List Instr := (savedAt o).map fun (r, d) => .load .d r .t0 d
+
+def loadY : List Instr := loadBE64 .s4 .t0 .a1 0 ++ loadBE64 .s5 .t0 .a1 8
+
+/-- `Y` out of the way, and the registers restored. -/
+def finish (o : Nat) : List Instr :=
+  ([mv .t1 .s4, mv .t2 .s5, .addSp .t0 0] : List Instr) ++ restoreAt o
+
+/-- `Y` stored, once the frame is released. -/
+def storeY : List Instr := storeBE 8 .t1 .t3 .a1 0 ++ (storeBE 8 .t2 .t3 .a1 8 ++ [])
+
+/-- The frame's last 384 bytes are used: the key's words, then the registers. -/
+def start : List Instr :=
+  ([.addSp .t0 0] : List Instr) ++ saveAt 1952 ++ ([.addSp .s9 1664] : List Instr) ++ prep ++ ([mv .a0 .s9] : List Instr) ++
+  loadY
 
 def ghash : Prog isa :=
-  .ite (.zero N) (.block []) (.frame (.alloc frameBytes) body (.free frameBytes))
+  .seq (.frame (.alloc 2048) (.seq (.block start) (.seq loopCode (.block (finish 1952)))) (.free 2048)) (.block storeY)
 
 end VG.Impl.Gcm.RISCV64

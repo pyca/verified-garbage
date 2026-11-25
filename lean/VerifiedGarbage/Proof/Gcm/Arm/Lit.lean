@@ -12,10 +12,15 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
-/-! # GHASH on ARMv7: the code as a literal, for the checks that evaluate it -/
+/-! # `vg_ghash` on ARM, as a literal
+
+For the checks of every instruction and the constant-time analyses that
+evaluate it. -/
 
 @[expose] public section
 
-namespace VG.Impl.Gcm.Arm
-materialize_code ghash
-end VG.Impl.Gcm.Arm
+namespace VG
+
+materialize_code Impl.Gcm.Arm.ghash
+
+end VG

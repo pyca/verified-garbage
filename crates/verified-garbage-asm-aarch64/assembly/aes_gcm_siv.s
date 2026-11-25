@@ -9858,7 +9858,7 @@ vg_aes_gcm_siv_seal:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	cbnz x9, 23b
 	b 22f
@@ -9909,7 +9909,7 @@ vg_aes_gcm_siv_seal:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	b 28f
 27:
@@ -9948,7 +9948,7 @@ vg_aes_gcm_siv_seal:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	cbnz x9, 215b
 	b 214f
@@ -9999,7 +9999,7 @@ vg_aes_gcm_siv_seal:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	b 220f
 219:
@@ -10039,7 +10039,7 @@ vg_aes_gcm_siv_seal:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	ldr x9, [x19, #88]
 	rev x9, x9
@@ -10390,7 +10390,7 @@ vg_aes_gcm_siv_open:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	cbnz x9, 29b
 	b 28f
@@ -10441,7 +10441,7 @@ vg_aes_gcm_siv_open:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	b 214f
 213:
@@ -10480,7 +10480,7 @@ vg_aes_gcm_siv_open:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	cbnz x9, 221b
 	b 220f
@@ -10531,7 +10531,7 @@ vg_aes_gcm_siv_open:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	b 226f
 225:
@@ -10571,7 +10571,7 @@ vg_aes_gcm_siv_open:
 	add x4, x19, #1504
 	add x2, x19, #480
 	add x3, x10, #0
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x9, x28, #4
 	ldr x9, [x19, #88]
 	rev x9, x9

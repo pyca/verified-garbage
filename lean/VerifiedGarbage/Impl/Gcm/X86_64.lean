@@ -3,48 +3,31 @@ module
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
-# GHASH: x86-64 implementation
+# GHASH on x86-64, with integer multiplications
 
-`vg_ghash(h = rdi, y = rsi, data = rdx, n = rcx, scratch = r8)`.
+`vg_ghash(h = rdi, y = rsi, data = rdx, n = rcx, scratch = r8)`, in the
+baseline ISA.
 
-For each of the `n` blocks `X` at `data`, `Y := (Y ⊕ X) • H`, with the
-carry-less products computed by integer multiplications with "holes", as in
-BearSSL's `ghash_ctmul64.c` (Thomas Pornin, MIT licence; see
-<https://www.bearssl.org/ctmul.html>):
+A block is two byte-reversed words, `y₁` (its first 8 bytes) and `y₀`, whose
+bit `63 − i` is the coefficient of `xⁱ` (and of `x⁶⁴⁺ⁱ`). The key is used as
+`H · x⁻¹`, which makes up for the factor `x` of carry-less products of words
+read in this order.
 
-* A block is big-endian: each 8-byte half is loaded with `mov` and `bswap`.
-  The first half `A` holds the coefficients of `x⁰ … x⁶³` (the most
-  significant bit is `x⁰`, SP 800-38D's bit order), the second `B` those of
-  `x⁶⁴ … x¹²⁷`. In this bit-reflected order, the integer-style carry-less
-  product of two 64-bit words `a, b` is the 128-bit word of `x · a · b`.
-* The carry-less product of two words `a` and `b` (`product`): the bits of
-  `b` are split into the four classes `b & cls j` (the bits `j mod 4`), and
-  those of `a` into eight: the four classes, each in the low and the high 32
-  bits (`half i h`). The integer product (`mul`) of a part of `a` in class
-  `i` and a part of `b` in class `j` has in each bit position of class
-  `i + j mod 4` the sum of at most 8 bit products, which is less than 16, so
-  its carries never reach the next bit of that class: those bits are the
-  bits of the carry-less product. The products of each class `k` are added
-  (XOR) in `r12:r11`, masked with `cls k` and added to the result in
-  `r14:r13`. (With 16 bits per part, a sum could reach 16 and carry into the
-  next bit of the class; splitting `a` into halves also keeps the high half
-  of each product, in `rdx`, exact, so that no bit reversal is needed.)
-* `Y • H` is `x⁻¹ · (Y · H)`, so the code multiplies by `H' = x⁻¹ · H`
-  instead, computed once: `H' = (H <<< 1) ⊕ (x⁻¹ if the bit shifted out is
-  1)`, where `x⁻¹ = 1 + x + x⁶ + x¹²⁷`. The 24 parts of `H'_A`, `H'_B` and
-  `H'_A ⊕ H'_B` are stored in `scratch[48..240)`.
-* Each block takes three word products (Karatsuba): `A = Y_A · H'_A`,
-  `B = Y_B · H'_B`, `M = (Y_A ⊕ Y_B) · (H'_A ⊕ H'_B)`, which give the 256-bit
-  product `W₀ ‖ W₁ ‖ W₂ ‖ W₃` of `x · Y · H' = Y · H` (`W₀` the lowest
-  powers).
-* The reduction modulo `x¹²⁸ + x⁷ + x² + x + 1` folds `W₃` into `W₁, W₂`,
-  then `W₂` into `W₀, W₁` (`fold`), using `x¹²⁸ = 1 + x + x² + x⁷`.
-* `Y ⊕ X` and partial results are kept in `y` and in `scratch[240..256)`
-  while registers are short. `Y` is written back to `y` after every block.
-* `rbx, rbp, r12–r15` are saved in `scratch[0..48)` and restored on exit.
-* `rdi, rsi, rdx, rcx, r8` (the pointers and the block count) are public;
-  no address and no branch depends on anything else, and `mul` takes the
-  same time for every operand.
+* The carry-less product of two words is the sum of 25 integer products of
+  128 bits (`mul`): each word is split into the five classes of its bit
+  positions modulo 5. The partial products of class `i` by class `j` all lie
+  at positions of class `i + j`, at most 13 at each, which is less than 2⁵:
+  their sum does not carry into the next position of the class, so its bit
+  there is the carry-less product's. The five products that meet in a class
+  are added with XOR, and one mask keeps the class.
+* Three such products (Karatsuba) multiply two blocks.
+* The four words of the product are reduced with shifts:
+  `x¹²⁸ = 1 + x + x² + x⁷`.
+
+`scratch` holds 15 words of the key (`k₀`, `k₁` and `k₀ + k₁`, each in its
+five classes), the products of the halves, the callee-saved registers, and
+`y₁`, `y₀` and their sum. Every branch and every address depends only on the
+pointers and `n`.
 -/
 
 @[expose] public section
@@ -53,151 +36,128 @@ namespace VG.Impl.Gcm.X86_64
 
 open VG.X86_64
 
-def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
+/-- Word `k` of `scratch`. -/
+def slot (k : Nat) : MemOp := { base := .r8, disp := ((8 * k : Nat) : Int) }
 
-/-- The bits of class `i` (the bit positions `i mod 4`). -/
-def cls (i : Nat) : BitVec 64 := 0x1111111111111111 <<< i
+def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := (d : Int) }
 
-/-- The bits of class `i` in the low (`h = 0`) or high (`h = 1`) 32 bits. -/
-def half (i h : Nat) : BitVec 64 := cls i &&& (0xFFFFFFFF <<< (32 * h))
+/-- The positions congruent to `r` modulo 5. -/
+def mask (r : Nat) : BitVec 64 :=
+  match r with
+  | 0 => 0x1084210842108421#64 | 1 => 0x2108421084210842#64 | 2 => 0x4210842108421084#64
+  | 3 => 0x8421084210842108#64 | _ => 0x0842108421084210#64
 
-/-- The classes of the second factor. -/
-def B : Nat → Reg
-  | 0 => .rbx
-  | 1 => .rbp
-  | 2 => .r9
-  | _ => .r10
+/-- The classes of the word being multiplied. -/
+def cls (i : Nat) : Reg :=
+  match i with
+  | 0 => .rcx | 1 => .rbx | 2 => .rbp | 3 => .r12 | _ => .r13
 
-/-- The sum of the products of one class, and of the result. -/
-def AL : Reg := .r11
-def AH : Reg := .r12
-def PL : Reg := .r13
-def PH : Reg := .r14
-/-- `Y_A`, then `W₀`. -/
-def W0 : Reg := .r15
+def xorR (d r : Reg) : Instr := .alu .xor d (.reg r)
 
-/-- Where in `scratch` part `u` of `H'` is: the table `u / 8` (`H'_A`,
-`H'_B`, `H'_A ⊕ H'_B`), part `half (u % 8 / 2) (u % 2)`. -/
-def off (u : Nat) : Nat := 48 + 8 * u
+/-- The slots of `y₁`, `y₀` and their sum, and of the low and high products. -/
+def y1S : Nat := 25
+def y0S : Nat := 26
+def yS : Nat := 27
+def lS : Nat := 15
+def hS : Nat := 17
 
-/-- Where `Y_A ⊕ Y_B` and `W₃` are kept. -/
-def slotM : Nat := 240
-def slotW : Nat := 248
+def saved : List (Reg × Nat) := [(.rbx, 19), (.rbp, 20), (.r12, 21), (.r13, 22), (.r14, 23), (.r15, 24)]
 
-/-- The `t`-th of the eight products of class `k`, with table `q`. -/
-def term (q k t : Nat) : List Instr := [
-  .mov .rax (.mem (at_ .r8 (off (8 * q + t)))),
-  .mul (B ((k + 4 - t / 2) % 4)),
-  .alu .xor AL (.reg .rax),
-  .alu .xor AH (.reg .rdx)]
+def save : List Instr := saved.map fun p => .store (slot p.2) p.1
+def restore : List Instr := saved.map fun p => .mov p.1 (.mem (slot p.2))
 
-/-- The products of class `k`, masked and added to the result. -/
-def clsCode (q k : Nat) : List Instr :=
-  ([.mov AL (.imm 0), .mov AH (.imm 0)] : List Instr) ++ (List.range 8).flatMap (term q k) ++
-  ([.movImm64 .rax (cls k), .alu .and AL (.reg .rax), .alu .and AH (.reg .rax),
-   .alu .xor PL (.reg AL), .alu .xor PH (.reg AH)] : List Instr)
+/-! ## The key -/
 
-/-- The classes of the second factor `y`. -/
-def split (y : Src) : List Instr :=
-  (List.range 4).flatMap fun j => [.movImm64 (B j) (cls j), .alu .and (B j) y]
+/-- `H` into `r9` and `r10`; the data pointer and the count out of the way of
+the multiplication. -/
+def loadH : List Instr :=
+  [.mov .r15 (.reg .rdx), .mov .r9 (.mem (at_ .rdi 0)), .mov .r10 (.mem (at_ .rdi 8)), .mov .rdi (.reg .rcx)]
 
-/-- `PH:PL` := the carry-less product of table `q`'s word and `y`. -/
-def product (y : Src) (q : Nat) : List Instr :=
-  split y ++ ([.mov PL (.imm 0), .mov PH (.imm 0)] : List Instr) ++ (List.range 4).flatMap (clsCode q)
+/-- `H · x⁻¹` in `r9` and `r10`, their sum in `r11`. -/
+def adjust : List Instr :=
+  [.bswap .r9, .bswap .r10,
+   .mov .r11 (.reg .r9), .shift .shr .r11 63, .mov .r14 (.reg .r10), .shift .shr .r14 63,
+   .shift .shl .r9 1, xorR .r9 .r14, .shift .shl .r10 1, xorR .r10 .r11,
+   .shift .shl .r11 57, xorR .r9 .r11, .shift .shl .r11 5, xorR .r9 .r11, .shift .shl .r11 1, xorR .r9 .r11,
+   .mov .r11 (.reg .r9), xorR .r11 .r10]
 
-/-- `x¹²⁸ · w` added to `lo` and `hi` (the next 64 powers): `lo ⊕= w ⊕
-(w >> 1) ⊕ (w >> 2) ⊕ (w >> 7)`, `hi ⊕= (w << 63) ⊕ (w << 62) ⊕ (w << 57)`. -/
-def fold (w lo hi : Reg) : List Instr := [
-  .alu .xor lo (.reg w),
-  .mov .rax (.reg w), .shift .shr .rax 1, .alu .xor lo (.reg .rax),
-  .mov .rax (.reg w), .shift .shr .rax 2, .alu .xor lo (.reg .rax),
-  .mov .rax (.reg w), .shift .shr .rax 7, .alu .xor lo (.reg .rax),
-  .mov .rax (.reg w), .alu .and .rax (.imm 1), .shift .ror .rax 1, .alu .xor hi (.reg .rax),
-  .mov .rax (.reg w), .alu .and .rax (.imm 3), .shift .ror .rax 2, .alu .xor hi (.reg .rax),
-  .mov .rax (.reg w), .alu .and .rax (.imm 0x7f), .shift .ror .rax 7, .alu .xor hi (.reg .rax)]
+def keyClass (t : Nat) (r : Reg) (j : Nat) : List Instr :=
+  [.movImm64 .rax (mask j), .alu .and .rax (.reg r), .store (slot (5 * t + j)) .rax]
 
-/-- Load `Y ⊕ X`: `Y_A` in `W0`, `Y_B` in `y[8..16)`, `Y_A ⊕ Y_B` in `scratch`. -/
-def load : List Instr := [
-  .mov W0 (.mem (at_ .rsi 0)), .bswap W0,
-  .mov .rax (.mem (at_ .rdi 0)), .bswap .rax,
-  .alu .xor W0 (.reg .rax),
-  .mov AL (.mem (at_ .rsi 8)), .bswap AL,
-  .mov .rax (.mem (at_ .rdi 8)), .bswap .rax,
-  .alu .xor AL (.reg .rax),
-  .store (at_ .rsi 8) AL,
-  .alu .xor AL (.reg W0),
-  .store (at_ .r8 slotM) AL]
+def keyWord (t : Nat) (r : Reg) : List Instr := (List.range 5).flatMap (keyClass t r)
 
-/-- `W0 := A_hi`, `y[0..8) := A_lo`. -/
-def keepA : List Instr := [.mov W0 (.reg PH), .store (at_ .rsi 0) PL]
+def loadY : List Instr :=
+  [.mov .r9 (.mem (at_ .rsi 0)), .mov .r10 (.mem (at_ .rsi 8))]
 
-/-- `y := (A_lo ⊕ B_hi ⊕ A_hi, A_lo ⊕ B_hi ⊕ B_lo)`, `W₃ = B_lo` to `scratch`. -/
-def keepB : List Instr := [
-  .mov .rax (.mem (at_ .rsi 0)),
-  .alu .xor .rax (.reg PH),
-  .mov AL (.reg .rax),
-  .alu .xor AL (.reg W0),
-  .alu .xor .rax (.reg PL),
-  .store (at_ .rsi 0) AL,
-  .store (at_ .rsi 8) .rax,
-  .store (at_ .r8 slotW) PL]
+def storeYs : List Instr := [.bswap .r9, .bswap .r10, .store (slot y1S) .r9, .store (slot y0S) .r10]
 
-/-- `W₁` in `AL`, `W₂` in `AH`, `W₃` in `PL`. -/
-def keepM : List Instr := [
-  .mov AL (.mem (at_ .rsi 0)), .alu .xor AL (.reg PH),
-  .mov AH (.mem (at_ .rsi 8)), .alu .xor AH (.reg PL),
-  .mov PL (.mem (at_ .r8 slotW))]
+/-! ## The product of two words -/
 
-/-- Store the new `Y = W₀ ‖ W₁`, advance to the next block and decrement the
-count (setting ZF when it hits 0). -/
-def store : List Instr := [
-  .bswap W0, .store (at_ .rsi 0) W0,
-  .bswap AL, .store (at_ .rsi 8) AL,
-  .alu .add .rdi (.imm 16), .alu .sub .rcx (.imm 1)]
+/-- The classes of the word in slot `k`. -/
+def split1 (k i : Nat) : List Instr := [.movImm64 (cls i) (mask i), .alu .and (cls i) (.mem (slot k))]
 
-/-- One block. -/
+def split (k : Nat) : List Instr := (List.range 5).flatMap (split1 k)
+
+/-- Class `i` by the class of key word `t` in slot `5 t + j`, added to `r10 : r9`. -/
+def part (t i j : Nat) : List Instr :=
+  [.mov .rax (.mem (slot (5 * t + j))), .mul (cls i), xorR .r9 .rax, xorR .r10 .rdx]
+
+/-- The products that meet in class `r`, and that class of their sum, added to
+`r14 : r11`. -/
+def classSum (t r : Nat) : List Instr :=
+  ([xorR .r9 .r9, xorR .r10 .r10] : List Instr) ++ part t 0 (r % 5) ++ part t 1 ((r + 4) % 5) ++
+  part t 2 ((r + 3) % 5) ++ part t 3 ((r + 2) % 5) ++ part t 4 ((r + 1) % 5) ++
+  ([.movImm64 .rax (mask r), .alu .and .r9 (.reg .rax), .movImm64 .rdx (mask ((r + 1) % 5)),
+    .alu .and .r10 (.reg .rdx), xorR .r11 .r9, xorR .r14 .r10] : List Instr)
+
+/-- The carry-less product of the word in slot `k` and key word `t`, in
+`r14 : r11`. -/
+def mul (k t : Nat) : List Instr :=
+  split k ++ ([xorR .r11 .r11, xorR .r14 .r14] : List Instr) ++ classSum t 0 ++ classSum t 1 ++ classSum t 2 ++
+  classSum t 3 ++ classSum t 4
+
+def keep (k : Nat) : List Instr := [.store (slot k) .r11, .store (slot (k + 1)) .r14]
+
+/-! ## A block -/
+
+def loadX : List Instr := [.mov .r9 (.mem (at_ .r15 0)), .mov .r10 (.mem (at_ .r15 8))]
+
+def addX : List Instr :=
+  [.bswap .r9, .bswap .r10, .alu .xor .r9 (.mem (slot y1S)), .alu .xor .r10 (.mem (slot y0S)),
+   .store (slot y1S) .r9, .store (slot y0S) .r10, xorR .r9 .r10, .store (slot yS) .r9]
+
+/-- `d ^= s ≪ 63 ^ s ≪ 62 ^ s ≪ 57`, through `r9`. -/
+def foldDn (d s : Reg) : List Instr :=
+  [.mov .r9 (.reg s), .shift .shl .r9 57, xorR d .r9, .shift .shl .r9 5, xorR d .r9, .shift .shl .r9 1, xorR d .r9]
+
+/-- `d ^= s ≫ 1 ^ s ≫ 2 ^ s ≫ 7`, through `r9`. -/
+def foldUp (d s : Reg) : List Instr :=
+  [.mov .r9 (.reg s), .shift .shr .r9 1, xorR d .r9, .shift .shr .r9 1, xorR d .r9, .shift .shr .r9 5, xorR d .r9]
+
+/-- The products, the middle one in `r14 : r11`, reduced and stored as `y₁`
+and `y₀`. -/
+def reduce : List Instr :=
+  ([.mov .rax (.mem (slot lS)), .mov .rdx (.mem (slot (lS + 1))), .mov .rcx (.mem (slot hS)),
+    .mov .rbx (.mem (slot (hS + 1))),
+    xorR .r11 .rax, xorR .r11 .rcx, xorR .r14 .rdx, xorR .r14 .rbx,
+    xorR .r11 .rdx, xorR .r14 .rcx, xorR .r14 .rax] : List Instr) ++
+  foldDn .r11 .rax ++ foldUp .r14 .rax ++ ([xorR .rbx .r11] : List Instr) ++ foldUp .rbx .r11 ++ foldDn .r14 .r11 ++
+  ([.store (slot y1S) .rbx, .store (slot y0S) .r14] : List Instr)
+
+def next : List Instr := [.alu .add .r15 (.imm 16), .alu .sub .rdi (.imm 1)]
+
 def body : List Instr :=
-  load ++ product (.reg W0) 0 ++ keepA ++ product (.mem (at_ .rsi 8)) 1 ++ keepB ++
-    product (.mem (at_ .r8 slotM)) 2 ++ keepM ++ fold PL AL AH ++ fold AH W0 AL ++ store
+  loadX ++ addX ++ mul y0S 0 ++ keep lS ++ mul y1S 1 ++ keep hS ++ mul yS 2 ++ reduce ++ next
 
-/-- The callee-saved registers we use, and where they are saved. -/
-def saved : List (Reg × Nat) := [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
+def prologue : List Instr :=
+  save ++ loadH ++ adjust ++ keyWord 0 .r10 ++ keyWord 1 .r9 ++ keyWord 2 .r11 ++ loadY ++ storeYs ++
+  ([.alu .test .rdi (.reg .rdi)] : List Instr)
 
-def save : List Instr := saved.map fun (r, d) => .store (at_ .r8 d) r
-def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r8 d))
-
-/-- The high word of `x⁻¹ = 1 + x + x⁶ + x¹²⁷` (its low word is 1). -/
-def xInvHigh : BitVec 64 := 0xC200000000000000
-
-/-- `H' = x⁻¹ · H`: `H'_A` in `AL`, `H'_B` in `AH`, `H'_A ⊕ H'_B` in `PH`. -/
-def hInv : List Instr := [
-  .mov AL (.mem (at_ .rdi 0)), .bswap AL,
-  .mov AH (.mem (at_ .rdi 8)), .bswap AH,
-  .alu .add AH (.reg AH), .alu .adc AL (.reg AL),
-  .alu .sbb .rax (.reg .rax),
-  .movImm64 PL xInvHigh, .alu .and PL (.reg .rax), .alu .xor AL (.reg PL),
-  .alu .and .rax (.imm 1), .alu .xor AH (.reg .rax),
-  .mov PH (.reg AL), .alu .xor PH (.reg AH)]
-
-/-- The word of table `q`. -/
-def tblReg : Nat → Reg
-  | 0 => AL
-  | 1 => AH
-  | _ => PH
-
-/-- Part `u` of the tables. -/
-def entry (u : Nat) : List Instr := [
-  .movImm64 .rax (half (u % 8 / 2) (u % 2)),
-  .alu .and .rax (.reg (tblReg (u / 8))),
-  .store (at_ .r8 (off u)) .rax]
-
-/-- Save registers, compute the tables, move `data` to `rdi` (`mul` writes
-`rdx`) and test `n`. -/
-def setup : List Instr :=
-  save ++ hInv ++ (List.range 24).flatMap entry ++ ([.mov .rdi (.reg .rdx), .alu .test .rcx (.reg .rcx)] : List Instr)
+def epilogue : List Instr :=
+  ([.mov .r9 (.mem (slot y1S)), .mov .r10 (.mem (slot y0S)), .bswap .r9, .bswap .r10] : List Instr) ++ restore ++
+  ([.store (at_ .rsi 0) .r9, .store (at_ .rsi 8) .r10] : List Instr)
 
 def ghash : Prog isa :=
-  .seq (.block setup)
-    (.seq (.ite .e (.block []) (.loop (.block body) .ne)) (.block restore))
+  .seq (.block prologue) (.seq (.ite .e (.block []) (.loop (.block body) .ne)) (.block epilogue))
 
 end VG.Impl.Gcm.X86_64

@@ -2,27 +2,28 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.RISCV64
 
-/-! # Scalar RISC-V GHASH with an already bitsliced key
-The caller supplies the 36 read-only operand words at `a0`. The four product spills
-occupy bytes 0–31 of a 112-byte frame. Bytes 32–111 hold the saved registers.
--/
+/-! # GHASH on RISC-V with the key's words computed before
+
+`vg_ghash_prepared(a0, y = a1, data = a2, n = a3, scratch = a4)`: `vg_ghash`
+with the 36 doublewords of the key at `a0`. Its frame holds only the registers
+it restores; `scratch` is not used. -/
 
 @[expose] public section
+
 namespace VG.Impl.Gcm.RISCV64.Prepared
-open VG VG.RISCV64
 
-def compactSaved : List (Reg × Nat) := saved.map fun (r,off) => (r,off-288)
-def compactSave : List Instr := compactSaved.map fun (r,off) => .store .d r .t0 off
-def compactRestore : List Instr := compactSaved.map fun (r,off) => .load .d r .t0 off
+open VG.RISCV64
 
-def cachedBody : Prog isa :=
-  .seq (.block (.addSp .t0 0 :: compactSave ++ [.addi FP HP 0, .addSp HP 0] ++ maskCode ++ loadY))
-    (.seq (.loop (.block (blockCodeWith HP 0)) (.nonzero N))
-      (.block (storeY ++ (.addSp .t0 0 :: compactRestore) ++ Impl.StackScratch.RISCV64.wipe 14)))
+def cachedStart : List Instr :=
+  ([.addSp .t0 0] : List Instr) ++ saveAt 0 ++ maskCode ++ loadY
 
-def cachedHash : Prog isa := .ite (.zero N) (.block []) (.frame (.alloc 112) cachedBody (.free 112))
+def cachedHash : Prog isa :=
+  .seq (.frame (.alloc 112) (.seq (.block cachedStart) (.seq loopCode (.block (finish 0)))) (.free 112)) (.block storeY)
 
+/-- The key's words' address: the buffer's, which the caller keeps at
+`sp + 16`, and 960. -/
 def loadPrepared : List Instr := [.addSp .t0 0, .load .d .a0 .t0 16, .addi .a0 .a0 960]
+
 def preparedInvocation : Prog isa := .seq (.block loadPrepared) (.call "vg_ghash_prepared" cachedHash)
 
 end VG.Impl.Gcm.RISCV64.Prepared

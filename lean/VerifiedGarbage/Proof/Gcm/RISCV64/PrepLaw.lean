@@ -6,30 +6,26 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
-# What `vg_ghash`'s `prep` writes, without its algebra
+# What `prep` writes
 
-Untrusted: everything here is checked by Lean. `prep` (`Impl/Gcm/RISCV64.lean`)
-writes, from the hash subkey at `HP`, the 36 doublewords GHASH's integer
-multiplications read at `FP`: class `j` of operand `i`, as
-`Spec/Gcm/Bitsliced.lean` states them (`ghashOperand`, `ghashClass`).
-`PrepLaw` states it, `Law.lean` proves it; as with `GhashLaw`, code that runs
-`prep` outside `vg_ghash` (`vg_aes_gcm_bitslice`) takes it as a hypothesis,
-so that it does not import the algebra of `Proof/Gcm/Poly.lean`.
+Untrusted: everything here is checked by Lean. `prep`
+(`Impl/Gcm/RISCV64.lean`) writes the key's 36 doublewords
+(`Spec/Gcm/Bitsliced.lean`). `PrepLaw` says so, and `Law.lean` proves it: code
+that also runs `prep` takes it as a hypothesis, not to import its algebra.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Gcm.RISCV64
 
-open VG VG.RISCV64 VG.Impl.Gcm.RISCV64
+open VG VG.RISCV64
+open VG.Impl.Gcm.RISCV64 (HP FP prep)
 
 /-- The registers `prep` writes. -/
-def prepWrites : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .a7, .a6, .s4]
+def prepWrites : List Reg := [.s0, .s1, .s2, .s3, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .a6]
 
-/-- `prep`, from the hash subkey at `HP` (readable) to the 36 doublewords at
-`FP` (writable and 8-byte aligned). -/
 class PrepLaw : Prop where
-  ok : ∀ s, InRegions (s.rd ++ s.wr) (s.gpr HP) 16 →
+  ok : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr HP) 16 →
     (∀ k < 36, (s.gpr FP + BitVec.ofNat 64 (8 * k)).toNat % 8 = 0 ∧
       InRegions s.wr (s.gpr FP + BitVec.ofNat 64 (8 * k)) 8) →
     WP isa (.block prep) s fun t =>
