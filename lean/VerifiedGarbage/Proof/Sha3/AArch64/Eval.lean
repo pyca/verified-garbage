@@ -23,6 +23,8 @@ input lanes, in every register. `runV` and `runS` say that the machine runs
 the block and that its registers hold those forms of the lanes they held.
 -/
 
+-- separate module: how any round's code runs over forms, apart from the rounds' own
+
 @[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Eval

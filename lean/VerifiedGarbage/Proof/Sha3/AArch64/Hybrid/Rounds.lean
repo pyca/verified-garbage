@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Scalar
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 import VerifiedGarbage.Proof.Sha3.AArch64.RoundConstants
 import VerifiedGarbage.Proof.Sha3.Lanes

@@ -18,6 +18,8 @@ rotations, and code is right when the forms it ends with are the round's
 (`chiForm`).
 -/
 
+-- separate module: what θ, ρ, π and χ are over forms, for any architecture's code
+
 @[expose] public section
 
 namespace VG.Proof.Sha3.Forms

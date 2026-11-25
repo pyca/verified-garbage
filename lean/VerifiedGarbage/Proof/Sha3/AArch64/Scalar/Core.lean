@@ -17,6 +17,8 @@ lanes' registers, and changes no other register but its free ones, `v27` and
 `v28`, and memory only in the 24 bytes at `x28`.
 -/
 
+-- separate module: the kernel's check of the rounds, not made again when the code around them changes
+
 @[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Scalar
