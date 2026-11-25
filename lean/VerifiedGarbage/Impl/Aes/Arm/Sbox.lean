@@ -43,6 +43,8 @@ def kp : Reg := .r9
 def t0 : Reg := .r10
 def t1 : Reg := .r11
 def t2 : Reg := .r12
+/-- `t2`, as the other ciphers' layers call it. -/
+def u7 : Reg := .r12
 
 /-! ## Short forms -/
 

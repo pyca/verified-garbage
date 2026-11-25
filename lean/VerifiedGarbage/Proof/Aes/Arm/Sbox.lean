@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
-public import VerifiedGarbage.Proof.Aes.SboxSpec
-public import VerifiedGarbage.Proof.Aes.InvSboxSpec
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Proof.Aes.Sbox0
 public import VerifiedGarbage.Proof.Framework.Arm.StraightNot
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
@@ -22,15 +22,9 @@ bit positions of the slices.
 namespace VG.Proof.Aes.Arm
 
 open VG VG.Arm VG.Arm.Straight VG.Bitslice VG.Impl.Aes.Arm
-open VG.Proof.Aes (sboxT row_sboxT invSboxT row_invSboxT xorT row row_xorT getLsbD_row ONES testBit_ite_ONES)
+open VG.Proof.Aes (bsByte getLsbD_bsByte sbIn sbox0T invSbox0T sboxOfT sbox0T_bit invSbox0T_bit sboxOfT_bit sbox0
+  invSbox0)
 open VG.Spec.Aes (sbox invSbox)
-
-/-- The byte at bit `x` of the slices `Q`. -/
-def bsByte (Q : Nat → BitVec 32) (x : Nat) : Byte := ofBits 8 fun j => (Q j).getLsbD x
-
-theorem getLsbD_bsByte (Q : Nat → BitVec 32) (x : Nat) {j : Nat} (hj : j < 8) :
-    (bsByte Q x).getLsbD j = (Q j).getLsbD x := by
-  rw [bsByte, getLsbD_ofBits]; simp [hj]
 
 /-- The memory the S-boxes use: the scratch buffer's first slots. -/
 def spillCfg : Cfg := { base := sb, slots := 12, ext := sb, exts := 0 }
@@ -62,50 +56,32 @@ theorem writes_sb {is : List Instr} (h : (is.all fun i => !clobbers i sb) = true
 
 /-! ## The checks -/
 
-/-- Bit `j` of the 256 inputs. -/
-def inT (j : Nat) : Nat := tableOf (fun c => c.testBit j) 256
-def inTs : List Nat := (List.range 8).map inT
-
-theorem row_inTs {c : Nat} (hc : c < 256) : row inTs c = BitVec.ofNat 8 c := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro j hj
-  have h : inTs.getD j 0 = inT j := by
-    simp only [inTs, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj, Option.map_some,
-      Option.getD_some]
-  rw [getLsbD_row _ _ hj, h, inT, testBit_tableOf, BitVec.getLsbD_ofNat]
-  simp [hc, hj]
-
 /-- The slices `q j` hold the inputs' tables. -/
 def sboxEnv : Env Nat :=
-  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map inT, slot := fun _ => none }
+  { reg := fun r => ((List.range 8).find? (fun k => q k == r)).map sbIn, slot := fun _ => none }
 
 /-- The slices `r j` hold the tables `T`. -/
 def sboxPost (r : Nat → Reg) (T : List Nat) (e : Env Nat) : Bool :=
   (List.range 8).all fun j => e.reg (r j) == some (T.getD j 0)
 
-/-- The constant `{63}`. -/
-def c63 : List Nat := (List.range 8).map fun j => if (0x63).testBit j then ONES else 0
-
-theorem row_c63 : ∀ c < 256, row c63 c = 0x63 := by decide +kernel
-
 theorem subBytes_check : checkN (table 32 256) spillCfg (fun _ => none) subBytes sboxEnv
-    (sboxPost p (xorT (sboxT inTs) c63)) = true := by decide +kernel
+    (sboxPost p sbox0T) = true := by decide +kernel
 
 theorem invSubBytes_check : checkN (table 32 256) spillCfg (fun _ => none) invSubBytes sboxEnv
-    (sboxPost p (invSboxT (xorT inTs c63))) = true := by decide +kernel
+    (sboxPost p invSbox0T) = true := by decide +kernel
 
 theorem subBytesQ_check : checkN (table 32 256) sboxCfg (fun _ => none) subBytesQ sboxEnv
-    (sboxPost q (xorT (sboxT inTs) c63)) = true := by decide +kernel
+    (sboxPost q sbox0T) = true := by decide +kernel
 
 theorem sbox_check : checkN (table 32 256) sboxCfg (fun _ => none) sboxCode sboxEnv
-    (sboxPost q (sboxT inTs)) = true := by decide +kernel
+    (sboxPost q sboxOfT) = true := by decide +kernel
 
 /-! ## On the machine -/
 
 /-- A block that the check accepts, at every bit position of the slices. -/
 theorem table_ok {cfg : Cfg} {is : List Instr} {r : Nat → Reg} {T : List Nat} {f : Byte → Byte}
     (hchk : checkN (table 32 256) cfg (fun _ => none) is sboxEnv (sboxPost r T) = true)
-    (hf : ∀ c : Byte, row T c.toNat = f c) {s : State} (hok : Ok cfg s) :
+    (hf : ∀ c < 256, ∀ j < 8, (T.getD j 0).testBit c = (f (BitVec.ofNat 8 c)).getLsbD j) {s : State} (hok : Ok cfg s) :
     ∃ s', runBlock isa is s = some s' ∧
       (∀ x < 32, bsByte (fun j => s'.gpr (r j)) x = f (bsByte (fun j => s.gpr (q j)) x)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
@@ -129,34 +105,24 @@ theorem table_ok {cfg : Cfg} {is : List Instr} {r : Nat → Reg} {T : List Nat} 
     have hk8 := List.mem_range.mp (List.mem_of_find?_eq_some hk)
     simp only [beq_iff_eq] at hqk
     subst hqk
-    simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
+    simp only [TableRel, sbIn, testBit_tableOf, hc, decide_true, Bool.true_and,
       BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
   obtain ⟨s', hs', p₀⟩ := key 0 (by decide)
   refine ⟨s', hs', fun x hx => ?_, p₀.rd, p₀.wr, p₀.sp, fun r' hr => p₀.other r' (by simp [hr]), p₀.frame⟩
   obtain ⟨s'', hs'', p₁⟩ := key x hx
   obtain rfl := run_unique hs'' hs'
-  rw [← hf]
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   have := p₁.rel.reg (r j) _ (hout j hj)
   simp only [TableRel] at this
-  rw [getLsbD_bsByte _ _ hj, getLsbD_row _ _ hj, this]
-
-theorem row_sub63 (c : Byte) : row (xorT (sboxT inTs) c63) c.toNat = sbox c ^^^ 0x63 := by
-  rw [row_xorT (by decide +kernel) (by decide +kernel), row_sboxT (by decide) c.isLt, row_inTs c.isLt,
-    row_c63 _ c.isLt]
-  simp
-
-theorem row_inv63 (c : Byte) : row (invSboxT (xorT inTs c63)) c.toNat = invSbox (c ^^^ 0x63) := by
-  rw [row_invSboxT _ c.isLt, row_xorT (by decide) (by decide +kernel), row_inTs c.isLt, row_c63 _ c.isLt]
-  simp
+  rw [getLsbD_bsByte _ _ hj, ← this, hf _ (BitVec.isLt _) j hj, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 theorem subBytes_ok {s : State} (hok : Ok spillCfg s) :
     ∃ s', runBlock isa subBytes s = some s' ∧
       (∀ x < 32, bsByte (fun j => s'.gpr (p j)) x = sbox (bsByte (fun j => s.gpr (q j)) x) ^^^ 0x63) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ∉ layerWrites → r ≠ kp → s'.gpr r = s.gpr r) ∧ Frame [slotRegion spillCfg s] s.mem s'.mem := by
-  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok subBytes_check row_sub63 hok
+  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok subBytes_check (fun c hc j hj => sbox0T_bit hc hj) hok
   exact ⟨s', h1, h2, h3, h4, h5, fun r hr hk => h6 r (writes_sb (by decide +kernel) r hr hk), h7⟩
 
 theorem invSubBytes_ok {s : State} (hok : Ok spillCfg s) :
@@ -164,7 +130,7 @@ theorem invSubBytes_ok {s : State} (hok : Ok spillCfg s) :
       (∀ x < 32, bsByte (fun j => s'.gpr (p j)) x = invSbox (bsByte (fun j => s.gpr (q j)) x ^^^ 0x63)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ∉ layerWrites → r ≠ kp → s'.gpr r = s.gpr r) ∧ Frame [slotRegion spillCfg s] s.mem s'.mem := by
-  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok invSubBytes_check row_inv63 hok
+  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok invSubBytes_check (fun c hc j hj => invSbox0T_bit hc hj) hok
   exact ⟨s', h1, h2, h3, h4, h5, fun r hr hk => h6 r (writes_sb (by decide +kernel) r hr hk), h7⟩
 
 theorem subBytesQ_ok {s : State} (hok : Ok sboxCfg s) :
@@ -172,12 +138,8 @@ theorem subBytesQ_ok {s : State} (hok : Ok sboxCfg s) :
       (∀ x < 32, bsByte (fun j => s'.gpr (q j)) x = sbox (bsByte (fun j => s.gpr (q j)) x) ^^^ 0x63) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ Frame [slotRegion sboxCfg s] s.mem s'.mem := by
-  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok subBytesQ_check row_sub63 hok
+  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok subBytesQ_check (fun c hc j hj => sbox0T_bit hc hj) hok
   exact ⟨s', h1, h2, h3, h4, h5, fun r hr => h6 r (writes_rest (by decide +kernel) r hr), h7⟩
-
-theorem row_sub (c : Byte) : row (sboxT inTs) c.toNat = sbox c := by
-  rw [row_sboxT (by decide) c.isLt, row_inTs c.isLt]
-  simp
 
 /-- The S-box in place, its constant included. -/
 theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
@@ -185,7 +147,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
       (∀ j < 8, ∀ x < 32, (s'.gpr (q j)).getLsbD x = (sbox (bsByte (fun k => s.gpr (q k)) x)).getLsbD j) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ Frame [slotRegion sboxCfg s] s.mem s'.mem := by
-  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok sbox_check row_sub hok
+  obtain ⟨s', h1, h2, h3, h4, h5, h6, h7⟩ := table_ok sbox_check (fun c hc j hj => sboxOfT_bit hc hj) hok
   exact ⟨s', h1, fun j hj x hx => by rw [← h2 x hx, getLsbD_bsByte _ _ hj], h3, h4, h5,
     fun r hr => h6 r (writes_rest (by decide +kernel) r hr), h7⟩
 

@@ -326,7 +326,7 @@ def regBlock (Q : Nat → BitVec 32) (c : Nat) : Spec.Aes.State :=
 
 theorem inRel_regBlock (Q : Nat → BitVec 32) : InRel Q (regBlock Q) := by
   intro b _ i hi j hj
-  rw [vget _ hi]
+  rw [getD_eq _ hi]
   simp [regBlock, hj]
 
 /-- What a transformation of two blocks does: `f R w` to each, with the
@@ -400,7 +400,7 @@ theorem regBlock_load {Q : Nat → BitVec 32} {m : Mem} {A : Addr} {c : Nat}
     regBlock Q c = Spec.Aes.stateAt m A := by
   apply Vector.ext
   intro i hi
-  refine byteExt fun j hj => ?_
+  refine byte_ext fun j hj => ?_
   simp only [regBlock, Spec.Aes.stateAt, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb', hj,
     decide_true, Bool.true_and]
   rw [h _ (by omega_arith), readW_bit _ _ (by omega_arith) hj, Offset.add_add,
@@ -817,7 +817,7 @@ theorem group_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
       vals := fun k hk hkn t ht => by
         rw [gq₆ _ (by omega_arith)]
         obtain hcn : 2 * g + k / 4 < n := by omega_arith
-        apply byteExt
+        apply byte_ext
         intro j hj
         have := hin₃ (k / 4) (by omega_arith) (4 * (k % 4) + t) (by omega_arith) j hj
         dsimp only at this

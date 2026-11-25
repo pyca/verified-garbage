@@ -664,7 +664,7 @@ theorem ctr_inRel {Q : Nat → BitVec 32} {icb : Spec.Gcm.Block} {W : Nat → Bi
     InRel Q (fun bb => ctrState icb (2 * g + bb)) := by
   intro bb hb i hi16 j hj
   obtain ⟨h0, h1⟩ := hQ bb hb
-  simp only [ctrState, vget _ hi16, Vector.getElem_ofFn]
+  simp only [ctrState, getD_eq _ hi16, Vector.getElem_ofFn]
   rw [ctrBlock_byte _ _ hi16]
   by_cases h12 : i < 12
   · rw [ite_eq_left h12, h0 _ (by omega_arith), toBytes_getD _ hi16, BitVec.getLsbD_extractLsb',
@@ -826,7 +826,7 @@ theorem ks_of_inRel {Q : Nat → BitVec 32} {R g : Nat} {w : List Byte} {icb : S
     (h : InRel Q (fun bb => Spec.Aes.cipher R w (ctrState icb (2 * g + bb)))) {k t : Nat} (hk : k < 8)
     (ht : t < 4) :
     (Q (2 * (k % 4) + k / 4)).extractLsb' (8 * t) 8 = keyStream R w icb (4 * (8 * g + k) + t) := by
-  apply byteExt
+  apply byte_ext
   intro j hj
   have := h (k / 4) (by omega_arith) (4 * (k % 4) + t) (by omega_arith) j hj
   rw [show (4 * (k % 4) + t) / 4 = k % 4 by omega_arith, show (4 * (k % 4) + t) % 4 = t by omega_arith] at this

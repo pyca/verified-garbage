@@ -141,7 +141,7 @@ theorem spread_ok (s : State) : ∃ s', runBlock isa keySpread s = some s' ∧
       (∀ r, r ∉ orthoWrites → s'.gpr r = s.gpr r) := by
   obtain ⟨s', h1, h2, h3⟩ := kLin_ok spread_check (fun r hr => by
     have := keyRegs_keep r hr; simp only [List.all_append, Bool.and_eq_true] at this; exact this.2) s
-  refine ⟨s', h1, fun f v hv b hb i hi => byteExt fun j hj => ?_, h3⟩
+  refine ⟨s', h1, fun f v hv b hb i hi => byte_ext fun j hj => ?_, h3⟩
   rw [getLsbD_bsByte _ _ hj, h2 j hj _ (at_lt hb), spreadG, Straight.xorBits_cons, Straight.xorBits_nil,
     Bool.xor_false, Straight.bitOf_word _ _ _ (by have := at_lt (f := f) (i := i) hb; omega_using [this, hj]),
     ← hv i hi j hj]
@@ -1082,7 +1082,7 @@ theorem ctr_after {m m' : Mem} {C : Addr} {n : Nat}
   split
   · rw [toBytes_blockAt _ _ hk]
   · rw [icb_lo]
-    refine byteExt fun j hj => ?_
+    refine byte_ext fun j hj => ?_
     rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb', rev_bit _ (by omega_arith) hj]
     simp only [hj, decide_true, Bool.true_and]
     congr 1; omega_arith
@@ -1103,7 +1103,7 @@ theorem ctr32_of_dataInv {m₀ m : Mem} {S T : Addr} {n R : Nat} {w : List Byte}
   refine congrArg (_ ^^^ ·) ?_
   unfold Spec.Gcm.aesWith
   rw [toBytes_ofBytes (by simp) hk, keyStream, show (16 * i + k) / 16 = i by omega_arith,
-    show (16 * i + k) % 16 = k by omega_arith, vget _ hk, List.getD_eq_getElem?_getD,
+    show (16 * i + k) % 16 = k by omega_arith, getD_eq _ hk, List.getD_eq_getElem?_getD,
     Vector.getElem?_toList, Vector.getElem?_eq_getElem hk, Option.getD_some]
   rfl
 

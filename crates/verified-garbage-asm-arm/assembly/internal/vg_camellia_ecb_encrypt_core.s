@@ -163,42 +163,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r12, #80]
 	ldr r6, [r12, #96]
 	ldr r7, [r12, #112]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -217,6 +181,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #160]
 	str r1, [r8, #164]
 	str r2, [r8, #168]
@@ -233,42 +233,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r12, #84]
 	ldr r6, [r12, #100]
 	ldr r7, [r12, #116]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -287,6 +251,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #192]
 	str r1, [r8, #196]
 	str r2, [r8, #200]
@@ -303,42 +303,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r12, #88]
 	ldr r6, [r12, #104]
 	ldr r7, [r12, #120]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -357,6 +321,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #224]
 	str r1, [r8, #228]
 	str r2, [r8, #232]
@@ -373,42 +373,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r12, #92]
 	ldr r6, [r12, #108]
 	ldr r7, [r12, #124]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -427,6 +391,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #256]
 	str r1, [r8, #260]
 	str r2, [r8, #264]
@@ -2623,42 +2623,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r8, #244]
 	ldr r6, [r8, #248]
 	ldr r7, [r8, #252]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -2677,6 +2641,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #2528]
 	str r1, [r8, #2544]
 	str r2, [r8, #2560]
@@ -2693,42 +2693,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r8, #276]
 	ldr r6, [r8, #280]
 	ldr r7, [r8, #284]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -2747,6 +2711,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #2532]
 	str r1, [r8, #2548]
 	str r2, [r8, #2564]
@@ -2763,42 +2763,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r8, #180]
 	ldr r6, [r8, #184]
 	ldr r7, [r8, #188]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -2817,6 +2781,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #2536]
 	str r1, [r8, #2552]
 	str r2, [r8, #2568]
@@ -2833,42 +2833,6 @@ vg_camellia_ecb_encrypt_core:
 	ldr r5, [r8, #212]
 	ldr r6, [r8, #216]
 	ldr r7, [r8, #220]
-	movw r11, #21845
-	movt r11, #21845
-	eor r10, r1, r0, lsr #1
-	and r10, r10, r11
-	eor r1, r1, r10
-	eor r0, r0, r10, ror #31
-	eor r10, r3, r2, lsr #1
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r2, r2, r10, ror #31
-	eor r10, r5, r4, lsr #1
-	and r10, r10, r11
-	eor r5, r5, r10
-	eor r4, r4, r10, ror #31
-	eor r10, r7, r6, lsr #1
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r6, r6, r10, ror #31
-	movw r11, #13107
-	movt r11, #13107
-	eor r10, r2, r0, lsr #2
-	and r10, r10, r11
-	eor r2, r2, r10
-	eor r0, r0, r10, ror #30
-	eor r10, r3, r1, lsr #2
-	and r10, r10, r11
-	eor r3, r3, r10
-	eor r1, r1, r10, ror #30
-	eor r10, r6, r4, lsr #2
-	and r10, r10, r11
-	eor r6, r6, r10
-	eor r4, r4, r10, ror #30
-	eor r10, r7, r5, lsr #2
-	and r10, r10, r11
-	eor r7, r7, r10
-	eor r5, r5, r10, ror #30
 	movw r11, #3855
 	movt r11, #3855
 	eor r10, r4, r0, lsr #4
@@ -2887,6 +2851,42 @@ vg_camellia_ecb_encrypt_core:
 	and r10, r10, r11
 	eor r7, r7, r10
 	eor r3, r3, r10, ror #28
+	movw r11, #13107
+	movt r11, #13107
+	eor r10, r2, r0, lsr #2
+	and r10, r10, r11
+	eor r2, r2, r10
+	eor r0, r0, r10, ror #30
+	eor r10, r3, r1, lsr #2
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r1, r1, r10, ror #30
+	eor r10, r6, r4, lsr #2
+	and r10, r10, r11
+	eor r6, r6, r10
+	eor r4, r4, r10, ror #30
+	eor r10, r7, r5, lsr #2
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r5, r5, r10, ror #30
+	movw r11, #21845
+	movt r11, #21845
+	eor r10, r1, r0, lsr #1
+	and r10, r10, r11
+	eor r1, r1, r10
+	eor r0, r0, r10, ror #31
+	eor r10, r3, r2, lsr #1
+	and r10, r10, r11
+	eor r3, r3, r10
+	eor r2, r2, r10, ror #31
+	eor r10, r5, r4, lsr #1
+	and r10, r10, r11
+	eor r5, r5, r10
+	eor r4, r4, r10, ror #31
+	eor r10, r7, r6, lsr #1
+	and r10, r10, r11
+	eor r7, r7, r10
+	eor r6, r6, r10, ror #31
 	str r0, [r8, #2540]
 	str r1, [r8, #2556]
 	str r2, [r8, #2572]

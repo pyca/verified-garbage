@@ -166,7 +166,7 @@ theorem statesAt_of_ecbInv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec
   intro t ht
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
   rw [Offset.add_add, h _ (by omega_arith), ite_eq_left (show 16 * j + t < 4 * (4 * n) by omega_arith),
-    show (16 * j + t) / 16 = j by omega_arith, show (16 * j + t) % 16 = t by omega_arith, vget _ ht]
+    show (16 * j + t) / 16 = j by omega_arith, show (16 * j + t) % 16 = t by omega_arith, getD_eq _ ht]
 
 /-! ## The key loop, counting in the low 4 bits of `lr` -/
 

@@ -118,7 +118,7 @@ theorem gather_ok (s : State) : ∃ s', runBlock isa wordGather s = some s' ∧
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ gather_check
   let W : Nat → BitVec 32 := fun k => s.gpr (q k)
-  have hrel : Rel (LaneRel 8 (assign W (2 ^ 8))) noMem (linExt 0) (linEnv (rIns q)) s := by
+  have hrel : Rel (LaneRel 8 (Straight.assign W (2 ^ 8))) noMem (linExt 0) (linEnv (rIns q)) s := by
     refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => by simp [noMem] at hj, fun _ _ h => by cases h⟩
     simp only [linEnv, Option.map_eq_some_iff] at h
     obtain ⟨⟨r', i⟩, hf, rfl⟩ := h
@@ -127,18 +127,18 @@ theorem gather_ok (s : State) : ∃ s', runBlock isa wordGather s = some s' ∧
     have hm := List.mem_of_find?_eq_some hf
     simp only [rIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hm
     obtain ⟨k, hk, rfl, rfl⟩ := hm
-    exact inWord_rel W (by omega_using [hk])
+    exact Straight.inWord_rel W (by omega_using [hk])
   obtain ⟨s', hs', p⟩ := run lanes_sound (noMem_ok s) hrel he
   simp only [gatherPost, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hpost
   refine ⟨s', hs', fun x hx => ?_, p.rd, p.wr, p.sp, ?_, fun r hr => p.other r ?_⟩
   · have h := p.rel.reg _ _ hpost.1
-    have h0 : LaneRel 8 (assign W (2 ^ 8)) (outWord (gatherG 0)) (s'.gpr (q 0) ^^^ 0x63636363) := by
+    have h0 : LaneRel 8 (Straight.assign W (2 ^ 8)) (Straight.outWord (gatherG 0)) (s'.gpr (q 0) ^^^ 0x63636363) := by
       refine ⟨Nat.two_pow_pos _, fun y hy => ?_⟩
       rw [BitVec.getLsbD_xor, h.2 y hy]
-      simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+      simp only [Straight.outWord, Nat.zero_testBit, Bool.false_xor]
       rw [show (0x63636363 : Nat).testBit y = (0x63636363 : BitVec 32).getLsbD y from rfl]
       cases (0x63636363 : BitVec 32).getLsbD y <;> simp
-    have := outWord_rel_of_lt hpost.2 h0 x hx
+    have := Straight.outWord_rel_of_lt hpost.2 h0 x hx
     rw [BitVec.getLsbD_xor, gatherG, Straight.xorBits_cons, Straight.xorBits_nil, Bool.xor_false,
       Straight.bitOf_word _ _ _ (by omega_using [hx])] at this
     rw [← this]
@@ -158,7 +158,7 @@ theorem subWord_mid {s : State} (hok : Ok sboxCfg s) :
   have hb₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide)
   obtain ⟨s₂, r₂, h₂, rd₂, wr₂, sp₂, o₂, f₂⟩ := subBytesQ_ok (hok.congr (s' := s₁) hb₁ hb₁ rd₁ wr₁)
   obtain ⟨s₃, r₃, h₃, rd₃, wr₃, sp₃, m₃, o₃⟩ := gather_ok s₂
-  refine ⟨s₃, ?_, fun t ht => byteExt fun j hj => ?_, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁],
+  refine ⟨s₃, ?_, fun t ht => byte_ext fun j hj => ?_, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁],
     by rw [sp₃, sp₂, sp₁], fun r hr => by rw [o₃ r hr, o₂ r hr, o₁ r hr], ?_⟩
   · have app : ∀ (a b : List Instr) (s s' : State), runBlock isa a s = some s' →
         runBlock isa (a ++ b) s = runBlock isa b s' := by
@@ -177,7 +177,7 @@ theorem subWord_mid {s : State} (hok : Ok sboxCfg s) :
     rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, h₃ _ (by omega_arith), b63 t ht j hj,
       show (8 * t + j) % 8 = j by omega_arith, show (8 * t + j) / 8 = t by omega_arith,
       ← getLsbD_bsByte (fun k => s₂.gpr (q k)) (8 * t) hj, h₂ _ (by omega_arith), BitVec.getLsbD_xor]
-    have e : bsByte (fun j => s₁.gpr (q j)) (8 * t) = (s.gpr (q 0)).extractLsb' (8 * t) 8 := byteExt fun k hk => by
+    have e : bsByte (fun j => s₁.gpr (q j)) (8 * t) = (s.gpr (q 0)).extractLsb' (8 * t) 8 := byte_ext fun k hk => by
       rw [getLsbD_bsByte _ _ hk, h₁ k hk _ (by omega_arith) (by omega_arith), BitVec.getLsbD_extractLsb',
         decide_eq_true hk, Bool.true_and, Nat.add_comm]
     rw [e]
