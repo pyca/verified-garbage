@@ -10,7 +10,7 @@ use rustls::crypto::cipher::{
 };
 use rustls::enums::{ContentType, ProtocolVersion};
 use rustls::error::Error;
-use rustls_verified_garbage as provider;
+use rustls_verified_garbage::cipher_suite;
 
 const SEQ: u64 = 7;
 
@@ -98,7 +98,7 @@ fn check(
 
 #[test]
 fn tls13_records() {
-    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS13_CIPHER_SUITES {
         let alg = suite.aead_alg;
         let iv = || Iv::new(&[0x55; 12]).unwrap();
         check(
@@ -112,7 +112,7 @@ fn tls13_records() {
 
 #[test]
 fn tls12_records() {
-    for suite in provider::ALL_TLS12_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS12_CIPHER_SUITES {
         let alg = suite.aead_alg;
         let shape = alg.key_block_shape();
         let iv = vec![0x55; shape.fixed_iv_len];
@@ -131,7 +131,7 @@ fn tls12_records() {
 /// bytes), though it sealed it.
 #[test]
 fn tls12_bad_records() {
-    for suite in provider::ALL_TLS12_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS12_CIPHER_SUITES {
         let alg = suite.aead_alg;
         let shape = alg.key_block_shape();
         let iv = vec![0x55; shape.fixed_iv_len];
@@ -175,7 +175,7 @@ fn holds(secrets: &ConnectionTrafficSecrets, suite: &str, key: &[u8], iv: &[u8])
 /// it is given, and opens no record shorter than a tag.
 #[test]
 fn tls13_secrets() {
-    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS13_CIPHER_SUITES {
         let alg = suite.aead_alg;
         let name = format!("{:?}", suite.common.suite);
         let iv = Iv::new(&[0x55; 12]).unwrap();
@@ -202,7 +202,7 @@ fn tls13_secrets() {
 /// nonce if it has one.
 #[test]
 fn tls12_secrets() {
-    for suite in provider::ALL_TLS12_CIPHER_SUITES {
+    for suite in cipher_suite::ALL_TLS12_CIPHER_SUITES {
         let alg = suite.aead_alg;
         let name = format!("{:?}", suite.common.suite);
         let shape = alg.key_block_shape();

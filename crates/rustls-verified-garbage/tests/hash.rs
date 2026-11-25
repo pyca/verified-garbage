@@ -2,7 +2,7 @@
 //! a context continued, copied or finished early.
 
 use rustls::crypto::HashAlgorithm;
-use rustls_verified_garbage as provider;
+use rustls_verified_garbage::cipher_suite;
 
 /// A message's digest is the same from `hash` and from a context it is fed
 /// to in pieces; a context finished without being consumed, or copied, can
@@ -10,8 +10,12 @@ use rustls_verified_garbage as provider;
 /// SHA-2 of that length.
 #[test]
 fn incremental() {
-    let tls12 = provider::ALL_TLS12_CIPHER_SUITES.iter().map(|s| &s.common);
-    let tls13 = provider::ALL_TLS13_CIPHER_SUITES.iter().map(|s| &s.common);
+    let tls12 = cipher_suite::ALL_TLS12_CIPHER_SUITES
+        .iter()
+        .map(|s| &s.common);
+    let tls13 = cipher_suite::ALL_TLS13_CIPHER_SUITES
+        .iter()
+        .map(|s| &s.common);
     for common in tls12.chain(tls13) {
         let (hash, name) = (common.hash_provider, format!("{:?}", common.suite));
         let message: Vec<u8> = (0..300u32).map(|i| i as u8).collect();

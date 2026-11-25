@@ -1,14 +1,14 @@
 //! Every key exchange group agrees on a secret from the two shares it makes,
 //! and refuses a share that is not one.
 
-use rustls_verified_garbage::{ALL_KX_GROUPS, kx_group};
+use rustls_verified_garbage::kx_group;
 
 /// A client's exchange started by each group and a server's completed with
 /// the client's share give the same secret, of the group the exchanges say;
 /// another exchange gives another secret.
 #[test]
 fn groups_agree() {
-    for group in ALL_KX_GROUPS {
+    for group in kx_group::ALL_KX_GROUPS {
         let name = format!("{group:?}");
         let client = group.start().unwrap().into_single();
         assert_eq!(client.group(), group.name(), "{name}");
@@ -34,7 +34,7 @@ fn groups_agree() {
 /// or as a server.
 #[test]
 fn truncated_shares() {
-    for group in ALL_KX_GROUPS {
+    for group in kx_group::ALL_KX_GROUPS {
         let name = format!("{group:?}");
         let client = group.start().unwrap().into_single();
         let share = client.pub_key().to_vec();

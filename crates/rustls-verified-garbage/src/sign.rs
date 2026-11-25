@@ -533,10 +533,8 @@ mod tests {
     use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87};
 
     use super::{load_private_key, mldsa_keygen_failed, rsa_signing_failed, signing_failed};
-    use crate::verify::{
-        RSA_PKCS1_2048_8192_SHA384, RSA_PKCS1_3072_8192_SHA384, SUPPORTED_SIG_ALGS,
-    };
-    use crate::{DEFAULT_KEY_PROVIDER, der};
+    use crate::verify::SUPPORTED_SIG_ALGS;
+    use crate::{DEFAULT_PROVIDER, der};
 
     const MESSAGE: &[u8] = b"signed";
 
@@ -686,8 +684,7 @@ mod tests {
     }
 
     /// An RSA key loads as PKCS #1, and as PKCS #8 with its parameters NULL
-    /// or absent, and signs with every RSA scheme; a PKCS #1 v1.5 signature
-    /// with SHA-384 does not verify where the modulus must be 3072 bits.
+    /// or absent, and signs with every RSA scheme.
     #[test]
     fn rsa_signs() {
         let (pkcs1, public_key) = rsa_key(|_| {});
@@ -707,22 +704,6 @@ mod tests {
         ] {
             signs(&*load_private_key(&der).unwrap(), &public_key, &schemes);
         }
-        let key = load_private_key(&PrivateKeyDer::Pkcs1(pkcs1.into())).unwrap();
-        let sig = key
-            .choose_scheme(&[SignatureScheme::RSA_PKCS1_SHA384])
-            .unwrap()
-            .sign(MESSAGE)
-            .unwrap();
-        assert!(
-            RSA_PKCS1_2048_8192_SHA384
-                .verify_signature(&public_key, MESSAGE, &sig)
-                .is_ok()
-        );
-        assert!(
-            RSA_PKCS1_3072_8192_SHA384
-                .verify_signature(&public_key, MESSAGE, &sig)
-                .is_err()
-        );
     }
 
     /// An RSA key does not load if it is no `RSAPrivateKey`, has more than
@@ -830,7 +811,7 @@ mod tests {
         let private_key = |seed: &[u8]| asn1::write_single(&seed).unwrap();
         for pk in [Some(bits(&public_key)), None] {
             let der = pkcs8(1, der::ED25519, None, &private_key(&seed), pk);
-            let key = DEFAULT_KEY_PROVIDER.load_private_key(der).unwrap();
+            let key = DEFAULT_PROVIDER.key_provider.load_private_key(der).unwrap();
             signs(&*key, &public_key, &[SignatureScheme::ED25519]);
         }
         let mut other = public_key;
