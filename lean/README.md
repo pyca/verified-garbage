@@ -199,6 +199,7 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 | Keeps callee-saved registers, the stack pointer and the return address | `TCB/` (`Verified`, `Artifact.spSafe`) |
 | Branches and addresses depend only on public data and the contract's `leak` | `TCB/` (`ConstantTime`) |
 | Leaves no secrets in registers, flags or its stack | `TCB/` (`NoResidue`) |
+| Outputs its `Api` declares public reveal nothing else (`Api.publicOut`) | `TCB/` (`Artifact.publicOutOk`) |
 | What it returns and writes to its buffers | **The contract's postcondition only** |
 | Instructions take the same time whatever their operands | [Assumed](../README.md#what-the-constant-time-guarantee-assumes) |
 | The Rust code around it | [Tests](../README.md#what-is-not-verified) |
