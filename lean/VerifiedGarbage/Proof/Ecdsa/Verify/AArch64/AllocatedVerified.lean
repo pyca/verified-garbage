@@ -1002,7 +1002,7 @@ theorem cachedSum_relCT (raw : RawCorrect) {base : Addr}
     exact List.mem_append_right _ (List.mem_append_right _
       (List.mem_append_right _ (List.mem_append_right _ hx))))⟩)
 
-theorem cachedDigit_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
+theorem cachedDigitInline_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
     (hj : j<257) (hc : DigitChecks)
     {P : Point C} {E : Nat → Fe C} :
@@ -1060,6 +1060,24 @@ theorem cachedDigit_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
     rcases hs with ⟨rfl,rfl⟩
     rcases ht with ⟨rfl,rfl⟩
     exact ⟨rfl,_,hp⟩
+
+
+theorem cachedDigit_relCT (raw : RawCorrect) {base : Addr} {u v j : Nat}
+    (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
+    (hj : j<257) (hc : DigitChecks)
+    {P : Point C} {E : Nat → Fe C} :
+    RelCT isa (fun s t => FieldPair K.M base 8192 C.p (·∈jointSlots cfg) (jointLive cfg) E s t ∧
+      JointStable cfg C base P u v s ∧ JointStable cfg C base P u v t ∧
+      s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j)
+      VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.cachedDigit
+      (fun s t => ∃ E', FieldPair K.M base 8192 C.p (·∈jointSlots cfg) (jointLive cfg) E' s t) := by
+  apply AllocatedCall.call_relCT
+  · intro s₁ s₂ t₁ t₂ h₁ h₂ sy₁ sy₂ ⟨h,c₁,c₂,j₁,j₂⟩
+    exact ⟨allocatedFieldPair_stable h₁ h₂ sy₁ sy₂ h,c₁.of_mem h₁.mem,c₂.of_mem h₂.mem,
+      (h₁.gpr _ allocatedRegs_x19).trans j₁,(h₂.gpr _ allocatedRegs_x19).trans j₂⟩
+  · intro s₁ s₂ t₁ t₂ h₁ h₂ sy₁ sy₂ ⟨E',h⟩
+    exact ⟨E',allocatedFieldPair_stable h₁ h₂ sy₁ sy₂ h⟩
+  · exact cachedDigitInline_relCT raw hm hOne hj hc
 
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated
