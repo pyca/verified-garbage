@@ -41,7 +41,7 @@ theorem cached_call_pre {s : State} {K Y D S T : Addr} {n : Nat} {H : Block}
   constructor
   · refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩ <;>
       simp only [cachedEntry, State.withRegions_gpr, State.withRegions_sp, State.withRegions_rd,
-        State.withRegions_wr, State.withRegions_mem, State.callEntry_mem, State.callEntry_sp, allocd,
+        State.withRegions_wr, State.withRegions_mem, State.callEntry_mem, State.callEntry_sp,
         callEntry_gpr' _ (by decide : Reg.a0 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a1 ∉ linkRegs),
         callEntry_gpr' _ (by decide : Reg.a2 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.a3 ∉ linkRegs),
         callEntry_gpr' _ (by decide : Reg.a4 ∉ linkRegs), a0,args .a1 (by decide) (by decide),
