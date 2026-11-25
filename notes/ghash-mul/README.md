@@ -249,3 +249,28 @@ J, as written: the scalar product stays in edi and ebp (no vector instruction
 touches them) and goes to xmm6 by two movd and punpckldq before Karatsuba's
 sums, rather than through memory, whose two stores a load of 16 bytes could not
 be forwarded from. Pointer and count: words 56 and 57.
+
+# Second round, settled before its code
+
+## riscv64
+
+As listed above: the first class of a product in its destination (2 fewer, nine
+times), and the four moves of `core` removed by naming the products'
+destinations (the sums' product in `s9 : a4`, the first's in `s4 : s6`, the last
+fold into `s5`): 22 of about 515. `mulhu` with 64-bit words and five classes
+would take 118 instructions a product of doublewords where this takes 139, but
+the prepared form's key layout (32-bit words, four classes) is fixed by `Spec/`,
+and two kinds of core are more to keep than it gains.
+
+## arm
+
+On Neoverse N2 (its software optimization guide): `mul` goes to one pipe (M0),
+1 a cycle: 243 cycles a block, against about 980 / 5 = 196 for the width. An
+operation with an operand shifted by more than 4 goes to the M pipes too (M0 or
+M1, 2 cycles); each `classes` has three (`and d, mask, x, lsr #16`), 81 a block,
+which take M0 from the `mul`s when the scheduler sends them there. A plain
+shift is the integer pipes'. So the halves are made once (`lsl`, `lsr`) and the
+classes are plain `and`s: 4 more instructions a 32-bit product (36 a block), 90
+fewer operations for the M pipes. Other cores (Cortex-A53, A72): shifted
+operands cost one more cycle of latency there too. Not done: storing the key's
+classes (no scratch).
