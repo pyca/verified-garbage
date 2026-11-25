@@ -162,13 +162,6 @@ theorem slots_widen {c : Cfg} {base : Addr} {a b : Mem} {slots slots' : List Nat
   · exact (by decide : VG.AArch64.Reg.x20 ∉ VG.Proof.Mont.AArch64.clobAll)
       (VG.Proof.Mont.AArch64.mem_clobAll h)
 
- theorem mulPP_eq_op {c : Cfg} (o a b : Nat) (h : a ≠ b) :
-    VG.Impl.Weierstrass.AArch64.opProg c.MP' (.mul o a b) = c.mulPP o a b := by
-  unfold VG.Impl.Weierstrass.AArch64.opProg VG.Impl.Ecdsa.AArch64.Cfg.mulPP
-  cases hh : VG.Impl.Weierstrass.AArch64.Mont.callOf c.MP' with
-  | none => simp [VG.Impl.Weierstrass.AArch64.opCode, h]
-  | some fm => obtain ⟨f, m⟩ := fm; simp [h, MP'_n]
-
 end VG.Proof.EcKey.Compressed.AArch64
 
 end
@@ -848,13 +841,9 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   obtain hW := sl_le c h7 (i := W0) (by decide)
   obtain hD := sl_le c h7 (i := D) (by decide)
   obtain hMP := sl_le c h7 (i := MP) (by decide)
-  change WP isa (.seq (opProg c.MP' (.mul (c.sl QY) (c.sl ACC) (c.sl ONE)))
+  change WP isa (.seq (c.mulPP (c.sl QY) (c.sl ACC) (c.sl ONE))
     (.block (opCode c.MP' (.sub (c.sl W0) (c.sl ZERO) (c.sl QY)) ++
       Impl.EcKey.Compressed.AArch64.parityMask c ++ sel c.n (c.sl QY) (c.sl QY) (c.sl W0)))) s _
-  rw [mulPP_eq_op _ _ _ (by
-    intro h
-    have := sl_inj c hc.n0 h
-    contradiction)]
   refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := QY) (a := ACC) (b := ONE)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [hOne]; omega_using [hp3]))
     fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
@@ -1414,7 +1403,6 @@ namespace VG.Proof.EcKey.Compressed.AArch64
 
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Ecdh.AArch64 (R2P BP QXM QYM QY W0 W1 W2 W3)
-open VG.Impl.EcKey.Compressed.AArch64 (rhsOps)
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont.AArch64 VG.Proof.Mont
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Ecdh.AArch64
 
@@ -1449,24 +1437,12 @@ theorem rhs_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
     (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
     (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) :
-    WP isa (Impl.Weierstrass.AArch64.fprogB c.MP' (rhsOps c)) s (RhsPost c base s) := by
+    WP isa (Impl.EcKey.Compressed.AArch64.rhs c) s (RhsPost c base s) := by
   have h7 := hc.n10
   have hn := hs.nowrap
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  change WP isa (.seq (VG.Impl.Weierstrass.AArch64.opProg c.MP'
-    (.mul (c.sl QXM) (c.sl E) (c.sl R2P)))
+  change WP isa (.seq (c.mulPP (c.sl QXM) (c.sl E) (c.sl R2P))
     (VG.Impl.Weierstrass.AArch64.fprogB c.MP' (rhsTail.map (FOp.rename c.sl)))) s _
-  obtain hneq : c.sl E ≠ c.sl R2P := by
-    intro he
-    have := sl_inj c hc.n0 he
-    contradiction
-  obtain first : VG.Impl.Weierstrass.AArch64.opProg c.MP' (.mul (c.sl QXM) (c.sl E) (c.sl R2P)) =
-      c.mulPP (c.sl QXM) (c.sl E) (c.sl R2P) := by
-    unfold VG.Impl.Weierstrass.AArch64.opProg Cfg.mulPP
-    cases hh : VG.Impl.Weierstrass.AArch64.Mont.callOf c.MP' with
-    | none => simp [VG.Impl.Weierstrass.AArch64.opCode, hneq]
-    | some fm => obtain ⟨f, m⟩ := fm; simp [hneq, MP'_n]
-  rw [first]
   refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := QXM) (a := E) (b := R2P)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [hr2]; exact Nat.mod_lt _ (by have := hc.p_ge; omega_using [this])))
@@ -1608,8 +1584,7 @@ theorem decompressFront_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : Dec
     WP isa (.seq (.block Impl.EcKey.Compressed.AArch64.args)
       (.seq (.block (c.setupWith none))
       (.seq (.block (Impl.EcKey.Compressed.AArch64.decompressPeer c))
-      (.seq (Impl.Weierstrass.AArch64.fprogB c.MP'
-        (Impl.EcKey.Compressed.AArch64.rhsOps c)) rest)))) s₀ Q := by
+      (.seq (Impl.EcKey.Compressed.AArch64.rhs c) rest)))) s₀ Q := by
   apply decompressStart_ok hc hp
   intro g s S
   have h7 := hc.n10

@@ -3308,7 +3308,6 @@ vg_p521_check_point:
 	str x12, [x0, #3064]
 	str x13, [x0, #3072]
 	str x14, [x0, #3080]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #3088]
 	ldr x9, [x0, #3096]
 	ldr x10, [x0, #3104]
@@ -3318,8 +3317,10 @@ vg_p521_check_point:
 	ldr x14, [x0, #3136]
 	ldr x15, [x0, #3144]
 	ldr x21, [x0, #3152]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #3016]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #3024]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3032]
@@ -3336,35 +3337,19 @@ vg_p521_check_point:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3080]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2800]
 	str x9, [x0, #2808]
 	str x10, [x0, #2816]
@@ -3374,7 +3359,6 @@ vg_p521_check_point:
 	str x14, [x0, #2848]
 	str x15, [x0, #2856]
 	str x21, [x0, #2864]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2800]
 	ldr x9, [x0, #2808]
 	ldr x10, [x0, #2816]
@@ -3384,8 +3368,10 @@ vg_p521_check_point:
 	ldr x14, [x0, #2848]
 	ldr x15, [x0, #2856]
 	ldr x21, [x0, #2864]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #2944]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #2952]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2960]
@@ -3402,35 +3388,19 @@ vg_p521_check_point:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3008]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #3088]
 	str x9, [x0, #3096]
 	str x10, [x0, #3104]
@@ -3440,7 +3410,6 @@ vg_p521_check_point:
 	str x14, [x0, #3136]
 	str x15, [x0, #3144]
 	str x21, [x0, #3152]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2728]
 	ldr x9, [x0, #2736]
 	ldr x10, [x0, #2744]
@@ -3450,6 +3419,7 @@ vg_p521_check_point:
 	ldr x14, [x0, #2776]
 	ldr x15, [x0, #2784]
 	ldr x21, [x0, #2792]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #3088]
 	subs x8, x8, x2
 	ldr x2, [x0, #3096]
@@ -3468,34 +3438,17 @@ vg_p521_check_point:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #3152]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #3016]
 	str x9, [x0, #3024]
 	str x10, [x0, #3032]

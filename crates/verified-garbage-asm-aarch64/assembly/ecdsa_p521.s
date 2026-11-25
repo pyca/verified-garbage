@@ -2009,27 +2009,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #2800, lsl #0
 	movz x3, #2800, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #3160, lsl #0
 	movz x3, #3160, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1144, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1072, lsl #0
 	movz x2, #2800, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -2039,8 +2038,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1072]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1080]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1088]
@@ -2057,35 +2058,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -2095,7 +2080,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -2105,8 +2089,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1072]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1080]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1088]
@@ -2123,35 +2109,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -2161,7 +2131,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1720]
 	ldr x9, [x0, #1728]
 	ldr x10, [x0, #1736]
@@ -2171,6 +2140,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1768]
 	ldr x15, [x0, #1776]
 	ldr x21, [x0, #1784]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #424]
 	subs x8, x8, x2
 	ldr x2, [x0, #432]
@@ -2189,34 +2159,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #488]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -2226,7 +2179,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1912]
 	str x15, [x0, #1920]
 	str x21, [x0, #1928]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -2236,8 +2188,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -2254,35 +2208,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -2292,7 +2230,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -2302,8 +2239,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -2320,35 +2259,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -2362,9 +2285,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1504, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1504]
 	ldr x9, [x0, #1512]
 	ldr x10, [x0, #1520]
@@ -2374,6 +2296,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1552]
 	ldr x15, [x0, #1560]
 	ldr x21, [x0, #1568]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -2392,34 +2315,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1504]
 	str x9, [x0, #1512]
 	str x10, [x0, #1520]
@@ -2429,7 +2335,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1552]
 	str x15, [x0, #1560]
 	str x21, [x0, #1568]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1504]
 	ldr x9, [x0, #1512]
 	ldr x10, [x0, #1520]
@@ -2439,6 +2344,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1552]
 	ldr x15, [x0, #1560]
 	ldr x21, [x0, #1568]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -2457,34 +2363,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1504]
 	str x9, [x0, #1512]
 	str x10, [x0, #1520]
@@ -2494,7 +2383,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1552]
 	str x15, [x0, #1560]
 	str x21, [x0, #1568]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -2504,6 +2392,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1504]
 	subs x8, x8, x2
 	ldr x2, [x0, #1512]
@@ -2522,34 +2411,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1568]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -2563,9 +2435,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1576, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -2575,8 +2446,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1144]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1152]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1160]
@@ -2593,35 +2466,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1208]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -2631,7 +2488,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1192]
 	str x15, [x0, #1200]
 	str x21, [x0, #1208]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -2641,8 +2497,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1144]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1152]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1160]
@@ -2659,35 +2517,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1208]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -2697,7 +2539,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1192]
 	str x15, [x0, #1200]
 	str x21, [x0, #1208]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -2707,8 +2548,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1144]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1152]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1160]
@@ -2725,35 +2568,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1208]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -2763,7 +2590,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1192]
 	str x15, [x0, #1200]
 	str x21, [x0, #1208]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1576]
 	ldr x9, [x0, #1584]
 	ldr x10, [x0, #1592]
@@ -2773,6 +2599,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1624]
 	ldr x15, [x0, #1632]
 	ldr x21, [x0, #1640]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1144]
 	subs x8, x8, x2
 	ldr x2, [x0, #1152]
@@ -2791,34 +2618,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1208]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1576]
 	str x9, [x0, #1584]
 	str x10, [x0, #1592]
@@ -2828,7 +2638,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1624]
 	str x15, [x0, #1632]
 	str x21, [x0, #1640]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #3160]
 	ldr x9, [x0, #3168]
 	ldr x10, [x0, #3176]
@@ -2838,8 +2647,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #3208]
 	ldr x15, [x0, #3216]
 	ldr x21, [x0, #3224]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #3160]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #3168]
 	adcs x9, x9, x2
 	ldr x2, [x0, #3176]
@@ -2856,35 +2667,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #3224]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1216]
 	str x9, [x0, #1224]
 	str x10, [x0, #1232]
@@ -2895,7 +2690,6 @@ vg_ecdsa_p521_verify:
 	str x15, [x0, #1272]
 	str x21, [x0, #1280]
 212:
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1504]
 	ldr x9, [x0, #1512]
 	ldr x10, [x0, #1520]
@@ -2905,6 +2699,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1552]
 	ldr x15, [x0, #1560]
 	ldr x21, [x0, #1568]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -2923,34 +2718,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1720]
 	str x9, [x0, #1728]
 	str x10, [x0, #1736]
@@ -2964,27 +2742,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1792, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1216, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1504, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1936, lsl #0
 	movz x2, #1072, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1576]
 	ldr x9, [x0, #1584]
 	ldr x10, [x0, #1592]
@@ -2994,6 +2771,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1624]
 	ldr x15, [x0, #1632]
 	ldr x21, [x0, #1640]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1144]
 	subs x8, x8, x2
 	ldr x2, [x0, #1152]
@@ -3012,34 +2790,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1208]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2008]
 	str x9, [x0, #2016]
 	str x10, [x0, #2024]
@@ -3053,9 +2814,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #2080, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #2008, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1504]
 	ldr x9, [x0, #1512]
 	ldr x10, [x0, #1520]
@@ -3065,6 +2825,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1552]
 	ldr x15, [x0, #1560]
 	ldr x21, [x0, #1568]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1936]
 	subs x8, x8, x2
 	ldr x2, [x0, #1944]
@@ -3083,34 +2844,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -3124,9 +2868,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1576, lsl #0
 	movz x2, #1576, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2080]
 	ldr x9, [x0, #2088]
 	ldr x10, [x0, #2096]
@@ -3136,6 +2879,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2128]
 	ldr x15, [x0, #2136]
 	ldr x21, [x0, #2144]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1504]
 	subs x8, x8, x2
 	ldr x2, [x0, #1512]
@@ -3154,34 +2898,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1568]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -3191,7 +2918,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -3201,6 +2927,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1936]
 	subs x8, x8, x2
 	ldr x2, [x0, #1944]
@@ -3219,34 +2946,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -3256,7 +2966,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1504]
 	ldr x9, [x0, #1512]
 	ldr x10, [x0, #1520]
@@ -3266,6 +2975,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1552]
 	ldr x15, [x0, #1560]
 	ldr x21, [x0, #1568]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -3284,34 +2994,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -3325,9 +3018,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1144, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -3337,6 +3029,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1576]
 	subs x8, x8, x2
 	ldr x2, [x0, #1584]
@@ -3355,34 +3048,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1640]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -3471,13 +3147,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #6904]
@@ -3537,13 +3213,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7048]
@@ -3603,13 +3279,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7192]
@@ -3669,13 +3345,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7336]
@@ -3735,13 +3411,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7480]
@@ -3801,13 +3477,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7624]
@@ -3867,13 +3543,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7768]
@@ -3933,13 +3609,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1864, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	ldr x1, [x0, #1720]
 	str x1, [x0, #7912]
@@ -4398,39 +4074,38 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1288, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1936, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #1576, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -4440,6 +4115,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -4458,34 +4134,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -4495,7 +4154,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2080]
 	ldr x9, [x0, #2088]
 	ldr x10, [x0, #2096]
@@ -4505,6 +4163,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2128]
 	ldr x15, [x0, #2136]
 	ldr x21, [x0, #2144]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -4523,34 +4182,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2080]
 	str x9, [x0, #2088]
 	str x10, [x0, #2096]
@@ -4586,27 +4228,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1072, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #2080, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -4616,6 +4257,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -4634,34 +4276,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -4671,7 +4296,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -4681,6 +4305,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -4699,34 +4324,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -4736,7 +4344,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -4746,6 +4353,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -4764,34 +4372,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -4801,7 +4392,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -4811,6 +4401,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -4829,34 +4420,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -4870,15 +4444,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1144, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -4888,6 +4461,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -4906,34 +4480,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -4947,13 +4504,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1216, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1648, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1216, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	b 222f
 221:
@@ -5120,15 +4677,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -5138,8 +4694,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -5156,35 +4714,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -5198,9 +4740,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1864, lsl #0
 	movz x2, #1288, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -5210,6 +4751,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -5228,34 +4770,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -5265,7 +4790,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -5275,8 +4799,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1720]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1728]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1736]
@@ -5293,35 +4819,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -5335,9 +4845,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1936, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1072, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -5347,8 +4856,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -5365,35 +4876,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -5403,7 +4898,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -5413,8 +4907,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -5431,35 +4927,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -5469,7 +4949,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -5479,8 +4958,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -5497,35 +4978,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -5539,9 +5004,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1216, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1216]
 	ldr x9, [x0, #1224]
 	ldr x10, [x0, #1232]
@@ -5551,8 +5015,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1264]
 	ldr x15, [x0, #1272]
 	ldr x21, [x0, #1280]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1216]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1224]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1232]
@@ -5569,35 +5035,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1280]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1216]
 	str x9, [x0, #1224]
 	str x10, [x0, #1232]
@@ -5611,9 +5061,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1072, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -5623,6 +5072,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -5641,34 +5091,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -5678,7 +5111,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -5688,6 +5120,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -5706,34 +5139,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -5743,7 +5159,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -5753,6 +5168,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -5771,34 +5187,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -5812,15 +5211,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1144, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -5830,8 +5228,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -5848,35 +5248,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -5886,7 +5270,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -5896,6 +5279,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -5914,34 +5298,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -6277,27 +5644,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1936, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #1576, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -6307,6 +5673,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -6325,34 +5692,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -6362,7 +5712,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2080]
 	ldr x9, [x0, #2088]
 	ldr x10, [x0, #2096]
@@ -6372,6 +5721,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2128]
 	ldr x15, [x0, #2136]
 	ldr x21, [x0, #2144]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -6390,34 +5740,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2080]
 	str x9, [x0, #2088]
 	str x10, [x0, #2096]
@@ -6453,27 +5786,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1288, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #2080, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -6483,6 +5815,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -6501,34 +5834,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -6538,7 +5854,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -6548,6 +5863,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -6566,34 +5882,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -6603,7 +5902,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -6613,6 +5911,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -6631,34 +5930,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -6668,7 +5950,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -6678,6 +5959,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1288]
 	subs x8, x8, x2
 	ldr x2, [x0, #1296]
@@ -6696,34 +5978,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1352]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -6737,15 +6002,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1360, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1360]
 	ldr x9, [x0, #1368]
 	ldr x10, [x0, #1376]
@@ -6755,6 +6019,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1408]
 	ldr x15, [x0, #1416]
 	ldr x21, [x0, #1424]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -6773,34 +6038,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -6814,7 +6062,7 @@ vg_ecdsa_p521_verify:
 	movz x1, #1432, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	b 232f
 231:
@@ -6981,15 +6229,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1144, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -6999,8 +6246,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -7017,35 +6266,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -7059,9 +6292,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1864, lsl #0
 	movz x2, #1072, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -7071,6 +6303,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -7089,34 +6322,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -7126,7 +6342,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -7136,8 +6351,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1720]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1728]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1736]
@@ -7154,35 +6371,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -7196,9 +6397,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1936, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1288, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -7208,8 +6408,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -7226,35 +6428,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -7264,7 +6450,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -7274,8 +6459,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -7292,35 +6479,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -7330,7 +6501,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -7340,8 +6510,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -7358,35 +6530,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -7400,9 +6556,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1432, lsl #0
 	movz x2, #1144, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1432]
 	ldr x9, [x0, #1440]
 	ldr x10, [x0, #1448]
@@ -7412,8 +6567,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1480]
 	ldr x15, [x0, #1488]
 	ldr x21, [x0, #1496]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1432]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1440]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1448]
@@ -7430,35 +6587,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1496]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1432]
 	str x9, [x0, #1440]
 	str x10, [x0, #1448]
@@ -7472,9 +6613,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1288, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -7484,6 +6624,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -7502,34 +6643,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -7539,7 +6663,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -7549,6 +6672,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -7567,34 +6691,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -7604,7 +6711,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -7614,6 +6720,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1288]
 	subs x8, x8, x2
 	ldr x2, [x0, #1296]
@@ -7632,34 +6739,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1352]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -7673,15 +6763,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1360, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -7691,8 +6780,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -7709,35 +6800,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -7747,7 +6822,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1360]
 	ldr x9, [x0, #1368]
 	ldr x10, [x0, #1376]
@@ -7757,6 +6831,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1408]
 	ldr x15, [x0, #1416]
 	ldr x21, [x0, #1424]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -7775,34 +6850,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -7932,21 +6990,20 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1144, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1072, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -7956,6 +7013,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -7974,34 +7032,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -8011,7 +7052,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -8021,8 +7061,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1720]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1728]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1736]
@@ -8039,35 +7081,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -8081,9 +7107,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1936, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1288, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -8093,8 +7118,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -8111,35 +7138,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -8149,7 +7160,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -8159,8 +7169,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -8177,35 +7189,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -8215,7 +7211,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -8225,8 +7220,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -8243,35 +7240,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -8281,7 +7262,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1912]
 	str x15, [x0, #1920]
 	str x21, [x0, #1928]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -8291,8 +7271,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -8309,35 +7291,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -8347,7 +7313,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1912]
 	str x15, [x0, #1920]
 	str x21, [x0, #1928]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -8357,8 +7322,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1216]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1224]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1232]
@@ -8375,35 +7342,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1280]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1432]
 	str x9, [x0, #1440]
 	str x10, [x0, #1448]
@@ -8417,9 +7368,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1432, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1432]
 	ldr x9, [x0, #1440]
 	ldr x10, [x0, #1448]
@@ -8429,6 +7379,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1480]
 	ldr x15, [x0, #1488]
 	ldr x21, [x0, #1496]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -8447,34 +7398,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1432]
 	str x9, [x0, #1440]
 	str x10, [x0, #1448]
@@ -8484,7 +7418,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1480]
 	str x15, [x0, #1488]
 	str x21, [x0, #1496]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1432]
 	ldr x9, [x0, #1440]
 	ldr x10, [x0, #1448]
@@ -8494,6 +7427,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1480]
 	ldr x15, [x0, #1488]
 	ldr x21, [x0, #1496]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -8512,34 +7446,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1432]
 	str x9, [x0, #1440]
 	str x10, [x0, #1448]
@@ -8553,9 +7470,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1288, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -8565,6 +7481,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -8583,34 +7500,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -8620,7 +7520,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -8630,6 +7529,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -8648,34 +7548,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -8685,7 +7568,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -8695,6 +7577,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1288]
 	subs x8, x8, x2
 	ldr x2, [x0, #1296]
@@ -8713,34 +7596,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1352]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -8754,15 +7620,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1360, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -8772,8 +7637,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -8790,35 +7657,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -8828,7 +7679,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -8838,8 +7688,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -8856,35 +7708,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -8894,7 +7730,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -8904,8 +7739,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -8922,35 +7759,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -8960,7 +7781,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1360]
 	ldr x9, [x0, #1368]
 	ldr x10, [x0, #1376]
@@ -8970,6 +7790,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1408]
 	ldr x15, [x0, #1416]
 	ldr x21, [x0, #1424]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -8988,34 +7809,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -9310,39 +8114,38 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1288, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1936, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #1576, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -9352,6 +8155,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -9370,34 +8174,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -9407,7 +8194,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2080]
 	ldr x9, [x0, #2088]
 	ldr x10, [x0, #2096]
@@ -9417,6 +8203,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2128]
 	ldr x15, [x0, #2136]
 	ldr x21, [x0, #2144]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -9435,34 +8222,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2080]
 	str x9, [x0, #2088]
 	str x10, [x0, #2096]
@@ -9498,27 +8268,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1072, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #2080, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -9528,6 +8297,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -9546,34 +8316,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -9583,7 +8336,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -9593,6 +8345,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -9611,34 +8364,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -9648,7 +8384,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -9658,6 +8393,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -9676,34 +8412,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -9713,7 +8432,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -9723,6 +8441,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -9741,34 +8460,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -9782,15 +8484,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1144, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -9800,6 +8501,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -9818,34 +8520,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -9859,13 +8544,13 @@ vg_ecdsa_p521_verify:
 	movz x1, #1216, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1648, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1216, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	b 245f
 244:
@@ -10032,15 +8717,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1432, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -10050,8 +8734,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -10068,35 +8754,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -10110,9 +8780,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1864, lsl #0
 	movz x2, #1288, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -10122,6 +8791,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -10140,34 +8810,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -10177,7 +8830,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -10187,8 +8839,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1720]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1728]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1736]
@@ -10205,35 +8859,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -10247,9 +8885,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1936, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1072, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -10259,8 +8896,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -10277,35 +8916,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -10315,7 +8938,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -10325,8 +8947,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -10343,35 +8967,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -10381,7 +8989,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -10391,8 +8998,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -10409,35 +9018,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -10451,9 +9044,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1216, lsl #0
 	movz x2, #1360, lsl #0
 	movz x3, #1432, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1216]
 	ldr x9, [x0, #1224]
 	ldr x10, [x0, #1232]
@@ -10463,8 +9055,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1264]
 	ldr x15, [x0, #1272]
 	ldr x21, [x0, #1280]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1216]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1224]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1232]
@@ -10481,35 +9075,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1280]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1216]
 	str x9, [x0, #1224]
 	str x10, [x0, #1232]
@@ -10523,9 +9101,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1072, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -10535,6 +9112,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -10553,34 +9131,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -10590,7 +9151,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -10600,6 +9160,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -10618,34 +9179,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1072]
 	str x9, [x0, #1080]
 	str x10, [x0, #1088]
@@ -10655,7 +9199,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1120]
 	str x15, [x0, #1128]
 	str x21, [x0, #1136]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -10665,6 +9208,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1072]
 	subs x8, x8, x2
 	ldr x2, [x0, #1080]
@@ -10683,34 +9227,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1136]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -10724,15 +9251,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1144, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -10742,8 +9268,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -10760,35 +9288,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -10798,7 +9310,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1144]
 	ldr x9, [x0, #1152]
 	ldr x10, [x0, #1160]
@@ -10808,6 +9319,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1192]
 	ldr x15, [x0, #1200]
 	ldr x21, [x0, #1208]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -10826,34 +9338,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -11189,27 +9684,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1936, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #1576, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2080, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -11219,6 +9713,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -11237,34 +9732,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -11274,7 +9752,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2080]
 	ldr x9, [x0, #2088]
 	ldr x10, [x0, #2096]
@@ -11284,6 +9761,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2128]
 	ldr x15, [x0, #2136]
 	ldr x21, [x0, #2144]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -11302,34 +9780,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2080]
 	str x9, [x0, #2088]
 	str x10, [x0, #2096]
@@ -11365,27 +9826,26 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1864, lsl #0
 	movz x2, #1864, lsl #0
 	movz x3, #1720, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1288, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #2080, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -11395,6 +9855,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -11413,34 +9874,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -11450,7 +9894,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -11460,6 +9903,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -11478,34 +9922,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -11515,7 +9942,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -11525,6 +9951,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -11543,34 +9970,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -11580,7 +9990,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -11590,6 +9999,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1288]
 	subs x8, x8, x2
 	ldr x2, [x0, #1296]
@@ -11608,34 +10018,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1352]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -11649,15 +10042,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1360, lsl #0
 	movz x2, #2080, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #2008, lsl #0
 	movz x2, #2008, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1360]
 	ldr x9, [x0, #1368]
 	ldr x10, [x0, #1376]
@@ -11667,6 +10059,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1408]
 	ldr x15, [x0, #1416]
 	ldr x21, [x0, #1424]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2008]
 	subs x8, x8, x2
 	ldr x2, [x0, #2016]
@@ -11685,34 +10078,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2072]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -11726,7 +10102,7 @@ vg_ecdsa_p521_verify:
 	movz x1, #1432, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	b 255f
 254:
@@ -11893,15 +10269,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1720, lsl #0
 	movz x2, #1216, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1144, lsl #0
 	movz x3, #1144, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -11911,8 +10286,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -11929,35 +10306,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -11971,9 +10332,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1864, lsl #0
 	movz x2, #1072, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -11983,6 +10343,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1720]
 	subs x8, x8, x2
 	ldr x2, [x0, #1728]
@@ -12001,34 +10362,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -12038,7 +10382,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -12048,8 +10391,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1720]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1728]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1736]
@@ -12066,35 +10411,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1784]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -12108,9 +10437,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1936, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1288, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1936]
 	ldr x9, [x0, #1944]
 	ldr x10, [x0, #1952]
@@ -12120,8 +10448,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1984]
 	ldr x15, [x0, #1992]
 	ldr x21, [x0, #2000]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -12138,35 +10468,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -12176,7 +10490,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -12186,8 +10499,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1936]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1944]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1952]
@@ -12204,35 +10519,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2000]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1936]
 	str x9, [x0, #1944]
 	str x10, [x0, #1952]
@@ -12242,7 +10541,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1984]
 	str x15, [x0, #1992]
 	str x21, [x0, #2000]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -12252,8 +10550,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1864]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1872]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1880]
@@ -12270,35 +10570,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1864]
 	str x9, [x0, #1872]
 	str x10, [x0, #1880]
@@ -12312,9 +10596,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1432, lsl #0
 	movz x2, #1144, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1432]
 	ldr x9, [x0, #1440]
 	ldr x10, [x0, #1448]
@@ -12324,8 +10607,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1480]
 	ldr x15, [x0, #1488]
 	ldr x21, [x0, #1496]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1432]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1440]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1448]
@@ -12342,35 +10627,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1496]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1432]
 	str x9, [x0, #1440]
 	str x10, [x0, #1448]
@@ -12384,9 +10653,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #1288, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1936, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -12396,6 +10664,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -12414,34 +10683,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -12451,7 +10703,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1288]
 	ldr x9, [x0, #1296]
 	ldr x10, [x0, #1304]
@@ -12461,6 +10712,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1336]
 	ldr x15, [x0, #1344]
 	ldr x21, [x0, #1352]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1864]
 	subs x8, x8, x2
 	ldr x2, [x0, #1872]
@@ -12479,34 +10731,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1928]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1288]
 	str x9, [x0, #1296]
 	str x10, [x0, #1304]
@@ -12516,7 +10751,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1336]
 	str x15, [x0, #1344]
 	str x21, [x0, #1352]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1864]
 	ldr x9, [x0, #1872]
 	ldr x10, [x0, #1880]
@@ -12526,6 +10760,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1912]
 	ldr x15, [x0, #1920]
 	ldr x21, [x0, #1928]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1288]
 	subs x8, x8, x2
 	ldr x2, [x0, #1296]
@@ -12544,34 +10779,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1352]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -12585,15 +10803,14 @@ vg_ecdsa_p521_verify:
 	movz x1, #1360, lsl #0
 	movz x2, #1936, lsl #0
 	movz x3, #1360, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1792, lsl #0
 	movz x2, #1792, lsl #0
 	movz x3, #1792, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1792]
 	ldr x9, [x0, #1800]
 	ldr x10, [x0, #1808]
@@ -12603,8 +10820,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1840]
 	ldr x15, [x0, #1848]
 	ldr x21, [x0, #1856]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #1792]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #1800]
 	adcs x9, x9, x2
 	ldr x2, [x0, #1808]
@@ -12621,35 +10840,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1792]
 	str x9, [x0, #1800]
 	str x10, [x0, #1808]
@@ -12659,7 +10862,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #1840]
 	str x15, [x0, #1848]
 	str x21, [x0, #1856]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1360]
 	ldr x9, [x0, #1368]
 	ldr x10, [x0, #1376]
@@ -12669,6 +10871,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1408]
 	ldr x15, [x0, #1416]
 	ldr x21, [x0, #1424]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #1792]
 	subs x8, x8, x2
 	ldr x2, [x0, #1800]
@@ -12687,34 +10890,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #1856]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1360]
 	str x9, [x0, #1368]
 	str x10, [x0, #1376]
@@ -12897,21 +11083,20 @@ vg_ecdsa_p521_verify:
 	movz x1, #1072, lsl #0
 	movz x2, #1504, lsl #0
 	movz x3, #1648, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1720, lsl #0
 	movz x2, #1648, lsl #0
 	movz x3, #1648, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_sqr_mod_p}
 	umov x30, v29.d[0]
 	mov v29.d[0], x30
 	movz x1, #1216, lsl #0
 	movz x2, #1720, lsl #0
 	movz x3, #1648, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1576]
 	ldr x9, [x0, #1584]
 	ldr x10, [x0, #1592]
@@ -12921,8 +11106,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1624]
 	ldr x15, [x0, #1632]
 	ldr x21, [x0, #1640]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #280]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #288]
 	adcs x9, x9, x2
 	ldr x2, [x0, #296]
@@ -12939,35 +11126,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #344]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #1144]
 	str x9, [x0, #1152]
 	str x10, [x0, #1160]
@@ -13757,9 +11928,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #2584, lsl #0
 	movz x2, #2512, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -13769,6 +11939,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2584]
 	subs x8, x8, x2
 	ldr x2, [x0, #2592]
@@ -13787,34 +11958,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2648]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2944]
 	str x9, [x0, #2952]
 	str x10, [x0, #2960]
@@ -13824,7 +11978,6 @@ vg_ecdsa_p521_verify:
 	str x14, [x0, #2992]
 	str x15, [x0, #3000]
 	str x21, [x0, #3008]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #2512]
 	ldr x9, [x0, #2520]
 	ldr x10, [x0, #2528]
@@ -13834,8 +11987,10 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #2560]
 	ldr x15, [x0, #2568]
 	ldr x21, [x0, #2576]
+	movz x7, #0, lsl #0
+	subs x1, x7, x7
 	ldr x2, [x0, #2152]
-	adds x8, x8, x2
+	adcs x8, x8, x2
 	ldr x2, [x0, #2160]
 	adcs x9, x9, x2
 	ldr x2, [x0, #2168]
@@ -13852,35 +12007,19 @@ vg_ecdsa_p521_verify:
 	adcs x15, x15, x2
 	ldr x2, [x0, #2216]
 	adcs x21, x21, x2
-	adc x22, x7, x7
-	ldr x2, [x0, #64]
-	subs x1, x8, x2
-	ldr x2, [x0, #72]
-	sbcs x3, x9, x2
-	ldr x2, [x0, #80]
-	sbcs x4, x10, x2
-	ldr x2, [x0, #88]
-	sbcs x5, x11, x2
-	ldr x2, [x0, #96]
-	sbcs x6, x12, x2
-	ldr x2, [x0, #104]
-	sbcs x16, x13, x2
-	ldr x2, [x0, #112]
-	sbcs x17, x14, x2
-	ldr x2, [x0, #120]
-	sbcs x24, x15, x2
-	ldr x2, [x0, #128]
-	sbcs x25, x21, x2
-	sbcs x2, x22, x7
-	csel x8, x1, x8, hs
-	csel x9, x3, x9, hs
-	csel x10, x4, x10, hs
-	csel x11, x5, x11, hs
-	csel x12, x6, x12, hs
-	csel x13, x16, x13, hs
-	csel x14, x17, x14, hs
-	csel x15, x24, x15, hs
-	csel x21, x25, x21, hs
+	movz x2, #512, lsl #0
+	subs x1, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2512]
 	str x9, [x0, #2520]
 	str x10, [x0, #2528]
@@ -13894,9 +12033,8 @@ vg_ecdsa_p521_verify:
 	movz x1, #2584, lsl #0
 	movz x2, #2512, lsl #0
 	movz x3, #1216, lsl #0
-	bl {vg_p521_mul_mod_p}
+	bl {vg_p521_prod_mod_p}
 	umov x30, v29.d[0]
-	movz x7, #0, lsl #0
 	ldr x8, [x0, #1072]
 	ldr x9, [x0, #1080]
 	ldr x10, [x0, #1088]
@@ -13906,6 +12044,7 @@ vg_ecdsa_p521_verify:
 	ldr x14, [x0, #1120]
 	ldr x15, [x0, #1128]
 	ldr x21, [x0, #1136]
+	movz x7, #0, lsl #0
 	ldr x2, [x0, #2584]
 	subs x8, x8, x2
 	ldr x2, [x0, #2592]
@@ -13924,34 +12063,17 @@ vg_ecdsa_p521_verify:
 	sbcs x15, x15, x2
 	ldr x2, [x0, #2648]
 	sbcs x21, x21, x2
-	sbc x17, x7, x7
-	ldr x2, [x0, #64]
-	and x2, x2, x17
-	adds x8, x8, x2
-	ldr x2, [x0, #72]
-	and x2, x2, x17
-	adcs x9, x9, x2
-	ldr x2, [x0, #80]
-	and x2, x2, x17
-	adcs x10, x10, x2
-	ldr x2, [x0, #88]
-	and x2, x2, x17
-	adcs x11, x11, x2
-	ldr x2, [x0, #96]
-	and x2, x2, x17
-	adcs x12, x12, x2
-	ldr x2, [x0, #104]
-	and x2, x2, x17
-	adcs x13, x13, x2
-	ldr x2, [x0, #112]
-	and x2, x2, x17
-	adcs x14, x14, x2
-	ldr x2, [x0, #120]
-	and x2, x2, x17
-	adcs x15, x15, x2
-	ldr x2, [x0, #128]
-	and x2, x2, x17
-	adcs x21, x21, x2
+	sbcs x8, x8, x7
+	sbcs x9, x9, x7
+	sbcs x10, x10, x7
+	sbcs x11, x11, x7
+	sbcs x12, x12, x7
+	sbcs x13, x13, x7
+	sbcs x14, x14, x7
+	sbcs x15, x15, x7
+	sbcs x21, x21, x7
+	movz x2, #511, lsl #0
+	and x21, x21, x2
 	str x8, [x0, #2800]
 	str x9, [x0, #2808]
 	str x10, [x0, #2816]

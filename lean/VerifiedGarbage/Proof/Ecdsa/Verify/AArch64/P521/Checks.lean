@@ -123,6 +123,12 @@ taint_summary mulPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x
   (.call (Impl.Weierstrass.Mont.p521p.fn "mul")
     (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521p.m))
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary prodPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Impl.Weierstrass.Mont.p521p.fn "prod") Impl.Weierstrass.AArch64.P521.prodFn)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
+taint_summary sqrPSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
+  (.call (Impl.Weierstrass.Mont.p521p.fn "sqr") Impl.Weierstrass.AArch64.P521.sqrFn)
+  keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
 taint_summary mulNSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
   (.call (Impl.Weierstrass.Mont.p521n.fn "mul")
     (Impl.Weierstrass.AArch64.Mont.mulFn 9 Impl.Weierstrass.Mont.p521n.m))
@@ -131,25 +137,25 @@ taint_summary mulNSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x
 taint_summary validateSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdh.AArch64.Cfg.validate p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary scalarsSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdsa.Verify.AArch64.Cfg.scalars p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary nPowSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   p521.nPow
   keeping (VectorTaint.ofRegs [.x0, .x20])
-  using mulPSum mulNSum
+  using mulPSum mulNSum prodPSum sqrPSum
 taint_summary uvSum : VectorTaint.taint (VectorTaint.ofRegs [.x0])
   (Impl.Ecdsa.Verify.AArch64.Cfg.uv p521)
   keeping (VectorTaint.ofRegs [.x0, .x19, .x20])
-  using mulPSum mulNSum
+  using mulPSum mulNSum prodPSum sqrPSum
 
 /-- Constant time for the registers `rs`, by taint tracking, with the field
 functions' summaries. -/
 macro "reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime_of_exists (A := VectorTaint.taint) (Taint.ofRegs $rs, RegSet.empty)
-    (fun _ _ _ _ h => VectorTaint.agree_initial h) (by taint_decide_sum [mulPSum, mulNSum]))
+    (fun _ _ _ _ h => VectorTaint.agree_initial h) (by taint_decide_sum [mulPSum, mulNSum, prodPSum, sqrPSum]))
 
 /-- The window method's slots, which the public NAF uses. -/
 abbrev Kq := packedQ p521

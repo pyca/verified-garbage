@@ -595,7 +595,7 @@ private theorem linKeep {M : Mod} {base : Addr} {o : Nat} {s t : State} (hn : M.
     OpKeep M base o s t :=
   ⟨fun r hr => k.gpr r (by rwa [hn] at hr), k.rd, k.wr, k.sp, fun x hx _ => k.mem x (by rwa [hn] at hx)⟩
 
-theorem OpKeepR.toOpKeep {M : Mod} {base : Addr} {o : Nat} {s t : State} (hn : M.n = 9) (k : OpKeepR 9 base o s t) :
+theorem toOpKeep {M : Mod} {base : Addr} {o : Nat} {s t : State} (hn : M.n = 9) (k : OpKeepR 9 base o s t) :
     OpKeep M base o s t := linKeep hn k
 
 /-- `[o] = [a] + [b] mod p`. -/

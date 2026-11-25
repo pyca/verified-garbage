@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521
 public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 
 /-!
@@ -36,8 +37,8 @@ open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 def opCode (M : Mod) : FOp → List Instr
   | .mul o a b => if a == b && P256Square.supported M then
       P256Square.square M o a else Mont.AArch64.mul M o a b
-  | .add o a b => Mont.AArch64.add M o a b
-  | .sub o a b => Mont.AArch64.sub M o a b
+  | .add o a b => if P521.supported M then Mont.AArch64.P521.add o a b else Mont.AArch64.add M o a b
+  | .sub o a b => if P521.supported M then Mont.AArch64.P521.sub o a b else Mont.AArch64.sub M o a b
 
 /-- A straight-line sequence of field operations. -/
 def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
@@ -59,12 +60,20 @@ def mulCall (f : String) (n m o a b : Nat) : Prog isa := callProg f (Mont.mulFn 
 def sqrCall (o a : Nat) : Prog isa :=
   callProg (Impl.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
 
+/-- `[o] = [a] [b] R⁻¹ mod p`, or the square where `a` is `b`, by a call of
+P-521's field functions. -/
+def fieldCall521 (o a b : Nat) : Prog isa :=
+  if a == b then callProg (Impl.Weierstrass.Mont.p521p.fn "sqr") P521.sqrFn o a a
+  else callProg (Impl.Weierstrass.Mont.p521p.fn "prod") P521.prodFn o a b
+
 /-- The code of a field operation: a call for a product modulo a modulus
 whose products are functions (`Mont.callOf`), using the dedicated square for
-P-384's field prime when both input slots agree, else `opCode`. -/
+P-384's field prime when both input slots agree, and P-521's field functions,
+else `opCode`. -/
 def opProg (M : Mod) (op : FOp) : Prog isa :=
   match op, Mont.callOf M with
-  | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a else mulCall f M.n m o a b
+  | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a
+      else if P521.isField M.n m then fieldCall521 o a b else mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
 
 /-- Programs one after the other. -/
