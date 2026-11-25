@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.LazyP521
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -549,13 +552,13 @@ theorem half_ok {base : Addr} {size o a m : Nat} {s : State} (hm : m + 1 = 512 *
 /-! ## The products -/
 
 /-- The pointer `r = rdi + a`. -/
-theorem ptr_ok {s : State} {base : Addr} {size a : Nat} {r : Reg} (hs : Scr s base size) (ha : a < 2 ^ 31) (hr : r ≠ .rdi) :
+theorem ptr_ok {s : State} {base : Addr} {size a : Nat} {r : Reg} (hs : Scr s base size) (ha : a < 2 ^ 31) :
     WP isa (.block (ptr r a)) s fun s' => s'.gpr r = off base a ∧ Keeps [r] s s' := by
   apply WP.of_runBlock
   simp only [ptr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some, Option.map_some,
     RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun q hq => ?_, rfl, rfl, rfl⟩
-  · rw [hs.rdi, se_imm ha]; rfl
+  · rw [hs.rdi, se_imm ha]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hq, ite_false]
 
@@ -571,7 +574,7 @@ theorem mulFn_ok {s : State} {base : Addr} {Z a b m : Nat} (hs : Scr s base Z) (
   have hat : ∀ n < 9, Apart (off base a) (0 + 8 * n) 8 base (Mont.fnMod true).tmp (8 * n) := fun n hn => by
     have h : Apart (off base a) 0 72 base (Mont.fnMod true).tmp (8 * n) :=
       Mont.apart_off base (by rw [hft, hft']; omega_using [ha]) (by omega_using [ha])
-    exact h.mono (by omega_using []) (by omega_using [hn])
+    exact h.sub (by omega_using []) (by omega_using [hn])
   have hbt : Apart (off base b) 0 72 base (Mont.fnMod true).tmp 72 :=
     Mont.apart_off base (by rw [hft, hft']; omega_using [hb]) (by omega_using [hb])
   rw [mulFn, WP.block_append_iff]
@@ -588,5 +591,415 @@ theorem mulFn_ok {s : State} {base : Addr} {Z a b m : Nat} (hs : Scr s base Z) (
   refine ⟨⟨fun r hr => ?_, by rw [k₄.rd, k₃.rd], by rw [k₄.wr, k₃.wr]⟩, fun x hx => ?_, hW1, hW2, _, eW⟩
   · rw [k₄.gpr r hr, k₃.gpr r hr]
   · rw [O₄ x (by rw [hft]; simp only [Mont.fnTmp] at hx ⊢; omega_using [hx]), O₃ x (by rw [hft]; exact hx)]
+
+/-! ### The calls -/
+
+/-- `rbx` into `xmm7`. -/
+theorem saveB_ok (s : State) : WP isa (.block [.xop (.movq .xmm7 .rbx)]) s fun s' =>
+    s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm .xmm7 = (0 : BitVec 64) ++ s.gpr .rbx := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left',
+    Mont.setXmm_gpr, Mont.setXmm_mem, Mont.setXmm_rd, Mont.setXmm_wr, Mont.setXmm_xmm, ↓reduceIte]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-- `rbx` into `xmm7` and `rsi` into `xmm6`. -/
+theorem saveBS_ok (s : State) : WP isa (.block [.xop (.movq .xmm7 .rbx), .xop (.movq .xmm6 .rsi)]) s fun s' =>
+    s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm .xmm7 = (0 : BitVec 64) ++ s.gpr .rbx ∧
+      s'.xmm .xmm6 = (0 : BitVec 64) ++ s.gpr .rsi := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, Option.some.injEq, exists_eq_left',
+    Mont.setXmm_gpr, Mont.setXmm_mem, Mont.setXmm_rd, Mont.setXmm_wr, Mont.setXmm_xmm, reduceCtorEq, ↓reduceIte]
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+theorem loadB_ok (s : State) : WP isa (.block [.movqR .rbx .xmm7]) s fun s' =>
+    s'.gpr .rbx = qword (s.xmm .xmm7) 0 ∧ Keeps [.rbx] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left',
+    RegUpd.gpr_setReg_self]
+  refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr]
+
+theorem loadS_ok (s : State) : WP isa (.block [.movqR .rsi .xmm6]) s fun s' =>
+    s'.gpr .rsi = qword (s.xmm .xmm6) 0 ∧ Keeps [.rsi] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left',
+    RegUpd.gpr_setReg_self]
+  refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr]
+
+/-- What a product by a call does. -/
+def MulPost (m : Nat) (base : Addr) (o a b : Nat) (s s' : State) : Prop :=
+  wordsVal s'.mem base o 9 < m ∧
+    wordsVal s'.mem base o 9 * (2 ^ 64) ^ 9 % m = wordsVal s.mem base a 9 * wordsVal s.mem base b 9 % m ∧
+    KeepRegs opRegs s s' ∧
+    ∀ x, (ofs base x < o ∨ o + 72 ≤ ofs base x) → (ofs base x < Mont.fnTmp ∨ Mont.fnTmp + 72 ≤ ofs base x) →
+      s'.mem x = s.mem x
+
+/-- A core's result made canonical and stored. -/
+theorem canon_ok {s s₁ : State} {base : Addr} {Z o a b m : Nat} (hs₁ : Scr s₁ base Z) (ho : o + 72 ≤ Z)
+    (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (h : Mont.Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base b 9) s s₁) :
+    WP isa (.block (xCanon 0 o)) s₁ (MulPost m base o a b s) := by
+  obtain ⟨k₁, O₁, hW1, hW2, U, eW⟩ := h
+  refine WP.mono (xCanon_ok hs₁.toC ho hm hW1 hW2) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hmo : 0 < m := by omega_using [hW1, hW2]
+  refine ⟨by rw [e₂]; exact Nat.mod_lt _ hmo,
+    by rw [e₂, Nat.mod_mul_mod, Nat.mul_comm, eW, Nat.add_mul_mod_self_right],
+    ⟨fun r hr => ?_, by rw [k₂.rd, k₁.rd], by rw [k₂.wr, k₁.wr]⟩, fun x hx hx' => ?_⟩
+  · rw [k₂.gpr r (fun h => hr (by
+      rcases List.mem_cons.mp h with h | h
+      · exact h ▸ List.mem_cons_self ..
+      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))), k₁.gpr r hr]
+  · rw [O₂ x hx, O₁ x hx']
+
+theorem sqrCall_ok {s : State} {base : Addr} {Z o a m : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
+    (ho : o + 72 ≤ 3520) (ha : a + 72 ≤ 3520) (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hAB : wordsVal s.mem base a 9 * wordsVal s.mem base a 9 < (2 ^ 64) ^ 9 * m) :
+    WP isa (sqrCall o a).inline s (MulPost m base o a a s) := by
+  simp only [sqrCall, Code.inline, sqrFn]
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (saveB_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁, x₁⟩ => ?_
+  have hs₁ : Scr s₁ base Z := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  refine WP.mono (WP.vecKeep rfl (ptr_ok hs₁ (r := .rbx) (a := a) (by omega_using [ha])))
+    fun s₂ ⟨⟨b₂, k₂⟩, x₂, _⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  have hm₂ : s₂.mem = s.mem := k₂.2.1.trans m₁
+  refine WP.seq (WP.mono (WP.vecKeep (by decide +kernel) (Mont.sqrCore_okP hs₂ hZ b₂ ha hm (by rw [hm₂]; exact hAB)))
+    fun s₃ ⟨C₃, x₃, _⟩ => ?_)
+  have hs₃ : Scr s₃ base Z := hs₂.of_keepRegs C₃.1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.vecKeep (c := .block (xCanon 0 o)) (by rfl) (canon_ok hs₃ (o := o) (by omega_using [hZ, ho]) hm C₃))
+    fun s₄ ⟨⟨l₄, e₄, k₄, mm₄⟩, x₄, _⟩ => ?_
+  refine WP.mono (loadB_ok s₄) fun s₅ ⟨b₅, k₅⟩ => ?_
+  rw [hm₂] at e₄
+  refine ⟨by rw [k₅.2.1]; exact l₄, by rw [k₅.2.1]; exact e₄,
+    ⟨fun r hr => ?_, by rw [k₅.2.2.1, k₄.rd, k₂.2.2.1, rd₁], by rw [k₅.2.2.2, k₄.wr, k₂.2.2.2, wr₁]⟩,
+    fun x h1 h2 => by rw [k₅.2.1, mm₄ x h1 h2, hm₂]⟩
+  by_cases hb : r = .rbx
+  · rw [hb, b₅, x₄, x₃, x₂, x₁, Mont.qword_lo]
+  · rw [k₅.1 r (by simpa using hb), k₄.gpr r hr, k₂.1 r (by simpa using hb), g₁]
+
+theorem mulCall_ok {s : State} {base : Addr} {Z o a b m : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z)
+    (ho : o + 72 ≤ 3520) (ha : a + 72 ≤ 3520) (hb : b + 72 ≤ 3520) (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hAB : wordsVal s.mem base a 9 * wordsVal s.mem base b 9 < (2 ^ 64) ^ 9 * m) :
+    WP isa (LazyP521.mulCall o a b).inline s (MulPost m base o a b s) := by
+  simp only [LazyP521.mulCall, Code.inline]
+  refine WP.seq ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (saveBS_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁, x₁, y₁⟩ => ?_
+  have hs₁ : Scr s₁ base Z := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.vecKeep rfl (ptr_ok hs₁ (r := .rsi) (a := a) (by omega_using [ha])))
+    fun s₂ ⟨⟨b₂, k₂⟩, x₂, _⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ (by decide)
+  refine WP.mono (WP.vecKeep rfl (ptr_ok hs₂ (r := .rbx) (a := b) (by omega_using [hb])))
+    fun s₃ ⟨⟨b₃, k₃⟩, x₃, _⟩ => ?_
+  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  have hm₃ : s₃.mem = s.mem := k₃.2.1.trans (k₂.2.1.trans m₁)
+  refine WP.seq (WP.mono (WP.vecKeep (by decide +kernel) (mulFn_ok hs₃ hZ (by rw [k₃.1 _ (by decide), b₂]) b₃ ha hb hm
+    (by rw [hm₃]; exact hAB))) fun s₄ ⟨C₄, x₄, _⟩ => ?_)
+  have hs₄ : Scr s₄ base Z := hs₃.of_keepRegs C₄.1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.vecKeep (c := .block (xCanon 0 o)) (by rfl) (canon_ok hs₄ (o := o) (by omega_using [hZ, ho]) hm C₄))
+    fun s₅ ⟨⟨l₅, e₅, k₅, mm₅⟩, x₅, _⟩ => ?_
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (WP.vecKeep rfl (loadB_ok s₅)) fun s₆ ⟨⟨b₆, k₆⟩, x₆, _⟩ => ?_
+  refine WP.mono (loadS_ok s₆) fun s₇ ⟨b₇, k₇⟩ => ?_
+  rw [hm₃] at e₅
+  refine ⟨by rw [k₇.2.1, k₆.2.1]; exact l₅, by rw [k₇.2.1, k₆.2.1]; exact e₅,
+    ⟨fun r hr => ?_, by rw [k₇.2.2.1, k₆.2.2.1, k₅.rd, k₃.2.2.1, k₂.2.2.1, rd₁],
+      by rw [k₇.2.2.2, k₆.2.2.2, k₅.wr, k₃.2.2.2, k₂.2.2.2, wr₁]⟩,
+    fun x h1 h2 => by rw [k₇.2.1, k₆.2.1, mm₅ x h1 h2, hm₃]⟩
+  by_cases hs : r = .rsi
+  · rw [hs, b₇, x₆, x₅, x₄, x₃, x₂, y₁, Mont.qword_lo]
+  · rw [k₇.1 r (by simpa using hs)]
+    by_cases hb : r = .rbx
+    · rw [hb, b₆, x₅, x₄, x₃, x₂, x₁, Mont.qword_lo]
+    · rw [k₆.1 r (by simpa using hb), k₅.gpr r hr, k₃.1 r (by simpa using hb), k₂.1 r (by simpa using hs), g₁]
+
+/-! ## Programs -/
+
+/-- A number's bound: below `m` for `0`, else at most `k m`. -/
+def Bd (m k v : Nat) : Prop := v ≤ max k 1 * m ∧ (k = 0 → v < m)
+
+/-- The slots of `L` hold numbers in their bounds, which stand for `E`. -/
+structure LInv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (L : Bounds)
+    (E : Nat → Fin m) (s : State) : Prop where
+  scr : Scr s base size
+  mod : ModOkW M size m s.mem base
+  sl : ∀ x k, L.lookup x = some k → Sl x
+  bd : ∀ x k, L.lookup x = some k → Bd m k (wordsVal s.mem base x M.n)
+  val : ∀ x k, L.lookup x = some k → toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
+
+/-- An operation writing `o`, which then holds `v` with the bound `k`. -/
+theorem LInv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    {L : Bounds} {E : Nat → Fin m} {s s' : State} (hI : LInv M base size m Sl L E s) {o k : Nat}
+    (ho : Sl o) (hk : OpKeep M base o s s') (hr : Bd m k (wordsVal s'.mem base o M.n)) {v : Fin m}
+    (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
+    LInv M base size m Sl ((o, k) :: L) (Function.update E o v) s' := by
+  have hn := hI.scr.nowrap
+  have hlo := hL.le o ho
+  have hmo := hL.mo o ho
+  have hto := hL.tmp o ho
+  have hM := hI.mod
+  have heq : ∀ x, Sl x → x ≠ o → wordsVal s'.mem base x M.n = wordsVal s.mem base x M.n :=
+    fun x hx hxo => by
+      have := hL.apart x o hx ho hxo
+      have := hL.tmp x hx
+      have := hL.le x hx
+      exact opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)
+  have look : ∀ x k', ((o, k) :: L).lookup x = some k' → (x = o ∧ k' = k) ∨ (x ≠ o ∧ L.lookup x = some k') := by
+    intro x k' h
+    rw [List.lookup_cons] at h
+    by_cases hx : x = o
+    · subst hx; simp only [beq_self_eq_true, Option.some.injEq] at h; exact Or.inl ⟨rfl, h.symm⟩
+    · rw [beq_eq_false_iff_ne.mpr hx] at h; exact Or.inr ⟨hx, h⟩
+  refine ⟨⟨(hk.gpr _ (rdi_not_clob _)).trans hI.scr.rdi, hk.wr ▸ hI.scr.wr, hn⟩,
+    ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
+  · have := hM.mo
+    have := hM.sep
+    rw [opKeep_wordsVal hk (by omega_arith) (by omega_arith) (by omega_arith)]
+    exact hM.val
+  · intro x k' h
+    rcases look x k' h with ⟨rfl, -⟩ | ⟨-, h⟩
+    · exact ho
+    · exact hI.sl x k' h
+  · intro x k' h
+    rcases look x k' h with ⟨rfl, rfl⟩ | ⟨hx, h⟩
+    · exact hr
+    · rw [heq x (hI.sl x k' h) hx]; exact hI.bd x k' h
+  · intro x k' h
+    rcases look x k' h with ⟨rfl, rfl⟩ | ⟨hx, h⟩
+    · rw [Function.update_self]; exact hv
+    · rw [Function.update_of_ne hx, heq x (hI.sl x k' h) hx]; exact hI.val x k' h
+
+/-- A half, modulo P-521's `p`. -/
+def halfF (m : Nat) [NeZero m] : Fin m := Fin.ofNat m (2 ^ 520)
+
+/-- An operation on what the slots stand for. -/
+def run {m : Nat} [NeZero m] (E : Nat → Fin m) : LOp → Nat → Fin m
+  | .mul o a b => Function.update E o (E a * E b)
+  | .add o a b => Function.update E o (E a + E b)
+  | .sub o a b => Function.update E o (E a - E b)
+  | .tri o a => Function.update E o (E a + E a + E a)
+  | .sub2 o a b => Function.update E o (E a - E b - E b)
+  | .subF o a b => Function.update E o (E a - E b)
+  | .half o a => Function.update E o (E a * halfF m)
+  | .cadd o a b => Function.update E o (E a + E b)
+  | .csub o a b => Function.update E o (E a - E b)
+
+def runs {m : Nat} [NeZero m] (ops : List LOp) (E : Nat → Fin m) : Nat → Fin m := ops.foldl run E
+
+/-! ### What numbers stand for -/
+
+section
+variable {m : Nat} [NeZero m] {R : Nat}
+
+theorem toM_congr {x y : Nat} (h : x % m = y % m) : toM m R x = toM m R y := by
+  unfold toM; rw [ofNat_eq_ofNat.mpr h]
+
+theorem toM_plus (A B : Nat) : toM m R (A + B) = toM m R A + toM m R B := by
+  rw [← toM_add R A B]; exact toM_congr (Nat.mod_mod _ _).symm
+
+theorem toM_minus {A B : Nat} (h : B ≤ m) : toM m R (A + (m - B)) = toM m R A - toM m R B := by
+  rw [← toM_sub (R := R) (A := A) (B := B) (by omega_using [h])]
+  refine toM_congr ?_
+  rw [Nat.mod_mod, show A + (m - B) = A + m - B by omega_using [h]]
+
+theorem toM_fold {v q x : Nat} (h : v + q * m = x) : toM m R v = toM m R x := by
+  subst h; exact toM_congr (Nat.add_mul_mod_self_right _ _ _).symm
+
+theorem halfF_two (hm : m + 1 = 512 * (2 ^ 64) ^ 8) : halfF m + halfF m = 1 := by
+  apply Fin.ext
+  rw [Fin.val_add]
+  simp only [halfF, Fin.val_ofNat, Nat.add_mod_mod, Nat.mod_add_mod]
+  show _ = 1 % m
+  obtain hm' : m = 512 * (2 ^ 64) ^ 8 - 1 := by omega_using [hm]
+  subst hm'
+  decide +kernel
+
+theorem toM_half (hm : m + 1 = 512 * (2 ^ 64) ^ 8) {v q A : Nat} (h : 2 * v = A + q * m) :
+    toM m R v = toM m R A * halfF m := by
+  have h1 : toM m R v + toM m R v = toM m R A := by
+    rw [← toM_plus, ← Nat.two_mul]
+    exact (toM_fold (q := q) h.symm).symm
+  have h2 := halfF_two hm
+  rw [← h1]
+  grind
+
+end
+
+section
+variable {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+
+theorem LKeep.op {o : Nat} {s s' : State} (hn9 : M.n = 9) (h : LKeep base o s s') : OpKeep M base o s s' :=
+  ⟨fun r hr => h.1.gpr r fun h' => hr (by rw [hn9]; exact xRegs_clob r h'), h.1.rd, h.1.wr,
+    fun x hx _ => h.2 x (by rw [hn9] at hx; exact hx)⟩
+
+theorem prod_lt {ka kb A B : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8) (ha : ka ≤ 8) (hb : kb ≤ 8)
+    (hA : Bd m ka A) (hB : Bd m kb B) : A * B < (2 ^ 64) ^ 9 * m := by
+  have h1 : A ≤ 8 * m := Nat.le_trans hA.1 (Nat.mul_le_mul_right _ (by omega_using [ha]))
+  have h2 : B ≤ 8 * m := Nat.le_trans hB.1 (Nat.mul_le_mul_right _ (by omega_using [hb]))
+  have hm0 : 0 < m := Nat.pos_of_ne_zero (NeZero.ne m)
+  calc A * B ≤ (8 * m) * (8 * m) := Nat.mul_le_mul h1 h2
+    _ = (64 * m) * m := by grind
+    _ < (2 ^ 64) ^ 9 * m := Nat.mul_lt_mul_of_pos_right (by omega_arith) hm0
+
+/-- An operation, whose bounds `step` checks. -/
+theorem op_ok (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n))) (hred : M.red = .friendly p521Ws)
+    (ht : M.tmp = Mont.fnTmp) {L L' : Bounds} {E : Nat → Fin m} {s : State} (hI : LInv M base size m Sl L E s)
+    {op : LOp} (ho : Sl op.out) (hs : step L op = some L') :
+    WP isa (code M op).inline s fun s' => OpKeep M base op.out s s' ∧ LInv M base size m Sl L' (run E op) s' := by
+  obtain ⟨hn9, hp⟩ := p521_of_red hred hI.mod.red
+  have hsz : ∀ x, Sl x → x + 72 ≤ size := fun x hx => by have := hL.le x hx; rwa [hn9] at this
+  have hz := hI.scr.toC
+  have W : ∀ (mm : Mem) (x : Nat), wordsVal mm base x M.n = wordsVal mm base x 9 := fun mm x => by rw [hn9]
+  have B := hI.bd
+  have V := hI.val
+  have S := hI.sl
+  have hm0 : 0 < m := Nat.pos_of_ne_zero (NeZero.ne m)
+  cases op with
+  | mul o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, h2, hlow⟩, rfl⟩ := hs
+    simp only [Mont.lowArgs, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
+    obtain ⟨⟨l1, l2⟩, l3⟩ := hlow
+    have hZ : 4096 ≤ size := by
+      have := hI.mod.tmp; rw [ht, hn9] at this; simp only [Mont.fnTmp] at this; omega_using [this]
+    have hAB := prod_lt hp h1 h2 (B a ka hka) (B b kb hkb)
+    rw [W, W] at hAB
+    have key : WP isa (code M (.mul o a b)).inline s (MulPost m base o a b s) := by
+      simp only [LazyP521.code]
+      split
+      · rename_i hab
+        subst hab
+        exact sqrCall_ok hI.scr hZ l1 l2 hp hAB
+      · exact mulCall_ok hI.scr hZ l1 l2 l3 hp hAB
+    refine WP.mono key fun s' ⟨lt, e, k, mm⟩ => ?_
+    have ok : OpKeep M base o s s' := ⟨fun r hr => k.gpr r fun h' => hr (by rw [hn9]; exact xRegs_clob r h'), k.rd, k.wr,
+      fun x hx hx' => mm x (by rw [hn9] at hx; exact hx) (by rw [hn9, ht] at hx'; exact hx')⟩
+    refine ⟨ok, hI.update hL ho ok ⟨by rw [W, show max 0 1 = 1 by decide, Nat.one_mul]; exact Nat.le_of_lt lt, fun _ => by rw [W]; exact lt⟩ ?_⟩
+    rw [toM_mul hm (A := wordsVal s.mem base a M.n) (B := wordsVal s.mem base b M.n)
+      (by rw [W, W, W, hn9, Nat.pow_mul 2 64 9]; exact e), V a ka hka, V b kb hkb]
+  | add o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, h2⟩, rfl⟩ := hs
+    have bA := (B a ka hka).1; have bB := (B b kb hkb).1
+    rw [W] at bA bB
+    have hA4 : wordsVal s.mem base a 9 ≤ 4 * m := Nat.le_trans bA (Nat.mul_le_mul_right _ (by omega_using [h1]))
+    have hB4 : wordsVal s.mem base b 9 ≤ 4 * m := Nat.le_trans bB (Nat.mul_le_mul_right _ (by omega_using [h2]))
+    refine WP.mono (add_ok hz (hsz o ho) (hsz a (S a ka hka)) (hsz b (S b kb hkb)) (by omega_arith)) fun s' ⟨e, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨?_, fun h => absurd h (by omega_using [])⟩ ?_⟩
+    · rw [W, e, show max (max ka 1 + max kb 1) 1 = max ka 1 + max kb 1 by omega_using [], Nat.add_mul]
+      exact Nat.add_le_add bA bB
+    · rw [W, e, toM_plus, ← W, ← W, V a ka hka, V b kb hkb]
+  | sub o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, h2⟩, rfl⟩ := hs
+    have bA := (B a ka hka).1; have bB := (B b kb hkb).1
+    rw [W] at bA bB
+    have hA4 : wordsVal s.mem base a 9 ≤ 4 * m := Nat.le_trans bA (Nat.mul_le_mul_right _ (by omega_using [h1]))
+    have hB1 : wordsVal s.mem base b 9 ≤ m := by rw [show max kb 1 = 1 by omega_using [h2], Nat.one_mul] at bB; exact bB
+    refine WP.mono (sub_ok hp hz (hsz o ho) (hsz a (S a ka hka)) (hsz b (S b kb hkb)) hB1 hA4) fun s' ⟨e, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨?_, fun h => absurd h (by omega_using [])⟩ ?_⟩
+    · rw [W, e, show max (max ka 1 + 1) 1 = max ka 1 + 1 by omega_using [], Nat.add_mul, Nat.one_mul]
+      exact Nat.add_le_add bA (Nat.sub_le _ _)
+    · rw [W, e, toM_minus hB1, ← W, ← W, V a ka hka, V b kb hkb]
+  | tri o a =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, h1, rfl⟩ := hs
+    have bA := (B a ka hka).1
+    rw [W, show max ka 1 = 1 by omega_using [h1], Nat.one_mul] at bA
+    refine WP.mono (tri_ok hp hz (hsz o ho) (hsz a (S a ka hka)) bA) fun s' ⟨e, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨?_, fun h => absurd h (by omega_using [])⟩ ?_⟩
+    · rw [W, e, show max 3 1 = 3 by decide]; exact Nat.mul_le_mul_left _ bA
+    · rw [W, e, show 3 * wordsVal s.mem base a 9 = wordsVal s.mem base a 9 + wordsVal s.mem base a 9 +
+        wordsVal s.mem base a 9 by omega_using [], toM_plus, toM_plus, ← W, V a ka hka]
+  | sub2 o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, h2⟩, rfl⟩ := hs
+    have bA := (B a ka hka).1; have bB := (B b kb hkb).1
+    rw [W, show max ka 1 = 1 by omega_using [h1], Nat.one_mul] at bA
+    rw [W, show max kb 1 = 1 by omega_using [h2], Nat.one_mul] at bB
+    refine WP.mono (sub2_ok hp hz (hsz o ho) (hsz a (S a ka hka)) (hsz b (S b kb hkb)) bB bA) fun s' ⟨⟨⟨q, e⟩, l⟩, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨by rw [W, show max 1 1 = 1 by decide, Nat.one_mul]; exact l,
+        fun h => absurd h (by omega_using [])⟩ ?_⟩
+    rw [W, toM_fold e, show wordsVal s.mem base a 9 + 2 * (m - wordsVal s.mem base b 9) =
+      wordsVal s.mem base a 9 + (m - wordsVal s.mem base b 9) + (m - wordsVal s.mem base b 9) by omega_using [],
+      toM_minus bB, toM_minus bB, ← W, ← W, V a ka hka, V b kb hkb]
+  | subF o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, h2⟩, rfl⟩ := hs
+    have bA := (B a ka hka).1; have bB := (B b kb hkb).1
+    rw [W, show max ka 1 = 1 by omega_using [h1], Nat.one_mul] at bA
+    rw [W, show max kb 1 = 1 by omega_using [h2], Nat.one_mul] at bB
+    refine WP.mono (subF_ok hp hz (hsz o ho) (hsz a (S a ka hka)) (hsz b (S b kb hkb)) bB bA) fun s' ⟨⟨⟨q, e⟩, l⟩, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨by rw [W, show max 1 1 = 1 by decide, Nat.one_mul]; exact l,
+        fun h => absurd h (by omega_using [])⟩ ?_⟩
+    rw [W, toM_fold e, toM_minus bB, ← W, ← W, V a ka hka, V b kb hkb]
+  | half o a =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, h1, rfl⟩ := hs
+    have bA := (B a ka hka).1
+    rw [W, show max ka 1 = 1 by omega_using [h1], Nat.one_mul] at bA
+    refine WP.mono (half_ok hp hz (hsz o ho) (hsz a (S a ka hka)) bA) fun s' ⟨⟨⟨q, e⟩, l⟩, k⟩ =>
+      ⟨k.op hn9, hI.update hL ho (k.op hn9) ⟨by rw [W, show max 1 1 = 1 by decide, Nat.one_mul]; exact l,
+        fun h => absurd h (by omega_using [])⟩ ?_⟩
+    rw [W, toM_half hp e, ← W, V a ka hka]
+  | cadd o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨h1, rfl⟩, rfl⟩ := hs
+    have bA := (B a ka hka).1; have bB := (B b 0 hkb).2 rfl
+    rw [show max ka 1 = 1 by omega_using [h1], Nat.one_mul] at bA
+    have sa := S a ka hka; have sb := S b 0 hkb
+    refine WP.mono (_root_.VG.Proof.Mont.X86_64.add_ok hI.scr hI.mod (hL.le o ho) (hL.le a sa) (hL.le b sb) (hL.tmp o ho)
+      (hL.tmp a sa) (hL.tmp b sb) (hL.mo o ho) (by omega_using [bA, bB])) fun s' ⟨k, e⟩ =>
+      ⟨k, hI.update hL ho k ⟨?_, fun _ => by rw [e]; exact Nat.mod_lt _ hm0⟩ ?_⟩
+    · rw [e, show max 0 1 = 1 by decide, Nat.one_mul]; exact Nat.le_of_lt (Nat.mod_lt _ hm0)
+    · rw [e, toM_add, V a ka hka, V b 0 hkb]
+  | csub o a b =>
+    change Sl o at ho
+    simp only [step, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.ite_none_right_eq_some, Option.some.injEq] at hs
+    obtain ⟨ka, hka, kb, hkb, ⟨rfl, rfl⟩, rfl⟩ := hs
+    have bA := (B a 0 hka).2 rfl; have bB := (B b 0 hkb).2 rfl
+    have sa := S a 0 hka; have sb := S b 0 hkb
+    refine WP.mono (_root_.VG.Proof.Mont.X86_64.sub_ok hI.scr hI.mod (hL.le o ho) (hL.le a sa) (hL.le b sb) (hL.tmp o ho)
+      (hL.tmp a sa) (hL.tmp b sb) (hL.mo o ho) bA bB) fun s' ⟨k, e⟩ =>
+      ⟨k, hI.update hL ho k ⟨?_, fun _ => by rw [e]; exact Nat.mod_lt _ hm0⟩ ?_⟩
+    · rw [e, show max 0 1 = 1 by decide, Nat.one_mul]; exact Nat.le_of_lt (Nat.mod_lt _ hm0)
+    · rw [e, toM_sub (by omega_using [bB]), V a 0 hka, V b 0 hkb]
+
+/-- A program, whose bounds `check` checks. -/
+theorem prog_ok (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n))) (hred : M.red = .friendly p521Ws)
+    (ht : M.tmp = Mont.fnTmp) : ∀ (ops : List LOp) {L L' : Bounds} {E : Nat → Fin m} {s : State},
+      LInv M base size m Sl L E s → (∀ op ∈ ops, Sl op.out) → check L ops = some L' →
+      WP isa (prog M ops).inline s fun s' => ProgKeep M base (ops.map LOp.out) s s' ∧
+        LInv M base size m Sl L' (runs ops E) s'
+  | [], L, L', E, s, hI, _, hc => by
+    simp only [check, Option.some.injEq] at hc
+    subst hc
+    exact WP.block_nil ⟨ProgKeep.refl _ _ _ s, hI⟩
+  | op :: ops, L, L', E, s, hI, hS, hc => by
+    simp only [check, Option.bind_eq_some_iff] at hc
+    obtain ⟨L₁, h₁, hc⟩ := hc
+    show WP isa (Code.seq (code M op).inline (prog M ops).inline) s _
+    refine WP.seq (WP.mono (op_ok hL hm hred ht hI (hS op (List.mem_cons_self ..)) h₁) fun s₁ ⟨k₁, I₁⟩ => ?_)
+    refine WP.mono (prog_ok hL hm hred ht ops I₁ (fun op' h => hS op' (List.mem_cons_of_mem _ h)) hc) fun s₂ ⟨k₂, I₂⟩ =>
+      ⟨⟨fun r hr => (k₂.gpr r hr).trans (k₁.gpr r hr), k₂.rd.trans k₁.rd, k₂.wr.trans k₁.wr, fun x hx hx' => ?_⟩, I₂⟩
+    rw [List.map_cons] at hx
+    rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) hx', k₁.mem x (hx _ (List.mem_cons_self ..)) hx']
+
+end
 
 end VG.Proof.Weierstrass.X86_64.LazyP521
