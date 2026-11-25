@@ -35,16 +35,17 @@ materialize_code winBuildJX
 
 theorem winKX_ok : p521XT.Ok winKX.M := p521XHT_ok
 
+theorem winKX_lazy : WinCfg.lazyOk winKX = true := by decide +kernel
+theorem winKX_quad : WinCfg.quadJ winKX = WinCfg.quadLazy winKX := by rw [WinCfg.quadJ, winKX_lazy]; rfl
+
 taint_summary winBuildJXSum : taintS τB winBuildJX
 taint_summary_map winNormJXSum : taintS τB winNormJX via taintS_eraseInv
   (by simp only [winNormJX, WinCfg.normTbl, WinCfg.seqRange, WinCfg.prodStep, WinCfg.backStep,
     WinCfg.backOne, WinCfg.mulTb, WinCfg.mulTx, Code.mapBlocks, winKX_ok.fprogB]; rfl :
     Code.mapBlocks Instr.erase winNormJX = _)
-taint_summary_map winLoopJXSum : taintS τL winLoopJX via taintS_eraseInv
-  (by simp only [winLoopJX, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,
-    winKX_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLoopJX = _)
+taint_summary winLoopJXSum : taintS τL winLoopJX
 taint_summary_map winLastJXSum : taintS τL winLastJX via taintS_eraseInv
-  (by simp only [winLastJX, WinCfg.stepLast, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.toProjR, Code.mapBlocks,
+  (by simp only [winLastJX, WinCfg.stepLast, winKX_quad, WinCfg.quadLazy, WinCfg.toProjR, Code.mapBlocks,
     winKX_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLastJX = _)
 
 end VG.Proof.P521.X86_64
