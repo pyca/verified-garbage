@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -338,7 +339,8 @@ def verifyPrefix (c : Cfg) : Prog isa :=
 /-- After the public comb. -/
 def verifySuffix (c : Cfg) : Prog isa :=
   .seq (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c))
-    (.seq (c.winPrep (c.sl V)) (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))
+    (.seq c.preparePadd (.seq (c.winPrep (c.sl V))
+      (.seq (WinCfg.window (winQ c) c.padd) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c)))))
     (Impl.Ecdsa.Verify.AArch64.Cfg.tail c)
 
 theorem verifyPrefix_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :

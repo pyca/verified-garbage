@@ -135,7 +135,8 @@ scan of signing. -/
 def points : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg true) <|
   .seq (.block (save c)) <|
-  .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
+  .seq c.preparePadd <| .seq (c.winPrep (c.sl V)) <|
+    .seq (WinCfg.window (c.winCfg PX PY) c.padd) (sum c)
 
 /-- The conversion factor, the order in field Montgomery form, and the
 upper bound on the signature scalar for its second possible lift. -/
