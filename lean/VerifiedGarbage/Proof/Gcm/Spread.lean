@@ -96,7 +96,7 @@ theorem lp_xor {w : Nat} (a b : BitVec w) : lp (a ^^^ b) = lp a + lp b := by
 theorem lp_zero (w : Nat) : lp (0#w) = 0 := by
   ext k; simp [coeff_lp, bit]
 
-theorem lp_shl (b : BitVec 64) {j : Nat} (hj : j < 64) : lp (b.setWidth 128 <<< j) = X ^ j * lp b := by
+theorem lp_shl (b : BitVec 64) {j : Nat} (hj : j ≤ 64) : lp (b.setWidth 128 <<< j) = X ^ j * lp b := by
   ext d
   rw [coeff_lp, coeff_X_pow_mul', coeff_lp, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
   by_cases h : j ≤ d
@@ -179,7 +179,8 @@ theorem coeff_mul_class {k i j : Nat} {a b : BitVec 64} (ha : InClass k i a) (hb
     · simp [h2]
   · simp [h1]
 
-theorem coeff_mul_lt {k i : Nat} {a b : BitVec 64} (ha : InClass k i a) (hn : 63 / k + 1 < 2 ^ k) (d : Nat) :
+theorem coeff_mul_lt {k i : Nat} {a b : BitVec 64} {n : Nat} (ha : InClass k i a)
+    (hw : ∀ p, a.getLsbD p = true → p ≤ n) (hn : n / k + 1 < 2 ^ k) (d : Nat) :
     (np a * np b).coeff d < 2 ^ k := by
   apply Nat.lt_of_le_of_lt _ hn
   rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun p q => (np a).coeff p * (np b).coeff q) d]
@@ -192,15 +193,15 @@ theorem coeff_mul_lt {k i : Nat} {a b : BitVec 64} (ha : InClass k i a) (hn : 63
     · simp
   calc _ ≤ ∑ p ∈ Finset.range d.succ, (if a.getLsbD p = true then 1 else 0) := Finset.sum_le_sum h
     _ = ((Finset.range d.succ).filter fun p => a.getLsbD p = true).card := (Finset.card_filter _ _).symm
-    _ ≤ ((Finset.range (63 / k + 1)).image fun t => k * t + i).card := by
+    _ ≤ ((Finset.range (n / k + 1)).image fun t => k * t + i).card := by
         refine Finset.card_le_card fun p hp => ?_
         simp only [Finset.mem_filter] at hp
         have hc := ha p hp.2
-        have h64 : p < 64 := BitVec.lt_of_getLsbD hp.2
+        have h64 := hw p hp.2
         rw [Finset.mem_image]
         refine ⟨p / k, ?_, ?_⟩
         · rw [Finset.mem_range]
-          exact Nat.lt_succ_of_le (Nat.div_le_div_right (by omega))
+          exact Nat.lt_succ_of_le (Nat.div_le_div_right h64)
         · rw [← hc]; exact Nat.div_add_mod p k
     _ ≤ _ := by
         refine Finset.card_image_le.trans ?_
@@ -211,8 +212,8 @@ theorem toNat_mul_eval (a b : BitVec 64) : a.toNat * b.toNat = (np a * np b).eva
 
 /-- A bit of the integer product, in the class of the product, is the bit of
 the carry-less product. -/
-theorem getLsbD_mul {k i j : Nat} (hk : 0 < k) {a b : BitVec 64} (ha : InClass k i a) (hb : InClass k j b)
-    (hn : 63 / k + 1 < 2 ^ k) {p : Nat} (hp : p < 128) (hpc : p % k = (i + j) % k) :
+theorem getLsbD_mul {k i j : Nat} {n : Nat} (hk : 0 < k) {a b : BitVec 64} (ha : InClass k i a) (hb : InClass k j b)
+    (hw : ∀ p, a.getLsbD p = true → p ≤ n) (hn : n / k + 1 < 2 ^ k) {p : Nat} (hp : p < 128) (hpc : p % k = (i + j) % k) :
     (a.setWidth 128 * b.setWidth 128).getLsbD p = (polyMul a b).getLsbD p := by
   have hm : (a.setWidth 128 * b.setWidth 128).toNat = a.toNat * b.toNat := by
     rw [BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
@@ -260,7 +261,7 @@ theorem getLsbD_mul {k i j : Nat} (hk : 0 < k) {a b : BitVec 64} (ha : InClass k
     rw [BitVec.getLsbD, hm, hs]
     conv_lhs => rw [hpd]
     rw [testBit_sum k _ hk (fun t => (np a * np b).coeff (k * t + (i + j) % k)) 128
-      (fun t _ => coeff_mul_lt ha hn _) hpk, ← hpd]
+      (fun t _ => coeff_mul_lt ha hw hn _) hpk, ← hpd]
   have h2 : bit ((polyMul a b).getLsbD p) = (((np a * np b).coeff p : ℕ) : ZMod 2) := by
     rw [← coeff_lp, lp_polyMul, lp, lp, ← Polynomial.map_mul, coeff_map]; rfl
   rw [h1]
@@ -323,7 +324,8 @@ theorem cp_mask (a b : BitVec 64) {i j r : Nat} (hi : i < 5) (hj : j < 5) (hr : 
   rw [BitVec.getLsbD_and, M5_class r hr p hp]
   by_cases hc : p % 5 = r
   · rw [decide_eq_true hc, Bool.and_true]
-    exact getLsbD_mul (by decide) (inClass_m5 a hi) (inClass_m5 b hj) (by decide) hp (hc.trans h.symm)
+    exact getLsbD_mul (n := 63) (by decide) (inClass_m5 a hi) (inClass_m5 b hj)
+      (fun q hq => Nat.le_of_lt_succ (BitVec.lt_of_getLsbD hq)) (by decide) hp (hc.trans h.symm)
   · rw [decide_eq_false hc, Bool.and_false]
     exact (getLsbD_polyMul_class (inClass_m5 a hi) (inClass_m5 b hj) (fun e => hc (e.trans h))).symm
 
@@ -484,5 +486,166 @@ theorem mul_words (y1 y0 h1 h0 : BitVec 64) :
   apply φ_inj
   rw [φ_mul, ← ρ_words, mulW_mulV, ρ_mulV, ρ_words, ← x_key h1 h0]
   ring
+
+/-! ## Four classes of 32-bit words -/
+
+/-- The positions congruent to `r` modulo 4. -/
+def m4 (r : Nat) : BitVec 64 := 0x1111111111111111#64 <<< r
+
+/-- The products that meet in class `r`. -/
+def meet4 (a b : BitVec 64) (r : Nat) : BitVec 64 :=
+  (a &&& m4 0) * (b &&& m4 (r % 4)) ^^^ (a &&& m4 1) * (b &&& m4 ((r + 3) % 4)) ^^^
+    (a &&& m4 2) * (b &&& m4 ((r + 2) % 4)) ^^^ (a &&& m4 3) * (b &&& m4 ((r + 1) % 4))
+
+/-- The carry-less product of two 32-bit words, from 16 integer products. -/
+def mul4 (a b : BitVec 64) : BitVec 64 :=
+  (meet4 a b 0 &&& m4 0) ^^^ (meet4 a b 1 &&& m4 1) ^^^ (meet4 a b 2 &&& m4 2) ^^^ (meet4 a b 3 &&& m4 3)
+
+/-- A 32-bit word, in 64 bits. -/
+def Low (a : BitVec 64) : Prop := ∀ p, a.getLsbD p = true → p < 32
+
+theorem m4_class : ∀ i < 4, ∀ p < 64, (m4 i).getLsbD p = decide (p % 4 = i) := by decide +kernel
+
+theorem inClass_m4 (a : BitVec 64) {i : Nat} (hi : i < 4) : InClass 4 i (a &&& m4 i) := by
+  intro p hp
+  have h64 : p < 64 := BitVec.lt_of_getLsbD hp
+  rw [BitVec.getLsbD_and, m4_class i hi p h64, Bool.and_eq_true, decide_eq_true_eq] at hp
+  exact hp.2
+
+theorem low_and {a : BitVec 64} (ha : Low a) (m : BitVec 64) : Low (a &&& m) := fun p hp => by
+  rw [BitVec.getLsbD_and, Bool.and_eq_true] at hp; exact ha p hp.1
+
+theorem vdword_mul (a b : BitVec 64) : vdword (a.setWidth 128 * b.setWidth 128) 0 = a * b := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [vdword, BitVec.extractLsb'_toNat, BitVec.toNat_mul, BitVec.toNat_setWidth, Nat.mul_zero, Nat.shiftRight_zero]
+  rw [Nat.mod_eq_of_lt (show a.toNat < 2 ^ 128 by have := a.isLt; omega),
+    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 128 by have := b.isLt; omega), Nat.mod_mod_of_dvd _ (by decide)]
+
+theorem getLsbD_vdword0 (v : BitVec 128) {p : Nat} (hp : p < 64) : (vdword v 0).getLsbD p = v.getLsbD p := by
+  simp only [vdword, BitVec.getLsbD_extractLsb', hp, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add]
+
+theorem cp4_mask {a : BitVec 64} (ha : Low a) (b : BitVec 64) {i j r : Nat} (hi : i < 4) (hj : j < 4) (hr : r < 4)
+    (h : (i + j) % 4 = r) :
+    (a &&& m4 i) * (b &&& m4 j) &&& m4 r = vdword (polyMul (a &&& m4 i) (b &&& m4 j)) 0 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro p hp
+  rw [BitVec.getLsbD_and, m4_class r hr p hp, getLsbD_vdword0 _ hp, ← vdword_mul, getLsbD_vdword0 _ hp]
+  by_cases hc : p % 4 = r
+  · rw [decide_eq_true hc, Bool.and_true]
+    exact getLsbD_mul (n := 31) (by decide) (inClass_m4 a hi) (inClass_m4 b hj)
+      (fun q hq => Nat.le_of_lt_succ (low_and ha _ q hq)) (by decide) (by omega) (hc.trans h.symm)
+  · rw [decide_eq_false hc, Bool.and_false]
+    exact (getLsbD_polyMul_class (inClass_m4 a hi) (inClass_m4 b hj) (fun e => hc (e.trans h))).symm
+
+theorem split4 (a : BitVec 64) : (a &&& m4 0) ^^^ (a &&& m4 1) ^^^ (a &&& m4 2) ^^^ (a &&& m4 3) = a := by
+  rw [← and_xor, ← and_xor, ← and_xor, show m4 0 ^^^ m4 1 ^^^ m4 2 ^^^ m4 3 = BitVec.allOnes 64 by decide,
+    BitVec.and_allOnes]
+
+theorem mul4_eq {a : BitVec 64} (ha : Low a) (b : BitVec 64) : mul4 a b = vdword (polyMul a b) 0 := by
+  have hm : ∀ r < 4, meet4 a b r &&& m4 r =
+      vdword (polyMul (a &&& m4 0) (b &&& m4 (r % 4)) ^^^ polyMul (a &&& m4 1) (b &&& m4 ((r + 3) % 4)) ^^^
+      polyMul (a &&& m4 2) (b &&& m4 ((r + 2) % 4)) ^^^ polyMul (a &&& m4 3) (b &&& m4 ((r + 1) % 4))) 0 := by
+    intro r hr
+    rw [meet4, xor_and, xor_and, xor_and, vdword_xor, vdword_xor, vdword_xor,
+      cp4_mask ha b (by decide) (Nat.mod_lt _ (by decide)) hr (by omega),
+      cp4_mask ha b (by decide) (Nat.mod_lt _ (by decide)) hr (by omega),
+      cp4_mask ha b (by decide) (Nat.mod_lt _ (by decide)) hr (by omega),
+      cp4_mask ha b (by decide) (Nat.mod_lt _ (by decide)) hr (by omega)]
+  rw [mul4, hm 0 (by decide), hm 1 (by decide), hm 2 (by decide), hm 3 (by decide), ← vdword_xor, ← vdword_xor,
+    ← vdword_xor]
+  refine congrArg (vdword · 0) ?_
+  simp only [Nat.reduceMod, Nat.reduceAdd]
+  apply lp_ext
+  conv_rhs => rw [lp_polyMul, ← split4 a, ← split4 b]
+  simp only [lp_xor, lp_polyMul]
+  ring
+
+/-! ## A 64-bit product from three 32-bit ones -/
+
+def lo32 (w : BitVec 64) : BitVec 64 := (w <<< 32) >>> 32
+def hi32 (w : BitVec 64) : BitVec 64 := w >>> 32
+
+theorem getLsbD_lo32 (w : BitVec 64) (p : Nat) : (lo32 w).getLsbD p = (decide (p < 32) && w.getLsbD p) := by
+  rw [lo32, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
+  by_cases h : p < 32
+  · simp only [h, decide_true, Bool.true_and, show 32 + p < 64 by omega, show ¬ 32 + p < 32 by omega, decide_false,
+      Bool.not_false, Nat.add_sub_cancel_left]
+  · simp only [h, decide_false, Bool.false_and, show ¬ 32 + p < 64 by omega]
+
+theorem low_lo32 (w : BitVec 64) : Low (lo32 w) := fun p hp => by
+  rw [getLsbD_lo32, Bool.and_eq_true, decide_eq_true_eq] at hp; exact hp.1
+
+theorem low_hi32 (w : BitVec 64) : Low (hi32 w) := fun p hp => by
+  rw [hi32, BitVec.getLsbD_ushiftRight] at hp
+  have := BitVec.lt_of_getLsbD hp
+  omega
+
+theorem low_xor {a b : BitVec 64} (ha : Low a) (hb : Low b) : Low (a ^^^ b) := fun p hp => by
+  rw [BitVec.getLsbD_xor] at hp
+  by_cases h : a.getLsbD p = true
+  · exact ha p h
+  · refine hb p ?_
+    rw [Bool.not_eq_true] at h
+    rwa [h, Bool.false_xor] at hp
+
+theorem lp_lo_hi (w : BitVec 64) : lp w = lp (lo32 w) + X ^ 32 * lp (hi32 w) := by
+  ext d
+  rw [coeff_add, coeff_X_pow_mul', coeff_lp, coeff_lp, getLsbD_lo32]
+  by_cases h : d < 32
+  · simp only [h, decide_true, Bool.true_and, show ¬ 32 ≤ d by omega, ite_false, add_zero]
+  · simp only [h, decide_false, Bool.false_and, show 32 ≤ d by omega, ite_true, coeff_lp, hi32,
+      BitVec.getLsbD_ushiftRight, show 32 + (d - 32) = d by omega]
+    simp [bit]
+
+/-- A product of 32-bit words is its low doubleword. -/
+theorem lp_low {a b : BitVec 64} (ha : Low a) (hb : Low b) : lp (vdword (polyMul a b) 0) = lp a * lp b := by
+  rw [← lp_polyMul]
+  ext d
+  rw [coeff_lp, coeff_lp]
+  by_cases h : d < 64
+  · rw [getLsbD_vdword0 _ h]
+  · rw [BitVec.getLsbD_of_ge _ d (by omega)]
+    symm
+    rw [← coeff_lp, lp_polyMul, coeff_mul]
+    refine Finset.sum_eq_zero fun ⟨p, q⟩ hpq => ?_
+    rw [Finset.mem_antidiagonal] at hpq
+    simp only [coeff_lp]
+    by_cases h1 : a.getLsbD p = true
+    · have h1' := ha p h1
+      have h2 : b.getLsbD q = false := by
+        rw [← Bool.not_eq_true]; intro h2; have := hb q h2; omega
+      rw [h2]; simp [bit]
+    · rw [Bool.not_eq_true] at h1; rw [h1]; simp [bit]
+
+/-- The carry-less product of two words, from three of their halves. -/
+def mul64 (a b : BitVec 64) : BitVec 64 × BitVec 64 :=
+  let p0 := mul4 (lo32 a) (lo32 b)
+  let p1 := mul4 (hi32 a) (hi32 b)
+  let m := mul4 (lo32 a ^^^ hi32 a) (lo32 b ^^^ hi32 b) ^^^ p0 ^^^ p1
+  (p0 ^^^ m <<< 32, p1 ^^^ m >>> 32)
+
+theorem polyMul_parts (a b : BitVec 64) :
+    let p0 := vdword (polyMul (lo32 a) (lo32 b)) 0
+    let p1 := vdword (polyMul (hi32 a) (hi32 b)) 0
+    let m := vdword (polyMul (lo32 a ^^^ hi32 a) (lo32 b ^^^ hi32 b)) 0 ^^^ p0 ^^^ p1
+    polyMul a b = (p0.setWidth 128 <<< 0) ^^^ (m.setWidth 128 <<< 32) ^^^ (p1.setWidth 128 <<< 64) := by
+  intro p0 p1 m
+  apply lp_ext
+  have h2 : (2 : P) = 0 := CharTwo.two_eq_zero
+  have e0 : lp p0 = lp (lo32 a) * lp (lo32 b) := lp_low (low_lo32 a) (low_lo32 b)
+  have e1 : lp p1 = lp (hi32 a) * lp (hi32 b) := lp_low (low_hi32 a) (low_hi32 b)
+  have em := lp_low (low_xor (low_lo32 a) (low_hi32 a)) (low_xor (low_lo32 b) (low_hi32 b))
+  rw [lp_xor, lp_xor] at em
+  rw [lp_polyMul, lp_xor, lp_xor, lp_shl p0 (by decide), lp_shl m (by decide), lp_shl p1 (by decide), lp_xor, lp_xor, em,
+    e0, e1, lp_lo_hi a, lp_lo_hi b]
+  linear_combination (-(X ^ 32 * lp (lo32 a) * lp (lo32 b) + X ^ 32 * lp (hi32 a) * lp (hi32 b))) * h2
+
+theorem mul64_eq (a b : BitVec 64) : mul64 a b = (vdword (polyMul a b) 0, vdword (polyMul a b) 1) := by
+  rw [polyMul_parts a b]
+  simp only [mul64, mul4_eq (low_lo32 a), mul4_eq (low_hi32 a), mul4_eq (low_xor (low_lo32 a) (low_hi32 a)), vdword_xor,
+    vdword_shl_0, vdword_shl_1 _ (show 0 ≤ 64 by decide), vdword_shl_1 _ (show 32 ≤ 64 by decide),
+    vdword_shl_1 _ (show 64 ≤ 64 by decide)]
+  have e : ∀ v : BitVec 64, v >>> 64 = 0#64 := fun v => BitVec.ushiftRight_eq_zero (Nat.le_refl 64)
+  simp [e, BitVec.xor_comm]
 
 end VG.Proof.Gcm.Spread
