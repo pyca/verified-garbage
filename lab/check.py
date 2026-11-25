@@ -26,3 +26,22 @@ for _ in range(100):
     assert res[0] == res[1], 'min'
     for k, x in enumerate(res): assert x == res[0], k
 print('steps ok')
+
+def l5(m, o): return sum(int.from_bytes(m[o+8*k:o+8*k+8], 'little') << (51*k) for k in range(5))
+def put5(m, o, top): 
+    for k in range(5): m[o+8*k:o+8*k+8] = random.choice([top-1, 0, random.randrange(top)]).to_bytes(8, 'little')
+def bnd(m, o): return all(int.from_bytes(m[o+8*k:o+8*k+8], 'little') < 2**51 + 2**15 for k in range(5))
+for _ in range(300):
+    m = bytearray(8192); put5(m, 224, 2**52 + 2**51 + 2**16); put5(m, 320, 2**52 + 2**51 + 2**16)
+    emu.run(gen.ALL['m51'], {i: 0 for i in range(31)}, m); assert l5(m, 448) % P == l5(m, 224) * l5(m, 320) % P and bnd(m, 448)
+    m = bytearray(8192); put5(m, 224, 2**52 + 2**51 + 2**16)
+    emu.run(gen.ALL['s51'], {i: 0 for i in range(31)}, m); assert l5(m, 448) % P == l5(m, 224) ** 2 % P and bnd(m, 448)
+    m = bytearray(8192)
+    for n in range(5): put5(m, gen.sl(n), 2**51 + 2**15)
+    for k in range(2000, 2300): m[k] = random.getrandbits(1)
+    x1, x2, z2, x3, z3 = (l5(m, gen.sl(n)) for n in range(5))
+    if m[99+1984] != m[99+1985]: x2, z2, x3, z3 = x3, z3, x2, z2
+    emu.run(gen.ALL['st51'], {i: 0 for i in range(31)}, m)
+    A, Bb, Cc, D = x2+z2, x2-z2, x3+z3, x3-z3; AA, BB, DA, CB = A*A, Bb*Bb, D*A, Cc*Bb; E = AA-BB
+    for n, v in ((1, AA*BB), (2, E*(AA+121665*E)), (3, (DA+CB)**2), (4, x1*(DA-CB)**2)): assert l5(m, gen.sl(n)) % P == v % P, n; assert bnd(m, gen.sl(n))
+print('51 ok')

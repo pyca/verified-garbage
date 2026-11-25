@@ -237,8 +237,92 @@ ORD = {'o0': 'AA BB E DA CB x3 t z3 x2 z2', 'o1': 'DA CB AA BB t x3 z3 E x2 z2',
 for k, v in ORD.items(): B['st_' + k] = ['mov w10, #0', 'mov x19, #100'] + minflags(FR + step_order(v))
 B['st_o1n'] = ['mov w10, #0', 'mov x19, #100'] + minflags(FR + step_order(ORD['o1'], False))
 B['sqrR'] = ['mov w10, #0'] + ldw(224, ['x12','x13','x14','x15']) + minflags(sqrR(448))
+
+# ---- radix 2^51 ----
+def sl(n): return 64 + 40 * n
+def ld5(o, r): return [f'ldp {r[0]}, {r[1]}, [x0, #{o}]', f'ldp {r[2]}, {r[3]}, [x0, #{o+16}]', f'ldr {r[4]}, [x0, #{o+32}]']
+def st5(o, r): return [f'stp {r[0]}, {r[1]}, [x0, #{o}]', f'stp {r[2]}, {r[3]}, [x0, #{o+16}]', f'str {r[4]}, [x0, #{o+32}]']
+B5 = ['x1','x2','x3','x4','x5']           # b
+N5 = [None,'x6','x7','x8','x9']           # 19 b1..b4
+LO = ['x10','x12','x14','x16','x20']; HI = ['x11','x13','x15','x17','x21']   # columns
+AI, PL, PH = 'x22', 'x23', 'x24'
+def carry51(o):
+    """The columns reduced: two parallel rounds, into LO and [o]."""
+    M_, C = 'x1', ['x2','x3','x4','x5','x6']
+    r = ['mov x1, #0xffffffffffff', 'movk x1, #7, lsl #48'.replace('movk','movk')]
+    r = ['mov x1, #0xffff', 'movk x1, #0xffff, lsl #16', 'movk x1, #0xffff, lsl #32', 'movk x1, #7, lsl #48', 'mov w7, #19']
+    r += [f'extr {C[k]}, {HI[k]}, {LO[k]}, #51' for k in range(5)]
+    r += [f'and {LO[k]}, {LO[k]}, x1' for k in range(5)]
+    r += ['mul x6, x6, x7']
+    r += [f'add {LO[k]}, {LO[k]}, {C[(k+4)%5]}' for k in range(5)]
+    r += [f'lsr {C[k]}, {LO[k]}, #51' for k in range(5)]
+    r += [f'and {LO[k]}, {LO[k]}, x1' for k in range(5)]
+    r += ['mul x6, x6, x7']
+    r += [f'add {LO[k]}, {LO[k]}, {C[(k+4)%5]}' for k in range(5)]
+    return r + (st5(o, LO) if o is not None else [])
+def mul51regs(a):
+    """[a] times b (in B5): the columns."""
+    r = ['mov w22, #19'] + [f'mul {N5[k]}, {B5[k]}, x22' for k in range(1, 5)]
+    for i in range(5):
+        r += [f'ldr {AI}, [x0, #{a+8*i}]']
+        for j in range(5):
+            c = (i + j) % 5; m = N5[j] if i + j >= 5 else B5[j]
+            if i == 0: r += [f'mul {LO[c]}, {AI}, {m}', f'umulh {HI[c]}, {AI}, {m}']
+            else: r += [f'mul {PL}, {AI}, {m}', f'umulh {PH}, {AI}, {m}', f'adds {LO[c]}, {LO[c]}, {PL}', f'adc {HI[c]}, {HI[c]}, {PH}']
+    return r
+def mul51(o, a, b): return ld5(b, B5) + mul51regs(a) + carry51(o)
+def sqr51regs(o):
+    """The square of B5."""
+    a0, a1, a2, a3, a4 = B5
+    r = ['mov w22, #19', f'add x6, {a0}, {a0}', f'add x7, {a1}, {a1}', f'mul x8, {a3}, x22', f'mul x9, {a4}, x22', 'add x24, x9, x9']
+    # terms by column, first term sets
+    T = [(0, a0, a0), (1, 'x6', a1), (2, 'x6', a2), (3, 'x6', a3), (4, 'x6', a4),
+         (0, a1, 'x24'), (2, a1, a1), (3, 'x7', a2), (4, 'x7', a3),
+         (1, a2, 'x24'), (4, a2, a2), (2, a3, 'x24'), (3, a4, 'x9'), (1, a3, 'x8'), (0, 'dbl', a2)]
+    seen = set()
+    for c, x, y in T:
+        if x == 'dbl': r += ['add x8, x8, x8']; x = 'x8'
+        if c not in seen: r += [f'mul {LO[c]}, {x}, {y}', f'umulh {HI[c]}, {x}, {y}']; seen.add(c)
+        else: r += [f'mul x22, {x}, {y}', f'umulh x23, {x}, {y}', f'adds {LO[c]}, {LO[c]}, x22', f'adc {HI[c]}, {HI[c]}, x23']
+    return r + carry51(o)
+def sqr51(o, a): return ld5(a, B5) + sqr51regs(o)
+P2 = ['x23', 'x24', 'x24', 'x24', 'x24']   # 2p's limbs: 2^52 - 38, 2^52 - 2
+def p2(): return ['mov x24, #0xfffe', 'movk x24, #0xffff, lsl #16', 'movk x24, #0xffff, lsl #32', 'movk x24, #0xf, lsl #48', 'sub x23, x24, #36']
+def st51():
+    X2, Z2, X3, Z3 = 1, 2, 3, 4
+    r = ['sub x19, x19, #1', 'add x17, x0, x19', 'ldrb w16, [x17, #1984]', 'ldrb w17, [x17, #1985]', 'eor x16, x16, x17', 'tst x16, x16'] + p2()
+    # limb by limb: x2 z2 x3 z3 swapped; A = 5, B = 6, C = 7, D = 8
+    for k in range(5):
+        g = lambda n: f'[x0, #{sl(n)+8*k}]'
+        r += [f'ldr x1, {g(X2)}', f'ldr x2, {g(Z2)}', f'ldr x3, {g(X3)}', f'ldr x4, {g(Z3)}',
+              'csel x5, x3, x1, ne', 'csel x6, x4, x2, ne', 'csel x7, x1, x3, ne', 'csel x8, x2, x4, ne',
+              'add x9, x5, x6', f'add x5, x5, {P2[k]}', 'sub x5, x5, x6', 'add x10, x7, x8', f'add x7, x7, {P2[k]}', 'sub x7, x7, x8',
+              f'str x9, {g(5)}', f'str x5, {g(6)}', f'str x10, {g(7)}', f'str x7, {g(8)}']
+    r += sqr51(sl(9), sl(5)) + sqr51(sl(10), sl(6)) + mul51(sl(8), sl(8), sl(5)) + mul51(sl(7), sl(7), sl(6))
+    # E (slot 6) := AA - BB; AA + a24 E in B5 and then z2
+    r += ld5(sl(9), B5) + ld5(sl(10), ['x6','x7','x8','x9','x10']) + p2()
+    for k in range(5): r += [f'add {B5[k]}, {B5[k]}, {P2[k]}', f'sub {B5[k]}, {B5[k]}, {["x6","x7","x8","x9","x10"][k]}']
+    r += st5(sl(6), B5) + mul51(sl(1), sl(9), sl(10))
+    # x3 := (DA + CB)^2, t := (DA - CB)^2
+    r += ld5(sl(8), B5) + ld5(sl(7), ['x6','x7','x8','x9','x10']) + [f'add {B5[k]}, {B5[k]}, {["x6","x7","x8","x9","x10"][k]}' for k in range(5)] + sqr51regs(sl(3))
+    r += ld5(sl(8), B5) + ld5(sl(7), ['x6','x7','x8','x9','x10']) + p2()
+    for k in range(5): r += [f'add {B5[k]}, {B5[k]}, {P2[k]}', f'sub {B5[k]}, {B5[k]}, {["x6","x7","x8","x9","x10"][k]}']
+    r += sqr51regs(sl(4))
+    # z2
+    E = ['x20','x21','x22','x23','x24']; L, H, C = ['x6','x7','x8','x9','x10'], ['x11','x12','x13','x14','x15'], ['x6','x7','x8','x9','x10']
+    r += ld5(sl(6), E) + ld5(sl(9), B5) + ['mov w16, #0xdb41', 'movk w16, #1, lsl #16', 'mov x17, #0xffff', 'movk x17, #0xffff, lsl #16', 'movk x17, #0xffff, lsl #32', 'movk x17, #7, lsl #48']
+    r += [f'mul {L[k]}, {E[k]}, x16' for k in range(5)] + [f'umulh {H[k]}, {E[k]}, x16' for k in range(5)]
+    r += [f'extr {H[k]}, {H[k]}, {L[k]}, #51' for k in range(5)] + [f'and {L[k]}, {L[k]}, x17' for k in range(5)] + ['mov w16, #19', 'mul x15, x15, x16']
+    r += [f'add {B5[k]}, {B5[k]}, {L[k]}' for k in range(5)] + [f'add {B5[k]}, {B5[k]}, {H[(k+4)%5]}' for k in range(5)]
+    r += mul51regs(sl(6)) + carry51(sl(2))
+    # z3
+    r += mul51(sl(4), sl(0), sl(4))
+    return r
+B['m51'] = mul51(448, 320, 224); B['m51_dep'] = mul51(224, 224, 224)
+B['s51'] = sqr51(448, 224); B['s51_dep'] = sqr51(224, 224)
+B['st51'] = ['mov x19, #100'] + st51()
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1'): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51'): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
