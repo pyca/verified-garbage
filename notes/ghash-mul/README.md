@@ -118,3 +118,34 @@ masked out again for each product, 81 more `and`.
 Reduction by 32-bit words: word i of the product (i = 0..3, ascending) adds
 w ^ w>>1 ^ w>>2 ^ w>>7 to word i+4 and w<<31 ^ w<<30 ^ w<<25 to word i+3,
 with shifted operands (`eor d, d, w, lsr #k`): 7 instructions a word.
+
+## x86, changed before its code
+
+`GhashImpl` (`Proof/AesGcm/X86/Callee.lean`) asks for `stackUse = 0`, and the
+contract gives no room below `esp`: D is out, since `pmuludq` runs only in an
+MCDT frame (12 bytes of stack). What is left:
+
+E. Scalar `mul` (32x32->64, not on the MCDT list), B's 144: `mov eax,[key
+   class]; mov r,[y class]; mul r; xor; xor`, 5 instructions each, 720; 36
+   class sums with 2 zeroings, 2 masks, and their additions, about 220; the
+   rest (Karatsuba's sums, the reduction, the y classes) in SSE2 by 64-bit
+   lanes (`psllq`, `psrlq`, `pxor`), about 120. The y classes of a word come at
+   once from a splat and a `pand` with the four masks. About 1050.
+F. No multiplication: 27 products of 16x16 bits (Karatsuba three deep) in 7
+   vectors of four 32-bit lanes, a bit at a time: `movdqa m,y; psraw m,15; pand
+   m,h; paddd acc,acc; pxor acc,m; paddw y,y`, 6 instructions for each of 16
+   bits: 672, plus the lane arrangement and Karatsuba (about 200).
+G. `Z ^= V_i & mask` with `V_i = H x^i`, `i < 8` (128 bytes of scratch) and
+   `Z *= x^8` per byte: 128 x 5 + 16 x 8 = 770 and more for the masks (no
+   `psrad`, `pcmpeq` or byte broadcast in the model).
+
+E, F and G are within a fifth of each other on paper. E: its algebra is the
+one RISC-V uses, it has most of its work in independent chains, and F's and
+G's SIMD operations have fewer ports than the scalar ones (3 against 4).
+
+Scratch (256 bytes): the key's 36 words of classes (144); 16 for the four
+classes of the word being multiplied; `y` (16); the three products of 64
+bits being combined and the three of 128 (48 + 32); 4 saved registers (16).
+Registers: `ecx` scratch, `ebx`, `esi` the class sum, `edi` the y class,
+`ebp`: data pointer; the count in memory. The product (64 bits) accumulates
+as `lo`, `hi` in memory or in xmm (`movd`, `punpckldq`, `pxor`).
