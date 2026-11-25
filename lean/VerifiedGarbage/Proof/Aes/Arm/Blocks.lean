@@ -187,14 +187,14 @@ theorem shr4 {N : Nat} (hN : 16 * N + 16 ≤ 2 ^ 32) : BitVec.ofNat 32 (16 * N) 
 theorem blocksKeyBody_ok {s₀ : State} {b sc : BitVec 32} {R N : Nat} {w : List Byte}
     (hk : KSetup s₀ b sc R w) (hN : 16 * N + 16 ≤ 2 ^ 32) {j : Nat} {s : State}
     (hi : KInv s₀ b sc R w j s) (hlr : s.gpr .lr = BitVec.ofNat 32 (16 * N + j + 1)) :
-    WP isa (.block blocksKeyBody) s fun s' =>
+    WP isa blocksKeyBody s fun s' =>
       (j = 0 ∧ Arm.eval .ne s' = some false ∧ KDone s₀ b R w s' ∧ s'.gpr .lr = BitVec.ofNat 32 (16 * N)) ∨
       (0 < j ∧ Arm.eval .ne s' = some true ∧ KInv s₀ b sc R w (j - 1) s' ∧
         s'.gpr .lr = BitVec.ofNat 32 (16 * N + (j - 1) + 1)) := by
   have hR := hk.rounds
   have hjR := hi.hj
-  simp only [blocksKeyBody]
-  refine keyFront_ok hk hi fun s₃ hr12 hkp hlr₃ hkeep₃ hrd hwr hsp hfr hkeys => ?_
+  refine WP.seq ?_
+  refine keyFront_ok hk hi hN hlr fun s₃ hr12 hkp hlr₃ hkeep₃ hrd hwr hsp hfr hkeys => ?_
   simp only [blocksKeyStep]
   refine wp_sub (op2_imm (by decide)) fun s₄ u₄ => wp_sub (op2_imm (by decide)) fun s₅ u₅ =>
     wp_sub (op2_imm (by decide)) fun s₆ u₆ => VG.Proof.MdStream.Arm.wp_and (op2_imm (by decide))
@@ -239,7 +239,7 @@ theorem blocksKeyBody_ok {s₀ : State} {b sc : BitVec 32} {R N : Nat} {w : List
 theorem blocksKeyLoop_ok {s₀ : State} {b sc : BitVec 32} {R N : Nat} {w : List Byte}
     (hk : KSetup s₀ b sc R w) (hN : 16 * N + 16 ≤ 2 ^ 32) {s : State} (hi : KInv s₀ b sc R w R s)
     (hlr : s.gpr .lr = BitVec.ofNat 32 (16 * N + R + 1)) :
-    WP isa (.loop (.block blocksKeyBody) .ne) s fun s' =>
+    WP isa (.loop blocksKeyBody .ne) s fun s' =>
       KDone s₀ b R w s' ∧ s'.gpr .lr = BitVec.ofNat 32 (16 * N) := by
   refine WP.loop (M := isa)
     (fun n s => KInv s₀ b sc R w n s ∧ s.gpr .lr = BitVec.ofNat 32 (16 * N + n + 1))

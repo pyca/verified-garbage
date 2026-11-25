@@ -28,7 +28,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 `subAll` (`ortho`, the S-box, `ortho`, with the loop registers kept in
 slots meanwhile) applies the S-box to every byte of the eight words
-(`subAll_wp`, from the bitsliced layers' lemmas); each word of the
+(`subWord_wp`, from the bitsliced layers' lemmas); each word of the
 schedule is then a few scalar instructions around it (`word_ok`), and the
 loop over the words keeps the schedule's bytes so far equal to the
 specification's (`WInv`).
@@ -74,18 +74,118 @@ open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg op2_lsr op2_lsl wp_mov
   wp_cmp wp_orr wp_and wp_ldr wp_str)
 open VG.Proof.Aes (kw kTemp kw_step kw_key kw_length kTemp_length xorWord_getD
   subWord_getD rotWord_getD rotWord_length rcon_getD flatten_expandWords)
-open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
+open VG.Spec.Aes (sbox xtimes rotWord rcon xorWord)
 
-/-! ## The S-box on every byte -/
+/-! ## The S-box on a word's bytes -/
 
-/-- The two states that the words hold, as `InRel` relates them. -/
-def stOf (Q : Nat → BitVec 32) (b : Nat) : Spec.Aes.State :=
-  Vector.ofFn fun i => (Q (2 * (i.1 / 4) + b)).extractLsb' (8 * (i.1 % 4)) 8
+/-- The word's bits that slice `j` holds, and its bytes' bits back in place. -/
+def slicesG (j x : Nat) : List Nat := if j + x < 32 then [j + x] else []
+def gatherG (_ x : Nat) : List Nat := [32 * (x % 8) + 8 * (x / 8)]
 
-theorem inRel_stOf (Q : Nat → BitVec 32) : InRel Q (stOf Q) := by
-  intro b hb i hi j hj
-  rw [vget _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
-  simp [hj]
+theorem slices_check : check (lanes 32 5) noMem (linExt 0) wordSlices (linEnv [(q 0, 0)])
+    (linPost 5 (rOuts q slicesG)) = true := by decide +kernel
+
+/-- The gathered word has `{63}` added to each byte. -/
+def gatherPost (e : Env (Nat × Nat)) : Bool :=
+  e.reg (q 0) == some (0x63636363, mk 32 (gatherG 0) 32) && decide (mk 32 (gatherG 0) 32 < 2 ^ (32 * 2 ^ 8))
+
+theorem gather_check : check (lanes 32 8) noMem (linExt 0) wordGather (linEnv (rIns q)) gatherPost = true := by
+  decide +kernel
+
+theorem word_keeps : ∀ r, r ∉ layerWrites → ((wordSlices ++ wordGather).all fun i => !clobbers i r) = true := by
+  intro r; cases r <;> decide +kernel
+
+theorem slices_ok (s : State) : ∃ s', runBlock isa wordSlices s = some s' ∧
+    (∀ j < 8, ∀ x < 32, j + x < 32 → (s'.gpr (q j)).getLsbD x = (s.gpr (q 0)).getLsbD (j + x)) ∧
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) := by
+  obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok slices_check (noMem_ok s) (fun _ => s.gpr (q 0))
+    (fun r i hri => by
+      simp only [List.mem_singleton, Prod.mk.injEq] at hri
+      obtain ⟨rfl, rfl⟩ := hri
+      exact ⟨by decide, rfl⟩) (fun j hj => by simp [noMem] at hj)
+  have hmem : ∀ j < 8, (q j, slicesG j) ∈ rOuts q slicesG := fun j hj => by
+    simp only [rOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
+  refine ⟨s', hs', fun j hj x hx h => ?_, hrd, hwr, hsp, frame_nil hfr, fun r hr => hoth r ?_⟩
+  · rw [hout _ _ (hmem j hj) x hx, slicesG, ite_eq_left h, Straight.xorBits_cons, Straight.xorBits_nil, Bool.xor_false]
+    have := Straight.bitOf_word (fun _ => s.gpr (q 0)) 0 (j + x) h
+    simpa using this
+  · have := word_keeps r hr
+    simp only [List.all_append, Bool.and_eq_true] at this
+    exact this.1
+
+theorem gather_ok (s : State) : ∃ s', runBlock isa wordGather s = some s' ∧
+    (∀ x < 32, (s'.gpr (q 0)).getLsbD x = ((0x63636363 : BitVec 32).getLsbD x ^^ (s.gpr (q (x % 8))).getLsbD (8 * (x / 8)))) ∧
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ gather_check
+  let W : Nat → BitVec 32 := fun k => s.gpr (q k)
+  have hrel : Rel (LaneRel 8 (assign W (2 ^ 8))) noMem (linExt 0) (linEnv (rIns q)) s := by
+    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => by simp [noMem] at hj, fun _ _ h => by cases h⟩
+    simp only [linEnv, Option.map_eq_some_iff] at h
+    obtain ⟨⟨r', i⟩, hf, rfl⟩ := h
+    have hr : r' = r := by simpa using List.find?_some hf
+    subst hr
+    have hm := List.mem_of_find?_eq_some hf
+    simp only [rIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hm
+    obtain ⟨k, hk, rfl, rfl⟩ := hm
+    exact inWord_rel W (by omega_using [hk])
+  obtain ⟨s', hs', p⟩ := run lanes_sound (noMem_ok s) hrel he
+  simp only [gatherPost, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hpost
+  refine ⟨s', hs', fun x hx => ?_, p.rd, p.wr, p.sp, ?_, fun r hr => p.other r ?_⟩
+  · have h := p.rel.reg _ _ hpost.1
+    have h0 : LaneRel 8 (assign W (2 ^ 8)) (outWord (gatherG 0)) (s'.gpr (q 0) ^^^ 0x63636363) := by
+      refine ⟨Nat.two_pow_pos _, fun y hy => ?_⟩
+      rw [BitVec.getLsbD_xor, h.2 y hy]
+      simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+      rw [show (0x63636363 : Nat).testBit y = (0x63636363 : BitVec 32).getLsbD y from rfl]
+      cases (0x63636363 : BitVec 32).getLsbD y <;> simp
+    have := outWord_rel_of_lt hpost.2 h0 x hx
+    rw [BitVec.getLsbD_xor, gatherG, Straight.xorBits_cons, Straight.xorBits_nil, Bool.xor_false,
+      Straight.bitOf_word _ _ _ (by omega_using [hx])] at this
+    rw [← this]
+    cases (0x63636363 : BitVec 32).getLsbD x <;> simp
+  · exact frame_nil p.frame
+  · have := word_keeps r hr
+    simp only [List.all_append, Bool.and_eq_true] at this
+    simp [this.2]
+
+/-- SUBWORD, between the loop registers' saving and loading back. -/
+theorem subWord_mid {s : State} (hok : Ok sboxCfg s) :
+    ∃ s', runBlock isa (wordSlices ++ subBytesQ ++ wordGather) s = some s' ∧
+      (∀ t < 4, (s'.gpr (q 0)).extractLsb' (8 * t) 8 = sbox ((s.gpr (q 0)).extractLsb' (8 * t) 8)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) ∧ Frame [slotRegion sboxCfg s] s.mem s'.mem := by
+  obtain ⟨s₁, r₁, h₁, rd₁, wr₁, sp₁, m₁, o₁⟩ := slices_ok s
+  have hb₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide)
+  obtain ⟨s₂, r₂, h₂, rd₂, wr₂, sp₂, o₂, f₂⟩ := subBytesQ_ok (hok.congr (s' := s₁) hb₁ hb₁ rd₁ wr₁)
+  obtain ⟨s₃, r₃, h₃, rd₃, wr₃, sp₃, m₃, o₃⟩ := gather_ok s₂
+  refine ⟨s₃, ?_, fun t ht => byteExt fun j hj => ?_, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁],
+    by rw [sp₃, sp₂, sp₁], fun r hr => by rw [o₃ r hr, o₂ r hr, o₁ r hr], ?_⟩
+  · have app : ∀ (a b : List Instr) (s s' : State), runBlock isa a s = some s' →
+        runBlock isa (a ++ b) s = runBlock isa b s' := by
+      intro a
+      induction a with
+      | nil => intro b s s' h; rw [runBlock_nil] at h; cases h; rfl
+      | cons i is ih =>
+        intro b s s' h
+        rw [List.cons_append, runBlock_cons]
+        rw [runBlock_cons] at h
+        cases he : exec i s with
+        | none => rw [he] at h; cases h
+        | some u => rw [he, runStep_some] at h; rw [runStep_some]; exact ih b u s' h
+    rw [List.append_assoc, app _ _ _ _ r₁, app _ _ _ _ r₂, r₃]
+  · have b63 : ∀ t < 4, ∀ j < 8, (0x63636363 : BitVec 32).getLsbD (8 * t + j) = (0x63 : Byte).getLsbD j := by decide
+    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, h₃ _ (by omega_arith), b63 t ht j hj,
+      show (8 * t + j) % 8 = j by omega_arith, show (8 * t + j) / 8 = t by omega_arith,
+      ← getLsbD_bsByte (fun k => s₂.gpr (q k)) (8 * t) hj, h₂ _ (by omega_arith), BitVec.getLsbD_xor]
+    have e : bsByte (fun j => s₁.gpr (q j)) (8 * t) = (s.gpr (q 0)).extractLsb' (8 * t) 8 := byteExt fun k hk => by
+      rw [getLsbD_bsByte _ _ hk, h₁ k hk _ (by omega_arith) (by omega_arith), BitVec.getLsbD_extractLsb',
+        decide_eq_true hk, Bool.true_and, Nat.add_comm]
+    rw [e]
+    cases (0x63 : Byte).getLsbD j <;> simp
+  · rw [m₃, ← m₁]
+    have := f₂
+    simp only [slotRegion, sboxCfg, hb₁] at this ⊢
+    exact this
 
 section
 variable {is : List Instr} {s : State} {Q' : State → Prop} {b : BitVec 32} {L : Nat}
@@ -108,21 +208,20 @@ theorem wp_stS' {t : Reg} {k : Nat} (hb : s.gpr sb = b) (hscr : (⟨State.addr b
 
 end
 
-/-- The registers `subAll` may change: the state's. -/
+/-- The registers `subWord` may change: the state's. -/
 def qRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7]
 
 theorem lslot_frame (B : Addr) {k : Nat} (h1 : 42 ≤ k) (h2 : k < 46) :
     (⟨B + BitVec.ofNat 64 168, 16⟩ : Region).Contains (slotA B k) (32 / 8) :=
   Offset.contains B (by omega_arith) (by omega_arith) (by omega_arith)
 
-theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
+theorem subWord_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
     (hscr : (⟨State.addr b, 512⟩ : Region) ∈ s.wr) (hfit : b.toNat + 512 ≤ 2 ^ 32) {P : State → Prop}
-    (h : ∀ s', (∀ k < 8, ∀ t < 4, (Q s' k).extractLsb' (8 * t) 8 = sbox ((Q s k).extractLsb' (8 * t) 8)) →
+    (h : ∀ s', (∀ t < 4, (s'.gpr (q 0)).extractLsb' (8 * t) 8 = sbox ((s.gpr (q 0)).extractLsb' (8 * t) 8)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → (∀ r, r ∉ qRegs → s'.gpr r = s.gpr r) →
       Frame [⟨State.addr b, 128⟩, ⟨State.addr b + BitVec.ofNat 64 168, 16⟩] s.mem s'.mem → P s') :
-    WP isa (.block subAll) s P := by
-  simp only [subAll, loopRegs, List.map_cons, List.map_nil, List.append_assoc, List.cons_append,
-    List.nil_append]
+    WP isa (.block subWord) s P := by
+  simp only [Impl.Aes.Arm.subWord, loopRegs, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
   let B := State.addr b
   refine wp_stS' hb hscr hfit (by decide) (by decide) fun s₁ u₁ => ?_
   refine wp_stS' (u₁.gpr ▸ hb) (u₁.wr ▸ hscr) hfit (by decide) (by decide) fun s₂ u₂ => ?_
@@ -135,27 +234,21 @@ theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
   obtain m₄ : s₄.mem = (((s.mem.writeW (slotA B 42) (s.gpr .r10)).writeW (slotA B 43) (s.gpr .r11)).writeW
       (slotA B 44) (s.gpr .r12)).writeW (slotA B 45) (s.gpr .lr) := by
     simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr, B]
+  obtain hb₄ : s₄.gpr sb = b := by rw [g₄, hb]
+  obtain ok₄ : Ok sboxCfg s₄ := Ok.of_off (off := 0) (by rw [wr₄]; exact hscr) hfit
+    (by show s₄.gpr sb = _; rw [hb₄]; simp) (by simp [sboxCfg]) rfl
   rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₅, hs₅, h₅, rd₅, wr₅, sp₅, o₅, m₅⟩ := ortho_ok' s₄
-  refine WP.of_runBlock ⟨s₅, hs₅, ?_⟩
-  obtain hb₅ : s₅.gpr sb = b := by rw [o₅ _ (by decide), g₄, hb]
-  rw [WP.block_append_iff (M := isa)]
-  obtain ok₅ : Ok sboxCfg s₅ := Ok.of_off (off := 0) (by rw [wr₅, wr₄]; exact hscr) hfit
-    (by show s₅.gpr sb = _; rw [hb₅]; simp) (by simp [sboxCfg]) rfl
-  obtain ⟨s₆, hs₆, h₆, rd₆, wr₆, sp₆, o₆, f₆⟩ := sbox_ok ok₅
-  refine WP.of_runBlock ⟨s₆, hs₆, ?_⟩
-  rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₇, hs₇, h₇, rd₇, wr₇, sp₇, o₇, m₇⟩ := ortho_ok' s₆
+  obtain ⟨s₇, hs₇, h₇, rd₇, wr₇, sp₇, o₇, f₇⟩ := subWord_mid ok₄
   refine WP.of_runBlock ⟨s₇, hs₇, ?_⟩
-  obtain hb₇ : s₇.gpr sb = b := by rw [o₇ _ (by decide), o₆ _ (by decide), hb₅]
-  obtain wr₇' : s₇.wr = s.wr := by rw [wr₇, wr₆, wr₅, wr₄]
-  obtain f₆' : Frame [⟨B, 128⟩] s₅.mem s₆.mem := by
-    have := f₆; simp only [slotRegion, sboxCfg, hb₅] at this; exact this
+  obtain hb₇ : s₇.gpr sb = b := by rw [o₇ _ (by decide), hb₄]
+  obtain wr₇' : s₇.wr = s.wr := by rw [wr₇, wr₄]
+  obtain f₆' : Frame [⟨B, 128⟩] s₄.mem s₇.mem := by
+    have := f₇; simp only [slotRegion, sboxCfg, hb₄] at this; exact this
   obtain lslot : ∀ k, 42 ≤ k → k < 46 → s₇.mem.readW (slotA B k) 32 = s₄.mem.readW (slotA B k) 32 := by
     intro k h1 h2
-    rw [m₇, f₆'.readW (Region.contains_self _ _) (fun r hr => by
+    exact f₆'.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (scr_disj (lx := 128) (y := 4 * k) (ly := 4) _ (by omega_arith) (by omega_arith)).symm) (by decide), m₅]
+      exact (scr_disj (lx := 128) (y := 4 * k) (ly := 4) _ (by omega_arith) (by omega_arith)).symm) (by decide)
   refine wp_ldS' hb₇ (by rw [wr₇']; exact hscr) hfit (by decide) (by decide) fun s₈ u₈ => ?_
   refine wp_ldS' (by rw [u₈.other _ (by decide), hb₇]) (by rw [u₈.wr, wr₇']; exact hscr) hfit
     (by decide) (by decide) fun s₉ u₉ => ?_
@@ -163,24 +256,11 @@ theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
     (by rw [u₉.wr, u₈.wr, wr₇']; exact hscr) hfit (by decide) (by decide) fun s₁₀ u₁₀ => ?_
   refine wp_ldS' (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), hb₇])
     (by rw [u₁₀.wr, u₉.wr, u₈.wr, wr₇']; exact hscr) hfit (by decide) (by decide) fun s₁₁ u₁₁ => ?_
-  refine WP.block_nil (h s₁₁ (fun k hk t ht => ?_) ?_ ?_ ?_ (fun r hr => ?_) ?_)
-  · have hin := in_of_bs h₇ (bs_subBytes h₆ (bs_of_in h₅ (inRel_stOf (Q s₄))))
-    obtain gq : ∀ i < 8, Q s₁₁ i = Q s₇ i := fun i hi => by
-      have : q i ≠ .r10 ∧ q i ≠ .r11 ∧ q i ≠ .r12 ∧ q i ≠ .lr := by revert hi; revert i; decide
-      simp only [Q]
-      rw [u₁₁.other _ this.2.2.2, u₁₀.other _ this.2.2.1, u₉.other _ this.2.1, u₈.other _ this.1]
-    refine byteExt fun j hj => ?_
-    have := hin (k % 2) (by omega_arith) (4 * (k / 2) + t) (by omega_arith) j hj
-    rw [show 2 * ((4 * (k / 2) + t) / 4) + k % 2 = k by omega_arith,
-      show 8 * ((4 * (k / 2) + t) % 4) + j = 8 * t + j by omega_arith] at this
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, gq k hk, this, vget _ (by omega_arith)]
-    simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
-    rw [show 2 * ((4 * (k / 2) + t) / 4) + k % 2 = k by omega_arith,
-      show (4 * (k / 2) + t) % 4 = t by omega_arith]
-    simp only [Q, g₄]
-  · rw [u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, rd₇, rd₆, rd₅, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
+  refine WP.block_nil (h s₁₁ (fun t ht => ?_) ?_ ?_ ?_ (fun r hr => ?_) ?_)
+  · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), h₇ t ht, g₄]
+  · rw [u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, rd₇, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
   · rw [u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, wr₇']
-  · rw [u₁₁.sp, u₁₀.sp, u₉.sp, u₈.sp, sp₇, sp₆, sp₅, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+  · rw [u₁₁.sp, u₁₀.sp, u₉.sp, u₈.sp, sp₇, u₄.sp, u₃.sp, u₂.sp, u₁.sp]
   · have e₁ : s₇.mem.readW (slotA B 42) 32 = s.gpr .r10 := by
       rw [lslot 42 (by omega_arith) (by omega_arith), m₄, readW_writeW_slot _ _ (by decide) (by decide) (by decide),
         readW_writeW_slot _ _ (by decide) (by decide) (by decide),
@@ -203,12 +283,10 @@ theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
     · subst hlr; rw [u₁₁.gpr, u₁₀.mem, u₉.mem, u₈.mem, e₄]
     obtain hl : r ∉ layerWrites := by
       revert hr h10 h11 h12 hlr; cases r <;> simp [qRegs, layerWrites]
-    obtain ho : r ∉ orthoWrites := by
-      revert hr h10 h11 h12 hlr; cases r <;> simp [qRegs, orthoWrites]
-    rw [u₁₁.other _ hlr, u₁₀.other _ h12, u₉.other _ h11, u₈.other _ h10, o₇ r ho, o₆ r hl, o₅ r ho, g₄]
-  · rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, m₇]
-    refine Frame.trans ?_ ((f₆'.trans (Frame.refl _ _)).mono (by simp [B]))
-    rw [m₅, m₄]
+    rw [u₁₁.other _ hlr, u₁₀.other _ h12, u₉.other _ h11, u₈.other _ h10, o₇ r hl, g₄]
+  · rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem]
+    refine Frame.trans ?_ (f₆'.mono (by simp [B]))
+    rw [m₄]
     obtain hm : (⟨B + BitVec.ofNat 64 168, 16⟩ : Region) ∈
         [(⟨B, 128⟩ : Region), ⟨B + BitVec.ofNat 64 168, 16⟩] := by simp
     exact ((((Frame.refl _ _).writeW hm _ (lslot_frame _ (by decide) (by decide))).writeW hm _
@@ -437,7 +515,7 @@ theorem rc_off_frame (B : Addr) : ∀ r ∈ [(⟨B, 128⟩ : Region), ⟨B + Bit
   · exact (scr_disj (lx := 128) (y := 164) (ly := 4) _ (by omega_arith) (by omega_arith)).symm
   · exact off_disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
 
-theorem subAll_frame {B : Addr} {m m' : Mem}
+theorem subWord_frame {B : Addr} {m m' : Mem}
     (h : Frame [⟨B, 128⟩, ⟨B + BitVec.ofNat 64 168, 16⟩] m m') :
     Frame [⟨B, 128⟩, ⟨B + BitVec.ofNat 64 164, 20⟩] m m' :=
   h.sub fun r hr => by
@@ -457,20 +535,20 @@ theorem rot_wp {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (h
   obtain hscr : (⟨State.addr B, 512⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hs.scr
   simp only [rotWordStep]
   rw [WP.block_append_iff (M := isa)]
-  refine subAll_wp hi.r8 hscr hs.fitB fun s₂ h₂ rd₂ wr₂ sp₂ o₂ f₂ => ?_
+  refine subWord_wp hi.r8 hscr hs.fitB fun s₂ h₂ rd₂ wr₂ sp₂ o₂ f₂ => ?_
   obtain rc₂ : s₂.mem.readW (slotA (State.addr B) rconSlot) 32 = rcW ((i - 1) / nk) := by
     rw [f₂.readW (Region.contains_self _ _) (rc_off_frame _) (by decide), hi.rc]
   refine rotTail_wp (by rw [o₂ _ (by decide), hi.r8]) (by rw [wr₂]; exact hscr) hs.fitB
     fun s₃ q₃ m₃ o₃ rd₃ wr₃ sp₃ => ⟨fun t ht => ?_, fun r hr => (o₃ r hr).trans (o₂ r hr),
       rd₃.trans rd₂, wr₃.trans wr₂, sp₃.trans sp₂, ?_, ?_⟩
-  · rw [q₃, xor_byte, rot_byte _ ht, h₂ 0 (by omega_arith) _ (by omega_arith), hi.temp _ (by omega_arith), rc₂,
+  · rw [q₃, xor_byte, rot_byte _ ht, h₂ _ (by omega_arith), hi.temp _ (by omega_arith), rc₂,
       rcW_byte _ ht]
     simp only [kTemp, h0, ite_true]
-    rw [xorWord_getD (by simp [subWord, rotWord_length hlen]) (by rfl) ht,
+    rw [xorWord_getD (by simp [Spec.Aes.subWord, rotWord_length hlen]) (by rfl) ht,
       subWord_getD (by rw [rotWord_length hlen]; exact ht), rotWord_getD hlen ht, rcon_getD _ ht,
       ← div_pred_zero h3 hi1 h0, Nat.add_sub_cancel]
   · rw [m₃]
-    refine Frame.writeW (r := ⟨State.addr B + BitVec.ofNat 64 164, 20⟩) (subAll_frame f₂) (by simp) _ ?_
+    refine Frame.writeW (r := ⟨State.addr B + BitVec.ofNat 64 164, 20⟩) (subWord_frame f₂) (by simp) _ ?_
     simp only [Region.Contains, slotA, rconSlot]
     rw [show State.addr B + BitVec.ofNat 64 (4 * 41) - (State.addr B + BitVec.ofNat 64 164) = 0 by
       bv_omega]
@@ -482,7 +560,7 @@ theorem temp_wp {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (
     WP isa (.ite .eq (.block rotWordStep)
       (.seq (.block [.dp .sub (q 1) .r11 (.imm 4), .dp .sub (q 2) .r12 (.imm 8),
           .dp .orr (q 1) (q 1) (.reg (q 2)), .cmp (q 1) (.imm 0)])
-        (.ite .eq (.block subAll) (.block [])))) s (Mid B kl nk i s) := by
+        (.ite .eq (.block subWord) (.block [])))) s (Mid B kl nk i s) := by
   have h3 := hs.nk3
   obtain hnk : 0 < nk := by omega_arith
   obtain hmod := Nat.mod_lt i hnk
@@ -510,12 +588,12 @@ theorem temp_wp {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (
   refine WP.ite _ hev₄ (fun hb₄ => ?_) (fun hb₄ => ?_)
   · -- `SUBWORD(temp)`.
     obtain h8 : nk = 8 ∧ i % nk = 4 := by simp at hb₄; omega_arith
-    refine subAll_wp (by rw [g₄ _ (by decide), hi.r8]) (by rw [wr₄, hi.wr]; exact hs.scr) hs.fitB
+    refine subWord_wp (by rw [g₄ _ (by decide), hi.r8]) (by rw [wr₄, hi.wr]; exact hs.scr) hs.fitB
       fun s₅ h₅ rd₅ wr₅ sp₅ o₅ f₅ => ?_
     rw [m₄] at f₅
     refine ⟨fun t ht => ?_, fun r hr => (o₅ r hr).trans (g₄ r hr), rd₅.trans rd₄, wr₅.trans wr₄,
-      sp₅.trans sp₄, subAll_frame f₅, ?_⟩
-    · rw [h₅ 0 (by omega_arith) _ ht, show Q s₄ 0 = s₄.gpr (q 0) from rfl, hq0, hi.temp _ ht]
+      sp₅.trans sp₄, subWord_frame f₅, ?_⟩
+    · rw [h₅ _ ht, hq0, hi.temp _ ht]
       rw [kTemp, ite_eq_right h0, ite_eq_left (show nk > 6 ∧ i % nk = 4 by omega_arith),
         subWord_getD (by rw [hlen]; exact ht)]
     · rw [f₅.readW (Region.contains_self _ _) (rc_off_frame _) (by decide), hi.rc, div_pred_ne h3 h0]
