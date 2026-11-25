@@ -415,6 +415,15 @@ inductive Instr
   `zmm2`, unsigned, for `j` from 0 to 31, and its bits 63:32 are zero
   (see `cmpltuMask`). -/
   | vpcmpltuw (dst : Reg) (src1 src2 : XReg)
+  /-- `vpcmpuq k1, ymm1, ymm2, imm8` (`EVEX.256.66.0F3A.W1 1E /r ib`),
+  then `kmovw r32, k1` and `kxorw k1, k1, k1`. The low four bits of
+  the destination give the results of unsigned quadword comparisons, with
+  predicate equal (0) or greater than (6). The other bits and k1 are zero. -/
+  | evCmpUq (gt : Bool) (dst : Reg) (src1 src2 : VReg)
+  /-- `kmovw k1, r32; vpaddq ymm1 {k1}, ymm2, ymm3; kxorw k1, k1, k1`.
+  Add the quadwords selected by bits 3:0 of `mask`. Other quadwords retain
+  their destination value. Bits above the vector length and k1 are zero. -/
+  | evMaskAddQ (mask : Reg) (dst src1 src2 : VReg)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -621,6 +630,7 @@ def Instr.requires : Instr → List String
   | .kLoad .. | .kStore .. => ["avx512f"]
   | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
   | .vpcmpltuw .. => ["avx512f", "avx512bw"]
+  | .evCmpUq .. | .evMaskAddQ .. => ["avx512f", "avx512vl"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
@@ -638,6 +648,22 @@ unsigned integers (see `exec`). -/
 def cmpltuMask (s : State) (a b : XReg) : BitVec 32 :=
   BitVec.ofNat 32 ((List.range 32).foldl
     (fun acc j => if (s.zword a j).toNat < (s.zword b j).toNat then acc + 2 ^ j else acc) 0)
+
+/-- SDM Vol. 2, VPCMPUQ predicates EQ (0) and NLE (6). KMOVW transfers
+the mask to a 32-bit register, and KXORW clears the temporary mask. -/
+def cmpUqMask (gt : Bool) (a b : BitVec 256) : BitVec 32 :=
+  BitVec.ofNat 32 ((List.range 4).foldl (fun acc j =>
+    let x := a.extractLsb' (64 * j) 64
+    let y := b.extractLsb' (64 * j) 64
+    if (if gt then y.toNat < x.toNat else x = y) then acc + 2 ^ j else acc) 0)
+
+/-- SDM Vol. 2, VPADDQ (EVEX.256, merging-masking). The four mask bits
+select modular 64-bit sums, with the old destination in masked-off lanes. -/
+def maskAddQ (mask : BitVec 64) (dst a b : BitVec 256) : BitVec 256 :=
+  let lane := fun j =>
+    if mask.getLsbD j then (a.extractLsb' (64 * j) 64) + (b.extractLsb' (64 * j) 64)
+    else dst.extractLsb' (64 * j) 64
+  lane 3 ++ lane 2 ++ lane 1 ++ lane 0
 
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
 `DEST := ZeroExtend(SRC)` (with a 32-bit destination, zero-extended to 64
@@ -877,6 +903,8 @@ def exec : Instr → State → Option State
   -- k1`): `DEST[31:0] := ZeroExtend(SRC[31:0])`, a 32-bit destination
   -- zero-extended to 64 bits (SDM Vol. 1 §3.4.1.1); "Flags Affected: None".
   | .vpcmpltuw d a b, s => some (s.setReg32 d (cmpltuMask s a b))
+  | .evCmpUq gt d a b, s => some (s.setReg32 d (cmpUqMask gt (s.vy a) (s.vy b)))
+  | .evMaskAddQ k d a b, s => some (s.setVy d (maskAddQ (s.gpr k) (s.vy d) (s.vy a) (s.vy b)))
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -961,7 +989,7 @@ def addrs : Instr → State → List Addr
   -- instruction makes the same number of observations.
   | .kLoad k _ m, s | .kStore m k _, s => [s.ea m, (s.gpr k).setWidth 8 |>.setWidth 64]
   | .kLoad8 k _ m, s | .kStore8 m k _, s => [s.ea m, s.gpr k]
-  | .vpcmpltuw .., _ => []
+  | .vpcmpltuw .., _ | .evCmpUq .., _ | .evMaskAddQ .., _ => []
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -1110,12 +1138,12 @@ def Instr.dst : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
-  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => some d
+  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. | .evCmpUq _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
+  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore .. | .evMaskAddQ ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call

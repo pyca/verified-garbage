@@ -482,6 +482,26 @@ def cmplt (a b : XReg) : Option (BitVec 64) := (exec (.vpcmpltuw .rax a b) sC).m
 #guard Instr.encode (.vpcmpltuw .r11 .xmm12 .xmm9) ==
   some [[0x62, 0xd3, 0x9d, 0x48, 0x3e, 0xc9, 0x01], [0xc5, 0x7b, 0x93, 0xd9]]
 
+-- From least to most significant: equal, greater, less, unsigned greater.
+def uqCompareState : State :=
+  (sC.setVy (.lo .xmm3) ((0xffffffffffffffff#64) ++ (1#64) ++ (3#64) ++ (2#64))).setVy
+    (.hi .xmm24) ((0#64) ++ (2#64) ++ (2#64) ++ (2#64))
+
+#guard (exec (.evCmpUq false .rdx (.lo .xmm3) (.hi .xmm24)) uqCompareState).map (·.gpr .rdx) == some 1
+#guard (exec (.evCmpUq true .rdx (.lo .xmm3) (.hi .xmm24)) uqCompareState).map (·.gpr .rdx) == some 10
+#guard Instr.encode (.evCmpUq true .rdx (.lo .xmm3) (.hi .xmm24)) ==
+  some [[0x62, 0x93, 0xe5, 0x28, 0x1e, 0xc8, 0x06], [0xc5, 0xf8, 0x93, 0xd1], [0xc5, 0xf4, 0x47, 0xc9]]
+
+-- Add to lanes 0 and 2 only. Lane 2 wraps and the other lanes retain DST.
+def maskAddState : State :=
+  ((uqCompareState.setReg .rdx 0x105).setVy
+    (.hi .xmm25) ((3#64) ++ (0xffffffffffffffff#64) ++ (2#64) ++ (4#64)))
+
+#guard (exec (.evMaskAddQ .rdx (.lo .xmm3) (.lo .xmm3) (.hi .xmm25)) maskAddState).map
+    (·.vy (.lo .xmm3)) == some ((0xffffffffffffffff#64) ++ (0#64) ++ (3#64) ++ (6#64))
+#guard Instr.encode (.evMaskAddQ .rdx (.lo .xmm3) (.lo .xmm3) (.hi .xmm25)) ==
+  some [[0xc5, 0xf8, 0x92, 0xca], [0x62, 0x91, 0xe5, 0x29, 0xd4, 0xd9], [0xc5, 0xf4, 0x47, 0xc9]]
+
 /-! ## `EVEX.512` forms on `zmm0`–`zmm31` (`E5Op`), and the memory forms beside them
 
 Each expected value was computed on an Intel Xeon with AVX512_IFMA (Granite

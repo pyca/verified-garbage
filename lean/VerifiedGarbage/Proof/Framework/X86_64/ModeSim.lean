@@ -74,6 +74,8 @@ theorem exec_withMx {i : Instr} (hi : touchesMxcsr i = false) (s : State) (m : B
   case vop op =>
     simp only [reduceExec, Option.map_some]
     cases op <;> simp only [reduceVOpExec, withMx_ite] <;> rfl
+  case evMaskAddQ =>
+    simp only [reduceExec, Option.map_some, setVy_withMx, vy_withMx]
   case eop op =>
     simp only [reduceExec, Option.map_some]
     cases op <;> simp only [EOp.exec, setVy_withMx, vy_withMx] <;> rfl

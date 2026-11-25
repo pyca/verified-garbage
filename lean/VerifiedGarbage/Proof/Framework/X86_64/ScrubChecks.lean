@@ -59,14 +59,14 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .evCmpUq _ d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpbroadcastdZ .. | .zbcstd .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
+  | .e5op _ | .evMaskAddQ .. | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- Whether an instruction may write the general-purpose register `r`. -/
@@ -87,7 +87,7 @@ def Instr.vecLevel : Instr → Nat
   | .vpmadd52Load .. | .zop _ | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .zbcst ..
   | .vpbroadcastdZ .. | .zbcstd .. | .kLoad .. | .kLoad8 .. => 1
   | .vbroadcasti32x4H .. | .eop _ | .evLoad .. | .evMadd52Load .. | .ldmxcsr _
-  | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => 2
+  | .e5op _ | .evMaskAddQ .. | .evBroadcastLoad .. | .e5InsertLoad .. => 2
   | _ => 0
 
 /-- The level of the vector registers alone: `vecLevel`, but `ldmxcsr`,

@@ -1065,7 +1065,7 @@ def stepFn1 (i : Instr) : RStep :=
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
-  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .evCmpUq _ d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _
   | .aluTbl _ d .. => bif isSp d then ⟨fun _ => none⟩ else fastFn (Taint.stepKeepFn i) (some d)
   -- Plain, writing no general-purpose register.
   | _ => fastFn (Taint.stepKeepFn i) none

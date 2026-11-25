@@ -184,7 +184,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | movzx16 d m => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | aluTbl _ d m _ _ => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | vpmovmskb _ d _ => cases hs; exact k d
-  | vpcmpltuw d _ _ => cases hs; exact k d
+  | vpcmpltuw d _ _ | evCmpUq _ d _ _ => cases hs; exact k d
   | movqR d _ => cases hs; exact k d
   | movdquLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | movdquStore m _ => exact storeStepKD_nil h hs
@@ -202,7 +202,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | zbcst _ _ _ m | vpbroadcastdZ _ m | zbcstd _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vpmadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vmovdqu32Store m _ => exact storeStepKD_nil h hs
-  | eop _ | e5op _ => cases hs; exact nx
+  | eop _ | e5op _ | evMaskAddQ _ _ _ _ => cases hs; exact nx
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evBroadcastLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx

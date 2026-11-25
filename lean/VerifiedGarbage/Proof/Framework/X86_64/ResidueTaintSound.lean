@@ -50,6 +50,7 @@ theorem exec_unknowns_pres (i : Instr) (s : State) :
   case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
+  case evMaskAddQ k d a b => cases d <;> exact Pres.some' rfl
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
   case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
@@ -81,6 +82,7 @@ theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
   case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
+  case evMaskAddQ k d a b => cases d <;> exact Pres.some' rfl
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
   case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vbinLoad _ len _ _ _ => cases len <;> simp only [reduceExec] <;> uk_go

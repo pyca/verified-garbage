@@ -250,7 +250,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [e₁, e₂, e₃]
     exact ite_eq_left_of_eq_true _ _ (eq_true hc') |>.trans rfl
   | vpmovmskb len d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
-  | vpcmpltuw d a b => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
+  | vpcmpltuw d a b | evCmpUq _ d a b => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movqR d r => simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; rfl
   | movdquLoad d m =>
     simp only [reduceExec, Option.map_eq_some_iff] at h
@@ -293,6 +293,9 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     · exact store256_widen hw h
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h ⊢; subst h; cases op <;> rfl
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
+    exact setVy_withRegions _ _ _ _ _
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h ⊢; subst h
     cases op <;> exact setVy_withRegions _ _ _ _ _
@@ -473,6 +476,8 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     · simp only [reduceExec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> exact ⟨rfl, rfl⟩
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact ⟨rfl, rfl⟩
   | e5op op =>
@@ -546,6 +551,8 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
       rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | zop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact Frame.refl _ _
+  | evMaskAddQ _ d _ _ =>
+    simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> exact Frame.refl _ _
   | eop op =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact Frame.refl _ _
   | e5op op =>
@@ -785,6 +792,8 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
     · simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
+    · rename_i _ d _ _
+      simp only [reduceExec, Option.some.injEq] at h; subst h; cases d <;> rfl
     · simp only [reduceExec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
       split at h <;> cases h; rfl

@@ -307,6 +307,9 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     cases len <;> simp only [exec, Option.map_map] <;>
       rw [show (s.patch H hv u).ea m = s.ea m from rfl] <;> simp only [load128_patch hc, load256_patch hc] <;> rfl
   | zop op => simp only [exec, Option.map_some]; congr 1; cases op <;> rfl
+  | evMaskAddQ _ d _ _ =>
+    simp only [exec, Option.map_some]; congr 1
+    cases d <;> rfl
   | eop op =>
     simp only [exec, Option.map_some]; congr 1
     cases op <;> simp only [EOp.exec, State.setVy] <;> (try split) <;> rfl

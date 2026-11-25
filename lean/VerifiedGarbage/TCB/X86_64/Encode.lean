@@ -651,6 +651,13 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .vpcmpltuw d a b => do
     return [← evex 1 3 true 2 (xreg a) 0x3E 1 (.reg (xreg b)) (imm := [1]),
       ← vex 3 1 false 0 0 0x93 (reg d) (.reg 1)]
+  | .evCmpUq gt d a b => do
+    return [← evex 1 3 true 1 (vreg a) 0x1E 1 (.reg (vreg b)) (imm := [if gt then 6 else 0]),
+      ← vex 0 1 false 0 0 0x93 (reg d) (.reg 1), [0xc5, 0xf4, 0x47, 0xc9]]
+  | .evMaskAddQ k d a b => do
+    return [← vex 0 1 false 0 0 0x92 1 (.reg (reg k)),
+      ← evex 1 1 true 1 (vreg a) 0xD4 (vreg d) (.reg (vreg b)) (aaa := 1),
+      [0xc5, 0xf4, 0x47, 0xc9]]
   -- "STMXCSR" (`NP 0F AE /3`), "LDMXCSR" (`NP 0F AE /2`), "LFENCE" (`NP 0F AE
   -- E8`).
   | .stmxcsr m => (legacy [] false [0x0F, 0xAE] 3 (.mem m)).map ([·])

@@ -348,6 +348,10 @@ def Instr.asm : Instr → List String
   | .kStore m k r => [s!"kmovw k1, {k.name32}", s!"vmovdqu64 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
   | .kLoad8 k d m => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {d.zname} " ++ "{k1}{z}" ++ s!", {m.str512}"]
   | .kStore8 m k r => [s!"kmovq k1, {k.name}", s!"vmovdqu8 {m.str512} " ++ "{k1}" ++ s!", {r.zname}"]
+  | .evMaskAddQ k d a b => [s!"kmovw k1, {k.name32}",
+      s!"vpaddq {d.yname} " ++ "{k1}" ++ s!", {a.yname}, {b.yname}", "kxorw k1, k1, k1"]
+  | .evCmpUq gt d a b => [s!"vpcmpuq k1, {a.yname}, {b.yname}, {if gt then 6 else 0}",
+      s!"kmovw {d.name32}, k1", "kxorw k1, k1, k1"]
   | .vpcmpltuw d a b => [s!"vpcmpuw k1, {a.zname}, {b.zname}, 1", s!"kmovd {d.name32}, k1"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
@@ -399,7 +403,7 @@ def Instr.memOps : Instr → List MemOp
   | .stmxcsr m | .ldmxcsr m | .callm m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
-  | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw ..
+  | .vpmovmskb .. | .zop _ | .eop _ | .e5op _ | .vpcmpltuw .. | .evCmpUq .. | .evMaskAddQ ..
   | .lfence | .mul _ | .imul .. | .imul3 .. | .shld .. | .btr ..
   | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => []
 
