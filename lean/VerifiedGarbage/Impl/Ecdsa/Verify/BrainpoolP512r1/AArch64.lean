@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Sum
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
 
 @[expose] public section
@@ -9,13 +10,8 @@ namespace VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1
 
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
-/-- General complete addition uses `a` and `3b`. -/
-def slots (c : Ecdsa.AArch64.Cfg) : RcbSlots := { c.rcbSlots with b3 := c.sl EXPP }
-
-def sum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
-  .seq (fprogB c.MP' (rcb (slots c) (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++
-      (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
+abbrev slots := GeneralSum.slots
+abbrev sum := GeneralSum.sum
 
 /-- `[u]G + [v]Q`: `u`, then `v`, to `K`'s slot, which the calls of
 `vg_brainpoolp512r1_mul` read, with `r` kept meanwhile in `EM`'s slot (free until the final

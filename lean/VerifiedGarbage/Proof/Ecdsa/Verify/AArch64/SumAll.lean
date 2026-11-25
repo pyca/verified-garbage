@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Sum
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
@@ -31,14 +33,9 @@ open VG.Proof.Ecdsa.AArch64
 
 variable {c : VG.Impl.Ecdsa.AArch64.Cfg}
 
-/-- General complete addition uses `a` and `3b`. -/
-def slots (c : Cfg) : RcbSlots := { c.rcbSlots with b3 := c.sl EXPP }
-
-/-- `R = U + R`, by the complete formulas, through `D`. -/
-def sum (c : Cfg) : Prog isa :=
-  .seq (fprogB c.MP' (rcb (slots c) (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++
-      (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
+abbrev slots := GeneralSum.slots
+abbrev inlineSum := GeneralSum.inlineSum
+abbrev sum := GeneralSum.sum
 
 abbrev sumR : List Nat := [AP, EXPP, UX, UY, UZ, RX, RY, RZ]
 abbrev sumSl : List Nat := sumR ++ [T0, T1, T2, T3, T4, T5, DX, DY, DZ]
@@ -47,9 +44,10 @@ abbrev sumSl : List Nat := sumR ++ [T0, T1, T2, T3, T4, T5, DX, DY, DZ]
 addition by a call of `padd`) includes. -/
 abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ]
 
-theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem inlineSum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
-    WP isa (sum c) s fun s' =>
+    WP isa (inlineSum c) s fun s' =>
+      s'.gpr .x30 = s.gpr .x30 ∧
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
       ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p ∧ sv c base s' RY < c.C.p) ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
@@ -72,7 +70,7 @@ theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s bas
       exact List.mem_map_of_mem (sub i hi)
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       exact hlt i hi
-  unfold sum
+  unfold inlineSum GeneralSum.inlineSum
   have hAl : Aligned c.MP' (· ∈ sumSl.map c.sl) := ⟨fun x hx => by
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
     fun f m' h => (hc.call_p f m' h).2⟩
@@ -120,11 +118,13 @@ theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s bas
     simp only [List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
     rcases hw with (⟨y, hy, rfl⟩ | hw) | hw | hw | hw
-    · simp only [rcbW, slots, Cfg.rcbSlots, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hy
+    · simp only [rcbW, slots, GeneralSum.slots, Cfg.rcbSlots, Cfg.pt, List.mem_cons, List.not_mem_nil, or_false] at hy
       rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [MP'_n]
     all_goals (subst hw; simp [MP'_n, MP'_tmp])
-  refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
+  refine ⟨?_, hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
+  · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide)]
+    exact k₁.gpr _ (fun h => absurd (mem_clobAll h) (by decide))
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.n10, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red, hM₁.call⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega_using [hn, this])]
@@ -143,5 +143,22 @@ theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s bas
     show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
     exact (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+
+theorem sum_full_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
+    WP isa (sum c) s fun s' =>
+      Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
+      ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p ∧ sv c base s' RY < c.C.p) ∧
+      (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
+        rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl EXPP))
+          (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
+          (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) := by
+  rw [sum, GeneralSum.sum]
+  split
+  · have he : Scr s.callEntry base size :=
+      ⟨(State.callEntry_gpr s (by decide)).trans hs.x0, hs.wr, hs.nowrap, hs.enc⟩
+    obtain ⟨tr, t, exec, link, post⟩ := inlineSum_full_ok hc he hM hlt
+    exact ⟨_, t, Exec.call (call_callEntry s) exec (by simp only [isa, ret, link, ite_true]), post⟩
+  · exact WP.mono (inlineSum_full_ok hc hs hM hlt) fun _ h => h.2
 
 end VG.Proof.Ecdsa.Verify.AArch64.JointKit
