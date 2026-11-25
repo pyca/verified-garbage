@@ -2,21 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Absorb
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lit
 
 /-! # Keccak-f[1600] on AArch64, in general registers: the backend of the sponge -/
 
 @[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar
-
-materialize_code core
-materialize_code permute
-materialize_code absorbBlocks
 
 /-- The sponge's callee. -/
 def callee : Callee where
