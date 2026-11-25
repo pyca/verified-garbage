@@ -28,6 +28,8 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.MillerRabin.X86_64
 /-- The arithmetic a backend gives the round's callers, and the round they
 inline: Montgomery multiplication by `mm`, which inlines to `mont.mm`. -/
 structure RoundArith where
+  /-- The arithmetic backend's suffix, shared by rounds using the same arithmetic. -/
+  arithSuffix : String := ""
   mont : Mont
   /-- Arithmetic specialized for callers that inline their multiplication.
   The callable kernel may dispatch on operand indices at run time; this

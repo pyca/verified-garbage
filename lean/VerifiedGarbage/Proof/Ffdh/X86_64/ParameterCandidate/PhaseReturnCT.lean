@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicyCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
@@ -46,7 +48,7 @@ def PhaseReturned (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Pr
   (∃ n, CandidateTape d.p (d.used + n) s ∧ s.gpr .rdi = d.p.B ∧ PhaseOutcome d.p d.used n q c s.mem) ∧
     s.wr = d.wr ∧ InnerKW d.p.B d.wr ∧ s.zf = some (decide (policyStatus (d.decision q c) = 1))
 
-theorem modulusPolicy_done (M : Mont) (R : R2Impl M) (K : Kernel) (q : Bool) (c : Checks) (d : CandidatePublic) (s : State)
+theorem modulusPolicy_done (M : Mont) (R : Preparation M) (K : Kernel) (q : Bool) (c : Checks) (d : CandidatePublic) (s : State)
     (h : PhasePrime q c d s) : WP isa (modulusPolicy M.mm R.code K.run) s (PhaseDone q c d) := by
   obtain ⟨mi, hg, hp, hn⟩ := h.1.2
   exact WP.mono (modulusPolicy_ok M R K h.1.1.1 hg hp hn h.2)

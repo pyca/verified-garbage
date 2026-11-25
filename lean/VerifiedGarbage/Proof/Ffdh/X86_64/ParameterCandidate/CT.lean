@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
@@ -23,7 +25,7 @@ def finishPublic (p : CandidateP) : OuterPublic :=
   ⟨p.B, candidateWr p, p.op, p.k, p.up, p.bits,
     Proof.Ffdh.candidateStatus (Spec.Ffdh.sievedParameterCandidate p.bits p.gen p.rand), p.rp⟩
 
-private theorem body_finish (M : Mont) (R : R2Impl M) (K : Kernel) (p : CandidateP) (s : State) (h : CR p s) :
+private theorem body_finish (M : Mont) (R : Preparation M) (K : Kernel) (p : CandidateP) (s : State) (h : CR p s) :
     WP isa (body M.mm R.code K.run) s (FinishHeader (finishPublic p)) := by
   have hk := pc_kw h.1
   have hw := pc_wr h.1
@@ -38,13 +40,13 @@ private theorem body_finish (M : Mont) (R : R2Impl M) (K : Kernel) (p : Candidat
   · simp only [List.mem_singleton] at he; subst e
     exact hr.1
 
-theorem code_ct (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem code_ct (M : Mont) (R : Preparation M) (K : Kernel) :
     RelCT isa (Two CR) (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) fun _ _ => True := by
   unfold VG.Impl.Ffdh.X86_64.ParameterCandidate.code
   exact RelCT.seq (two_post (body_ct M R K) (body_finish M R K))
     (two_map finishPublic (fun _ _ h => h) finish_ct)
 
-theorem pc_constantTime (M : Mont) (R : R2Impl M) (K : Kernel) :
+theorem pc_constantTime (M : Mont) (R : Preparation M) (K : Kernel) :
     ConstantTime isa pcContract.pre pcContract.pub
       (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) := by
   refine RelCT.constantTime ((code_ct M R K).mono

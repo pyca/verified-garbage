@@ -127,6 +127,7 @@ namespace VG.Proof.Variants.MillerRabin.X86_64.Adx
 open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 
 def arith : RoundArith where
+  arithSuffix := "_adx"
   mont := Mont.fnAdx
   inlineMont := Mont.fnAdxSpecialized
   inlineDepth := by

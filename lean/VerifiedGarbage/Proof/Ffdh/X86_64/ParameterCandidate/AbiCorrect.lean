@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
+
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
@@ -294,7 +296,7 @@ private theorem finish_result {p : CandidateP} {used : Nat} {s t : State}
       · simpa only [he, Proof.Ffdh.candidateStatus, ite_true, hi] using hbytes
       · simpa only [he, Proof.Ffdh.candidateStatus, Nat.reduceEqDiff, ite_false, hcount] using hused
 
-theorem correct_ok (M : Mont) (R : R2Impl M) (K : Kernel) {s : State} (c : PcCtx s) :
+theorem correct_ok (M : Mont) (R : Preparation M) (K : Kernel) {s : State} (c : PcCtx s) :
     WP isa (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) s fun t => pcPost s t ∧
       (∀ r ∈ saved, t.gpr r = s.gpr r) ∧ Keep (.rdi :: mmRegs) s t := by
   unfold VG.Impl.Ffdh.X86_64.ParameterCandidate.code
@@ -346,7 +348,7 @@ private theorem ret_frame {c : Prog isa} {s t : State} {tr : List Leak}
   · simp only [List.mem_singleton] at hr; subst r
     exact Offset.base_disjoint_below _ (by omega_using [hd])
 
-theorem pc_correct (M : Mont) (R : R2Impl M) (K : Kernel)
+theorem pc_correct (M : Mont) (R : Preparation M) (K : Kernel)
     (hs : SpSafe (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run))
     (hd : (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run).x86_64Depth ≤ 128)
     (hmx : ctlOk (VG.Impl.Ffdh.X86_64.ParameterCandidate.code M.mm R.code K.run) = true)
