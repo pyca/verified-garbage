@@ -321,17 +321,163 @@ def st51():
 B['m51'] = mul51(448, 320, 224); B['m51_dep'] = mul51(224, 224, 224)
 B['s51'] = sqr51(448, 224); B['s51_dep'] = sqr51(224, 224)
 B['st51'] = ['mov x19, #100'] + st51()
+
+# ---- NEON pairs, radix 2^51 ----
+NS = {'x2': 16, 'z2': 64, 'x3': 112, 'z3': 160, 'A': 208, 'B': 256, 'C': 304, 'D': 352, 'AA': 400, 'BB': 448, 'x1': 560, 'E': 608, 'F': 656}
+KM51, KM26, KM25, K19 = 704, 720, 736, 752      # constants: 2^51-1, 2^26-1, 2^25-1 (2d), 19 (4s)
+VSP = 768                                        # vector spills
+def v2(op, d, *r): return f'{op} v{d}.2d, ' + ', '.join(f'v{x}.2d' if isinstance(x, int) else x for x in r)
+def vand(d, a, b): return f'and v{d}.16b, v{a}.16b, v{b}.16b'
+def split(o1, o2, dst, t=(28, 29, 30), m=31):
+    """The limbs of [o1], [o2] into dst[k] = [lo1, lo2, hi1, hi2]; m = mask26."""
+    r = []
+    a, b, c = t
+    for k in (0, 2):
+        r += [f'ldr q{a}, [x0, #{o1+8*k}]', f'ldr q{b}, [x0, #{o2+8*k}]', v2('trn1', c, a, b), v2('trn2', a, a, b)]
+        for src, d in ((c, dst[k]), (a, dst[k+1])):
+            r += [vand(b, src, m), v2('ushr', src, src, '#26'), f'uzp1 v{d}.4s, v{b}.4s, v{src}.4s']
+    r += [f'ldr q{a}, [x0, #{o1+32}]', f'ldr q{b}, [x0, #{o2+32}]', v2('trn1', c, a, b), vand(b, c, m), v2('ushr', c, c, '#26'), f'uzp1 v{dst[4]}.4s, v{b}.4s, v{c}.4s']
+    return r
+def um(acc, d, a, b, hi):
+    """d += a b (d = a b the first time)."""
+    op = 'umlal' if d in acc else 'umull'; acc.add(d)
+    s = '4s' if hi else '2s'
+    return f"{op}{'2' if hi else ''} v{d}.2d, v{a}.{s}, v{b}.{s}"
+def vreduce(E, X, o1, o2, t):
+    """E[m] + 2^26 X[m], m < 5, reduced into [o1], [o2]; t: 6 temporaries."""
+    a, b, c, m26, m25, m51 = t
+    r = [f'ldr q{m26}, [x0, #{KM26}]', f'ldr q{m25}, [x0, #{KM25}]']
+    # round 1: carries E_m -> X_m (26), X_m -> E_(m+1) (25), X_4 -> E_0 times 19
+    r += [v2('ushr', c, X[4], '#25'), vand(X[4], X[4], m25)]
+    r += [v2('ushr', a, E[4], '#26'), vand(E[4], E[4], m26), v2('add', X[4], X[4], a)]
+    for m in (3, 2, 1, 0):
+        r += [v2('ushr', b, X[m], '#25'), vand(X[m], X[m], m25), v2('add', E[m+1], E[m+1], b)]
+        r += [v2('ushr', a, E[m], '#26'), vand(E[m], E[m], m26), v2('add', X[m], X[m], a)]
+    r += [v2('add', E[0], E[0], c), v2('shl', a, c, '#1'), v2('shl', c, c, '#4'), v2('add', E[0], E[0], a), v2('add', E[0], E[0], c)]
+    # limbs
+    for m in range(5): r += [v2('shl', X[m], X[m], '#26'), v2('add', E[m], E[m], X[m])]
+    r += [f'ldr q{m51}, [x0, #{KM51}]']
+    for m in range(5): r += [v2('ushr', X[m], E[m], '#51'), vand(E[m], E[m], m51)]
+    for m in range(1, 5): r += [v2('add', E[m], E[m], X[m-1])]
+    r += [v2('add', E[0], E[0], X[4]), v2('shl', a, X[4], '#1'), v2('shl', c, X[4], '#4'), v2('add', E[0], E[0], a), v2('add', E[0], E[0], c)]
+    for k in (0, 2): r += [v2('trn1', a, E[k], E[k+1]), v2('trn2', b, E[k], E[k+1]), f'str q{a}, [x0, #{o1+8*k}]', f'str q{b}, [x0, #{o2+8*k}]']
+    # the fifth limbs, with the padding of the slots
+    r += [v2('trn1', a, E[4], E[4]), v2('trn2', b, E[4], E[4]), f'str q{a}, [x0, #{o1+32}]', f'str q{b}, [x0, #{o2+32}]']
+    return r
+def mu2(o1, a1, b1, o2, a2, b2):
+    Av, As, Bv, Bn = [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19]
+    r = [f'ldr q31, [x0, #{KM26}]'] + split(a1, a2, Av) + split(b1, b2, Bv)
+    r += [f'ext v{As[k]}.16b, v{Av[k]}.16b, v{Av[k]}.16b, #8' for k in range(5)]
+    r += [f'ldr q31, [x0, #{K19}]'] + [f'mul v{Bn[k]}.4s, v{Bv[k]}.4s, v31.4s' for k in range(5)]
+    E, X, H = [20,21,22,23,24], [25,26,27,28,29], [30,31]
+    acc = set()
+    # H_m (hi hi at m + 1) is summed first, doubled, and the lows added to it
+    for m in range(5):
+        for i in range(5):
+            j = (m - 1 - i) % 5                 # hi hi with i + j + 1 = m (mod 5)
+            r += [um(acc, E[m], Av[i], (Bn if i + j + 1 >= 5 else Bv)[j], True)]
+        r += [v2('add', E[m], E[m], E[m])]
+        for i in range(5):
+            j = (m - i) % 5
+            r += [um(acc, E[m], Av[i], (Bn if i + j >= 5 else Bv)[j], False)]
+        for i in range(5):
+            j = (m - i) % 5; b = (Bn if i + j >= 5 else Bv)[j]
+            r += [um(acc, X[m], As[i], b, False), um(acc, X[m], As[i], b, True)]
+    return r + vreduce(E, X, o1, o2, (0, 1, 2, 3, 4, 5))
+def sq2(o1, a1, o2, a2):
+    Av, As, Dv, N = [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19]   # a, a exchanged, 2a, 19a
+    r = [f'ldr q31, [x0, #{KM26}]'] + split(a1, a2, Av)
+    r += [f'ext v{As[k]}.16b, v{Av[k]}.16b, v{Av[k]}.16b, #8' for k in range(5)]
+    r += [f'add v{Dv[k]}.4s, v{Av[k]}.4s, v{Av[k]}.4s' for k in range(5)]
+    r += [f'ldr q31, [x0, #{K19}]'] + [f'mul v{N[k]}.4s, v{Av[k]}.4s, v31.4s' for k in range(5)]
+    E, X = [20,21,22,23,24], [25,26,27,28,29]
+    acc = set()
+    for m in range(5):
+        for i in range(5):
+            j = (m - 1 - i) % 5
+            if i > j: continue
+            r += [um(acc, E[m], Av[i] if i == j else Dv[i], (N if i + j + 1 >= 5 else Av)[j], True)]
+        r += [v2('add', E[m], E[m], E[m])]
+        for i in range(5):
+            j = (m - i) % 5
+            if i > j: continue
+            b = (N if i + j >= 5 else Av)[j]
+            r += [um(acc, E[m], Av[i] if i == j else Dv[i], b, False)]
+        for i in range(5):
+            j = (m - i) % 5
+            if i > j: continue
+            b = (N if i + j >= 5 else Av)[j]
+            # as_i [hi, lo] . b_j [lo, hi], doubled
+            if i == j: r += [f'add v30.4s, v{As[i]}.4s, v{As[i]}.4s', um(acc, X[m], 30, b, False)]
+            else: r += [f'add v30.4s, v{As[i]}.4s, v{As[i]}.4s', um(acc, X[m], 30, b, False), um(acc, X[m], 30, b, True)]
+    return r + vreduce(E, X, o1, o2, (0, 1, 2, 3, 4, 5))
+def weave(a, b):
+    n, m, i, j, out = len(a), len(b), 0, 0, []
+    while i < n and j < m:
+        if i * m <= j * n: out.append(a[i]); i += 1
+        else: out.append(b[j]); j += 1
+    return out + a[i:] + b[j:]
+def front_neon():
+    r = ['sub x19, x19, #1', 'add x17, x0, x19', 'ldrb w16, [x17, #1984]', 'ldrb w17, [x17, #1985]', 'eor x16, x16, x17', 'tst x16, x16'] + p2()
+    for k in range(5):
+        g = lambda n: f'[x0, #{NS[n]+8*k}]'
+        r += [f'ldr x1, {g("x2")}', f'ldr x2, {g("z2")}', f'ldr x3, {g("x3")}', f'ldr x4, {g("z3")}',
+              'csel x5, x3, x1, ne', 'csel x6, x4, x2, ne', 'csel x7, x1, x3, ne', 'csel x8, x2, x4, ne',
+              'add x9, x5, x6', f'add x5, x5, {P2[k]}', 'sub x5, x5, x6', 'add x10, x7, x8', f'add x7, x7, {P2[k]}', 'sub x7, x7, x8',
+              f'str x9, {g("A")}', f'str x5, {g("B")}', f'str x10, {g("C")}', f'str x7, {g("D")}']
+    return r
+def vbranch():
+    """AA, BB (NEON); E and AA + a24 E (NEON, limbs); x2, z2."""
+    r = sq2(NS['AA'], NS['A'], NS['BB'], NS['B'])
+    return r, mu2(NS['x2'], NS['AA'], NS['BB'], NS['z2'], NS['E'], NS['F'])
+def mid():
+    """E := AA - BB, F := AA + a24 E (scalar)."""
+    O = ['x6','x7','x8','x9','x10']
+    r = ld5(NS['AA'], B5) + ld5(NS['BB'], O) + p2()
+    r += [x for k in range(5) for x in (f'add {O[k]}, {B5[k]}, x{23 if k == 0 else 24}'.replace(f'{B5[k]}, x', f'{B5[k]}, x') if False else f'sub {O[k]}, {B5[k]}, {O[k]}', f'add {O[k]}, {O[k]}, {P2[k]}')]
+    r += [f'str {O[k]}, [x0, #{NS["E"]+8*k}]' for k in range(5)]
+    H = ['x11','x12','x13','x14','x15']
+    r += ['mov w16, #0xdb41', 'movk w16, #1, lsl #16', 'mov x17, #0xffff', 'movk x17, #0xffff, lsl #16', 'movk x17, #0xffff, lsl #32', 'movk x17, #7, lsl #48']
+    r += [f'umulh {H[k]}, {O[k]}, x16' for k in range(5)] + [f'mul {O[k]}, {O[k]}, x16' for k in range(5)]
+    r += [f'extr {H[k]}, {H[k]}, {O[k]}, #51' for k in range(5)] + [f'and {O[k]}, {O[k]}, x17' for k in range(5)] + ['mov w16, #19', 'mul x15, x15, x16']
+    r += [f'add {B5[k]}, {B5[k]}, {O[k]}' for k in range(5)] + [f'add {B5[k]}, {B5[k]}, {H[(k+4)%5]}' for k in range(5)]
+    return r + [f'str {B5[k]}, [x0, #{NS["F"]+8*k}]' for k in range(5)]
+def sbranch():
+    """DA, CB; then x3, t, z3 (scalar)."""
+    DC = mul51(NS['D'], NS['D'], NS['A']) + mul51(NS['C'], NS['C'], NS['B'])
+    O = ['x6','x7','x8','x9','x10']
+    r = ld5(NS['D'], B5) + ld5(NS['C'], O) + [f'add {B5[k]}, {B5[k]}, {O[k]}' for k in range(5)] + sqr51regs(NS['x3'])
+    r += ld5(NS['D'], B5) + ld5(NS['C'], O) + p2()
+    for k in range(5): r += [f'add {B5[k]}, {B5[k]}, {P2[k]}', f'sub {B5[k]}, {B5[k]}, {O[k]}']
+    r += sqr51regs(NS['z3'])
+    return DC, r + mul51(NS['z3'], NS['x1'], NS['z3'])
+def st_neon(wv=True):
+    f = front_neon(); v1, v2_ = vbranch(); s1, s2 = sbranch()
+    if wv: return f + weave(s1, v1) + mid() + weave(s2, v2_)
+    return f + s1 + v1 + mid() + s2 + v2_
+def ldstfix(b):
+    """ldp/stp beyond their reach as two ldr/str."""
+    out = []
+    for l in b:
+        m = __import__('re').match(r'(ld|st)p (x\d+), (x\d+), \[x0, #(\d+)\]', l)
+        if m and int(m[4]) > 504: out += [f'{m[1]}r {m[2]}, [x0, #{m[4]}]', f'{m[1]}r {m[3]}, [x0, #{int(m[4])+8}]']
+        else: out.append(l)
+    return out
+KC = ['mov x2, #0xffff','movk x2, #0xffff, lsl #16','movk x2, #0xffff, lsl #32','movk x2, #7, lsl #48','dup v0.2d, x2',f'str q0, [x0, #{KM51}]','lsr x3, x2, #25','dup v0.2d, x3',f'str q0, [x0, #{KM26}]','lsr x3, x2, #26','dup v0.2d, x3',f'str q0, [x0, #{KM25}]','mov x3, #19','lsl x4, x3, #32','add x3, x3, x4','dup v0.2d, x3',f'str q0, [x0, #{K19}]']
+B['sq2'] = sq2(NS['AA'], NS['A'], NS['BB'], NS['B'])
+B['mu2'] = mu2(NS['x2'], NS['A'], NS['B'], NS['z2'], NS['C'], NS['D'])
+B['sn1'] = ldstfix(['mov x19, #100'] + st_neon()); B['sn0'] = ldstfix(['mov x19, #100'] + st_neon(False))
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51'): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1'): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}
 out = ['//! Lab.', 'use criterion::{BenchmarkId, Criterion};', 'use crate::{BenchDyn, VG};', 'pub const USES: &[&str] = &["x25519"];']
 asm = []
 for n, body in B.items():
-    asm.append(f'.p2align 6\n.globl lab_{n}\nlab_{n}:\nstp x19, x20, [sp, #-96]!\nstp x21, x22, [sp, #16]\nstp x23, x24, [sp, #32]\nstp x25, x26, [sp, #48]\nstp d8, d9, [sp, #64]\n'
+    asm.append(f'.p2align 6\n.globl lab_{n}\nlab_{n}:\nstp x19, x20, [sp, #-144]!\nstp x21, x22, [sp, #16]\nstp x23, x24, [sp, #32]\nstp x25, x26, [sp, #48]\nstp d8, d9, [sp, #64]\nstp d10, d11, [sp, #80]\nstp d12, d13, [sp, #96]\nstp d14, d15, [sp, #112]\n'
       'mov x25, x1\nmov x26, x1\nmov x2, #12345\nmovk x2, #54321, lsl #48\nmov x3, #777\nmovk x3, #999, lsl #32\n2:\n' + '\n'.join(body) +
-      '\nsub x25, x25, #1\ncbnz x25, 2b\nldp d8, d9, [sp, #64]\nldp x25, x26, [sp, #48]\nldp x23, x24, [sp, #32]\nldp x21, x22, [sp, #16]\nldp x19, x20, [sp], #96\nret\n')
+      '\nsub x25, x25, #1\ncbnz x25, 2b\nldp d8, d9, [sp, #64]\nldp d10, d11, [sp, #80]\nldp d12, d13, [sp, #96]\nldp d14, d15, [sp, #112]\nldp x25, x26, [sp, #48]\nldp x23, x24, [sp, #32]\nldp x21, x22, [sp, #16]\nldp x19, x20, [sp], #144\nret\n')
 out.append('core::arch::global_asm!(r"' + '\n'.join(asm) + '");')
 out.append('unsafe extern "C" {\n' + ''.join(f'fn lab_{n}(p: *mut u64, n: u64);' for n in B) + '}')
 out.append('pub fn bench(c: &mut Criterion) { let mut buf = vec![0x1234_5678_9abc_def1u64; 2048]; let p = buf.as_mut_ptr();')
