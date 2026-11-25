@@ -108,16 +108,18 @@ structure PcCtx (s : State) : Prop where
   stackSize : 128 ≤ (s.gpr .rsp).toNat
   stackScr : (⟨s.gpr .rsp - 128#64, 128⟩ : Region).Disjoint
     ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
+  stackOut : (⟨s.gpr .rsp - 128#64, 128⟩ : Region).Disjoint
+    ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   stackRand : (⟨s.gpr .rsp - 128#64, 128⟩ : Region).Disjoint
     ⟨s.gpr .r9, (stackArg s 0).toNat⟩
 
 theorem pcCtx_of {s : State} (h : pcPre s) : PcCtx s := by
-  obtain ⟨_, hstack, hrd, hwr, dou, dor, dos, _, _, dus, _, drs, _, _, _, _, _, _, _, _, dbr, dbs, _,
+  obtain ⟨_, hstack, hrd, hwr, dou, dor, dos, _, _, dus, _, drs, _, _, _, _, _, _, dbo, _, dbr, dbs, _,
     wo, wu, wr, ws, hb1, hb2, hlen, hgen, hroom⟩ := h
   unfold Spec.Rsa.scratchWords at hroom
   refine ⟨hb1, hb2, hlen, hgen, by omega_using [hroom], Scr.of_mem (by rw [hwr]; simp) ws,
     ⟨?_, ?_⟩, ⟨?_, ?_⟩, Scr.of_mem (by rw [hwr]; simp) wu, src_of_region (by rw [hrd]; simp) (by omega_using []) drs,
-    ?_, apart_of dor (by omega_using []) (by omega_using []), apart_of dou (by omega_using []) (by omega_using []), hstack, dbs, dbr⟩
+    ?_, apart_of dor (by omega_using []) (by omega_using []), apart_of dou (by omega_using []) (by omega_using []), hstack, dbs, dbo, dbr⟩
   · intro i hi
     rw [hwr]
     exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, contains_byte _ (by omega_using [hi]) (by omega_using [])⟩

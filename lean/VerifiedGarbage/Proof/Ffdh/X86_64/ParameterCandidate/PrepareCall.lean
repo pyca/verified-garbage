@@ -22,19 +22,19 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Impl.Ffdh.X86_64.ParameterCandidate VG.Impl.Bignum.X86_64.Public
 
-private theorem entry_frame {p : CandidateP} {s : State} (h : CandidateBase p s) :
+theorem call_entry_frame {p : CandidateP} {s : State} (h : CandidateBase p s) :
     Frame [below p.sp 128] s.mem s.callEntry.mem := by
   exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
     (by rw [h.sp]; exact below_call _ (by decide) (by decide))
 
-private theorem entry_root {p : CandidateP} {s : State} (h : CandidateBase p s) :
+theorem call_entry_root {p : CandidateP} {s : State} (h : CandidateBase p s) :
     ∀ x, ofs p.B x < p.Z → s.callEntry.mem x = s.mem x := by
   intro x hx
-  exact entry_frame h x (by
+  exact call_entry_frame h x (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r
     exact h.stackRoot x (by change ofs p.B x + 1 ≤ p.Z; omega_using [hx]))
 
-private theorem root_word {B : Addr} {Z d : Nat} {m m' : Mem}
+theorem call_root_word {B : Addr} {Z d : Nat} {m m' : Mem}
     (hZ : Z ≤ 2 ^ 64) (he : ∀ x, ofs B x < Z → m' x = m x) (hd : d + 8 ≤ Z) :
     word m' B d = word m B d := by
   apply Mem.readW_congr
@@ -43,20 +43,20 @@ private theorem root_word {B : Addr} {Z d : Nat} {m m' : Mem}
   rw [ofs_off B (d := d) (i := i) (by omega_using [hd, hZ, hi])]
   omega_using [hd, hi]
 
-private theorem root_wv {B : Addr} {Z d w : Nat} {m m' : Mem}
+theorem call_root_wv {B : Addr} {Z d w : Nat} {m m' : Mem}
     (hZ : Z ≤ 2 ^ 64) (he : ∀ x, ofs B x < Z → m' x = m x) (hd : d + 8 * w ≤ Z) :
     wv m' B d w = wv m B d w :=
-  wv_congr fun i hi => root_word hZ he (by omega_using [hd, hi])
+  wv_congr fun i hi => call_root_word hZ he (by omega_using [hd, hi])
 
-private theorem entry_inner {p : CandidateP} {s : State} (h : CandidateBase p s) :
+theorem call_entry_inner {p : CandidateP} {s : State} (h : CandidateBase p s) :
     ∀ x, ofs (off p.B 256) x < p.Z - 256 → s.callEntry.mem x = s.mem x := by
   intro x hx
-  apply entry_root h
+  apply call_entry_root h
   rcases ofs_rebase p.B x (o := 256) (by decide) with ⟨_, he⟩ | ⟨_, he⟩
   · omega_using [hx, he]
   · omega_using [hx, he, h.size64]
 
-private theorem inner_frame {p : CandidateP} {s : State} {m m' : Mem} {rs : List (Nat × Nat)}
+theorem call_inner_frame {p : CandidateP} {s : State} {m m' : Mem} {rs : List (Nat × Nat)}
     (h : CandidateBase p s) (hf : Frm (off p.B 256) rs m m')
     (hrs : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z - 256) : InScr p.B p.Z m m' := by
   apply InScr.of_frm (hf.rebase (by decide : 256 < 2 ^ 64) (fun r hr => by
@@ -82,12 +82,12 @@ theorem prepareCall_state_ok (name : String) (M : Mont) (R : R2Impl M)
       PhaseHeader p q c t ∧ CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t := by
   have hd := h.base.phase_dims q
   have hz : slot (p.phaseWords q) 8 ≤ p.Z - 256 := hd.z
-  have hi := entry_inner h.base
-  have he := entry_root h.base
-  have hw (d : Nat) (hd : d + 8 ≤ p.Z) := root_word h.base.size64 he hd
+  have hi := call_entry_inner h.base
+  have he := call_entry_root h.base
+  have hw (d : Nat) (hd : d + 8 ≤ p.Z) := call_root_word h.base.size64 he hd
   have hg' := Good.of_inScr hg hz hi rfl (by rw [State.callEntry_gpr _ (by decide)]; exact hg.rdi)
   have hn' : wv s.callEntry.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q := by
-    rw [root_wv (Nat.le_trans (Nat.sub_le _ _) h.base.size64) hi (by
+    rw [call_root_wv (Nat.le_trans (Nat.sub_le _ _) h.base.size64) hi (by
       have hh := slot_le (w := p.phaseWords q) (show aN < 8 by decide)
       omega_using [hh, hz])]
     exact hn
@@ -96,7 +96,7 @@ theorem prepareCall_state_ok (name : String) (M : Mont) (R : R2Impl M)
     (by omega_using [h.base.phase_large q]) (h.base.phase_wordshape q).1)
     fun u ⟨mi', hu, hf, ku⟩ => ?_
   have hrs := fun r hr => (h.base.modulus_ranges q r hr).1
-  have hfroot := inner_frame h.base hf hrs
+  have hfroot := call_inner_frame h.base hf hrs
   have hh : ∀ j < 32, word u.mem p.B (8 * j) = word s.mem p.B (8 * j) := by
     intro j hj
     rw [hf.word_below hrs (by omega_using [h.base.header_room, h.base.size64]) (by decide) (by omega_using [hj])]
@@ -109,7 +109,7 @@ theorem prepareCall_state_ok (name : String) (M : Mont) (R : R2Impl M)
     · rw [show t.gpr r = u.gpr r by simp [t, State.setReg, hrsp], ku.gpr hr, State.callEntry_gpr _ hrsp]
   have hfr : CandidateFrame p s.mem t.mem := by
     intro a ha hout hstack
-    exact (hfroot a ha).trans (entry_frame h.base a (by simpa only [List.forall_mem_singleton] using hstack))
+    exact (hfroot a ha).trans (call_entry_frame h.base a (by simpa only [List.forall_mem_singleton] using hstack))
   have ht := h.keep hfr (fun j hj => hh j (by omega_using [hj])) kt
     (by simp [t, State.setReg, h.base.sp])
   have hu' : ModulusReady t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi' (p.phaseValue q) := by
@@ -123,7 +123,7 @@ theorem prepareCall_state_ok (name : String) (M : Mont) (R : R2Impl M)
       (fun r hr => (h.base.modulus_ranges q r hr).2) (by decide)]
     have hl : word s.callEntry.mem (off p.B 256) (8 * VG.Impl.Rsa.X86_64.Crt.sLink) =
         word s.mem (off p.B 256) (8 * VG.Impl.Rsa.X86_64.Crt.sLink) :=
-      root_word (Nat.le_trans (Nat.sub_le _ _) h.base.size64) hi (by
+      call_root_word (Nat.le_trans (Nat.sub_le _ _) h.base.size64) hi (by
         change 136 ≤ p.Z - 256
         have hh := hdr_lt_slot (p.phaseWords q) 8 (i := 31) (by decide)
         omega_using [hz, hh])
@@ -149,13 +149,13 @@ private theorem entry_prepare {q : Bool} {c : Checks} {d : CandidatePublic} {s :
     (h : PhasePrime q c d s) : PrepareBefore (d.prep q) s.callEntry := by
   have hp := h.1.prepare h.2
   obtain ⟨mi, hg, hd, hz, hw, hk⟩ := hp.1
-  have hi := entry_inner h.1.1.1.base
+  have hi := call_entry_inner h.1.1.1.base
   have hz8 : slot (d.prep q).w 8 ≤ (d.prep q).IZ := hd.z
   refine ⟨⟨mi, Good.of_inScr hg hz8 hi rfl ?_, hd, hz, hw, hk⟩, ?_, hp.2.2⟩
   · rw [State.callEntry_gpr _ (by decide)]; exact hg.rdi
   · change wv s.callEntry.mem (off d.p.B 256) (slot (d.p.phaseWords q) aN) (d.p.phaseWords q) = d.p.phaseValue q
     change slot (d.p.phaseWords q) 8 ≤ d.p.Z - 256 at hz8
-    rw [root_wv (Nat.le_trans (Nat.sub_le _ _) h.1.1.1.base.size64) hi (by
+    rw [call_root_wv (Nat.le_trans (Nat.sub_le _ _) h.1.1.1.base.size64) hi (by
       have hh := slot_le (w := d.p.phaseWords q) (show aN < 8 by decide)
       omega_using [hh, hz8])]
     exact hp.2.1

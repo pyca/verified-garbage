@@ -6,17 +6,16 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.GeneratorCT`, which only this module used -/

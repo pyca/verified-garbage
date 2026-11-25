@@ -149,8 +149,8 @@ theorem sieve_ct (q : Bool) (c : Checks) : RelCT isa (Two (SieveIn q c)) sieve f
     (fun d j s hj h => word_at q d (sieveCount_le d.p.bits) j s hj h)).mono (fun _ _ ⟨d, h₁, h₂⟩ => ⟨d, h₁, h₂⟩) fun _ _ h => h) ?_
   exact two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h) inner_sieveTail_ct
 
-theorem primeCheck_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)) primeCheck fun _ _ => True := by
-  unfold primeCheck
+theorem primeCheck_ct_inline (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)) primeCheckInline fun _ _ => True := by
+  unfold primeCheckInline
   refine RelCT.seq (two_post
     (two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h.header) inner_oddTest_ct)
     (odd_checked q c)) ?_
@@ -191,8 +191,8 @@ theorem sieveFirst_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)
       (fun _ _ ⟨d, h₁, h₂⟩ => ⟨d, h₁, h₂⟩) fun _ _ h => h) ?_
   exact two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h) inner_sieveTail_ct
 
-theorem earlyCheck_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)) earlyCheck fun _ _ => True := by
-  unfold earlyCheck
+theorem earlyCheck_ct_inline (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)) earlyCheckInline fun _ _ => True := by
+  unfold earlyCheckInline
   refine RelCT.seq (two_post
     (two_map (fun d : CandidatePublic => d.inner q) (fun _ _ h => h.header) inner_oddTest_ct)
     (odd_checked q c)) ?_
@@ -203,11 +203,5 @@ theorem earlyCheck_ct (q : Bool) (c : Checks) : RelCT isa (Two (PhaseLoaded q c)
 def PhaseChecked (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) : Prop :=
   PhaseLoaded q c d s ∧ s.zf = some (d.p.sieved (d.p.phaseValue q))
 
-theorem prime_checked (q : Bool) (c : Checks) (d : CandidatePublic) (s : State) (h : PhaseLoaded q c d s) :
-    WP isa primeCheck s (PhaseChecked q c d) := by
-  obtain ⟨mi, hg, hp, hn⟩ := h.2
-  exact WP.mono (primeCheck_state_ok h.1.1 hg hp hn)
-    fun t ⟨ht, hgt, hpt, hnt, hz, _, _, k, _⟩ =>
-      ⟨⟨⟨ht, k.2.2.trans h.1.2.1, h.1.2.2⟩, mi, hgt, hpt, hnt⟩, hz⟩
 
 end VG.Proof.Ffdh.X86_64.ParameterCandidate

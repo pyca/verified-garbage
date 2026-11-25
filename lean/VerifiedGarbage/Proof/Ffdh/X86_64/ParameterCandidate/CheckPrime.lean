@@ -707,12 +707,12 @@ theorem primeCheck_ok {s : State} {B O : Addr} {Z w bits : Nat} {minv : BitVec 6
     (hlr : InRegions (s.rd ++ s.wr) (off B (8 * VG.Impl.Rsa.X86_64.Crt.sLink)) 8)
     (hbr : InRegions (s.rd ++ s.wr) (off O (8 * oBits)) 8)
     (hbits : word s.mem O (8 * oBits) = BitVec.ofNat 64 bits) :
-    WP isa primeCheck s fun t =>
+    WP isa primeCheckInline s fun t =>
       t.zf = some (Spec.Ffdh.primeShape (wv s.mem B (slot w aN) w) &&
         !Spec.RsaKeyGen.obviouslyComposite bits (wv s.mem B (slot w aN) w)) ∧ Good t B Z w minv ∧
       Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
-  unfold primeCheck
+  unfold primeCheckInline
   refine WP.seq (WP.mono (oddTest_ok hg hZ hw) fun u ⟨hz, hm, k⟩ => ?_)
   have hgu : Good u B Z w minv := ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
     by rw [hm]; exact hg.hdr⟩
@@ -738,18 +738,19 @@ theorem primeCheck_ok {s : State} {B O : Addr} {Z w bits : Nat} {minv : BitVec 6
     exact WP.block_nil ⟨by simpa [Spec.Ffdh.primeShape, Bool.beq_eq_decide_eq, ho', ho] using hz,
       hgu, by rw [hm]; exact Frm.refl _ _ _, k.mono (by decide)⟩
 
-theorem primeCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
+theorem primeCheck_state_ok_inline {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
     (hp : PhaseHeader p q c s)
     (hn : wv s.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q) :
-    WP isa primeCheck s fun t => CandidateTape p used t ∧
+    WP isa primeCheckInline s fun t => CandidateTape p used t ∧
       Good t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi ∧ PhaseHeader p q c t ∧
       wv t.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q ∧
       t.zf = some (Spec.Ffdh.primeShape (p.phaseValue q) &&
         !Spec.RsaKeyGen.obviouslyComposite p.bits (p.phaseValue q)) ∧
       CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t ∧
-      Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k := by
+      Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k ∧
+      Frm (off p.B 256) [(slot (p.phaseWords q) aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem := by
   refine WP.mono (primeCheck_ok hg (h.base.phase_dims q).z (h.base.phase_table_room q)
     (by omega_using [(h.base.phase_room q).1])
     (by omega_using [(h.base.phase_room q).2.1])
@@ -785,18 +786,18 @@ theorem primeCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks
     ?_, by simpa only [hn] using hz,
     fun j hj => h.base.inner_header hf hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf hrs), kk,
-    h.base.output_eq (h.base.inner_changes hf hrs)⟩
+    h.base.output_eq (h.base.inner_changes hf hrs), hf⟩
   rw [hf.wv_eq (by rng_disj) (by
     have hz := (h.base.phase_dims q).z
     have hs := slot_le (w := p.phaseWords q) (show aN < 8 by decide)
     omega_using [hz, hs, h.base.size64])]
   exact hn
 
-/-- What `earlyCheck` accepts: odd, and none of the table's first
+/-- What `earlyCheckInline` accepts: odd, and none of the table's first
 `4 firstWords` entries divides it. -/
 def earlyOk (v : Nat) : Bool := v % 2 == 1 && !anyPre v (4 * firstWords)
 
-/-- The sieved shape implies `earlyOk`: `earlyCheck` rejects only what the
+/-- The sieved shape implies `earlyOk`: `earlyCheckInline` rejects only what the
 whole sieve rejects. -/
 theorem earlyOk_of_sieved {p : CandidateP} {v : Nat} (hv : 8161 < v) (h : p.sieved v = true) :
     earlyOk v = true := by
@@ -810,14 +811,14 @@ theorem earlyOk_of_sieved {p : CandidateP} {v : Nat} (hv : 8161 < v) (h : p.siev
   · simp [ho]
   · rw [anyPre_mono hN ha] at h; simp at h
 
-/-- `earlyCheck`: oddness, then the table's first words. -/
+/-- `earlyCheckInline`: oddness, then the table's first words. -/
 theorem earlyCheck_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) :
-    WP isa earlyCheck s fun t =>
+    WP isa earlyCheckInline s fun t =>
       t.zf = some (earlyOk (wv s.mem B (slot w aN) w)) ∧ Good t B Z w minv ∧
       Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r12, .r13, .r14, .r15] s t := by
-  unfold earlyCheck
+  unfold earlyCheckInline
   refine WP.seq (WP.mono (oddTest_ok hg hZ hw) fun u ⟨hz, hm, k⟩ => ?_)
   have hgu : Good u B Z w minv := ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
     by rw [hm]; exact hg.hdr⟩
@@ -833,17 +834,18 @@ theorem earlyCheck_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg 
     exact WP.block_nil ⟨by simpa [earlyOk, Bool.beq_eq_decide_eq, ho', ho] using hz,
       hgu, by rw [hm]; exact Frm.refl _ _ _, k.mono (by decide)⟩
 
-theorem earlyCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
+theorem earlyCheck_state_ok_inline {p : CandidateP} {used : Nat} {q : Bool} {c : Checks} {s : State} {mi : BitVec 64}
     (h : CandidateTape p used s)
     (hg : Good s (off p.B 256) (p.Z - 256) (p.phaseWords q) mi)
     (hp : PhaseHeader p q c s)
     (hn : wv s.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q) :
-    WP isa earlyCheck s fun t => CandidateTape p used t ∧
+    WP isa earlyCheckInline s fun t => CandidateTape p used t ∧
       Good t (off p.B 256) (p.Z - 256) (p.phaseWords q) mi ∧ PhaseHeader p q c t ∧
       wv t.mem (off p.B 256) (slot (p.phaseWords q) aN) (p.phaseWords q) = p.phaseValue q ∧
       t.zf = some (earlyOk (p.phaseValue q)) ∧
       CandidateSaved p s.mem t.mem ∧ CandidateFrame p s.mem t.mem ∧ Keep mmRegs s t ∧
-      Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k := by
+      Spec.Rsa.bytesAt t.mem p.op p.k = Spec.Rsa.bytesAt s.mem p.op p.k ∧
+      Frm (off p.B 256) [(slot (p.phaseWords q) aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem := by
   refine WP.mono (earlyCheck_ok hg (h.base.phase_dims q).z (h.base.phase_table_room q)
     (by omega_using [(h.base.phase_room q).1])
     (by omega_using [(h.base.phase_room q).2.1])) fun t ⟨hz, hgt, hf, k⟩ => ?_
@@ -871,7 +873,7 @@ theorem earlyCheck_state_ok {p : CandidateP} {used : Nat} {q : Bool} {c : Checks
     ?_, by simpa only [hn] using hz,
     fun j hj => h.base.inner_header hf hrs j (by omega_using [hj]),
     CandidateFrame.of_scr (h.base.inner_changes hf hrs), kk,
-    h.base.output_eq (h.base.inner_changes hf hrs)⟩
+    h.base.output_eq (h.base.inner_changes hf hrs), hf⟩
   rw [hf.wv_eq (by rng_disj) (by
     have hz := (h.base.phase_dims q).z
     have hs := slot_le (w := p.phaseWords q) (show aN < 8 by decide)
