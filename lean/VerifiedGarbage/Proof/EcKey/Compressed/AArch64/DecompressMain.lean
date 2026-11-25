@@ -406,22 +406,158 @@ theorem step_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Cha
     congr 1
     omega_arith
 
-theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
+theorem linearSteps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State} :
     ∀ (sts : List (Nat × Nat)) {s : State} {v : Nat},
       (∀ st ∈ sts, st.1 < 2 ^ 16 ∧ (st.2 = 0 ∨ (st.2 % 2 = 1 ∧ st.2 ≤ 15))) →
       ChainSt P base size m s₀ s → TblC P base m (bv P base m s₀) 8 s →
       wordsVal s.mem base P.acc P.M.n < m →
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) = bv P base m s₀ ^ v →
-      WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.steps P sts) s fun s' => ChainSt P base size m s₀ s' ∧
+      WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.linearSteps P sts) s fun s' => ChainSt P base size m s₀ s' ∧
         wordsVal s'.mem base P.acc P.M.n < m ∧
         toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) = bv P base m s₀ ^ chainVal v sts
   | [], _, _, _, h, _, hlt, hv => WP.block_nil ⟨h, hlt, hv⟩
   | (k, d) :: rest, s, v, hst, h, hT, hlt, hv => by
-    rw [VG.Impl.EcKey.Compressed.AArch64.Chain.steps]
+    rw [VG.Impl.EcKey.Compressed.AArch64.Chain.linearSteps]
     have h1 := hst (k, d) (List.mem_cons_self ..)
     exact WP.seq (WP.mono (step_ok hL B hm h1.1 h1.2 h hT hlt hv) fun s₁ ⟨S₁, T₁, lt₁, v₁⟩ =>
-      steps_ok hL B hm rest (fun st hs => hst st (List.mem_cons_of_mem _ hs)) S₁ T₁ lt₁ v₁)
+      linearSteps_ok hL B hm rest (fun st hs => hst st (List.mem_cons_of_mem _ hs)) S₁ T₁ lt₁ v₁)
+
+/-- Straight-line squarings preserve the outer window counter. -/
+theorem straightSquares_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m]
+    (hL : ChainLay P size) (B : Backend P m) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    {s₀ : State} : ∀ k {s : State} {v : Nat},
+    ChainSt P base size m s₀ s → TblC P base m (bv P base m s₀) 8 s →
+    wordsVal s.mem base P.acc P.M.n < m →
+    toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) = bv P base m s₀ ^ v →
+    WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.straightSquares P k) s fun t =>
+      ChainSt P base size m s₀ t ∧ TblC P base m (bv P base m s₀) 8 t ∧
+      wordsVal t.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal t.mem base P.acc P.M.n) = bv P base m s₀ ^ (v * 2 ^ k) ∧
+      t.gpr .x19 = s.gpr .x19
+  | 0, s, v, h, hT, hlt, hv => WP.block_nil ⟨h, hT, hlt, by simpa using hv, rfl⟩
+  | k + 1, s, v, h, hT, hlt, hv => by
+    rw [VG.Impl.EcKey.Compressed.AArch64.Chain.straightSquares]
+    refine WP.seq (WP.mono (straightSquares_ok hL B hm k h hT hlt hv) fun u ⟨S, T, lt, val, xc⟩ => ?_)
+    refine WP.mono (mul_ok B S.scr S.mod hL.mod hL.acc hL.acc hL.acc hL.acc8 hL.acc8 hL.acc8 lt
+      (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+          rcases hx with rfl | rfl | rfl <;> exact .inl rfl)) fun t ⟨kt, ltt, et⟩ => ?_
+    refine ⟨S.op hL (.inl rfl) kt, T.acc hL S.scr.nowrap (Nat.le_refl _) kt.unch, ltt, ?_,
+      (kt.gpr _ (x19_not_clob _)).trans xc⟩
+    rw [toM_mul hm et, val, ← Lean.Grind.Semiring.pow_add, Nat.pow_succ]
+    congr 1
+    rw [← Nat.mul_assoc, Nat.mul_two]
+
+/-- Four squarings and multiplication by the table's fifteenth power. -/
+theorem fullWindow_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m]
+    (hL : ChainLay P size) (B : Backend P m) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    {s₀ s : State} {v : Nat} (h : ChainSt P base size m s₀ s)
+    (hT : TblC P base m (bv P base m s₀) 8 s) (hlt : wordsVal s.mem base P.acc P.M.n < m)
+    (hv : toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) = bv P base m s₀ ^ v) :
+    WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindow P) s fun t =>
+      ChainSt P base size m s₀ t ∧ TblC P base m (bv P base m s₀) 8 t ∧
+      wordsVal t.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal t.mem base P.acc P.M.n) = bv P base m s₀ ^ (v * 2 ^ 4 + 15) ∧
+      t.gpr .x19 = s.gpr .x19 := by
+  rw [VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindow]
+  refine WP.seq (WP.mono (straightSquares_ok hL B hm 4 h hT hlt hv) fun u ⟨S, T, lt, val, xc⟩ => ?_)
+  have hslot := slot_le P (i := 7) (by decide)
+  have Ti := T.1 7 (by decide)
+  refine WP.mono (mul_ok B S.scr S.mod hL.mod hL.acc hL.acc
+    (by have := hL.tbl; omega_arith) hL.acc8 hL.acc8 (slot_mod8 P hL.tbl8 _) Ti.1
+    (by intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl
+        · exact .inl rfl
+        · exact .inl rfl
+        · exact .inr (.inr hslot))) fun t ⟨kt, ltt, et⟩ => ?_
+  refine ⟨S.op hL (.inl rfl) kt, T.acc hL S.scr.nowrap (Nat.le_refl _) kt.unch, ltt, ?_,
+    (kt.gpr _ (x19_not_clob _)).trans xc⟩
+  rw [toM_mul hm et, val, Ti.2, ← Lean.Grind.Semiring.pow_add]
+
+private theorem chainVal_append (xs ys : List (Nat × Nat)) (v : Nat) :
+    chainVal v (xs ++ ys) = chainVal (chainVal v xs) ys := by
+  induction xs generalizing v with
+  | nil => rfl
+  | cons x xs ih => cases x; exact ih _
+
+private theorem chainVal_windows_succ (n v : Nat) :
+    chainVal v (List.replicate (n + 1) (4, 15)) =
+      chainVal v (List.replicate n (4, 15)) * 2 ^ 4 + 15 := by
+  rw [List.replicate_succ', chainVal_append]
+  rfl
+
+/-- Repeated full windows, counted down by x19. -/
+theorem repeatWindows_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m]
+    (hL : ChainLay P size) (B : Backend P m) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    {s₀ s : State} {v n : Nat} (hn : 1 ≤ n) (hn16 : n < 2 ^ 16)
+    (h : ChainSt P base size m s₀ s) (hT : TblC P base m (bv P base m s₀) 8 s)
+    (hlt : wordsVal s.mem base P.acc P.M.n < m)
+    (hv : toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) = bv P base m s₀ ^ v) :
+    WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.repeatWindows P n) s fun t =>
+      ChainSt P base size m s₀ t ∧ TblC P base m (bv P base m s₀) 8 t ∧
+      wordsVal t.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal t.mem base P.acc P.M.n) =
+        bv P base m s₀ ^ chainVal v (List.replicate n (4, 15)) := by
+  rw [VG.Impl.EcKey.Compressed.AArch64.Chain.repeatWindows]
+  refine WP.seq (WP.mono (setCounter_ok s hn16) fun u ⟨xu, ku⟩ => ?_)
+  have Su : ChainSt P base size m s₀ u :=
+    ⟨h.scr.of_keeps ku (by decide), h.keep.trans ((Keeps.regs ku).mono fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; simp [powClob]), by rw [ku.mem]; exact h.unch,
+      by rw [ku.mem]; exact h.mod⟩
+  refine countLoop_ok (n := n) (by omega_arith) (Inv := fun j t =>
+      ChainSt P base size m s₀ t ∧ TblC P base m (bv P base m s₀) 8 t ∧
+      t.gpr .x19 = BitVec.ofNat 64 j ∧ wordsVal t.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal t.mem base P.acc P.M.n) =
+        bv P base m s₀ ^ chainVal v (List.replicate (n - j) (4, 15)))
+    (fun j t h1 h2 ⟨St, Tt, xt, lt, vt⟩ => ?_)
+    (fun t ⟨St, Tt, _, lt, vt⟩ => ⟨St, Tt, lt, by simpa using vt⟩) hn
+    ⟨Su, by unfold TblC; rw [ku.mem]; exact hT, xu, by rw [ku.mem]; exact hlt,
+      by simpa [ku.mem, Impl.Weierstrass.chainVal] using hv⟩
+  refine WP.seq (WP.mono (fullWindow_ok hL B hm St Tt lt vt) fun u ⟨Su, Tu, lu, vu, xu⟩ => ?_)
+  refine WP.mono (decCounter_ok u h1 (by omega_arith) (xu.trans xt)) fun w ⟨xw, kw⟩ => ?_
+  have Sw : ChainSt P base size m s₀ w :=
+    ⟨Su.scr.of_keeps kw (by decide), Su.keep.trans ((Keeps.regs kw).mono fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; simp [powClob]), by rw [kw.mem]; exact Su.unch,
+      by rw [kw.mem]; exact Su.mod⟩
+  refine ⟨⟨Sw, by unfold TblC; rw [kw.mem]; exact Tu, xw, by rw [kw.mem]; exact lu, ?_⟩, xw⟩
+  rw [kw.mem, vu, show n - (j - 1) = (n - j) + 1 by omega_arith, chainVal_windows_succ]
+
+private theorem fullWindows_prefix (sts : List (Nat × Nat)) :
+    sts = List.replicate (VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindows sts) (4, 15) ++
+      sts.drop (VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindows sts) := by
+  induction sts with
+  | nil => rfl
+  | cons st rest ih =>
+    by_cases hs : st = (4, 15)
+    · subst st
+      simpa [VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindows, List.replicate_succ] using
+        congrArg (List.cons (4, 15)) ih
+    · have hz : VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindows (st :: rest) = 0 := by
+        rw [VG.Impl.EcKey.Compressed.AArch64.Chain.fullWindows, ite_eq_right hs]
+      simp [hz]
+
+theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m]
+    (hL : ChainLay P size) (B : Backend P m) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+    {s₀ s : State} {v : Nat} (sts : List (Nat × Nat))
+    (hst : ∀ st ∈ sts, st.1 < 2 ^ 16 ∧ (st.2 = 0 ∨ (st.2 % 2 = 1 ∧ st.2 ≤ 15)))
+    (h : ChainSt P base size m s₀ s) (hT : TblC P base m (bv P base m s₀) 8 s)
+    (hlt : wordsVal s.mem base P.acc P.M.n < m)
+    (hv : toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) = bv P base m s₀ ^ v) :
+    WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.steps P sts) s fun t =>
+      ChainSt P base size m s₀ t ∧ wordsVal t.mem base P.acc P.M.n < m ∧
+      toM m (2 ^ (64 * P.M.n)) (wordsVal t.mem base P.acc P.M.n) = bv P base m s₀ ^ chainVal v sts := by
+  unfold VG.Impl.EcKey.Compressed.AArch64.Chain.steps
+  dsimp only
+  split
+  · rename_i hrun
+    refine WP.seq (WP.mono (repeatWindows_ok hL B hm (Nat.le_trans (by decide) hrun.2.1) hrun.2.2 h hT hlt hv)
+      fun u ⟨Su, Tu, lu, vu⟩ => ?_)
+    refine WP.mono (linearSteps_ok hL B hm _ (fun st hs => hst st (List.mem_of_mem_drop hs)) Su Tu lu vu)
+      fun t ⟨St, lt, vt⟩ => ⟨St, lt, ?_⟩
+    rw [vt]
+    congr 1
+    exact (chainVal_append _ _ v).symm.trans (congrArg (Impl.Weierstrass.chainVal v) (fullWindows_prefix sts).symm)
+  · exact linearSteps_ok hL B hm sts hst h hT hlt hv
 
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e` of the chain;
 only `powClob` and `chainW` change. -/
