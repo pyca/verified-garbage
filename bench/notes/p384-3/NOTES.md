@@ -101,3 +101,21 @@ script of mine and checked by the value-numbering certificate.
 product: a any 384-bit, b < p: T < R p. Mid < 2^385: its top word is 0 or 1.
 Word 9 takes k + C2 + carry + top(P1) which is >= 0 as P0h + Mid + 2^192 P2l >= 0.
 linear: 9A+8B' < 17p, 3A+8B' < 11 p: t < 2^5, t c < 2^134, L + t c < 2^384 + 2^134 < 2p.
+
+# Measurements of the prototypes (CI aarch64, CPU part 0xd49; runs 45669004711, 45669474920)
+
+`gen.py`, `gen2.py` (candidates), `asm.py`, `asm2.py` (what was timed; no proofs).
+Eight dependent / eight independent operations, ns: Karatsuba 257 / 243,
+schoolbook 254 / 235, square 211 / 184. Single instructions, 256 of each, ns:
+add chain 65 (so a cycle is about 0.25 ns), add/adc/lsl/csel 20.5 (4 a cycle),
+adds 31 (about 2.2 a cycle), mul, umulh, extr 38 (about 2 a cycle), madd 76,
+mul latency 2, umulh 3, str 72 (about 1 a cycle), ldr 29.
+
+So: multiplies are not the bound (Karatsuba is a tie and is dropped: simpler
+code), and neither is the instruction count: 255 instructions in 118 cycles.
+Independent copies hardly overlap: the window (some 160 instructions) holds
+less than one operation, so what binds is the depth of the product followed
+by that of the reduction. Hence: reduce two words as soon as two rows of the
+product are in (rows 0-1, reduce, rows 2-3, reduce, rows 4-5, reduce), so that
+the reduction runs beside the next rows; only 8-9 accumulator words live.
+To be checked with a small model of the pipeline (`sim.py`) before the code.
