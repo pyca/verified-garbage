@@ -163,7 +163,7 @@ vg_camellia_modes_prepare_encrypt_18:
 	ld t4, 432(a5)
 	ld t6, 448(a5)
 	ld a6, 456(a5)
-	ld a7, 464(a5)
+	ld s8, 464(a5)
 	srli t0, s0, 16
 	xor t0, t0, s0
 	and t0, t0, t3
@@ -260,30 +260,30 @@ vg_camellia_modes_prepare_encrypt_18:
 	xor s7, s7, t0
 	slli t0, t0, 8
 	xor s7, s7, t0
-	srli t0, s0, 1
-	xor t0, t0, s1
-	and t0, t0, t6
-	xor s1, s1, t0
-	slli t0, t0, 1
-	xor s0, s0, t0
-	srli t0, s2, 1
-	xor t0, t0, s3
-	and t0, t0, t6
-	xor s3, s3, t0
-	slli t0, t0, 1
-	xor s2, s2, t0
-	srli t0, s4, 1
-	xor t0, t0, s5
-	and t0, t0, t6
-	xor s5, s5, t0
-	slli t0, t0, 1
+	srli t0, s0, 4
+	xor t0, t0, s4
+	and t0, t0, s8
 	xor s4, s4, t0
-	srli t0, s6, 1
-	xor t0, t0, s7
-	and t0, t0, t6
-	xor s7, s7, t0
-	slli t0, t0, 1
+	slli t0, t0, 4
+	xor s0, s0, t0
+	srli t0, s1, 4
+	xor t0, t0, s5
+	and t0, t0, s8
+	xor s5, s5, t0
+	slli t0, t0, 4
+	xor s1, s1, t0
+	srli t0, s2, 4
+	xor t0, t0, s6
+	and t0, t0, s8
 	xor s6, s6, t0
+	slli t0, t0, 4
+	xor s2, s2, t0
+	srli t0, s3, 4
+	xor t0, t0, s7
+	and t0, t0, s8
+	xor s7, s7, t0
+	slli t0, t0, 4
+	xor s3, s3, t0
 	srli t0, s0, 2
 	xor t0, t0, s2
 	and t0, t0, a6
@@ -308,30 +308,30 @@ vg_camellia_modes_prepare_encrypt_18:
 	xor s7, s7, t0
 	slli t0, t0, 2
 	xor s5, s5, t0
-	srli t0, s0, 4
-	xor t0, t0, s4
-	and t0, t0, a7
-	xor s4, s4, t0
-	slli t0, t0, 4
-	xor s0, s0, t0
-	srli t0, s1, 4
-	xor t0, t0, s5
-	and t0, t0, a7
-	xor s5, s5, t0
-	slli t0, t0, 4
+	srli t0, s0, 1
+	xor t0, t0, s1
+	and t0, t0, t6
 	xor s1, s1, t0
-	srli t0, s2, 4
-	xor t0, t0, s6
-	and t0, t0, a7
-	xor s6, s6, t0
-	slli t0, t0, 4
-	xor s2, s2, t0
-	srli t0, s3, 4
-	xor t0, t0, s7
-	and t0, t0, a7
-	xor s7, s7, t0
-	slli t0, t0, 4
+	slli t0, t0, 1
+	xor s0, s0, t0
+	srli t0, s2, 1
+	xor t0, t0, s3
+	and t0, t0, t6
 	xor s3, s3, t0
+	slli t0, t0, 1
+	xor s2, s2, t0
+	srli t0, s4, 1
+	xor t0, t0, s5
+	and t0, t0, t6
+	xor s5, s5, t0
+	slli t0, t0, 1
+	xor s4, s4, t0
+	srli t0, s6, 1
+	xor t0, t0, s7
+	and t0, t0, t6
+	xor s7, s7, t0
+	slli t0, t0, 1
+	xor s6, s6, t0
 	sd s0, 0(a1)
 	sd s1, 8(a1)
 	sd s2, 16(a1)
