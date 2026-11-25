@@ -226,7 +226,7 @@ theorem fold255Pre_ok (s : State) (h20 : (s.gpr .x20).toNat < 2 ^ 8) :
 /-- The carry chain of `fold255`: x9 into x4, x2 into x5 and x8 into x6. -/
 theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
-      .adcs .x .x7 .x7 .x10]) s fun t =>
+      .adc .x .x7 .x7 .x10]) s fun t =>
       ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * c.toNat =
         val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + (s.gpr .x9).toNat +
           2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
@@ -234,8 +234,8 @@ theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
   reg_exec hz
   refine ⟨carryOut (s.gpr .x7) 0 (carryOut (s.gpr .x6) (s.gpr .x8)
       (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false))), ?_,
-    ⟨?_, by simp only [RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_addWithCarry],
-      by simp only [RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_addWithCarry]⟩⟩
+    ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have e0 := addCarry_value (s.gpr .x4) (s.gpr .x9) false
     obtain e1 := addCarry_value (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false)
     obtain e2 := addCarry_value (s.gpr .x6) (s.gpr .x8)
@@ -261,10 +261,10 @@ theorem fold255_ok (s : State) (hz : s.gpr .x10 = 0) (h20 : (s.gpr .x20).toNat <
       Keeps [.x9, .x7, .x11, .x16, .x4, .x5, .x6] s t := by
   rw [Impl.Ed25519.AArch64.fold255, show ([.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
       .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
-      .adcs .x .x7 .x7 .x10] : List Instr) =
+      .adc .x .x7 .x7 .x10] : List Instr) =
     [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
       .mul .x .x9 .x9 .x11] ++ [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
-      .adcs .x .x7 .x7 .x10] from rfl, WP.block_append_iff]
+      .adc .x .x7 .x7 .x10] from rfl, WP.block_append_iff]
   refine WP.mono (fold255Pre_ok s h20) fun s₁ ⟨e9, e7, k1⟩ => ?_
   refine WP.mono (fold255Chain_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun t ⟨c, ec, k2⟩ => ?_
   rw [k1.gpr .x4 (by decide), k1.gpr .x5 (by decide), k1.gpr .x6 (by decide), k1.gpr .x2 (by decide),
