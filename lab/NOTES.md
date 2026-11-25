@@ -169,3 +169,15 @@ Registers of a product: row by row over a: b 5, 19 b 4, columns 10, product 2,
 a_i 1: 22 = x1-x17, x20-x24 but x1 (the output's address, kept in memory).
 
 Experiment 7: `m51`, `s51` (alone and dependent) and the step `st51`.
+
+## 9. Experiment 7's result (run 45680363598): radix 2^51 rejected
+
+Product 43.1 (dependent 48.8), square 31.6 (dependent 39.6), step 396: no
+better than the first step, though it sets flags a third as often. Its 1308
+instructions run at 3.3 a cycle, and its products at 3.3. The prediction (4 a
+cycle) was wrong. What runs best here runs at about 3.1-3.3: `mul50_chain4x25`
+3.1, `m51` 3.3, `pair` 3.1; while the step in the order o3 runs at 2.5. So:
+fewest instructions (four words, 910), scheduled so that they run at about 3.1:
+910 / 3.1 = 293. Two ways to fill what is lost to dependent neighbours:
+schedule across operations (interleave at the granularity of carry chains), or
+run one pair of operations on NEON.
