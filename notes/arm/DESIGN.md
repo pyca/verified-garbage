@@ -63,3 +63,13 @@ Scratch: keys (480 B), spills, masks' none (made by movw/movt), counters and sav
 
 SM4, Camellia, SEED: same `toBs`-like transposes (exchanges as above); S-box circuits to be
 looked at after this is committed.
+
+## Final counts (added after the code)
+
+S-box 132 instructions (112 gates, 9 stores, 9 loads, 2 sums recomputed), inverse 133;
+in place in 12 registers (key expansion's shared form) 141.
+Found by: `lp.cpp`/`combo.py` (equal-size linear layers for the same targets),
+`sched3.cpp`/`sched4.cpp` (simulated annealing over orders with Belady eviction; sched4 may
+also recompute a wire as the sum of any two live ones), `alloc*.py` (register colouring that
+fixes the outputs to p 0..7).
+MixColumns per form 28/79/54/79; InvMixColumns 49/124/75/124; four rounds 842.
