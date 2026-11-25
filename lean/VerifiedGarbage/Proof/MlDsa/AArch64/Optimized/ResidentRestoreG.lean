@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract

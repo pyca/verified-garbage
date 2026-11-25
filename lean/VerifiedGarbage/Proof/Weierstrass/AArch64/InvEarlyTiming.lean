@@ -48,7 +48,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
-meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0

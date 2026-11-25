@@ -29,7 +29,7 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
