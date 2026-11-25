@@ -323,3 +323,10 @@ with the `adcs` that takes it, does better than the lab's. So orders are searche
 on the real blocks. Experiment 14: the emitted step cut into its operations, in
 orders that respect dependences (a random sample of 24), and the sums of DA
 and CB from one load (`one`).
+
+## 19. Experiment 14's result (run 45688803078)
+
+The landed order 350.1 cycles; 24 others 347.7 (r2: BB DA CB AA E t x3 z3 z2 x2)
+to 383. Order is worth 2.4 more cycles; the base is about 340. What is left is the
+NEON pair (h2 / ta: 334-331 with the lab's reduction, which is slower than
+`Word.lean`'s, so about 322-325 is expected with the real one): (C).
