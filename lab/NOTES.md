@@ -127,3 +127,45 @@ Candidates, operations that depend on each other apart:
  o2: DA CB AA BB t x3 x2 z3 z2
  o3: AA BB DA CB x2 z2 t x3 z3
 Doubling a square's cross products with `extr` (no flags; 7 setters less).
+
+## 7. Experiment 6's result (run 45679510352)
+
+Cycles: o0 393, o1 367 (without `extr` 369), o2 364, o3 360; square with `extr`
+27.9 (no gain alone). So order is worth about 15 cycles and the scalar parts'
+sum (310) is near the end of what scalar code gives: the base is about 325 (26.93 us,
+less an inversion of about 2 us). To go below it, work that writes no flags must
+run beside the scalar code: NEON `umull` (1 a cycle, 2 products each) next to it
+(`vmix100`: 100 `umlal` and 100 `mul` together in 100 cycles).
+
+## 8. Radix 2^51, from the flag limit
+
+(Recognised: five 51-bit limbs is a well-known representation of this field,
+and so is each of its steps. It is considered here because experiment 4's limit
+asks for it; counts and bounds below are this derivation's own.)
+
+With five limbs of 51 bits the carries of sums need no flags (there are 13 free
+bits), and a product's columns are sums of 128-bit products: `adds` and `adc`
+per term, one setter each, not chained to another column's. Setters: product 20
+(25 terms, 5 first of their column), square 10, sums and differences 0, against
+32, 20, 6-7. A step: 5 x 20 + 4 x 10 = 140, against 295.
+
+Bounds. Results below 2^51 + 2^13. Sums below 2^52 + 2^14; differences with 2p
+added (limbs 2^52 - 38, 2^52 - 2) below 2^52 + 2^51 + 2^13. A column is at most
+a0 b_c + 19 (the rest): 1 + 4 x 19 = 77 < 2^6.3 terms for column 0, so with
+factors < 2^52.6 and 2^52.1 a column is < 2^111, its carry (>> 51) < 2^60, and
+column 4 (no 19) has carry < 2^56, times 19 < 2^61. One parallel round: r_i =
+(l_i mod 2^51) + c_(i-1) < 2^51 + 2^61, r_0 with 19 c_4; a second parallel round:
+limb < 2^51 + 19 x 2^10 . So limbs < 2^51 + 2^15: fine.
+
+Instructions: product: 6 loads, 4 (19 b), 50, 40, round 1: 5 extr 5 and 5 add
+2 (19 c4), round 2: 4 add-with-lsr 5 and 3 (or lsr and add apart), 3 stores:
+about 128. Square about 92. Front about 75. The a24 product with no setters.
+In all about 1150: at 4 integer operations a cycle 250-260 cycles, multiplies
+390 / 2 = 195, setters 140. Latency of a product about 3 + 6 + 8 = 20-25,
+against 53, so dependences matter little: the order can be the plain one.
+Predicted 260-290, against 360 (o3) and the base's about 325.
+
+Registers of a product: row by row over a: b 5, 19 b 4, columns 10, product 2,
+a_i 1: 22 = x1-x17, x20-x24 but x1 (the output's address, kept in memory).
+
+Experiment 7: `m51`, `s51` (alone and dependent) and the step `st51`.
