@@ -1491,12 +1491,11 @@ theorem xCanon_ok {s : State} {base : Addr} {size c₀ : Nat} (hs : ScrC s base 
 
 /-! ## The multiplication -/
 
-/-- `mulP_arith` for a result plus one, `W`, from the reduction's carry in. -/
-theorem mulP_arith1 {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
-    (hA : A < (2 ^ 64) ^ 9) (hB : B < m) (hU : U < (2 ^ 64) ^ 9)
+/-- `mulP_arith1` for any operands whose product is below `2⁵⁷⁶ m`. -/
+theorem mulP_arith1P {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hAB : A * B < (2 ^ 64) ^ 9 * m) (hU : U < (2 ^ 64) ^ 9)
     (e : A * B + 512 * (2 ^ 64) ^ 8 * U + (2 ^ 64) ^ 9 = U + (2 ^ 64) ^ 9 * W + (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 * acc) :
     1 ≤ W ∧ W ≤ 2 * m ∧ (2 ^ 64) ^ 9 * (W - 1) = A * B + U * m := by
-  obtain hAB : A * B < (2 ^ 64) ^ 9 * m := Nat.mul_lt_mul'' hA hB
   obtain hm' : m = 512 * (2 ^ 64) ^ 8 - 1 := by omega_arith
   subst hm'
   generalize A * B = P at *
@@ -1504,6 +1503,13 @@ theorem mulP_arith1 {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
   obtain hacc : acc = 0 := by omega_arith
   subst hacc
   refine ⟨by omega_arith, by omega_arith, by omega_arith⟩
+
+/-- `mulP_arith` for a result plus one, `W`, from the reduction's carry in. -/
+theorem mulP_arith1 {A B U W m acc : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hA : A < (2 ^ 64) ^ 9) (hB : B < m) (hU : U < (2 ^ 64) ^ 9)
+    (e : A * B + 512 * (2 ^ 64) ^ 8 * U + (2 ^ 64) ^ 9 = U + (2 ^ 64) ^ 9 * W + (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 * acc) :
+    1 ≤ W ∧ W ≤ 2 * m ∧ (2 ^ 64) ^ 9 * (W - 1) = A * B + U * m :=
+  mulP_arith1P hm (Nat.mul_lt_mul'' hA hB) hU e
 
 theorem xRegs_clob : ∀ r ∈ Reg.rax :: Reg.rcx :: Reg.rdx :: xRegs, r ∈ clob 9 := by decide
 

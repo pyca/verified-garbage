@@ -170,9 +170,10 @@ theorem Core.mid {m : Nat} {base : Addr} {A B : Nat} {s s' : State} (h : Core m 
 
 theorem fnTmp_val : (fnMod true).tmp = 4024 := rfl
 
-theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a m : Nat}
-    (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520)
-    (hm : m + 1 = 512 * (2 ^ 64) ^ 8) (hB : wordsVal s.mem base a 9 < m) :
+/-- The square, of a number whose square is below `2⁵⁷⁶ m`. -/
+theorem sqrCore_okP {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a m : Nat}
+    (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520) (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hB : wordsVal s.mem base a 9 * wordsVal s.mem base a 9 < (2 ^ 64) ^ 9 * m) :
     WP isa (.block sqrCore) s
       (Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base a 9) s) := by
   have hnw := hs.nowrap
@@ -261,7 +262,7 @@ theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ :
   rw [e₆'] at e₇
   obtain hU : wordsVal s₇.mem base (fnMod true).tmp 9 < (2 ^ 64) ^ 9 := by
     rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9
-  obtain ⟨hW1, hW2, eW⟩ := mulP_arith1 hm hAl hB hU e₇.symm
+  obtain ⟨hW1, hW2, eW⟩ := mulP_arith1P hm hB hU e₇.symm
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun x hx => ?_, hW1, hW2, _, eW⟩
   · have hr' : ∀ k, xAcc k ≠ r := fun k h => hr (h ▸ List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (xAcc_ne k).2.2.2.2)))
@@ -272,6 +273,14 @@ theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ :
   · have hx' : ofs base x < (fnMod true).tmp ∨ (fnMod true).tmp + 72 ≤ ofs base x := by
       rw [fnTmp_val]; simpa only [fnTmp] using hx
     rw [O₇ x (by omega_using [hx']), O₆ x hx', hm₅, O₃ x (by omega_using [hx']), O₂ x hx']
+
+theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a m : Nat}
+    (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520)
+    (hm : m + 1 = 512 * (2 ^ 64) ^ 8) (hB : wordsVal s.mem base a 9 < m) :
+    WP isa (.block sqrCore) s
+      (Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base a 9) s) :=
+  sqrCore_okP hs hZ hbx ha hm
+    (Nat.mul_lt_mul'' (by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9) hB)
 
 /-! ## Moves -/
 
