@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Generate.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
@@ -48,18 +49,29 @@ theorem fill (v : RoundImpl) : FillG v.level.level stubStack stub (Generate.genC
   fill_gen
 
 /-- Key generation over `v`, before its cleanup. -/
-def plain [Key.KeyProof] (v : RoundImpl) : Unscrubbed Spec.RsaKeyGen.keySearchApi target where
+def plain [Key.KeyProof] (v : RoundImpl) : Unscrubbed Proof.RsaKeyGen.keySearchAskedApi target where
   code := Generate.genCode v
   verified := Generate.gen_verified v
   spSafe := Generate.genCode_sp v
 
-/-- `Spec.RsaKeyGen.keySearchApi`'s function as emitted over `v` meets its
+/-- `vg_rsa_generate` as emitted over `v` meets `keySearchAskedContract`, its
 contract in constant time and returns without secret residue. -/
-theorem keySearch_scrubbed [Key.KeyProof] (v : RoundImpl) :
+theorem keySearch_asked [Key.KeyProof] (v : RoundImpl) :
     VerifiedScrubbed target (Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Generate.searchCall v))
-      (Spec.RsaKeyGen.keySearchApi.contract X86_64.abi 552) 32 :=
+      (Proof.RsaKeyGen.keySearchAskedContract X86_64.abi 552) 32 :=
   verifiedScrubbedAllFillG (plain v) _ (Proof.Rsa.X86_64.Scrub.keySearchOut _) (fill v) (Nat.zero_le _)
     (Nat.le_refl _) (ha := stub_side)
+
+theorem keySearch_scrubbed [Key.KeyProof] (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Generate.searchCall v))
+      (Spec.RsaKeyGen.keySearchContract X86_64.abi 552) 32 :=
+  keySearch_imp (keySearch_asked v) id
+
+theorem keySearch_public [Key.KeyProof] (v : RoundImpl) :
+    Spec.RsaKeyGen.keySearchOut.Of X86_64.abi
+      (Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Generate.searchCall v))
+      (Spec.RsaKeyGen.keySearchContract X86_64.abi 552) :=
+  Proof.RsaKeyGen.keySearch_public (keySearch_asked v)
 
 theorem keySearch_spSafe (v : RoundImpl) :
     (Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Generate.searchCall v)).all (fun i => !isa.writesSp i) = true :=

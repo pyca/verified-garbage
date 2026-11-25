@@ -35,14 +35,14 @@ def encrypt : Prog isa := wiped "vg_aes_encrypt_blocks" Impl.Aes.RISCV64.encrypt
 def decrypt : Prog isa := wiped "vg_aes_decrypt_blocks" Impl.Aes.RISCV64.decryptBlocks
 
 theorem sat (g : List Byte → Spec.Aes.State → Spec.Aes.State) :
-    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g) false 32 none).pre s := by
+    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g 2048) false 32 none).pre s := by
   implies_sat [Spec.Aes.blocksSig, pre, RISCV64.abi, RISCV64.argRegs] [Proof.Aes.RISCV64.blocksSat]
     using Proof.Aes.RISCV64.blocksSat
 
 theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {name : String} {body : Prog isa}
     (h : Verified target body (Spec.Aes.blocksSig.contract abi (pre 64) (post 64 g) false 0 none))
     (hd : body.noFrames = true) :
-    Verified target (wiped name body) (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g) false 32 none) :=
+    Verified target (wiped name body) (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g 2048) false 32 none) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64)
     (k := 256) (n := 2048) (i := 4) h Proof.Zeroize.RISCV64.verified (by decide) rfl rfl rfl
@@ -50,10 +50,10 @@ theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {na
     (by rw [sdepth_of_noFrames (by decide)]) (Nat.zero_le _)
     (pre_local 64) (post_local 64 g) (post_out 64 g) (AesEcb.wiped 64 g) (sat g)
 
-theorem encrypt_verified : Verified target encrypt (Spec.AesEcb.encryptContract abi 32) :=
+theorem encrypt_verified : Verified target encrypt (wipedContract enc 2048 abi 32) :=
   wiped_verified (Proof.Aes.encryptBlocks_keyed Proof.Aes.RISCV64.encryptBlocks_verified) (by lit_decide)
 
-theorem decrypt_verified : Verified target decrypt (Spec.AesEcb.decryptContract abi 32) :=
+theorem decrypt_verified : Verified target decrypt (wipedContract dec 2048 abi 32) :=
   wiped_verified (Proof.Aes.decryptBlocks_keyed Proof.Aes.RISCV64.decryptBlocks_verified) (by lit_decide)
 
 end VG.Proof.AesEcb.RISCV64

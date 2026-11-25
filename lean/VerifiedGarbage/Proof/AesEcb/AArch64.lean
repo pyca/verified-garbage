@@ -24,9 +24,11 @@ of it by `callWipe`, which then zeroes the whole of `scratch` with
 `vg_zeroize` (`encrypt_verified`, `decrypt_verified`), then the cleanup that
 clears the registers it may write and zeroes its 32 bytes of stack (its
 postcondition reads the memory on return only within the buffers,
-`encryptOk`, `decryptOk`). Either way they meet their contract in constant
+`wipedOk`). Either way they leave the whole of `scratch` as it was, or all of it
+zero (`encrypt_wipes`, `decrypt_wipes`), and so meet their contract in constant
 time and return without secret residue (`encrypt_scrubbed`,
-`decrypt_scrubbed`).
+`decrypt_scrubbed`), and which bytes of `scratch` are zero is public
+(`encrypt_public`, `decrypt_public`).
 -/
 
 @[expose] public section
@@ -57,7 +59,7 @@ theorem decBlocks (v : BlocksImpl) :
   Proof.Aes.decryptBlocks_keyed (Verified.of_correct v.decOk v.decCt Aese.decryptBlocks_implies)
 
 theorem sat (g : List Byte → Spec.Aes.State → Spec.Aes.State) :
-    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g) false 32 none).pre s := by
+    ∃ s, (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g 2048) false 32 none).pre s := by
   implies_sat [Spec.Aes.blocksSig, pre, AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat
 
 theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0 := by
@@ -66,7 +68,7 @@ theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0
 theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {name : String} {body : Prog isa}
     (h : Verified target body (Spec.Aes.blocksSig.contract abi (pre 64) (post 64 g) false 0 none))
     (hd : body.noFrames = true) :
-    Verified target (wiped name body) (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g) false 32 none) :=
+    Verified target (wiped name body) (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g 2048) false 32 none) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64)
     (k := 256) (n := 2048) (i := 4) h Proof.Zeroize.AArch64.wideVerified (by decide) rfl rfl rfl
@@ -75,11 +77,11 @@ theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {na
     (pre_local 64) (post_local 64 g) (post_out 64 g) (AesEcb.wiped 64 g) (sat g)
 
 theorem encrypt_verified (v : BlocksImpl) :
-    Verified target (encrypt v) (Spec.AesEcb.encryptContract abi 32) :=
+    Verified target (encrypt v) (wipedContract enc 2048 abi 32) :=
   wiped_verified (encBlocks v) v.encNoFrames
 
 theorem decrypt_verified (v : BlocksImpl) :
-    Verified target (decrypt v) (Spec.AesEcb.decryptContract abi 32) :=
+    Verified target (decrypt v) (wipedContract dec 2048 abi 32) :=
   wiped_verified (decBlocks v) v.decNoFrames
 
 theorem args_length : ∀ s vals,
@@ -90,41 +92,17 @@ theorem args_length : ∀ s vals,
   exact regArgs_length Spec.Aes.blocksSig s (by decide)
 
 theorem encrypt_free (v : BlocksImpl) (h : v.scratch = 0) :
-    Verified target v.enc.code (Spec.AesEcb.encryptContract abi) :=
+    Verified target v.enc.code (wipedContract enc 0 abi) :=
   Verified.ecb_of_unwritten (encBlocks v) (v.encFree h) args_length
 
 theorem decrypt_free (v : BlocksImpl) (h : v.scratch = 0) :
-    Verified target v.dec.code (Spec.AesEcb.decryptContract abi) :=
+    Verified target v.dec.code (wipedContract dec 0 abi) :=
   Verified.ecb_of_unwritten (decBlocks v) (v.decFree h) args_length
 
-/-- ECB's postcondition reads the memory on return only within the buffers. -/
-theorem ecbPost_out (g : List Byte → Spec.Aes.State → Spec.Aes.State) : ∀ vs m m₁ m₂ x,
-    vs.length = (Spec.Aes.blocksSig.words abi.ptrBits).length →
-    (∀ b ∈ Sig.bufs Spec.Aes.blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply (Spec.Aes.blocksSig.words abi.ptrBits) (AesEcb.ecbPost abi.ptrBits g) vs m m₁ x →
-      Curry.apply (Spec.Aes.blocksSig.words abi.ptrBits) (AesEcb.ecbPost abi.ptrBits g) vs m m₂ x := by
-  intro vs m m₁ m₂ x hlen hb h
-  obtain ⟨a, b, c, d, e, rfl⟩ := AesEcb.vs_eq hlen
-  rw [AesEcb.bufs_eq] at hb
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
-  obtain ⟨h1, h2⟩ := h
-  refine ⟨fun key hk => ?_, fun z hz => ?_⟩
-  · show Spec.Aes.statesAt m₂ c (d.setWidth abi.ptrBits).toNat = (Spec.Aes.statesAt m c (d.setWidth abi.ptrBits).toNat).map (g key)
-    have hd := AesEcb.agree_of hb.2.1
-    rw [AesEcb.statesAt_congr fun i hi => hd i (by have := AesEcb.n_le (pb := abi.ptrBits) d; omega_using [hi, this])]
-    exact h1 key hk
-  · rw [← hb.2.2 z hz]
-    exact h2 z hz
-
-theorem encryptOk : Scrub.ScrubAllOk (Spec.AesEcb.encryptContract abi 32) 32
-    (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
+theorem wipedOk (g : List Byte → Spec.Aes.State → Spec.Aes.State) :
+    Scrub.ScrubAllOk (wipedContract g 2048 abi 32) 32 (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
   Scrub.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
-    (ecbPost_out AesEcb.enc)
-
-theorem decryptOk : Scrub.ScrubAllOk (Spec.AesEcb.decryptContract abi 32) 32
-    (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
-  Scrub.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
-    (ecbPost_out AesEcb.dec)
+    (ecbPost_out _ g 2048)
 
 private theorem wiped_scrubbed {k : Contract isa} {name : String} {body : Prog isa}
     (hv : Verified target (wiped name body) k) (hok : Scrub.ScrubAllOk k 32 0)
@@ -137,29 +115,49 @@ private theorem wiped_scrubbed {k : Contract isa} {name : String} {body : Prog i
 /-- `vg_aes_ecb_encrypt` over `v`, as emitted: its code with the vector
 registers it writes cleared where it needs no `scratch`, the call wiping
 `scratch`, then its cleanup, otherwise. -/
-theorem encrypt_scrubbed (v : BlocksImpl) :
+theorem encrypt_wipes (v : BlocksImpl) :
     VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.enc)
-      (Spec.AesEcb.encryptContract abi (if v.scratch = 0 then 0 else 32)) 0 := by
+      (wipedContract enc (if v.scratch = 0 then 0 else 2048) abi (if v.scratch = 0 then 0 else 32)) 0 := by
   unfold Impl.AesEcb.AArch64.Fn.blocks
   rw [v.encScratch_eq]
   by_cases h : v.scratch = 0
   · simp only [h, ↓reduceIte]
     exact ⟨Clears.Verified.withClears (encrypt_free v h) v.encVecsOk, v.encRes h _, fun ty _ h => by cases ty <;> cases h⟩
   · simp only [h, ↓reduceIte]
-    exact wiped_scrubbed (encrypt_verified v) encryptOk (Scrub.sideAll_noDit_of_calleeSide v.encScrub)
+    exact wiped_scrubbed (encrypt_verified v) (wipedOk enc) (Scrub.sideAll_noDit_of_calleeSide v.encScrub)
       v.encNoFrames
 
+theorem encrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.enc)
+      (Spec.AesEcb.encryptContract abi (if v.scratch = 0 then 0 else 32)) 0 :=
+  encrypt_imp (encrypt_wipes v) id
+
+theorem encrypt_public (v : BlocksImpl) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.AArch64.Fn.blocks v.enc)
+      (Spec.AesEcb.encryptContract abi (if v.scratch = 0 then 0 else 32)) :=
+  scratch_public (encrypt_wipes v)
+
 /-- `vg_aes_ecb_decrypt` over `v`, as emitted. -/
-theorem decrypt_scrubbed (v : BlocksImpl) :
+theorem decrypt_wipes (v : BlocksImpl) :
     VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.dec)
-      (Spec.AesEcb.decryptContract abi (if v.scratch = 0 then 0 else 32)) 0 := by
+      (wipedContract dec (if v.scratch = 0 then 0 else 2048) abi (if v.scratch = 0 then 0 else 32)) 0 := by
   unfold Impl.AesEcb.AArch64.Fn.blocks
   rw [v.decScratch_eq]
   by_cases h : v.scratch = 0
   · simp only [h, ↓reduceIte]
     exact ⟨Clears.Verified.withClears (decrypt_free v h) v.decVecsOk, v.decRes h _, fun ty _ h => by cases ty <;> cases h⟩
   · simp only [h, ↓reduceIte]
-    exact wiped_scrubbed (decrypt_verified v) decryptOk (Scrub.sideAll_noDit_of_calleeSide v.decScrub)
+    exact wiped_scrubbed (decrypt_verified v) (wipedOk dec) (Scrub.sideAll_noDit_of_calleeSide v.decScrub)
       v.decNoFrames
+
+theorem decrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.dec)
+      (Spec.AesEcb.decryptContract abi (if v.scratch = 0 then 0 else 32)) 0 :=
+  decrypt_imp (decrypt_wipes v) id
+
+theorem decrypt_public (v : BlocksImpl) :
+    Spec.AesEcb.scratchOut.Of abi (Impl.AesEcb.AArch64.Fn.blocks v.dec)
+      (Spec.AesEcb.decryptContract abi (if v.scratch = 0 then 0 else 32)) :=
+  scratch_public (decrypt_wipes v)
 
 end VG.Proof.AesEcb.AArch64

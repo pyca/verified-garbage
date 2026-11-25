@@ -15,10 +15,9 @@ public import VerifiedGarbage.Impl.AesCbc.Arm.Wiped
 `vg_aes_cbc_encrypt_unwiped` and `vg_aes_cbc_decrypt_unwiped`) by
 `callWipeStack`, which copies the two stack arguments (`n` and `scratch`)
 into its frame for the call, then zero the whole of `scratch` (2176 bytes,
-which the CBC proofs do not bound) with `vg_zeroize`, leaving it scrubbed
-(`encrypt_scrubbed`, `decrypt_scrubbed`), with 32 bytes of stack (the CBC
-code's 8 and `callWipeStack`'s 24). `encrypt_verified` and
-`decrypt_verified` state them as the contracts of `Spec/Cbc/`.
+which the CBC proofs do not bound) with `vg_zeroize`, so that all of it is zero
+(`encrypt_verified`, `decrypt_verified`: `wipedContract`), with 32 bytes of stack
+(the CBC code's 8 and `callWipeStack`'s 24).
 -/
 
 @[expose] public section
@@ -44,7 +43,7 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 32} {name : String} {body : Pro
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 32) P vs m m₁ x → Curry.apply (Spec.Cbc.aesSig.words 32) P vs m m₂ x) :
     Verified target (Impl.AesCbc.Arm.Wiped.wiped name body)
-      (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 P) false 32 none) :=
+      (Spec.Cbc.aesSig.contract abi (pre 32) (wipedPost 32 P fun i => decide (i < 2176)) false 32 none) :=
   Verified.callWipeStack' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (kk := 272) (n := 2176) (i := 5) (k := 2) (off := 4) (stack := 8)
@@ -53,20 +52,14 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 32} {name : String} {body : Pro
     hd (by decide) (Nat.zero_le _)
     (pre_local 32) hpost hout (Wipe.wiped 32 P) (sat _)
 
-theorem encrypt_scrubbed :
-    Verified target Impl.AesCbc.Arm.Wiped.encrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (encPost 32)) false 32 none) :=
+theorem encrypt_verified :
+    Verified target Impl.AesCbc.Arm.Wiped.encrypt (wipedContract encPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.encrypt_keyed Proof.AesCbc.Arm.encrypt_verified) (by decide)
     (encPost_local 32) (encPost_out 32)
 
-theorem decrypt_scrubbed :
-    Verified target Impl.AesCbc.Arm.Wiped.decrypt (Spec.Cbc.aesSig.contract abi (pre 32) (scrubbedPost 32 (decPost 32)) false 32 none) :=
+theorem decrypt_verified :
+    Verified target Impl.AesCbc.Arm.Wiped.decrypt (wipedContract decPost (fun i => decide (i < 2176)) abi 32) :=
   wiped_verified (Proof.AesCbc.decrypt_keyed Proof.AesCbc.Arm.decrypt_verified) (by decide)
     (decPost_local 32) (decPost_out 32)
-
-theorem encrypt_verified : Verified target Impl.AesCbc.Arm.Wiped.encrypt (Spec.Cbc.aesEncryptContract abi 32) :=
-  encrypt_scrubbed
-
-theorem decrypt_verified : Verified target Impl.AesCbc.Arm.Wiped.decrypt (Spec.Cbc.aesDecryptContract abi 32) :=
-  decrypt_scrubbed
 
 end VG.Proof.AesCbc.Arm.Wiped

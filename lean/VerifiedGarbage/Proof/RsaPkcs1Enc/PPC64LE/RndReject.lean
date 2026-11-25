@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Alloc
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Random
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -136,9 +136,9 @@ structure RPre (s : State) : Prop where
   hsl : Spec.Rsa.publicScratchWords (s.gpr .r7).toNat ≤ (stackArg s 4).toNat
   hql : (stackArg s 6).toNat = Spec.Rsa.precomputedWords (s.gpr .r7).toNat
 
-theorem pre_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre s) : RPre s := by
+theorem pre_of {s : State} (h : (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre s) : RPre s := by
   rw [rndStack_eq] at h
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
     stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, dOt, dOn, dOe, dOm, dOr, dOs, dOq, dOa, dTn, dTe, dTm, dTr, dTs, dTq, dTa,
     dNs, dEs, dMs, dRs, dSq, dSa, dKo, dKt, dKn, dKe, dKm, dKr, dKs, dKq, dKa,
@@ -812,7 +812,7 @@ def post (s u : State) : Prop :=
   let res := Spec.RsaPkcs1Enc.padSearch (psLen s) (randB s)
   (∃ req, u.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 res.used ∧
     u.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧
-    res.Requests (Spec.RsaPkcs1Enc.padEntropy (psLen s)) req) ∧
+    Proof.RsaPkcs1Enc.PadAsked (psLen s) (randB s) req) ∧
   match res.outcome with
   | .accepted ps => Spec.Rsa.publicPrecompute (nB s) = some (preW s) →
       Spec.RsaPkcs1Enc.writtenRandom u.mem (s.gpr .r3) (kOf s) ((u.gpr .r3).setWidth 32)
@@ -1409,9 +1409,8 @@ theorem accept_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {i : Nat} {u
   refine WP.mono (accTail_ok hp C) fun x ⟨sv, rd, t0, t1, hr⟩ => ⟨sv, rd, ?_⟩
   obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_accepted hpre
   show (∃ req, _ ∧ _ ∧ _) ∧ _
-  unfold Spec.Entropy.Result.Requests
   rw [ho, hu]
-  exact ⟨⟨0, t0, t1, rfl⟩, hr⟩
+  exact ⟨⟨0, t0, t1, VG.Proof.RsaPkcs1Enc.padAsked_accepted hpre⟩, hr⟩
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd
 
@@ -1541,8 +1540,8 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
       (Spec.RsaPkcs1Enc.padEntropy (psLen s) ≤ rl s → x.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 (rl s) ∧
         x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 0 ∧ (x.gpr .r3).setWidth 32 = 3) ∧
       (rl s < Spec.RsaPkcs1Enc.padEntropy (psLen s) → ∃ req, x.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 0 ∧
-        x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧ rl s < req ∧
-        req ≤ Spec.RsaPkcs1Enc.padEntropy (psLen s) ∧ (x.gpr .r3).setWidth 32 = 0) := by
+        x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧
+        req = min (psLen s + 128) (rl s + psLen s - c) ∧ (x.gpr .r3).setWidth 32 = 0) := by
   have hP := hp.ps
   have hrl := hp.rl
   have hcap : Spec.RsaPkcs1Enc.padEntropy (psLen s) = psLen s + 128 := rfl
@@ -1608,15 +1607,15 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
     have ev' : isa.eval (.nonzero .d .r4) y = some (decide (rl s - c < 129)) := by
       rw [eval_nonzero, y4, shift_ne hd]
     have tail : ∀ (z : State) (req : Nat), Keep [.r0] y z → z.mem = y.mem → z.gpr .r0 = BitVec.ofNat 64 req →
-        rl s < req → req ≤ psLen s + 128 →
+        req = min (psLen s + 128) (rl s + psLen s - c) →
         WP isa (.block [.store .d .r0 .r30 8, .li .r3 0]) z fun x =>
           Rj s u c x ∧ Frame [tapeR s] v.mem x.mem ∧
           (Spec.RsaPkcs1Enc.padEntropy (psLen s) ≤ rl s → x.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 (rl s) ∧
             x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 0 ∧ (x.gpr .r3).setWidth 32 = 3) ∧
           (rl s < Spec.RsaPkcs1Enc.padEntropy (psLen s) → ∃ req, x.mem.readW (s.gpr .r5) 64 = BitVec.ofNat 64 0 ∧
-            x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧ rl s < req ∧
-            req ≤ Spec.RsaPkcs1Enc.padEntropy (psLen s) ∧ (x.gpr .r3).setWidth 32 = 0) := by
-      intro z req kz zm z0 h1 h2
+            x.mem.readW (s.gpr .r5 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 req ∧
+            req = min (psLen s + 128) (rl s + psLen s - c) ∧ (x.gpr .r3).setWidth 32 = 0) := by
+      intro z req kz zm z0 h1
       refine wp_std (a := s.gpr .r5 + BitVec.ofNat 64 8) (by rw [kz.get .r30, ky.get .r30, w30])
         (by rw [kz.wr, ky.wr]; exact T1) fun x₁ m₁ => wp_li (by decide) fun x o₂ e₂ => wp_nil ?_
       have kx : Keep [.r0, .r3, .r4] w x := ((ky.trans kz).trans (m₁.keep.trans o₂.keep)).mono
@@ -1624,18 +1623,19 @@ theorem budget_ok {s u v : State} (hp : RPre s) {c : Nat} (hc : c < psLen s) (hc
           (BitVec.ofNat 64 req) := by rw [o₂.mem, m₁.mem, z0, zm, ym]
       obtain ⟨Rx, fx⟩ := tapeRj kx (by decide) (by rw [xm]; exact tf _ _ _)
       exact ⟨Rx, fx, fun h => absurd h (by rw [hcap]; omega_using [hrl, hex]), fun _ => ⟨req,
-        by rw [xm, rd_t80, Mem.readW_writeW_self64], by rw [xm, Mem.readW_writeW_self64], h1, h2,
+        by rw [xm, rd_t80, Mem.readW_writeW_self64], by rw [xm, Mem.readW_writeW_self64], h1,
         by rw [e₂]; rfl⟩⟩
     by_cases hs : rl s - c < 129
     · refine WP.seq (WP.ite true (by rw [ev', decide_eq_true hs]) (fun _ => wp_add fun z₁ o₁'' e₁'' =>
         wp_sub fun z o₂'' e₂'' => wp_nil ?_) (fun h => absurd h (by decide)))
       refine tail z (psLen s + rl s - c) (o₁''.keep.trans o₂''.keep).mono (by rw [o₂''.mem, o₁''.mem]) ?_
-        (by omega_using [hc]) (by omega_using [hs])
+        (by omega_using [hc, hs, hcl])
       rw [e₂'', o₁''.get .r5, e₁'', ky.get .r28, ky.get .r10, ky.get .r5, Rw.r28, w11, w5,
         BitVec.ofNat_add_ofNat, sub_ofNat (by omega_using [hc]) (by omega_using [hP, hrl])]
     · refine WP.seq (WP.ite false (by rw [ev', decide_eq_false hs]) (fun h => absurd h (by decide))
         fun _ => wp_mov fun z o₁'' e₁'' => wp_nil ?_)
-      exact tail z (psLen s + 128) o₁''.keep (by rw [o₁''.mem]) (by rw [e₁'', ky.get .r12, w12]) hlt (by omega_using [])
+      exact tail z (psLen s + 128) o₁''.keep (by rw [o₁''.mem]) (by rw [e₁'', ky.get .r12, w12])
+        (by omega_using [hs, hcl, hc])
 
 theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} (hI : At s M (rl s) u)
     (hc : (kept s (rl s)).length < psLen s) : WP isa reject u (Fin s) := by
@@ -1663,15 +1663,16 @@ theorem reject_ok {s : State} (hp : RPre s) {M : Mem} (hM : Mm s M) {u : State} 
     rwa [List.length_replicate] at this
   obtain hnz : (VG.Proof.RsaPkcs1Enc.nz (randB s)).length < psLen s := by rw [← kept_all]; exact hc
   show (∃ req, _ ∧ _ ∧ _) ∧ _
-  unfold Spec.Entropy.Result.Requests
   by_cases hge : Spec.RsaPkcs1Enc.padEntropy (psLen s) ≤ rl s
   · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_exhausted hnz (by rw [randB_length]; exact hge)
     obtain ⟨h0, h1, hr⟩ := hex hge
     rw [ho, hu, randB_length]
-    exact ⟨⟨0, h0, h1, rfl⟩, hr, outZ⟩
+    exact ⟨⟨0, h0, h1,
+        VG.Proof.RsaPkcs1Enc.padAsked_exhausted hnz (by rw [randB_length]; exact hge)⟩, hr, outZ⟩
   · obtain ⟨ho, hu⟩ := VG.Proof.RsaPkcs1Enc.padSearch_entropy hnz (by rw [randB_length]; omega_using [hge])
-    obtain ⟨req, h0, h1, hr1, hr2, hr⟩ := hen (by omega_using [hge])
+    obtain ⟨req, h0, h1, hq, hr⟩ := hen (by omega_using [hge])
     rw [ho, hu]
-    exact ⟨⟨req, h0, h1, by rw [randB_length]; exact ⟨hr1, hr2⟩⟩, hr, outZ⟩
+    exact ⟨⟨req, h0, h1, VG.Proof.RsaPkcs1Enc.padAsked_entropy hnz (by rw [randB_length]; omega_using [hge])
+      (by rw [randB_length, ← kept_all]; exact hq)⟩, hr, outZ⟩
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -14,12 +15,12 @@ namespace VG.Proof.RsaKeyGen.Arm.Generate
 
 open VG VG.Arm VG.Spec.RsaKeyGen
 
-theorem gen_implies_pre (s : State) (h : (keySearchContract abi stackUse).pre s) : genContract.pre s := by
-  sig_pre [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
+theorem gen_implies_pre (s : State) (h : (keySearchAskedContract abi stackUse).pre s) : genContract.pre s := by
+  sig_pre [keySearchAskedContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
     genContract, genPre, inReads, inWrites, inKey, inUsed, inRand, inScr, inState, inArgs, inStack,
     State.addr, List.append_eq] at h
   sig_split h
-  sig_reduce [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
+  sig_reduce [keySearchAskedContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
     genContract, genPre, inReads, inWrites, inKey, inUsed, inRand, inScr, inState, inArgs, inStack,
     State.addr, List.append_eq, genLen, genE, genStp]
   simp only [List.mem_cons, List.not_mem_nil, or_false,
@@ -35,15 +36,15 @@ theorem gen_implies_pre (s : State) (h : (keySearchContract abi stackUse).pre s)
     | omega
     | with_reducible exact Region.Disjoint.symm ‹_›
 
-theorem gen_implies_post : ∀ s t, (keySearchContract abi stackUse).pre s →
-    genContract.post s t → (keySearchContract abi stackUse).post s t := by
-  sig_implies_post [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val,
+theorem gen_implies_post : ∀ s t, (keySearchAskedContract abi stackUse).pre s →
+    genContract.post s t → (keySearchAskedContract abi stackUse).post s t := by
+  sig_implies_post [keySearchAskedContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val,
     genContract, genPost, genResult, genRand, genE, genLen, genProgress, genStp, State.addr]
 
-theorem gen_implies_pub (s t : State) (_hs : (keySearchContract abi stackUse).pre s)
-    (_ht : (keySearchContract abi stackUse).pre t) (h : (keySearchContract abi stackUse).pub s t) :
+theorem gen_implies_pub (s t : State) (_hs : (keySearchAskedContract abi stackUse).pre s)
+    (_ht : (keySearchAskedContract abi stackUse).pre t) (h : (keySearchAskedContract abi stackUse).pub s t) :
     genContract.pub s t := by
-  sig_pub [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val] at h
+  sig_pub [keySearchAskedContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val] at h
   obtain ⟨hsp, hleak, r0, r1, r2, r3, a0, a1, a2, a3⟩ := h
   have hl : (List.map (fun x => x.toNat) (Spec.Rsa.wordsAt s.mem (BitVec.setWidth 64 (stackArg s 3)) 7)).length =
       (List.map (fun x => x.toNat) (Spec.Rsa.wordsAt t.mem (BitVec.setWidth 64 (stackArg t 3)) 7)).length := by
@@ -77,14 +78,14 @@ private def genSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x6000, 16⟩]
   wr := [⟨0x1000, 288⟩, ⟨0x2000, 8⟩, ⟨0x8000, 1056 * 8⟩, ⟨0x4000, 56⟩]
 
-theorem gen_implies : genContract.Implies (keySearchContract abi stackUse) where
+theorem gen_implies : genContract.Implies (keySearchAskedContract abi stackUse) where
   pre := gen_implies_pre
   post := gen_implies_post
   pub := gen_implies_pub
   sat := by
     refine ⟨genSat, ?_⟩
     sig_iff
-    sig_reduce [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
+    sig_reduce [keySearchAskedContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, stackBelow,
       genContract, genPre, primeLenValid, State.addr]
     sig_and_intros
     all_goals first

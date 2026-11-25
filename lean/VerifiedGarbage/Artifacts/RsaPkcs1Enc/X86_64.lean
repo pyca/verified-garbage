@@ -44,6 +44,7 @@ def artifacts : List (Artifact X86_64.target) :=
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v)
       verified := Proof.RsaPkcs1Enc.X86_64.Scrub.rnd_scrubbed v
+      publicOutOk := Proof.RsaPkcs1Enc.X86_64.Scrub.rnd_public v
       spSafe := Proof.RsaPkcs1Enc.X86_64.Scrub.rnd_spSafe v }])
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64

@@ -106,9 +106,9 @@ exponent in `state[6]`, from the state in `state` and the key's buffer: its
 status (`KeySearchResult.keyStatus`), the key's buffer (`keySearchBytes`), the
 octets it consumed at `used`, and the state for the next call, whose fourth
 word is the next tape's length: any that `Entropy.Result.Requests` allows
-(0 if there is none); the exponent is kept. Its timing may depend on the
-state's words, the result's status, consumption and octets left, and its
-trace: each prime search's (`primeSearch`'s) and each key's status
+(0 if there is none), which one being public (`keySearchOut`); the exponent is
+kept. Its timing may depend on the state's words, the result's status,
+consumption and octets left, and its trace: each prime search's (`primeSearch`'s) and each key's status
 (`keyResultStatus`). -/
 def keySearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   keySearchSig.contract A
@@ -143,12 +143,21 @@ def keySearchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       (wordsAt m state 7).map (·.toNat) ++
         [result.keyStatus, result.used, result.available] ++ result.trace)
 
+/-- What the function leaves that is public: the length of the next tape, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). The contract says which lengths it may be; this, that
+which of them it is reveals nothing else. -/
+def keySearchOut : PublicOut keySearchSig where
+  out _ := fun _key _keyLen _used _rand _randLen _scratch _scratchLen state _m m' _r =>
+    [(m'.readW (state + 24) 64).toNat]
+
 def keySearchApi : Api where
   module := "rsa_keygen"
   name := "vg_rsa_generate"
   sig := keySearchSig
   writeArgs := true
   contracts := some fun A stack => keySearchContract A stack
+  publicOut := some keySearchOut
   summary := "Generate an RSA key, as BoringSSL's `RSA_generate_key_ex` (FIPS 186-5 \
     Appendix A.1.3), over the random tape `rand`, from the state `state` that \
     `vg_rsa_generate_init` started: the search for `p`, then for `q` not too close to \
@@ -168,7 +177,8 @@ def keySearchApi : Api where
     and at most the entropy budget: keep those octets, in order, and append fresh random \
     octets up to that length. For 0, `key` holds the search's `p` once it is found, which \
     the next call reads: pass it back unchanged. `key` is otherwise zeros but for 1.\n\n\
-    Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing may depend on the pointers, \
+    Contract: `VG.Spec.RsaKeyGen.keySearchContract`. Timing, and the length of the next tape \
+    (`VG.Spec.RsaKeyGen.keySearchOut`), may depend on the pointers, \
     the lengths, `state`, the status and consumption it returns, and, for each prime's \
     search, its rejected candidates and the octets its accepted candidate's tests read, \
     and each key's status. Not on the primes or the key."

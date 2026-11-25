@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomCT
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
@@ -213,7 +213,7 @@ end In
 abbrev stackBytes : Nat := 56 + frameBytes + callStack
 
 /-- The shared contract, with that stack. -/
-abbrev spec : Contract isa := Spec.RsaPkcs1Enc.encryptRandomContract abi stackBytes
+abbrev spec : Contract isa := Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stackBytes
 
 /-- The public parameters of an entry state. -/
 def ep (s : State) : EP where
@@ -243,7 +243,7 @@ theorem ep_lay (s : State) :
       [(ep s).OUT, (ep s).TAPE, (ep s).SCR] s callStack := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
-  sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
+  sig_pre [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   sig_split h
   rename_i hsp hsa hrd hwr oT oN oE oM oR oS oQ oA tN tE tM tR tS tQ tA nS eS mS rS sQ sA

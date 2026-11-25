@@ -255,7 +255,7 @@ def GenDone (p : GenPublic) (original : State) (final : KeySearchResult) (s : St
   GenFrame p original final.used final.progress s ∧ s.gpr .ebx = BitVec.ofNat 32 final.keyStatus ∧
     Spec.Rsa.bytesAt s.mem (p.kp.setWidth 64) (9 * p.L) = keySearchBytes p.L final ∧
     ∃ requested, word s.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested
+      Asked p.L final requested
 
 /-- What each step that goes on lowers: the octets left of the tape, then the
 generations left. -/
@@ -1665,7 +1665,7 @@ structure AfterSearch (p : GenPublic) (o : State) (used : Nat) (st : KeyProgress
       | .accepted c => Spec.Rsa.i2osp c p.L
       | _ => List.replicate p.L 0)
   req : ∃ requested, word t.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-    (rOf p o used st).Requests (primeEntropy p.L) requested
+    Asked p.L (rOf p o used st) requested
   mem : Frame (searchChanges p o (phaseWord st.phase)) s.mem t.mem
 
 theorem rd_eq {o : State} (A : GenABI o) : o.rd = [rR o, tR o] := by

@@ -1017,11 +1017,10 @@ end
 Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/PPC64LE.lean`) of its code, which zeroes all of
 `scratch` with `vg_zeroize` once that code returns, and is verified against
-the same contract with 48 more bytes of stack and `scratch` left scrubbed
+the same contract with 48 more bytes of stack and `scratch` left wiped
 (`Verified.callWipe'`; `*_scrubbed`, the contracts of
 `Proof/MlKem/Scrubbed.lean`), since every byte of it is zero
-(`Scrubbed.keyGen_wiped`, …). `*_verified` state them as the contracts of
-`Spec/MlKem/`.
+(`Scrubbed.keyGen_wiped`, …).
 -/
 
 @[expose] public section
@@ -1515,57 +1514,29 @@ theorem decaps1024_sat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi
 theorem keyGen_scrubbed : Verified target Impl.MlKem.PPC64LE.Wipe.keyGen (Scrubbed.keyGenContract abi 96) :=
   keyGen_wipe Proof.MlKem.PPC64LE.KeyGen.verified keyGen_sdepth (by decide) keyGen_sat
 
-theorem keyGen_verified : Verified target Impl.MlKem.PPC64LE.Wipe.keyGen (Spec.MlKem.keyGenContract abi 96) :=
-  keyGen_scrubbed
-
 theorem encapsH_scrubbed : Verified target Impl.MlKem.PPC64LE.Wipe.encapsH (Scrubbed.encapsHContract abi 96) :=
   encapsH_wipe Proof.MlKem.PPC64LE.Encaps.verifiedH encapsH_sdepth (by decide) encapsH_sat
-
-theorem encapsH_verified : Verified target Impl.MlKem.PPC64LE.Wipe.encapsH (Spec.MlKem.encapsHContract abi 96) :=
-  encapsH_scrubbed
 
 theorem encaps_scrubbed : Verified target Impl.MlKem.PPC64LE.Wipe.encaps (Scrubbed.encapsContract abi 96) :=
   encaps_wipe Proof.MlKem.PPC64LE.Encaps.verified encaps_sdepth (by decide) encaps_sat
 
-theorem encaps_verified : Verified target Impl.MlKem.PPC64LE.Wipe.encaps (Spec.MlKem.encapsContract abi 96) :=
-  encaps_scrubbed
-
 theorem decaps_scrubbed : Verified target Impl.MlKem.PPC64LE.Wipe.decaps (Scrubbed.decapsContract abi 96) :=
   decaps_wipe Proof.MlKem.PPC64LE.Decaps.verified decaps_sdepth (by decide) decaps_sat
-
-theorem decaps_verified : Verified target Impl.MlKem.PPC64LE.Wipe.decaps (Spec.MlKem.decapsContract abi 96) :=
-  decaps_scrubbed
 
 theorem keyGen1024_scrubbed :
     Verified target Impl.MlKem.PPC64LE.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 96) :=
   keyGen1024_wipe Proof.MlKem1024.PPC64LE.KeyGen.verified keyGen1024_sdepth (by decide) keyGen1024_sat
 
-theorem keyGen1024_verified :
-    Verified target Impl.MlKem.PPC64LE.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 96) :=
-  keyGen1024_scrubbed
-
 theorem encapsH1024_scrubbed :
     Verified target Impl.MlKem.PPC64LE.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 96) :=
   encapsH1024_wipe Proof.MlKem1024.PPC64LE.Encaps.verifiedH encapsH1024_sdepth (by decide) encapsH1024_sat
-
-theorem encapsH1024_verified :
-    Verified target Impl.MlKem.PPC64LE.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 96) :=
-  encapsH1024_scrubbed
 
 theorem encaps1024_scrubbed :
     Verified target Impl.MlKem.PPC64LE.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 96) :=
   encaps1024_wipe Proof.MlKem1024.PPC64LE.Encaps.verified encaps1024_sdepth (by decide) encaps1024_sat
 
-theorem encaps1024_verified :
-    Verified target Impl.MlKem.PPC64LE.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 96) :=
-  encaps1024_scrubbed
-
 theorem decaps1024_scrubbed :
     Verified target Impl.MlKem.PPC64LE.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 96) :=
   decaps1024_wipe Proof.MlKem1024.PPC64LE.Decaps.verified decaps1024_sdepth (by decide) decaps1024_sat
-
-theorem decaps1024_verified :
-    Verified target Impl.MlKem.PPC64LE.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 96) :=
-  decaps1024_scrubbed
 
 end VG.Proof.MlKem.PPC64LE.Wipe

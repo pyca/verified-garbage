@@ -104,7 +104,8 @@ def encryptRandomSig : Sig where
 the padding string `padSearch` draws from `rand` (`n_len - msg_len - 3`
 octets), for a message of at most `n_len - 11` octets and a tape of at most
 the budget `padEntropy`: `tape` is the octets consumed and the length of the
-next tape (any that `Entropy.Result.Requests` allows, 0 but for status 0);
+next tape (any that `Entropy.Result.Requests` allows, 0 but for status 0, which
+one being public, `encryptRandomOut`);
 if no padding string was drawn, the status (0 for more entropy, 3 if
 exhausted) and zeros at `out`; otherwise, if `pre` holds the precomputed
 values of `n`, `writtenRandom` of the encryption. Constant time but for the
@@ -140,12 +141,22 @@ def encryptRandomContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
         (wordsAt m pre preLen.toNat).map (·.toNat) ++
         (padSearch (nLen.toNat - msgLen.toNat - 3) (bytesAt m rand randLen.toNat)).trace)
 
+/-- What the function leaves that is public: the length of the next tape, which
+the host allocates and fills, in two runs that agree on what its timing may
+depend on (`PublicOut`). The contract says which lengths it may be; this, that
+which of them it is reveals nothing else. -/
+def encryptRandomOut : PublicOut encryptRandomSig where
+  out _ := fun _out _outLen tape _n _nLen _e _eLen _msg _msgLen _rand _randLen _scratch _scratchLen
+      _pre _preLen _m m' _r =>
+    [(m'.readW (tape + 8) 64).toNat]
+
 def encryptRandomApi : Api where
   module := "rsa_pkcs1_enc"
   name := "vg_rsa_pkcs1_encrypt_random"
   sig := encryptRandomSig
   writeArgs := true
   contracts := some fun A stack => encryptRandomContract A stack
+  publicOut := some encryptRandomOut
   summary := s!"RSAES-PKCS1-v1_5 encryption: RSAES-PKCS1-V1_5-ENCRYPT (RFC 8017 §7.2.1), with \
     the padding string drawn from the random tape `rand` (`rand_len` bytes). With the \
     modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its \
@@ -165,7 +176,8 @@ def encryptRandomApi : Api where
     writes to `out` and returns once it has drawn `PS` is unspecified; memory safety, \
     `tape` and the timing guarantee still apply.\n\n\
     Contract: `VG.Spec.RsaPkcs1Enc.encryptRandomContract`. Constant time but for the \
-    public key and the tape's zero bytes: timing may depend on the pointers, the \
+    public key and the tape's zero bytes: timing, and `tape[1]` \
+    (`VG.Spec.RsaPkcs1Enc.encryptRandomOut`), may depend on the pointers, the \
     lengths, the contents of `n`, `e` and `pre`, and which bytes of `rand` are zero, not \
     on the message or the other bytes of `rand`."
   safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",

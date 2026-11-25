@@ -1540,10 +1540,9 @@ stack, and zeroes all of `scratch` with `vg_zeroize` once that code returns.
 It is verified against the same contract with 16 more bytes of stack, 24
 (`Verified.callWipe'`), or 24 more, 32 (`Verified.callWipeStack'`: its frame
 and the copy of the stack arguments, 8 bytes for one word or two), with
-`scratch` left scrubbed (`*_scrubbed`, the contracts of
+`scratch` left wiped (`*_scrubbed`, the contracts of
 `Proof/MlKem/Scrubbed.lean`), since every byte of it is zero
-(`Scrubbed.keyGen_wiped`, …). `*_verified` state them as the contracts of
-`Spec/MlKem/`.
+(`Scrubbed.keyGen_wiped`, …).
 -/
 
 @[expose] public section
@@ -2049,57 +2048,29 @@ theorem decaps1024_sat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi
 theorem keyGen_scrubbed : Verified target Impl.MlKem.Arm.Wipe.keyGen (Scrubbed.keyGenContract abi 24) :=
   keyGen_wipe Proof.MlKem.Arm.KeyGen.verified keyGen_stack keyGen_sat
 
-theorem keyGen_verified : Verified target Impl.MlKem.Arm.Wipe.keyGen (Spec.MlKem.keyGenContract abi 24) :=
-  keyGen_scrubbed
-
 theorem encapsH_scrubbed : Verified target Impl.MlKem.Arm.Wipe.encapsH (Scrubbed.encapsHContract abi 32) :=
   encapsH_wipe Proof.MlKem.Arm.Encaps.verifiedH encapsH_stack encapsH_sat
-
-theorem encapsH_verified : Verified target Impl.MlKem.Arm.Wipe.encapsH (Spec.MlKem.encapsHContract abi 32) :=
-  encapsH_scrubbed
 
 theorem encaps_scrubbed : Verified target Impl.MlKem.Arm.Wipe.encaps (Scrubbed.encapsContract abi 32) :=
   encaps_wipe Proof.MlKem.Arm.Encaps.verified encaps_stack encaps_sat
 
-theorem encaps_verified : Verified target Impl.MlKem.Arm.Wipe.encaps (Spec.MlKem.encapsContract abi 32) :=
-  encaps_scrubbed
-
 theorem decaps_scrubbed : Verified target Impl.MlKem.Arm.Wipe.decaps (Scrubbed.decapsContract abi 24) :=
   decaps_wipe Proof.MlKem.Arm.Decaps.verified decaps_stack decaps_sat
-
-theorem decaps_verified : Verified target Impl.MlKem.Arm.Wipe.decaps (Spec.MlKem.decapsContract abi 24) :=
-  decaps_scrubbed
 
 theorem keyGen1024_scrubbed :
     Verified target Impl.MlKem.Arm.Wipe.keyGen1024 (Scrubbed.keyGen1024Contract abi 24) :=
   keyGen1024_wipe Proof.MlKem1024.Arm.KeyGen.verified keyGen1024_stack keyGen1024_sat
 
-theorem keyGen1024_verified :
-    Verified target Impl.MlKem.Arm.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 24) :=
-  keyGen1024_scrubbed
-
 theorem encapsH1024_scrubbed :
     Verified target Impl.MlKem.Arm.Wipe.encapsH1024 (Scrubbed.encapsH1024Contract abi 32) :=
   encapsH1024_wipe Proof.MlKem1024.Arm.Encaps.verifiedH encapsH1024_stack encapsH1024_sat
-
-theorem encapsH1024_verified :
-    Verified target Impl.MlKem.Arm.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 32) :=
-  encapsH1024_scrubbed
 
 theorem encaps1024_scrubbed :
     Verified target Impl.MlKem.Arm.Wipe.encaps1024 (Scrubbed.encaps1024Contract abi 32) :=
   encaps1024_wipe Proof.MlKem1024.Arm.Encaps.verified encaps1024_stack encaps1024_sat
 
-theorem encaps1024_verified :
-    Verified target Impl.MlKem.Arm.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 32) :=
-  encaps1024_scrubbed
-
 theorem decaps1024_scrubbed :
     Verified target Impl.MlKem.Arm.Wipe.decaps1024 (Scrubbed.decaps1024Contract abi 24) :=
   decaps1024_wipe Proof.MlKem1024.Arm.Decaps.verified decaps1024_stack decaps1024_sat
-
-theorem decaps1024_verified :
-    Verified target Impl.MlKem.Arm.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 24) :=
-  decaps1024_scrubbed
 
 end VG.Proof.MlKem.Arm.Wipe

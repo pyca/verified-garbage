@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.EntropyRequest
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -24,13 +25,13 @@ namespace VG.Proof.RsaKeyGen.RISCV64.Generate
 
 open VG VG.RISCV64 VG.Spec.RsaKeyGen
 
-theorem gen_implies_pre₀ (s : State) (h : (keySearchContract abi stackUse).pre s) : basePre s := by
-  sig_pre [keySearchContract, keySearchSig, abi, argRegs, stackBelow, basePre,
+theorem gen_implies_pre₀ (s : State) (h : (keySearchAskedContract abi stackUse).pre s) : basePre s := by
+  sig_pre [keySearchAskedContract, keySearchSig, abi, argRegs, stackBelow, basePre,
     inReads, inWrites, inKey, inUsed, inRand, inScr, inState, List.append_eq] at h
-  sig_pre [keySearchContract, keySearchSig, abi, argRegs, stackBelow, basePre,
+  sig_pre [keySearchAskedContract, keySearchSig, abi, argRegs, stackBelow, basePre,
     inReads, inWrites, inKey, inUsed, inRand, inScr, inState, List.append_eq] at h
   sig_split h
-  sig_reduce [keySearchContract, keySearchSig, abi, argRegs, stackBelow, basePre,
+  sig_reduce [keySearchAskedContract, keySearchSig, abi, argRegs, stackBelow, basePre,
     inReads, inWrites, inKey, inUsed, inRand, inScr, inState, List.append_eq]
   simp only [List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, List.pairwise_cons, List.Pairwise.nil, and_true, false_implies,
@@ -45,21 +46,21 @@ theorem gen_implies_pre₀ (s : State) (h : (keySearchContract abi stackUse).pre
     | omega
     | with_reducible exact Region.Disjoint.symm ‹_›
 
-theorem gen_implies_post₀ : ∀ s t, True → genPost s t → (keySearchContract abi stackUse).post s t := by
+theorem gen_implies_post₀ : ∀ s t, True → genPost s t → (keySearchAskedContract abi stackUse).post s t := by
   intro s t _ h
-  sig_post [keySearchContract, keySearchSig, abi, argRegs, genPost,
+  sig_post [keySearchAskedContract, keySearchSig, abi, argRegs, genPost,
     genResult, genRand, genE, genLen, genProgress, List.append_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   simp only [genPost, genResult, genRand, genE, genLen, genProgress, BitVec.ofNat_toNat, BitVec.setWidth_eq] at h
   exact h
 
-theorem gen_implies_pub₀ (s t : State) (h : (keySearchContract abi stackUse).pub s t) :
+theorem gen_implies_pub₀ (s t : State) (h : (keySearchAskedContract abi stackUse).pub s t) :
     s.sp = t.sp ∧
     s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1 ∧ s.gpr .a2 = t.gpr .a2 ∧ s.gpr .a3 = t.gpr .a3 ∧
     s.gpr .a4 = t.gpr .a4 ∧ s.gpr .a5 = t.gpr .a5 ∧ s.gpr .a6 = t.gpr .a6 ∧ s.gpr .a7 = t.gpr .a7 ∧
     Spec.Rsa.wordsAt s.mem (s.gpr .a7) 7 = Spec.Rsa.wordsAt t.mem (t.gpr .a7) 7 ∧
     (genResult s).keyStatus = (genResult t).keyStatus ∧ (genResult s).used = (genResult t).used ∧
     (genResult s).available = (genResult t).available ∧ (genResult s).trace = (genResult t).trace := by
-  sig_pub [keySearchContract, keySearchSig, abi, argRegs, List.append_eq] at h
+  sig_pub [keySearchAskedContract, keySearchSig, abi, argRegs, List.append_eq] at h
   obtain ⟨hsp, hleak, r3, r4, r5, r6, r7, r8, r9, r10⟩ := h
   have hl : (List.map (fun x => x.toNat) (Spec.Rsa.wordsAt s.mem (s.gpr .a7) 7)).length =
       (List.map (fun x => x.toNat) (Spec.Rsa.wordsAt t.mem (t.gpr .a7) 7)).length := by
@@ -75,22 +76,22 @@ private theorem tables_eq' :
     tables = [(Impl.RsaKeyGen.TrialTable32.symbol, Impl.RsaKeyGen.TrialTable32.packed)] := rfl
 
 theorem gen_implies_pre (s : State)
-    (h : (keySearchContract (abi.withConsts tables) stackUse).pre s) : genContract.pre s := by
-  unfold keySearchContract at h
+    (h : (keySearchAskedContract (abi.withConsts tables) stackUse).pre s) : genContract.pre s := by
+  unfold keySearchAskedContract at h
   rw [tables_eq'] at h
   obtain ⟨h₁, h₂⟩ := pre_consts.mp h
   exact ⟨gen_implies_pre₀ _ h₁, h₂⟩
 
-theorem gen_implies_post (s t : State) (_ : (keySearchContract (abi.withConsts tables) stackUse).pre s)
-    (h : genContract.post s t) : (keySearchContract (abi.withConsts tables) stackUse).post s t := by
-  unfold keySearchContract
+theorem gen_implies_post (s t : State) (_ : (keySearchAskedContract (abi.withConsts tables) stackUse).pre s)
+    (h : genContract.post s t) : (keySearchAskedContract (abi.withConsts tables) stackUse).post s t := by
+  unfold keySearchAskedContract
   rw [tables_eq']
   exact post_consts.mpr (gen_implies_post₀ s t trivial h)
 
-theorem gen_implies_pub (s t : State) (_ : (keySearchContract (abi.withConsts tables) stackUse).pre s)
-    (_ : (keySearchContract (abi.withConsts tables) stackUse).pre t)
-    (h : (keySearchContract (abi.withConsts tables) stackUse).pub s t) : genContract.pub s t := by
-  unfold keySearchContract at h
+theorem gen_implies_pub (s t : State) (_ : (keySearchAskedContract (abi.withConsts tables) stackUse).pre s)
+    (_ : (keySearchAskedContract (abi.withConsts tables) stackUse).pre t)
+    (h : (keySearchAskedContract (abi.withConsts tables) stackUse).pub s t) : genContract.pub s t := by
+  unfold keySearchAskedContract at h
   rw [tables_eq'] at h
   obtain ⟨hp, hsy⟩ := pub_consts.mp h
   obtain ⟨a, b, c, d, e, f, g, i, j, k, l, m, n, o⟩ := gen_implies_pub₀ s t hp
@@ -166,14 +167,14 @@ theorem sat_e : Spec.Rsa.bytesAt satMem (0x4000 + 48) 8 = List.replicate 8 0 := 
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hm
   exact hb j (List.mem_range.mp hj)
 
-theorem sat_base : (keySearchContract abi stackUse).pre (stripConsts tables satState) := by
+theorem sat_base : (keySearchAskedContract abi stackUse).pre (stripConsts tables satState) := by
   have w0 : (stripConsts tables satState).mem.readW 0x4000 64 = 0 := sat_w0
   have w8 : (stripConsts tables satState).mem.readW (0x4000 + 8) 64 = 32 := sat_w8
   have w16 : (stripConsts tables satState).mem.readW (0x4000 + 16) 64 = BitVec.ofNat 64 (primeEntropy 32) :=
     sat_w16
   have w32 : (stripConsts tables satState).mem.readW (0x4000 + 32) 64 = 0 := sat_w32
   have we : Spec.Rsa.bytesAt (stripConsts tables satState).mem (0x4000 + 48) 8 = List.replicate 8 0 := sat_e
-  unfold keySearchContract
+  unfold keySearchAskedContract
   refine Sig.contract_pre_of_check (by decide +kernel) ?_
   sig_reduce [keySearchSig, abi, argRegs, List.append_eq, w0, w8, w16, w32, we, primeLenValid]
   sig_and_intros
@@ -210,16 +211,16 @@ theorem sat_consts : ConstsOk tables stackUse satState := by
     subst ht
     decide
 
-theorem sat : (keySearchContract (abi.withConsts tables) stackUse).pre satState := by
-  unfold keySearchContract
+theorem sat : (keySearchAskedContract (abi.withConsts tables) stackUse).pre satState := by
+  unfold keySearchAskedContract
   rw [tables_eq']
   have h₁ := sat_base
   have h₂ := sat_consts
-  unfold keySearchContract at h₁
+  unfold keySearchAskedContract at h₁
   rw [tables_eq'] at h₁ h₂
   exact pre_consts.mpr ⟨h₁, h₂⟩
 
-theorem gen_implies : genContract.Implies (keySearchContract (abi.withConsts tables) stackUse) where
+theorem gen_implies : genContract.Implies (keySearchAskedContract (abi.withConsts tables) stackUse) where
   pre := gen_implies_pre
   post := gen_implies_post
   pub := gen_implies_pub

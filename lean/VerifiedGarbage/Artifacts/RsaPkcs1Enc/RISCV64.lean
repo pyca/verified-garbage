@@ -17,6 +17,7 @@ def artifacts : List (Artifact RISCV64.target) := [
     verified := Proof.RsaPkcs1Enc.RISCV64.Front.decryptPrecomputed },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Fn.encryptRandom
-    verified := Proof.RsaPkcs1Enc.RISCV64.Fn.encryptRandom }]
+    verified := Proof.RsaPkcs1Enc.RISCV64.Fn.encryptRandom
+    publicOutOk := Proof.RsaPkcs1Enc.RISCV64.Fn.encryptRandom_public }]
 
 end VG.Artifacts.RsaPkcs1Enc.RISCV64

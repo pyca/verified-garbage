@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
@@ -73,7 +74,7 @@ structure Mid (p : GenPublic) (o : State) (final : KeySearchResult) (used : Nat)
       | .q _ => outBytes p.L (rOf p o used st))
   high : Spec.Rsa.bytesAt u.mem (p.slot 6) (3 * p.L) = List.replicate (3 * p.L) 0
   req : ∃ requested, word u.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-    (rOf p o used st).Requests (primeEntropy p.L) requested
+    Asked p.L (rOf p o used st) requested
 
 theorem bytesAt_add (m : Mem) (a : Addr) (x y : Nat) :
     Spec.Rsa.bytesAt m a (x + y) = Spec.Rsa.bytesAt m a x ++ Spec.Rsa.bytesAt m (a + BitVec.ofNat 64 x) y := by
@@ -681,7 +682,7 @@ theorem finish_done {p : GenPublic} {o s : State} {u : Nat} {st : KeyProgress} {
     (h : GenFrame p o u st s) (hu : final.used = u) (hpr : final.progress = ⟨0, .p, 0⟩)
     (hr0 : st.remaining = 0) (hkey : Spec.Rsa.bytesAt s.mem (p.kp.setWidth 64) (9 * p.L) = keySearchBytes p.L final)
     (hreq : ∃ requested, word s.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested) :
+      Asked p.L final requested) :
     WP isa (.block (finishWith final.keyStatus)) s (GenDone p o final) := by
   have hi := h.input
   have hv := hi.len_valid
@@ -698,7 +699,7 @@ theorem fail_done {p : GenPublic} {o s : State} {u : Nat} {st : KeyProgress} {fi
     (h : GenFrame p o u st s) (hu : final.used = u) (hpr : final.progress = ⟨0, .p, 0⟩)
     (hr0 : st.remaining = 0) (hz : keySearchBytes p.L final = List.replicate (9 * p.L) 0)
     (hreq : ∃ requested, word s.mem p.stp 24 = BitVec.ofNat 64 requested ∧
-      final.Requests (primeEntropy p.L) requested) :
+      Asked p.L final requested) :
     WP isa (fail final.keyStatus) s (GenDone p o final) := by
   have hi := h.input
   have A := hi.abi
@@ -876,7 +877,7 @@ theorem classify_entropy (hm : Mid p o final used st u) {k a : Nat}
     | q pB =>
       simp only [hout, keySearchBytes, List.append_assoc, List.replicate_append_replicate]
       congr 3; omega_using []
-  · simp only [Spec.Entropy.Result.Requests, ho] at hr ⊢
+  · simp only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho] at hr ⊢
     exact hr
 
 /-- The search was exhausted, and so is the key search: its last generation. -/
@@ -890,10 +891,10 @@ theorem classify_last (hm : Mid p o final used st u) (ho : (rOf p o used st).out
   obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw', hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hfinal
   exact fail_done (final := ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩)
-    hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; rfl⟩
+    hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; exact ⟨rfl, rfl⟩⟩
 
 /-- A prime accepted having read nothing: the key search is exhausted. -/
 theorem classify_none (hm : Mid p o final used st u) {c : Nat}
@@ -907,10 +908,10 @@ theorem classify_none (hm : Mid p o final used st u) {c : Nat}
   obtain hfinal : final = ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩ := by
     rw [hfin, tailOf, hks]; rfl
   obtain ⟨req, hw', hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hfinal
   exact fail_done (final := ⟨.exhausted, used + (rOf p o used st).used, tr ++ primeEntry (rOf p o used st)⟩)
-    hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; rfl⟩
+    hw rfl rfl hrem rfl ⟨req, by rw [hmem]; exact hw', by rw [hr0]; exact ⟨rfl, rfl⟩⟩
 
 /-- The search was exhausted: the next generation, from `p`. -/
 theorem classify_next (hm : Mid p o final used st u) (ho : (rOf p o used st).outcome = .exhausted)
@@ -944,7 +945,7 @@ theorem classify_next (hm : Mid p o final used st u) (ho : (rOf p o used st).out
     · rw [tk (Offset.sub_base _ (by omega_using [])) (by omega_using [hv])]; exact hm.high
   obtain hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
     obtain ⟨req, hw', hr'⟩ := hm.req
-    have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr'
+    have : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr'
     rw [w24, word_apart fr1 (.inl (by decide)) ⟨by decide, by decide⟩, hmem, hw', this]
   refine ⟨hreq0, ⟨_, primeEntry (rOf p o used st), ⟨g, hbx, hkey⟩, ?_, ?_, rfl, .inl ⟨ho, rfl, rfl, rfl⟩⟩, hm.final⟩
   · unfold genMeasure
@@ -982,7 +983,7 @@ theorem classify_p (hm : Mid p o final used st u) {c : Nat}
     · cases h; rw [hmem]; exact hs4
   obtain hreq0 : word t.mem p.stp 24 = BitVec.ofNat 64 0 := by
     obtain ⟨req, hw', hr'⟩ := hm.req
-    have : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr'
+    have : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr'
     rw [w24, hmem, hw', this]
   refine ⟨hreq0, ⟨_, primeEntry (rOf p o used st), ⟨g, hbx, hkey⟩, measure_lt p hpos hm.frame.used_le
     (Nat.le_refl _), ?_, rfl, .inr (.inl ⟨c, ho, hph, rfl, rfl, rfl⟩)⟩, hm.final⟩
@@ -1009,7 +1010,7 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
   simp only [outBytes, ho] at hs5
   obtain hrem : (rOf p o used st).remaining = 0 := by simp only [PrimeSearchResult.remaining, ho]
   obtain ⟨req, hw24, hr⟩ := hm.req
-  obtain hr0 : req = 0 := by simpa only [Spec.Entropy.Result.Requests, ho] using hr
+  obtain hr0 : req = 0 := by simpa only [Asked, Spec.Entropy.Result.Requests, Entropy.requested, ho, and_self] using hr
   subst hr0
   refine WP.seq (WP.mono (key_run key hw) fun v hk => ?_)
   obtain hkey : keyOf p w.mem = keyOp p.L p.eB pB (Spec.Rsa.i2osp c p.L) := by
@@ -1043,7 +1044,7 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
       obtain e : final.keyStatus = 1 := by rw [hks]; rfl
       rw [← e]
       refine WP.mono (finish_done (final := final) hgx (by rw [hks]; rfl) (by rw [hks]; rfl) hrem ?_
-        ⟨0, by rw [hmem1]; exact hwv, by rw [hks]; rfl⟩) fun _ h => Or.inr ⟨?_, h⟩
+        ⟨0, by rw [hmem1]; exact hwv, by rw [hks]; exact ⟨rfl, rfl⟩⟩) fun _ h => Or.inr ⟨?_, h⟩
       · rw [hmem1, key_outs, hout, hks]
         simp only [keySearchBytes, Spec.Entropy.Result.consume, keyBytes, List.flatten_cons, List.flatten_nil,
           List.append_nil, List.append_assoc]
@@ -1067,7 +1068,7 @@ theorem classify_key (key : KeyImpl) (hm : Mid p o final used st u) {c : Nat} {p
         · rw [hph] at h'; cases h'
         · rw [ho] at h; cases h; rw [hph] at h'; cases h'; rw [hkf] at hk'; cases hk'
       exact WP.mono (fail_done (final := final) hgy (by rw [hks]; rfl) (by rw [hks]; rfl) hrem (by rw [hks]; rfl)
-        ⟨0, by rw [hmem2, hmem1]; exact hwv, by rw [hks]; rfl⟩) fun _ h => Or.inr ⟨nc, h⟩
+        ⟨0, by rw [hmem2, hmem1]; exact hwv, by rw [hks]; exact ⟨rfl, rfl⟩⟩) fun _ h => Or.inr ⟨nc, h⟩
   | inr _ =>
     obtain hks := ks_accepted_small (L := p.L) (eB := p.eB) ho hg hph hkf
     simp only [keyOp, hkf, keyStatus] at he1 hstat hout
@@ -1336,9 +1337,9 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
     have Ps : Region.Sub ⟨low o + BitVec.ofNat 64 268, 16⟩ (lowR o) := low_sub (by decide)
     have hK := hp.kR_eq ▸ A.lowK
     rw [show below (o.gpr .esp) (4 * pushRegs.length) = ⟨low o + BitVec.ofNat 64 268, 16⟩ from push_eq hp] at fl
-    sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+    sig_post [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts] at post
-    sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+    sig_post [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
     obtain ⟨q1, q2, q3, req, q4, q5, q6⟩ := post
     refine ⟨q1, ?_, ?_, req, ?_, ?_, q6⟩
@@ -1414,7 +1415,7 @@ theorem gen_correct_ok (srch : Srch) (key : KeyImpl) {o : State} (h : contract.p
     simp only [changes, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     exacts [A.retK, A.retU, A.retB, A.retS, by rw [← hp.low_eq]; exact retL]
-  · sig_post [contract, Spec.RsaKeyGen.keySearchContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
+  · sig_post [contract, Proof.RsaKeyGen.keySearchAskedContract, Spec.RsaKeyGen.keySearchSig, abi, argSlots, argVal,
       argBytes, Abi.withConsts, VG.Impl.RsaKeyGen.TrialTable32.consts]
     obtain eK : keySearch (genLen o) (genE o)
         (keyProgressAt o.mem ((arg o 0).setWidth 64) ((arg o 7).setWidth 64) (genLen o)) (genRand o) =

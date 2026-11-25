@@ -70,6 +70,12 @@ def primeRequest (pLen available : Nat) : Nat :=
 def requested (pLen : Nat) (r : Spec.RsaKeyGen.PrimeSearchResult) : Nat :=
   Entropy.requested (primeRequest pLen) r
 
+/-- The length `q` the code asks for after the result `r`, of the search for a prime
+or of the search for a key: one the contracts allow, and a function of the result's
+status and of the octets left. -/
+def Asked {σ α : Type} (pLen : Nat) (r : Spec.Entropy.Result σ α) (q : Nat) : Prop :=
+  r.Requests (Spec.RsaKeyGen.primeEntropy pLen) q ∧ q = Entropy.requested (primeRequest pLen) r
+
 end VG.Proof.RsaKeyGen
 
 namespace VG.Proof.Ffdh

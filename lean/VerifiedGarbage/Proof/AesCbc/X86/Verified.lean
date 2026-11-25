@@ -70,12 +70,12 @@ theorem encryptZ_verified (v : BlocksImpl) :
   Verified.of_correct (fun _ hs => (wholeZ_wp (encBody_okB v) hs).mono fun _ h => ⟨h.1, h.2.1⟩)
     (wholeZ_ct (encBody_ok v) (encBody_ct v)) enc_implies
 
-/-- `encryptZ` leaves each byte of the scratch buffer from offset
-`v.encWritten` on unchanged or zero. -/
+/-- `encryptZ` leaves the bytes of the scratch buffer from offset
+`v.encWritten` on zero at the offsets `zeroedAt` and unchanged at the others. -/
 theorem encryptZ_tail (v : BlocksImpl) (s : State) (hs : (cbcX86 true).pre s) (t : List Leak) (s' : State)
     (he : Exec isa (encryptZ v.enc) s t s') : ∀ i, v.encWritten ≤ i → i < 2176 →
-      s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) ∨
-        s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) = 0 := by
+      s'.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) =
+        if zeroedAt i then 0 else s.mem ((arg s 5).setWidth 64 + BitVec.ofNat 64 i) := by
   obtain ⟨t', s'', he', -, -, h⟩ := wholeZ_wp (encBody_okB v) hs
   obtain ⟨-, rfl⟩ := Exec.det he he'
   exact h

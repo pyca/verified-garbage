@@ -35,6 +35,7 @@ def artifacts : List (Artifact X86.target) :=
       code := Impl.RsaKeyGen.X86.Fn.generate (Proof.RsaKeyGen.X86.Generate.srchOf v).call
         Proof.RsaKeyGen.X86.Generate.keyImpl.call
       verified := Proof.RsaKeyGen.X86.Scrub.generate_scrubbed v
+      publicOutOk := Proof.RsaKeyGen.X86.Scrub.generate_public v
       spSafe := Proof.RsaKeyGen.X86.Scrub.generate_spSafe v }])
 
 end VG.Artifacts.RsaKeyGen.X86

@@ -525,7 +525,7 @@ theorem AC6.res {σ s : State} (h : AC6 P σ s) : Res P σ s.mem (s.gpr .ebx) :=
   unfold Res
   rw [ho, hu, bx]
   refine ⟨⟨0, h.tape, ?_⟩, fun hp => writtenRandom_of (cr hp)⟩
-  simp only [Spec.Entropy.Result.Requests, ho]
+  exact padAsked_accepted hpre
 
 theorem final_vp : VP (AC6 P) (.block [.mov .eax (.reg .ebx)]) (Fin P) :=
   VP.taint [.esp] ret_taint (sp_agree fun _ _ h => h.hs) fun _ _ h =>

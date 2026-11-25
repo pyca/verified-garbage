@@ -22,7 +22,8 @@ def direct : List (Artifact X86.target) := [
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Enc.X86.Fn.encryptRandom Proof.RsaPkcs1Enc.X86.Rnd.encName
       (Proof.RsaPkcs1Enc.X86.Rnd.enc Proof.RsaPkcs1Sig.X86.Ver.baseline)
-    verified := Proof.RsaPkcs1Enc.X86.Scrub.encryptRandom_scrubbed }]
+    verified := Proof.RsaPkcs1Enc.X86.Scrub.encryptRandom_scrubbed
+    publicOutOk := Proof.RsaPkcs1Enc.X86.Scrub.encryptRandom_public }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86
 

@@ -842,10 +842,13 @@ theorem zero4_at (m : Mem) (c : Addr) {j : Nat} (hj : j < 16) :
 theorem not_contains {x : Addr} {R : Region} (h : Region.Disjoint ⟨x, 1⟩ R) : ¬ R.Contains x 1 :=
   h x (Region.contains_self _ _)
 
+/-- The offsets in the scratch buffer that `zeroSaved` zeroes. -/
+def zeroedAt (i : Nat) : Bool := decide (2048 ≤ i ∧ i < 2080)
+
 /-- The prologue, no blocks or `mid` on all of them, and the epilogue that
 zeroes what was saved, for a `mid` that changes memory only within
-`FB s₀ b`: the contract, and every byte of the scratch buffer from offset
-`b` on unchanged or zero. -/
+`FB s₀ b`: the contract, and the bytes of the scratch buffer from offset `b`
+on zero at the offsets `zeroedAt` and unchanged at the others. -/
 theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (modeX86 M).pre s₀)
     (hmid : ∀ {s₁ : State}, LInv M s₀ 0 s₁ → 0 < N s₀ →
       WP isa mid s₁ fun t => LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s₁.mem t.mem) :
@@ -853,8 +856,8 @@ theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (mod
       (.seq (.ite .e (.block []) mid) (.block (Impl.CmacAes.X86.restore 5 ++ zeroSaved)))) s₀ fun s' =>
       abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
       ∀ i, b ≤ i → i < 2176 →
-        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
-          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 := by
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) =
+          if zeroedAt i then 0 else s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) := by
   obtain hp := UPre.of h0
   have hsc := hp.scr_fit
   refine WP.seq (WP.mono (prologue_wp (M := M) hp) fun s₁ ⟨⟨h₁, hz⟩, hm₁⟩ => ?_)
@@ -921,8 +924,7 @@ theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (mod
       Offset.contains_base _ (by omega_using [h2]) (by omega_using [h2])
     rw [show cOff = 2048 from rfl] at m₄ m₅
     by_cases hzi : 2048 ≤ i ∧ i < 2080
-    · right
-      rw [m₅]
+    · rw [ite_eq_left (c := zeroedAt i = true) (decide_eq_true hzi), m₅]
       by_cases hhi : 2064 ≤ i
       · rw [show i = 2048 + 16 + (i - 2064) by omega_using [hhi], BitVec.ofNat_add (2048 + 16), ← BitVec.add_assoc]
         exact zero4_at _ _ (by omega_using [hzi])
@@ -934,8 +936,7 @@ theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (mod
           exact zero4_at _ _ (by omega_using [hhi])
         · simp only [List.mem_singleton] at hr; subst hr
           exact not_contains (Offset.disjoint _ (.inl (by omega_using [hhi])) (by omega_using [h2]) (by omega_using []))
-    · left
-      rw [fz _ fun r hr => by
+    · rw [ite_eq_right (c := zeroedAt i = true) fun h => hzi (of_decide_eq_true h), fz _ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact not_contains (Offset.disjoint _ (by omega_using [hzi]) (by omega_using [h2]) (by omega_using [])),
         hm₂, hft _ fun r hr => ?_, hm₁]
@@ -954,14 +955,14 @@ theorem endsZ_wp {M : Mode} {mid : Prog isa} {b : Nat} {s₀ : State} (h0 : (mod
         · exact fun hc => hp.b_scr _ hc hx1
 
 /-- `wholeZ body`, for a `body` that changes memory only within `FB s₀ b`:
-the contract, and every byte of the scratch buffer from offset `b` on
-unchanged or zero. -/
+the contract, and the bytes of the scratch buffer from offset `b` on zero at
+the offsets `zeroedAt` and unchanged at the others. -/
 theorem wholeZ_wp {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b)
     {s₀ : State} (h0 : (modeX86 M).pre s₀) :
     WP isa (wholeZ body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
       ∀ i, b ≤ i → i < 2176 →
-        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
-          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) =
+          if zeroedAt i then 0 else s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) :=
   endsZ_wp h0 fun h hn => loop_okB hb (UPre.of h0) hn h
 
 end VG.Proof.AesCbc.X86

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndCount
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Vp
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Loops
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
 import VerifiedGarbage.Proof.Framework.Offset
@@ -577,7 +577,7 @@ abbrev TapeW (P : RP) (m : Mem) (u v : Nat) : Prop :=
 def Res (P : RP) (σ : State) (m : Mem) (r : BitVec 32) : Prop :=
   (∃ req, Spec.Rsa.wordsAt m (P.tape.setWidth 64) 2 =
       [BitVec.ofNat 64 (Spec.RsaPkcs1Enc.padSearch P.pl (rB P σ)).used, BitVec.ofNat 64 req] ∧
-    (Spec.RsaPkcs1Enc.padSearch P.pl (rB P σ)).Requests (Spec.RsaPkcs1Enc.padEntropy P.pl) req) ∧
+    Proof.RsaPkcs1Enc.PadAsked P.pl (rB P σ) req) ∧
   match (Spec.RsaPkcs1Enc.padSearch P.pl (rB P σ)).outcome with
   | .accepted ps => Spec.Rsa.publicPrecompute P.nB = some P.pw →
       Spec.RsaPkcs1Enc.writtenRandom m (P.out.setWidth 64) P.K r (Spec.RsaPkcs1Enc.encrypt P.nB P.eB (msgB P σ) ps)

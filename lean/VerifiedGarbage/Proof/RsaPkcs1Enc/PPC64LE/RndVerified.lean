@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndCT
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.RndCorrect
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -26,7 +27,7 @@ namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd
 open VG VG.PPC64LE VG.Impl.RsaPkcs1Enc.PPC64LE.Random
 
 def contract : Contract isa where
-  pre := (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack).pre
+  pre := (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack).pre
   post := post
   pub := pub
 
@@ -48,17 +49,17 @@ def satState : State where
   rd := [⟨0x3000, 64⟩, ⟨0x4000, 1⟩, ⟨0x5000, 0⟩, ⟨0x6000, 0⟩, ⟨0x7000, 128⟩, ⟨0x10060, 56⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 16⟩, ⟨0x20000, 896⟩]
 
-theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack) where
+theorem implies : contract.Implies (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack) where
   pre := fun _ h => h
   post := by
     intro s u _ h
-    sig_post [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_post [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       abi, argRegs, stackArgs_seven, List.append_eq, List.range, List.range.loop]
     obtain ⟨⟨req, h0, h1, hr⟩, hm⟩ := h
     exact ⟨⟨req, by rw [wordsAt_two, h0, h1]; rfl, hr⟩, hm⟩
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig,
+    sig_pub [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig,
       abi, argRegs, stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, h3, h4, h5, h6, h7, h8, h9, h10, a0, a1, a2, a3, a4, a5, a6⟩ := h
     have hl' : (List.map BitVec.toNat (nB s₁ ++ eB s₁) ++ List.map BitVec.toNat (preW s₁)) ++ trace s₁ =
@@ -81,12 +82,12 @@ theorem implies : contract.Implies (Spec.RsaPkcs1Enc.encryptRandomContract abi r
       | 0, _ => exact a0 | 1, _ => exact a1 | 2, _ => exact a2 | 3, _ => exact a3 | 4, _ => exact a4
       | 5, _ => exact a5 | 6, _ => exact a6
   sat := by
-    implies_sat [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
+    implies_sat [Proof.RsaPkcs1Enc.encryptRandomAskedContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argRegs,
       stackArgs_seven, List.append_eq, rndStack, frameBytes, Impl.RsaPkcs1Sig.PPC64LE.frameBytes]
       [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_pkcs1_encrypt_random` meets the shared contract. -/
-theorem code_verified : Verified target code (Spec.RsaPkcs1Enc.encryptRandomContract abi rndStack) :=
+theorem code_verified : Verified target code (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi rndStack) :=
   Verified.of_correct (k := contract) code_correct code_ct implies
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Rnd

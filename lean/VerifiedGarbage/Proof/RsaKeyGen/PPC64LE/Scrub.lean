@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.KeyInit
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Backend
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
@@ -84,7 +84,7 @@ theorem bytesAt48_of {m₁ m₂ : Mem} {o : Addr}
   exact (h _ (contains_of (by omega))).symm
 
 theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
-    PostOut (Spec.RsaKeyGen.keySearchContract (abi.withConsts cs) stack)
+    PostOut (Proof.RsaKeyGen.keySearchAskedContract (abi.withConsts cs) stack)
       (Spec.RsaKeyGen.keySearchSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) (ScrubAbi.consts cs) fun
     | [key, keyLen, used, _, _, _, _, state], m, m₁, m₂, r, _, hp, hb, h => by
@@ -130,17 +130,31 @@ theorem keySearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
 /-- `vg_rsa_generate_search` as emitted (`Impl.RsaKeyGen.PPC64LE.Fn.keySearch`),
 with the Miller–Rabin round `v`, meets its contract in constant time and
 returns without secret residue. -/
-theorem keySearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+theorem keySearch_asked (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
     VerifiedScrubbed PPC64LE.target (Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code)
-      (Spec.RsaKeyGen.keySearchContract (PPC64LE.abi.withConsts Proof.RsaKeyGen.PPC64LE.Generate.tables)
+      (Proof.RsaKeyGen.keySearchAskedContract (PPC64LE.abi.withConsts Proof.RsaKeyGen.PPC64LE.Generate.tables)
         Proof.RsaKeyGen.PPC64LE.Generate.stackUse) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi) {
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keySearchAskedApi) {
       code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
       verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }
     1088 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (keySearchOut Proof.RsaKeyGen.PPC64LE.Generate.tables Proof.RsaKeyGen.PPC64LE.Generate.stackUse)
     (keySearchSide v hv)
+
+theorem keySearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    VerifiedScrubbed PPC64LE.target (Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code)
+      (Spec.RsaKeyGen.keySearchContract (PPC64LE.abi.withConsts Proof.RsaKeyGen.PPC64LE.Generate.tables)
+        Proof.RsaKeyGen.PPC64LE.Generate.stackUse) 32 :=
+  keySearch_imp (keySearch_asked v hv) id
+
+theorem keySearch_public (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+    (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
+    Spec.RsaKeyGen.keySearchOut.Of PPC64LE.abi (Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code)
+      (Spec.RsaKeyGen.keySearchContract (PPC64LE.abi.withConsts Proof.RsaKeyGen.PPC64LE.Generate.tables)
+        Proof.RsaKeyGen.PPC64LE.Generate.stackUse) :=
+  Proof.RsaKeyGen.keySearch_public (keySearch_asked v hv)
 
 end VG.Proof.RsaKeyGen.PPC64LE.Scrub

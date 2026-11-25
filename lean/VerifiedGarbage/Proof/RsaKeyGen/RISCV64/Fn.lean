@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Generate.Verified
@@ -55,15 +56,25 @@ theorem body_fill {round : Prog isa} (suffix : String) (h : calleeSide round 96 
 
 /-- `vg_rsa_generate` as emitted, with the Miller-Rabin round `v`: it meets
 its contract in constant time and returns without secret residue. -/
-theorem keySearch_scrubbed [InvLaw] (v : RoundImpl) :
+theorem keySearch_asked [InvLaw] (v : RoundImpl) :
     VerifiedScrubbed target (Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code)
-      (Spec.RsaKeyGen.keySearchContract (abi.withConsts Generate.tables) Generate.stackUse) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
+      (Proof.RsaKeyGen.keySearchAskedContract (abi.withConsts Generate.tables) Generate.stackUse) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaKeyGen.keySearchAskedApi)
     { suffix := v.suffix
       code := Impl.RsaKeyGen.RISCV64.Fn.body v.suffix v.code
       verified := Generate.gen_verified v }
     (Proof.Rsa.RISCV64.Scrub.keySearchOut Generate.tables Generate.stackUse)
     (scrubSide_of_fill (body_fill v.suffix (calleeSide_of (depth_le_of_sdepth v.stack) v.icalls))
       body_stub_side (fun _ h => h) (fun _ h => absurd h List.not_mem_nil))
+
+theorem keySearch_scrubbed [InvLaw] (v : RoundImpl) :
+    VerifiedScrubbed target (Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code)
+      (Spec.RsaKeyGen.keySearchContract (abi.withConsts Generate.tables) Generate.stackUse) 32 :=
+  keySearch_imp (keySearch_asked v) id
+
+theorem keySearch_public [InvLaw] (v : RoundImpl) :
+    Spec.RsaKeyGen.keySearchOut.Of abi (Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code)
+      (Spec.RsaKeyGen.keySearchContract (abi.withConsts Generate.tables) Generate.stackUse) :=
+  Proof.RsaKeyGen.keySearch_public (keySearch_asked v)
 
 end VG.Proof.RsaKeyGen.RISCV64.Fn

@@ -18,10 +18,12 @@ def artifacts : List (Artifact AArch64.target) :=
     Spec.AesEcb.encryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesEcb.AArch64.Fn.blocks v.enc
-      verified := Proof.AesEcb.AArch64.encrypt_scrubbed v },
+      verified := Proof.AesEcb.AArch64.encrypt_scrubbed v
+      publicOutOk := Proof.AesEcb.AArch64.encrypt_public v },
     Spec.AesEcb.decryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesEcb.AArch64.Fn.blocks v.dec
-      verified := Proof.AesEcb.AArch64.decrypt_scrubbed v }]
+      verified := Proof.AesEcb.AArch64.decrypt_scrubbed v
+      publicOutOk := Proof.AesEcb.AArch64.decrypt_public v }]
 
 end VG.Artifacts.AesEcb.AArch64

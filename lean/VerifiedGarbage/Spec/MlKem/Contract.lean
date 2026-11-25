@@ -40,9 +40,12 @@ iterations that depends on it. The functions may leak it (`Sig.contract`'s
 `leak`), and nothing else: in particular, not whether decapsulation
 rejected the ciphertext implicitly (§6.3). On return each byte of the
 working space `scratch` is unchanged or zero (`Zeroize.scrubbed`), so that
-none of the intermediate values the function computed is left there (§3.3).
-It is 32 KiB: room for 28 polynomials of 32-bit coefficients (1 KiB each),
-the state of a Keccak computation and its working space.
+none of the intermediate values the function computed is left there (§3.3),
+and which of its bytes are zeroed depends on nothing secret: two runs that
+agree on what is public and find the same bytes in `scratch` leave the same
+bytes there (`Zeroize.left`; `keyGenOut`, …). It is 32 KiB: room for 28
+polynomials of 32-bit coefficients (1 KiB each), the state of a Keccak
+computation and its working space.
 
 The functions may overwrite their arguments passed in memory, where the
 calling convention allows it (`writeArgs`), to pass arguments to the
@@ -96,6 +99,12 @@ def keyGenContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun seed _ek _dk _scratch m => leakRho (keyGenRho mlKem768 (bytesAt m seed 32)))
 
+/-- Two runs of `vg_mlkem768_keygen` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def keyGenOut : PublicOut keyGenSig where
+  given _ := fun _seed _ek _dk scratch m => Zeroize.left m scratch 32768
+  out _ := fun _seed _ek _dk scratch _m m' _r => Zeroize.left m' scratch 32768
+
 /-- `vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32`. -/
 def checkEkSig : Sig where
   params := [("ek", .array false .u8 1184)]
@@ -134,6 +143,12 @@ def encapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun ek _msg _key _ct _scratch m => leakRho (ekRho mlKem768 (bytesAt m ek 1184)))
 
+/-- Two runs of `vg_mlkem768_encaps` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def encapsOut : PublicOut encapsSig where
+  given _ := fun _ek _msg _key _ct scratch m => Zeroize.left m scratch 32768
+  out _ := fun _ek _msg _key _ct scratch _m m' _r => Zeroize.left m' scratch 32768
+
 /-- `vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32`.
 `scratch` is working space. -/
 def decapsSig : Sig where
@@ -156,6 +171,12 @@ def decapsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (writeArgs := true)
     (stack := stack)
     (leak := some fun dk _ct _key _scratch m => leakRho (dkRho mlKem768 (bytesAt m dk 2400)))
+
+/-- Two runs of `vg_mlkem768_decaps` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def decapsOut : PublicOut decapsSig where
+  given _ := fun _dk _ct _key scratch m => Zeroize.left m scratch 32768
+  out _ := fun _dk _ct _key scratch _m m' _r => Zeroize.left m' scratch 32768
 
 /-! ## The functions on every target, for any parameter set -/
 
@@ -182,14 +203,16 @@ def scratchSafetyDoc : String :=
   "`scratch` is working space: on return each of its bytes is unchanged or zero."
 
 /-- `vg_mlkem*_keygen` of the parameter set `p` on every target, with the
-signature `sig` and the contracts `contracts`, `keyGenContract` of the
-namespace `ns`. -/
-def Params.keyGenApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts) : Api where
+signature `sig`, the contracts `contracts`, `keyGenContract` of the
+namespace `ns`, and the public outputs `publicOut`. -/
+def Params.keyGenApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts)
+    (publicOut : PublicOut sig) : Api where
   module := p.module
   name := p.fn "keygen"
   sig := sig
   writeArgs := true
   contracts := some contracts
+  publicOut := some publicOut
   summary := s!"{p.name} key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 \
     Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the \
     encapsulation key to `*ek` and the decapsulation key to `*dk`. " ++ outcomeDoc ++ s!"\n\n\
@@ -217,14 +240,16 @@ def Params.checkEkApi (p : Params) (ns : String) (sig : Sig) (contracts : Contra
   safety := []
 
 /-- `vg_mlkem*_encaps` of the parameter set `p` on every target, with the
-signature `sig` and the contracts `contracts`, `encapsContract` of the
-namespace `ns`. -/
-def Params.encapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts) : Api where
+signature `sig`, the contracts `contracts`, `encapsContract` of the
+namespace `ns`, and the public outputs `publicOut`. -/
+def Params.encapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts)
+    (publicOut : PublicOut sig) : Api where
   module := p.module
   name := p.fn "encaps"
   sig := sig
   writeArgs := true
   contracts := some contracts
+  publicOut := some publicOut
   summary := s!"{p.name} encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` \
     (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes \
     the shared secret key to `*key` and the ciphertext to `*ct`. " ++ outcomeDoc ++ s!"\n\n\
@@ -237,14 +262,16 @@ def Params.encapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contrac
     scratchSafetyDoc]
 
 /-- `vg_mlkem*_decaps` of the parameter set `p` on every target, with the
-signature `sig` and the contracts `contracts`, `decapsContract` of the
-namespace `ns`. -/
-def Params.decapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts) : Api where
+signature `sig`, the contracts `contracts`, `decapsContract` of the
+namespace `ns`, and the public outputs `publicOut`. -/
+def Params.decapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts)
+    (publicOut : PublicOut sig) : Api where
   module := p.module
   name := p.fn "decaps"
   sig := sig
   writeArgs := true
   contracts := some contracts
+  publicOut := some publicOut
   summary := s!"{p.name} decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm \
     18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key \
     to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not \
@@ -261,7 +288,7 @@ def Params.decapsApi (p : Params) (ns : String) (sig : Sig) (contracts : Contrac
 
 /-- `vg_mlkem768_keygen` on every target. -/
 def keyGenApi : Api :=
-  mlKem768.keyGenApi "VG.Spec.MlKem" keyGenSig fun A stack => keyGenContract A stack
+  mlKem768.keyGenApi "VG.Spec.MlKem" keyGenSig (fun A stack => keyGenContract A stack) keyGenOut
 
 /-- `vg_mlkem768_check_ek` on every target. -/
 def checkEkApi : Api :=
@@ -269,10 +296,10 @@ def checkEkApi : Api :=
 
 /-- `vg_mlkem768_encaps` on every target. -/
 def encapsApi : Api :=
-  mlKem768.encapsApi "VG.Spec.MlKem" encapsSig fun A stack => encapsContract A stack
+  mlKem768.encapsApi "VG.Spec.MlKem" encapsSig (fun A stack => encapsContract A stack) encapsOut
 
 /-- `vg_mlkem768_decaps` on every target. -/
 def decapsApi : Api :=
-  mlKem768.decapsApi "VG.Spec.MlKem" decapsSig fun A stack => decapsContract A stack
+  mlKem768.decapsApi "VG.Spec.MlKem" decapsSig (fun A stack => decapsContract A stack) decapsOut
 
 end VG.Spec.MlKem

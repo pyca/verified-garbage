@@ -261,6 +261,7 @@ def artifacts : List (Artifact Arm.target) :=
       code := Impl.RsaKeyGen.Arm.Fn.generate
         (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
         (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code)
-      verified := Proof.RsaKeyGen.Arm.Fn.generate v }])
+      verified := Proof.RsaKeyGen.Arm.Fn.generate v
+      publicOutOk := Proof.RsaKeyGen.Arm.Fn.generate_public v }])
 
 end VG.Artifacts.RsaKeyGen.Arm

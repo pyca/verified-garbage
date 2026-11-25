@@ -41,6 +41,7 @@ def artifacts : List (Artifact Arm.target) :=
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
-      verified := Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v }]
+      verified := Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v
+      publicOutOk := Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom_public ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v }]
 
 end VG.Artifacts.RsaPkcs1Enc.Arm

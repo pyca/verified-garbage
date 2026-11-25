@@ -18,7 +18,8 @@ with the 32 bytes `h` given, which must be `H(ek)` (the precondition of
 implementation may use `h` in place of `H(ek)`, and nothing else changes:
 the same outcome (`Outcome`), the same leak (`ρ`, and nothing else; `h` is
 secret as the rest of `ek` is), the same working space, left with each byte
-unchanged or zero.
+unchanged or zero, and which bytes are zeroed reveals nothing
+(`Zeroize.left`; `encapsHOut`).
 
 The caller computes `h` from `ek` once, with SHA3-256 (or takes it from the
 decapsulation key, where `vg_mlkem*_keygen` writes it), and passes it with
@@ -59,15 +60,23 @@ def encapsHContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun ek _h _msg _key _ct _scratch m => leakRho (ekRho mlKem768 (bytesAt m ek 1184)))
 
+/-- Two runs of `vg_mlkem768_encaps_h` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def encapsHOut : PublicOut encapsHSig where
+  given _ := fun _ek _h _msg _key _ct scratch m => Zeroize.left m scratch 32768
+  out _ := fun _ek _h _msg _key _ct scratch _m m' _r => Zeroize.left m' scratch 32768
+
 /-- `vg_mlkem*_encaps_h` of the parameter set `p` on every target, with the
-signature `sig` and the contracts `contracts`, `encapsHContract` of the
-namespace `ns`. -/
-def Params.encapsHApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts) : Api where
+signature `sig`, the contracts `contracts`, `encapsHContract` of the
+namespace `ns`, and the public outputs `publicOut`. -/
+def Params.encapsHApi (p : Params) (ns : String) (sig : Sig) (contracts : Contracts)
+    (publicOut : PublicOut sig) : Api where
   module := p.module
   name := p.fn "encaps_h"
   sig := sig
   writeArgs := true
   contracts := some contracts
+  publicOut := some publicOut
   summary := s!"{p.name} encapsulation with given randomness and the hash of the key, \
     `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, \
     its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and \
@@ -84,7 +93,7 @@ def Params.encapsHApi (p : Params) (ns : String) (sig : Sig) (contracts : Contra
 
 /-- `vg_mlkem768_encaps_h` on every target. -/
 def encapsHApi : Api :=
-  mlKem768.encapsHApi "VG.Spec.MlKem" encapsHSig fun A stack => encapsHContract A stack
+  mlKem768.encapsHApi "VG.Spec.MlKem" encapsHSig (fun A stack => encapsHContract A stack) encapsHOut
 
 end VG.Spec.MlKem
 
@@ -109,8 +118,14 @@ def encapsHContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (stack := stack)
     (leak := some fun ek _h _msg _key _ct _scratch m => leakRho (ekRho mlKem1024 (bytesAt m ek 1568)))
 
+/-- Two runs of `vg_mlkem1024_encaps_h` that agree on what is public and on the bytes
+of `scratch` on entry leave the same bytes in it. -/
+def encapsHOut : PublicOut encapsHSig where
+  given _ := fun _ek _h _msg _key _ct scratch m => Zeroize.left m scratch 49152
+  out _ := fun _ek _h _msg _key _ct scratch _m m' _r => Zeroize.left m' scratch 49152
+
 /-- `vg_mlkem1024_encaps_h` on every target. -/
 def encapsHApi : Api :=
-  mlKem1024.encapsHApi "VG.Spec.MlKem1024" encapsHSig fun A stack => encapsHContract A stack
+  mlKem1024.encapsHApi "VG.Spec.MlKem1024" encapsHSig (fun A stack => encapsHContract A stack) encapsHOut
 
 end VG.Spec.MlKem1024

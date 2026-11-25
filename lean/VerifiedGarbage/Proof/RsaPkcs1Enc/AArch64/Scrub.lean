@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Random
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
@@ -40,9 +40,9 @@ open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.RsaPkcs1Sig.AArch64 (privP_side privP_depth pdOf)
 
 /-- `vg_rsa_pkcs1_encrypt_random` as emitted, cleanup included. -/
-theorem encryptRandom_scrubbed (v : Proof.Rsa.AArch64.PublicImpl) :
+theorem encryptRandom_asked (v : Proof.Rsa.AArch64.PublicImpl) :
     VerifiedScrubbed target (Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code)
-      (Spec.RsaPkcs1Enc.encryptRandomContract abi 2208) 32 := by
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi 2208) 32 := by
   obtain ⟨hs, hd⟩ := side_depth_of_fill2
     (c := Impl.RsaPkcs1Enc.AArch64.Random.code ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
       (Impl.RsaPkcs1Enc.AArch64.Precomputed.code v.name v.code))
@@ -54,5 +54,17 @@ theorem encryptRandom_scrubbed (v : Proof.Rsa.AArch64.PublicImpl) :
   exact verifiedScrubbedOf (W := 2208) (Rnd.code_verified (pdOf v) Enc.Pc.sat Rnd.sat)
     (Proof.Rsa.AArch64.Scrub.pkcs1EncryptRandomOk _) (by decide)
     (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (.inr (.inl rfl))
+
+theorem encryptRandom_scrubbed (v : Proof.Rsa.AArch64.PublicImpl) :
+    VerifiedScrubbed target
+      (Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code)
+      (Spec.RsaPkcs1Enc.encryptRandomContract abi 2208) 32 :=
+  encryptRandom_imp (encryptRandom_asked v) id
+
+theorem encryptRandom_public (v : Proof.Rsa.AArch64.PublicImpl) :
+    Spec.RsaPkcs1Enc.encryptRandomOut.Of abi
+      (Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code)
+      (Spec.RsaPkcs1Enc.encryptRandomContract abi 2208) :=
+  Proof.RsaPkcs1Enc.encryptRandom_public (encryptRandom_asked v)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Scrub

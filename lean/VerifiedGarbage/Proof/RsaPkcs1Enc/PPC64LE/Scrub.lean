@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.RandomPublic
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecP
@@ -35,7 +35,7 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
   cases v <;> simpa only [Spec.RsaPkcs1Enc.writtenRandom, e] using h
 
 theorem encryptRandomOut (stack : Nat) :
-    PostOut (Spec.RsaPkcs1Enc.encryptRandomContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
+    PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
   postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
     | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -64,15 +64,27 @@ theorem encryptRandomOut (stack : Nat) :
 /-- `vg_rsa_pkcs1_encrypt_random` as emitted
 (`Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom`) meets its contract in constant
 time and returns without secret residue. -/
-theorem encryptRandom_scrubbed :
+theorem encryptRandom_asked :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom
-      (Spec.RsaPkcs1Enc.encryptRandomContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Rnd.rndStack) 32 :=
-  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
+      (Proof.RsaPkcs1Enc.encryptRandomAskedContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Rnd.rndStack) 32 :=
+  verifiedScrubbedAll (api := Proof.RsaPkcs1Enc.encryptRandomAskedApi) {
       code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
       verified := Proof.RsaPkcs1Enc.PPC64LE.Rnd.code_verified }
     3440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (encryptRandomOut _)
     (by dsimp only; lit_decide)
+
+theorem encryptRandom_scrubbed :
+    VerifiedScrubbed PPC64LE.target
+      Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom
+      (Spec.RsaPkcs1Enc.encryptRandomContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Rnd.rndStack) 32 :=
+  encryptRandom_imp (encryptRandom_asked) id
+
+theorem encryptRandom_public :
+    Spec.RsaPkcs1Enc.encryptRandomOut.Of PPC64LE.abi
+      Impl.RsaPkcs1Enc.PPC64LE.Fn.encryptRandom
+      (Spec.RsaPkcs1Enc.encryptRandomContract PPC64LE.abi Proof.RsaPkcs1Enc.PPC64LE.Rnd.rndStack) :=
+  Proof.RsaPkcs1Enc.encryptRandom_public (encryptRandom_asked)
 
 end VG.Proof.RsaPkcs1Enc.PPC64LE.Scrub

@@ -30,6 +30,7 @@ def artifacts : List (Artifact AArch64.target) :=
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code
-      verified := Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandom_scrubbed v }])
+      verified := Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandom_scrubbed v
+      publicOutOk := Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandom_public v }])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

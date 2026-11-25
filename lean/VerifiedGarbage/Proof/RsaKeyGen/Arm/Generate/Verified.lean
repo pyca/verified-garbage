@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Correct
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Generate.Implies
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Search.Verified
@@ -1087,7 +1088,7 @@ theorem gen_correct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (s : State) (
 /-- The controller, given the inverse's law (`InvLaw`, whose instance the
 registration file imports). -/
 theorem gen_verified [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
-    Verified target (genCode v) (Spec.RsaKeyGen.keySearchContract abi stackUse) :=
+    Verified target (genCode v) (Proof.RsaKeyGen.keySearchAskedContract abi stackUse) :=
   Verified.of_correct (gen_correct v)
     (gen_constantTime _ (Search.Cand.ofRound v) _ Key.key_verified key_stack) gen_implies
 

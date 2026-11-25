@@ -23,6 +23,7 @@ def artifacts : List (Artifact X86_64.target) :=
       suffix := v.suffix
       code := Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Proof.RsaKeyGen.X86_64.Generate.searchCall v)
       verified := Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_scrubbed v
+      publicOutOk := Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_public v
       spSafe := Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_spSafe v }])
 
 end VG.Artifacts.RsaKeyGen.X86_64
