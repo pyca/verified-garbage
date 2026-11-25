@@ -113,9 +113,10 @@ def exit : List Instr :=
 def setup : Prog isa :=
   seqs [.block saveRegisters, .block entry, .block sizeWords, sizedWorkspace, .block args]
 
-def code (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+def code (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (prepare : Prog isa := Generation.primeSetup mul) : Prog isa :=
   .frame (.alloc 56)
-    (.seq setup (seqs [primeBytes mul round, .block exit, .block restoreRegisters]))
+    (.seq setup (seqs [primeBytes mul round prepare, .block exit, .block restoreRegisters]))
     (.free 56)
 
 end VG.Impl.Dsa.X86_64.ProbablePrime

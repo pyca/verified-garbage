@@ -1401,6 +1401,10 @@ pub(crate) mod vg_dsa_parameter_search_2048;
 pub(crate) mod vg_dsa_parameter_search_3072;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_prime_setup_adx.rs"]
+pub(crate) mod vg_dsa_prime_setup_adx;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime.rs"]
 pub(crate) mod vg_dsa_probable_prime;
 

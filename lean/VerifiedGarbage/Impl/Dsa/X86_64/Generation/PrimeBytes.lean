@@ -8,7 +8,8 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
 namespace VG.Impl.Dsa.X86_64.Generation
 open VG VG.X86_64
 
-def primeBytes (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
-  .seq (loadPadded 0 20 18) (probablePrime mul round)
+def primeBytes (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (prepare : Prog isa := primeSetup mul) : Prog isa :=
+  .seq (loadPadded 0 20 18) (probablePrime mul round prepare)
 
 end VG.Impl.Dsa.X86_64.Generation

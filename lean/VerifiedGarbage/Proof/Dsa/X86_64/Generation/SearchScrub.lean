@@ -49,19 +49,34 @@ open VG.Proof.Dsa.X86_64.Generation.RefillBackend (Hashes body name addrs fns)
 def primeStack : String → Nat := fun s => if s = "r" then 128 else 0
 
 /-- The prime test's code over stubs of the multiplication and the round. -/
-def primeStub : Prog isa :=
+def primeStub (shared : Bool := false) : Prog isa :=
   Impl.Dsa.X86_64.ProbablePrime.code (fun _ _ _ => .call "mm" (.block []))
     (Impl.MillerRabin.X86_64.Caller.call "r" (.block []))
+    (let prepare := Impl.Dsa.X86_64.Generation.primeSetup (fun _ _ _ => .call "mm" (.block []))
+     if shared then .call "prep" prepare else prepare)
 
-theorem prime_stub : stubCalleeG primeStub VecLevel.sse.level primeStack 184 = true := by lit_decide
+theorem prime_stub : stubCalleeG (primeStub false) VecLevel.sse.level primeStack 184 = true := by lit_decide
+
+theorem prime_call_stub : stubCalleeG (primeStub true) VecLevel.sse.level primeStack 184 = true := by
+  lit_decide
 
 theorem prime_side (v : RoundImpl) :
     calleeSide (ProbablePrime.testCode v) v.level.level 184 = true := by
   have hm := v.inlineSide
   have hr := v.side
-  refine calleeSide_of_fillG (n := primeStack) ?_ (Nat.zero_le _) prime_stub
-  unfold primeStub ProbablePrime.testCode VG.Proof.MillerRabin.X86_64.Kernel.called
-  fill_gen
+  by_cases h : v.arithSuffix = ""
+  · refine calleeSide_of_fillG (n := primeStack) ?_ (Nat.zero_le _) prime_stub
+    unfold primeStub ProbablePrime.testCode VG.Proof.MillerRabin.X86_64.Kernel.called
+      Preparation.forRound
+    simp only [h, ↓reduceIte, Bool.false_eq_true]
+    unfold Preparation.inlined
+    fill_gen
+  · refine calleeSide_of_fillG (n := primeStack) ?_ (Nat.zero_le _) prime_call_stub
+    unfold primeStub ProbablePrime.testCode VG.Proof.MillerRabin.X86_64.Kernel.called
+      Preparation.forRound
+    simp only [h, ↓reduceIte]
+    unfold Preparation.called
+    fill_gen
 
 /-! ## The search for one width -/
 

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillContract
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
@@ -198,9 +200,9 @@ theorem keeps_of_frame {bits : Nat} (hb : Supported bits) {s : State} (A : Prime
     exact A.stackWs _ (hs _ hx) hc
   · exact A.wsUsed _ hc hx
 
-theorem correct (M : Mont) (K : Kernel)
-    (ctl : ctlOk (code M.mm K.run) = true) (s : State) (pre : contract.pre s) :
-    ∃ trace t, Exec isa (code M.mm K.run) s trace t ∧ abiPreserved s t ∧ contract.post s t := by
+theorem correct (M : Mont) (K : Kernel) (S : VG.Proof.Dsa.X86_64.Generation.Preparation M)
+    (ctl : ctlOk (code M.mm K.run S.code) = true) (s : State) (pre : contract.pre s) :
+    ∃ trace t, Exec isa (code M.mm K.run S.code) s trace t ∧ abiPreserved s t ∧ contract.post s t := by
   obtain ⟨hb, A⟩ := primeABI_of pre
   have hwl : witness + len (s.gpr .r9).toNat ≤ domainCheck := by
     rcases hb with h | h | h | h | h <;> rw [h] <;> decide
@@ -209,7 +211,7 @@ theorem correct (M : Mont) (K : Kernel)
   simp only [off, BitVec.add_zero] at hs
   obtain ⟨trace, f, he, hsp, hpost⟩ := alloc_frame_ok (bytes := 56) (by decide) hl
     (Q := fun f => f.gpr .rsp = s.gpr .rsp ∧ BodyPost (s.gpr .r9).toNat s f)
-    (WP.mono (body_ok M K hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, fun m u fm => ⟨freeState_rsp h1, by
+    (WP.mono (body_ok M K S hb A) fun t ⟨h1, h2, _, hp⟩ => ⟨h1, h2, fun m u fm => ⟨freeState_rsp h1, by
       obtain ⟨hr, hu, hm, hg⟩ := hp
       refine ⟨hr, fun b rest h => ?_, hm.trans (fm.sub fun r hr => ?_), fun r hr' => ?_⟩
       · refine (fm.readW (r := ⟨s.gpr .r8, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)).trans
@@ -512,16 +514,98 @@ end
 namespace VG.Proof.Dsa.X86_64.ProbablePrime
 open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 
+open VG.Impl.Dsa.X86_64.ProbablePrime
+
+private def prepareStub : Prog isa :=
+  Impl.Dsa.X86_64.Generation.primeSetup (fun _ _ _ => .call "mm" (.block []))
+
+private theorem prepare_stub :
+    VG.X86_64.Scrub.stubCalleeG prepareStub 0 (fun _ => 0) 8 = true := by lit_decide
+
+private theorem prepare_side (v : RoundImpl) :
+    VG.X86_64.Scrub.calleeSide (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm)
+      v.level.level 8 = true := by
+  apply VG.X86_64.Scrub.calleeSide_of_fillG (n := fun _ => 0) ?_ (Nat.zero_le _) prepare_stub
+  have hm := v.inlineSide
+  unfold prepareStub
+  fill_gen
+
+private theorem prepare_depth (v : RoundImpl) :
+    (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth ≤ 8 := by
+  have h := prepare_side v
+  simp only [VG.X86_64.Scrub.calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact h.1.1
+
+private theorem code_ok_prepare (mul : Nat → Nat → Nat → Prog isa) (round a b : Prog isa)
+    (h : Generation.generationOk a = Generation.generationOk b) :
+    Generation.generationOk (Impl.Dsa.X86_64.ProbablePrime.code mul round a) = Generation.generationOk (Impl.Dsa.X86_64.ProbablePrime.code mul round b) := by
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Impl.Dsa.X86_64.Generation.primeBytes,
+    Impl.Dsa.X86_64.Generation.probablePrime, Generation.generationOk]
+  rw [h]
+
+private theorem code_instrs_prepare (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa)
+    (round a b : Prog isa) (h : a.allInstrs p = b.allInstrs p) :
+    (Impl.Dsa.X86_64.ProbablePrime.code mul round a).allInstrs p = (Impl.Dsa.X86_64.ProbablePrime.code mul round b).allInstrs p := by
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Impl.Dsa.X86_64.Generation.primeBytes,
+    Impl.Dsa.X86_64.Generation.probablePrime, Code.allInstrs]
+  rw [h]
+
+private theorem code_depth_prepare (mul : Nat → Nat → Nat → Prog isa) (round prepare : Prog isa)
+    (hm : ∀ o a b, Generation.generationDepth (mul o a b))
+    (hr : Generation.generationDepth round) (hp : Generation.generationDepth prepare) :
+    (Impl.Dsa.X86_64.ProbablePrime.code mul round prepare).x86_64Depth ≤ 184 := by
+  have htrial : Generation.generationDepth (Impl.Bignum.X86_64.seqs Impl.RsaKeyGen.X86_64.Candidate.trial) := by
+    unfold Generation.generationDepth; decide +kernel
+  have hpp : Generation.generationDepth (Impl.Dsa.X86_64.Generation.probablePrime mul round prepare) :=
+    htrial.seq ((hp.seq (Generation.millerRabin_depth mul round hm hr)).ite
+      (Generation.generationDepth.block _) _)
+  have hpbytes : Generation.generationDepth (Impl.Dsa.X86_64.Generation.primeBytes mul round prepare) :=
+    (show Generation.generationDepth (Impl.Dsa.X86_64.Generation.loadPadded 0 20 18) from by
+      change 0 ≤ 128; decide).seq hpp
+  unfold Generation.generationDepth at hpbytes
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, setup, Impl.Bignum.X86_64.seqs, sizedWorkspace, Code.x86_64Depth, Instr.frameBytes,
+    Nat.zero_max, Nat.max_zero]
+  exact Nat.add_le_add_right hpbytes 56
+
 /-- The test's code with the round implementation `v`. -/
 abbrev testCode (v : RoundImpl) : Prog isa :=
   Impl.Dsa.X86_64.ProbablePrime.code v.inlineMont.mm (Kernel.called v).run
+    (Generation.Preparation.forRound v).code
 
 theorem testCode_safe (v : RoundImpl) :
-    VG.Proof.Dsa.X86_64.Generation.generationSafe (testCode v) :=
-  code_safe _ _ (fun o a b => VG.Proof.Dsa.X86_64.Generation.generationSafe_of_allInstrs (v.inlineSafe o a b)) (VG.Proof.Dsa.X86_64.Generation.roundCode_safe v)
+    VG.Proof.Dsa.X86_64.Generation.generationSafe (testCode v) := by
+  have hm := fun o a b => Generation.generationSafe_of_allInstrs (v.inlineSafe o a b)
+  have hp := Generation.primeSetup_safe v.inlineMont.mm hm
+  have hs : Generation.generationSafe (Generation.Preparation.forRound v).code := by
+    unfold Generation.Preparation.forRound
+    split
+    · exact hp
+    · exact hp.call _
+  unfold Generation.generationSafe at hs hp ⊢
+  rw [code_ok_prepare _ _ _ _ (hs.trans hp.symm)]
+  exact code_safe _ _ hm (Generation.roundCode_safe v)
+
+theorem testCode_noMx (v : RoundImpl) :
+    (testCode v).allInstrs (fun i => !touchesMxcsr i) = true := by
+  have he : (Generation.Preparation.forRound v).code.allInstrs (fun i => !touchesMxcsr i) =
+      (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).allInstrs (fun i => !touchesMxcsr i) := by
+    unfold Generation.Preparation.forRound
+    split <;> rfl
+  rw [code_instrs_prepare _ _ _ _ _ he]
+  exact code_noMx _ _ v.inlineNoMx (Generation.roundCode_noMx v)
+
+theorem testCode_depth (v : RoundImpl) : (testCode v).x86_64Depth ≤ 184 := by
+  apply code_depth_prepare _ _ _ (Generation.inlineMul_depth v) (Generation.roundCode_depth v)
+  unfold Generation.generationDepth Generation.Preparation.forRound
+  split
+  · change (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth ≤ 128
+    have h := prepare_depth v; omega
+  · change (Impl.Dsa.X86_64.Generation.primeSetup v.inlineMont.mm).x86_64Depth + 8 ≤ 128
+    have h := prepare_depth v; omega
 
 theorem verified (v : RoundImpl) : Verified target (testCode v) contract :=
-  ⟨correct v.inlineMont (Kernel.called v) (testCode_safe v).mx, code_ct _ _, satisfiable⟩
+  ⟨correct v.inlineMont (Kernel.called v) (Generation.Preparation.forRound v) (testCode_safe v).mx,
+    code_ct _ _ (Generation.TimedPreparation.forRound v), satisfiable⟩
 
 /-- The test with the round implementation `v`, as parameter generation
 calls it. -/
@@ -530,9 +614,8 @@ def primeTest (v : RoundImpl) : VG.Proof.Dsa.X86_64.Generation.PrimeTest where
   code := testCode v
   verified := verified v
   safe := testCode_safe v
-  noMx := code_noMx _ _ v.inlineNoMx (VG.Proof.Dsa.X86_64.Generation.roundCode_noMx v)
-  depth := code_depth _ _ (VG.Proof.Dsa.X86_64.Generation.inlineMul_depth v)
-    (VG.Proof.Dsa.X86_64.Generation.roundCode_depth v)
+  noMx := testCode_noMx v
+  depth := testCode_depth v
 
 end VG.Proof.Dsa.X86_64.ProbablePrime
 
