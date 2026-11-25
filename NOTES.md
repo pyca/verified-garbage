@@ -73,3 +73,12 @@ Candidate improvements, in order of expected gain, decided on the first measurem
  (ii) the 3x: 26 -> two adds is 36; keep.
  (iii) the first batch's P-256 reduction in `abUpdate`: m = 1, so `mul x16 = t0 * minv` is t0, and k p is 4 products (mul/umulh pairs 8); by shifts 0. 2 rows
      per batch: 16+ products of ~ 90 in the update; about 60 instructions of 414.
+
+## 7. First measurement and the next trial (before it is run)
+
+Run 45671603913, Neoverse N2, against 5698282829 (which still has the old square): ecdh 43912 -> 42643 ns, verify (sha256, 64) 44950 -> 43529,
+sign 12437 -> 12291, public key 9293 -> 9182. A run against the base branch alone isolates this change.
+Trial A: the same raw doubling, 3000 tries of the search. Trial B: 3x before the product, M = (3(X-d) mod p)(X+d), takes 3x off the critical path's tail
+(the 3x runs beside X+d's addition but the add is 18 and 3x is 26: the path is X-d, 3x, mul instead of X-d, mul, 3x: no gain in length). Not tried.
+Trial C: S2 = S + S once, then X3 = M^2 - S2 (add 18 + sub 12 = 30 against 24, but only one subtraction follows M^2 on the path: 7 cycles less, as S is ready
+earlier). Measured by mca only: if it is 5 cycles or more better, it goes in.
