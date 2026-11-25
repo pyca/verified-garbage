@@ -148,36 +148,48 @@ def mulAcc (v : Reg) : List Instr :=
 def signed (u : Reg) : List Instr :=
   [.tst .x .x14 .x14, .cselc .x .x15 u .x16 .mi, .sub .x .x10 .x10 .x15]
 
-def sumFG : List Instr :=
-  ldp4 oF .x2 .x3 .x8 .x9 ++ ldp4 oG .x11 .x12 .x13 .x14 ++
-    ([.adds .x .x2 .x2 .x11, .adcs .x .x3 .x3 .x12, .adcs .x .x8 .x8 .x13, .adc .x .x9 .x9 .x14] : List Instr) ++
-    stp4 oS .x2 .x3 .x8 .x9
+/-- The row's four low words plus the operand. -/
+def addOpd : List Instr :=
+  [.adds .x .x2 .x2 .x11, .adcs .x .x3 .x3 .x12, .adcs .x .x8 .x8 .x13, .adc .x .x9 .x9 .x14]
 
-/-- The row over `2^59`, less the operand. -/
+/-- The row's four low words less the operand. -/
+def subOpd : List Instr :=
+  [.subs .x .x2 .x2 .x11, .sbcs .x .x3 .x3 .x12, .sbcs .x .x8 .x8 .x13, .sbc .x .x9 .x9 .x14]
+
+/-- The row over `2^59`. -/
 def shift : List Instr :=
-  [.extr .x .x2 .x3 .x2 59, .extr .x .x3 .x8 .x3 59, .extr .x .x8 .x9 .x8 59, .extr .x .x9 .x10 .x9 59,
-    .subs .x .x2 .x2 .x11, .sbcs .x .x3 .x3 .x12, .sbcs .x .x8 .x8 .x13, .sbc .x .x9 .x9 .x14]
+  [.extr .x .x2 .x3 .x2 59, .extr .x .x3 .x8 .x3 59, .extr .x .x8 .x9 .x8 59, .extr .x .x9 .x10 .x9 59]
+
+/-- `[oS] = f + g`. -/
+def sumFG : List Instr :=
+  ldp4 oF .x2 .x3 .x8 .x9 ++ ldp4 oG .x11 .x12 .x13 .x14 ++ addOpd ++ stp4 oS .x2 .x3 .x8 .x9
 
 /-- `[o] = (u f + v g) / 2^59`, for the biased `u` and `v`. -/
 def rowFG (u v : Reg) (o : Nat) : List Instr :=
   ldp4 oF .x11 .x12 .x13 .x14 ++ mulFirst u ++ signed u ++ ldp4 oG .x11 .x12 .x13 .x14 ++ mulAcc v ++
-    signed v ++ ldp4 oS .x11 .x12 .x13 .x14 ++ shift ++ stp4 o .x2 .x3 .x8 .x9
+    signed v ++ ldp4 oS .x11 .x12 .x13 .x14 ++ shift ++ subOpd ++ stp4 o .x2 .x3 .x8 .x9
 
 def copy4 (d s : Nat) : List Instr := ldp4 s .x11 .x12 .x13 .x14 ++ stp4 d .x11 .x12 .x13 .x14
 
-/-- `2 p` less the words in `x2`, `x3`, `x8`, `x9`, through `x15` and `x17`. -/
-def twoPMinus : List Instr :=
-  [.movz .x .x17 38 0, .sub .x .x15 .x16 .x17, .subImm .x .x17 .x16 1,
-    .subs .x .x2 .x15 .x2, .sbcs .x .x3 .x17 .x3, .sbcs .x .x8 .x17 .x8, .sbcs .x .x9 .x17 .x9]
+/-- The words of `2 p`: the lowest in `x15`, the others in `x17`. -/
+def twoP : List Instr := [.movz .x .x17 38 0, .sub .x .x15 .x16 .x17, .subImm .x .x17 .x16 1]
+
+/-- `2 p` less the row's four low words. -/
+def negRow : List Instr :=
+  [.subs .x .x2 .x15 .x2, .sbcs .x .x3 .x17 .x3, .sbcs .x .x8 .x17 .x8, .sbcs .x .x9 .x17 .x9]
+
+/-- The five words of `2^59` times the row's four low words less the operand, into
+`x11`–`x15`, and `x17 = 19`. -/
+def subShift : List Instr :=
+  [.subs .x .x2 .x2 .x11, .sbcs .x .x3 .x3 .x12, .sbcs .x .x8 .x8 .x13, .sbcs .x .x9 .x9 .x14,
+    .sbc .x .x10 .x16 .x16,
+    .lsl .x .x11 .x2 59, .extr .x .x12 .x3 .x2 5, .extr .x .x13 .x8 .x3 5, .extr .x .x14 .x9 .x8 5,
+    .extr .x .x15 .x10 .x9 5, .movz .x .x17 19 0]
 
 /-- `[oE] = 2^59 (2 p - a - b)`, and `x17 = 19`. -/
 def offsetAB : List Instr :=
-  ldp4 oA .x2 .x3 .x8 .x9 ++ ldp4 oB .x11 .x12 .x13 .x14 ++ twoPMinus ++
-    ([.subs .x .x2 .x2 .x11, .sbcs .x .x3 .x3 .x12, .sbcs .x .x8 .x8 .x13, .sbcs .x .x9 .x9 .x14,
-      .sbc .x .x10 .x16 .x16,
-      .lsl .x .x11 .x2 59, .extr .x .x12 .x3 .x2 5, .extr .x .x13 .x8 .x3 5, .extr .x .x14 .x9 .x8 5,
-      .extr .x .x15 .x10 .x9 5, .movz .x .x17 19 0] : List Instr) ++
-    stp4 oE .x11 .x12 .x13 .x14 ++ ([.str .x .x15 .x0 (oE + 32)] : List Instr)
+  ldp4 oA .x2 .x3 .x8 .x9 ++ ldp4 oB .x11 .x12 .x13 .x14 ++ twoP ++ negRow ++ subShift ++
+    stp4 oE .x11 .x12 .x13 .x14 ++ ([st .x15 (oE + 32)] : List Instr)
 
 /-- The row plus the five words of `x11`–`x15`, its bits from 255 up folded by `x17 = 19`. -/
 def fold : List Instr :=
@@ -190,7 +202,7 @@ def fold : List Instr :=
 /-- `[o] ≡ u a + v b`, for the biased `u` and `v`. -/
 def rowAB (u v : Reg) (o : Nat) : List Instr :=
   ldp4 oA .x11 .x12 .x13 .x14 ++ mulFirst u ++ ldp4 oB .x11 .x12 .x13 .x14 ++ mulAcc v ++
-    ldp4 oE .x11 .x12 .x13 .x14 ++ ([.ldr .x .x15 .x0 (oE + 32)] : List Instr) ++ fold ++ stp4 o .x2 .x3 .x8 .x9
+    ldp4 oE .x11 .x12 .x13 .x14 ++ ([ld .x15 (oE + 32)] : List Instr) ++ fold ++ stp4 o .x2 .x3 .x8 .x9
 
 def updateFG : List Instr :=
   sumFG ++ rowFG .x4 .x5 oT ++ rowFG .x6 .x7 oG ++ copy4 oF oT
@@ -219,25 +231,33 @@ def foldTop : List Instr :=
     .csel .x .x11 .x17 .x16, .adds .x .x2 .x2 .x11, .adcs .x .x3 .x3 .x16, .adcs .x .x8 .x8 .x16,
     .adc .x .x9 .x9 .x16]
 
-/-- Less `p` if that is not negative: `y + 19` has bit 255 set, which is dropped. -/
-def subP : List Instr :=
-  [.adds .x .x11 .x2 .x17, .adcs .x .x12 .x3 .x16, .adcs .x .x13 .x8 .x16, .adc .x .x14 .x9 .x16,
-    .tst .x .x14 .x14, .add .x .x14 .x14 .x14, .lsr .x .x14 .x14 1,
+/-- The operand is the row's four low words plus `19`. -/
+def plus19 : List Instr :=
+  [.adds .x .x11 .x2 .x17, .adcs .x .x12 .x3 .x16, .adcs .x .x13 .x8 .x16, .adc .x .x14 .x9 .x16]
+
+/-- The operand less `2^255` if that is not negative, else the row: `y - p` for `y ≥ p`
+from `y + 19`. -/
+def reduceOnce : List Instr :=
+  [.tst .x .x14 .x14, .add .x .x14 .x14 .x14, .lsr .x .x14 .x14 1,
     .cselc .x .x2 .x11 .x2 .mi, .cselc .x .x3 .x12 .x3 .mi, .cselc .x .x8 .x13 .x8 .mi,
     .cselc .x .x9 .x14 .x9 .mi]
 
+/-- `i = 0`, and ten batches. -/
+def counters : List Instr := [.movz .x .x20 0 0, .movz .x .x19 10 0]
+
 def start : List Instr :=
   set4 oF Spec.X25519.P ++ set4 oA 0 ++ set4 oB b0 ++
-    ldp4 128 .x2 .x3 .x8 .x9 ++ foldTop ++ subP ++ stp4 oG .x2 .x3 .x8 .x9 ++
-    ([.movz .x .x20 0 0, .movz .x .x19 10 0] : List Instr)
+    ldp4 128 .x2 .x3 .x8 .x9 ++ foldTop ++ plus19 ++ reduceOnce ++ stp4 oG .x2 .x3 .x8 .x9 ++ counters
+
+/-- The row's four low words for a negative `x10`, else the operand. -/
+def bySign : List Instr :=
+  [.tst .x .x10 .x10, .cselc .x .x2 .x2 .x11 .mi, .cselc .x .x3 .x3 .x12 .mi, .cselc .x .x8 .x8 .x13 .mi,
+    .cselc .x .x9 .x9 .x14 .mi]
 
 /-- `[slot 15] = a`, or `2 p - a` for a negative `f`. -/
 def finish : List Instr :=
-  ldp4 oA .x2 .x3 .x8 .x9 ++ ldp4 oA .x11 .x12 .x13 .x14 ++ ([ld .x10 (oF + 24), .movz .x .x16 0 0] : List Instr) ++
-    twoPMinus ++
-    ([.tst .x .x10 .x10, .cselc .x .x2 .x2 .x11 .mi, .cselc .x .x3 .x3 .x12 .mi, .cselc .x .x8 .x8 .x13 .mi,
-      .cselc .x .x9 .x9 .x14 .mi] : List Instr) ++
-    stores (offset 15) .x2 .x3 .x8 .x9
+  ldp4 oA .x2 .x3 .x8 .x9 ++ ldp4 oA .x11 .x12 .x13 .x14 ++ ([ld .x10 (oF + 24)] : List Instr) ++
+    ([.movz .x .x16 0 0] : List Instr) ++ twoP ++ negRow ++ bySign ++ stores (offset 15) .x2 .x3 .x8 .x9
 
 /-- `[slot 15] = [slot 2]^(p - 2)`. -/
 def invert : Prog isa :=
