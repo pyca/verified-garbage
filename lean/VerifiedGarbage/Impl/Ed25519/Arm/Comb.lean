@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
 
 /-!
@@ -163,6 +164,22 @@ def combInit : Prog isa :=
 def combPrepare : Prog isa := .seq (.block combCopy) combInit
 
 /-- `[s]B` into slots 0–3, for the scalar at `r12`. -/
-def combMultiply (umaal : Bool) : Prog isa := .seq combPrepare (.loop (combStep umaal) .ne)
+def combMultiplyInline (umaal : Bool) : Prog isa := .seq combPrepare (.loop (combStep umaal) .ne)
+
+/-- The helper's return address, beyond verification's headers and saved `lr`. -/
+def combReturn : Nat := 8176
+
+/-- The scalar pointer crosses the call in a temporary word: ARM veneers may clobber `r12`. -/
+def combInput : Nat := 60
+
+/-- The shared comb engine, preserving its own return address in the existing workspace. -/
+def combMultiplyFn (umaal : Bool) : Prog isa :=
+  .seq (.block (scratchAddr combReturn ++ [.str .lr .r12 0, .ldr .r12 .r0 combInput]))
+    (.seq (combMultiplyInline umaal) (.block (scratchAddr combReturn ++ [.ldr .lr .r12 0])))
+
+/-- `[s]B` into slots 0–3, shared by signing and verification. -/
+def combMultiply (umaal : Bool) : Prog isa :=
+  .seq (.block [.str .r12 .r0 combInput])
+    (.call ("vg_ed25519_comb_multiply" ++ if umaal then "_umaal" else "") (combMultiplyFn umaal))
 
 end VG.Impl.Ed25519.Arm

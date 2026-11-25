@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.Arm.CombCall
+
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
@@ -117,7 +119,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr T : BitVec 32} (hc : Ctx base 
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa (scalarBaseEngine umaal) s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (scalarBaseEngine umaal) s fun t => CombKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       V t.mem (State.addr base) FR = encodedValue
         (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) Spec.Ed25519.basePoint) := by
   have fa : (FA base).Sub ⟨State.addr base, 8192⟩ := Offset.sub_base _ (by decide)
@@ -137,7 +139,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr T : BitVec 32} (hc : Ctx base 
   refine WP.mono (combMultiply_ok hca al up hfit ur hsep hTa (by rw [sya]; exact hsym) apart)
     fun v ⟨vk, vl, vrep⟩ => ?_
   refine WP.mono (pointEncode_ok (vk.ctx hca) vl) fun t ⟨tk, tl, tv⟩ => ?_
-  refine ⟨(PointKeep.of_keep ak).trans (vk.trans (PointKeep.of_ikeep tk)), tl, ?_⟩
+  refine ⟨(PointKeep.of_keep ak).toCombKeep.trans (vk.trans (PointKeep.of_ikeep tk).toCombKeep), tl, ?_⟩
   change V t.mem (State.addr base) FR = encodedValue (point (env v.mem base) 0 1 2 3) at tv
   rw [tv, ← uv]
   have hm := pointMul_rep (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt a.mem (State.addr ptr) 32))
@@ -219,8 +221,8 @@ theorem combLoop_ct (b T : BitVec 32) :
       · rw [show 64 - (n - 1) = 64 - n + 1 by omega_using [hn]]; exact rv
   · exact RelCT.of_false fun x y h => hn ⟨h.1, h.2.1⟩
 
-theorem combMultiply_ct (b p T : BitVec 32) :
-    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (combMultiply umaal)
+theorem combMultiplyInline_ct (b p T : BitVec 32) :
+    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (combMultiplyInline umaal)
       (fun x y => Ctx b x ∧ Ctx b y) := by
   have hp : CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) combPrepare
       (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) := by
@@ -234,8 +236,87 @@ theorem combMultiply_ct (b p T : BitVec 32) :
     · intro s ⟨⟨hc, hp, hf, hr, hsep, hT, hsym, apart⟩, hl⟩
       exact WP.mono (combPrepare_ok hc hl hp hf hr hsep hT hsym apart) fun w ⟨_, E, I⟩ =>
         ⟨w, _, _, E, I⟩
-  rw [combMultiply]
+  rw [combMultiplyInline]
   exact RelCT.seq hp (combLoop_ct b T)
+
+/-- Public inputs while the call's veneer has replaced `r12`. -/
+def CombFnCTPre (b p T : BitVec 32) (s : State) : Prop :=
+  Ctx b s ∧ s.mem.readW (State.addr b + BitVec.ofNat 64 combInput) 32 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
+    (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
+    (⟨State.addr p, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩ ∧
+    TblAt s T ∧ s.syms combSym = T ∧ (TBL T).Disjoint ⟨State.addr b, 8192⟩ ∧ AllLim s.mem b
+
+def combEnterCT : Prog isa :=
+  .block (scratchAddr combReturn ++ [.str .lr .r12 0, .ldr .r12 .r0 combInput])
+def combLeaveCT : Prog isa := .block (scratchAddr combReturn ++ [.ldr .lr .r12 0])
+materialize_code combEnterCT
+materialize_code combLeaveCT
+
+theorem combMultiplyFn_ct (b p T : BitVec 32) :
+    CT (fun x y => CombFnCTPre b p T x ∧ CombFnCTPre b p T y) (combMultiplyFn umaal)
+      (fun x y => Ctx b x ∧ Ctx b y) := by
+  have enter : CT (fun x y => CombFnCTPre b p T x ∧ CombFnCTPre b p T y) combEnterCT
+      (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.1.r0.trans h.2.1.r0.symm
+    · intro s ⟨hc, hp, hf, hr, hs, ht, hy, ha, hl⟩
+      refine WP.mono_syms (combEnter_ok hc hp) fun u ⟨ur, uf, _, up⟩ syu => ?_
+      have sub : ∀ r ∈ [combReturnRegion b], r.Sub ⟨State.addr b, 8192⟩ := by
+        intro r hr; rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)
+      refine ⟨⟨hc.of_rest ur (by decide), up, hf, ?_, hs, ?_, by rw [syu]; exact hy, ha⟩,
+        combTemp_lim (.inr rfl) uf hl⟩
+      · rw [ur.rd, ur.wr]; exact hr
+      · exact ht.of_frame (by rw [ur.rd, ur.wr]) uf fun r hr => ha.sub_right (sub r hr)
+  have leave : CT (fun x y => Ctx b x ∧ Ctx b y) combLeaveCT (fun x y => Ctx b x ∧ Ctx b y) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.r0.trans h.2.r0.symm
+    · intro s hc
+      exact WP.mono (combLeave_ok hc) fun _ ⟨hr, _, _⟩ => hc.of_rest hr (by decide)
+  exact RelCT.seq enter (RelCT.seq (combMultiplyInline_ct b p T) leave)
+
+theorem combMultiply_ct (b p T : BitVec 32) :
+    CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (combMultiply umaal)
+      (fun x y => Ctx b x ∧ Ctx b y) := by
+  have spill : CT (fun x y => CombCTPre b p T x ∧ CombCTPre b p T y) (.block [.str .r12 .r0 combInput])
+      (fun x y => CombFnCTPre b p T x.callEntry ∧ CombFnCTPre b p T y.callEntry) := by
+    apply ctBoth
+    · apply ctRegs [.r0] _ (by native_taint_decide)
+      intro x y h r hr
+      rw [List.mem_singleton.mp hr]; exact h.1.1.1.r0.trans h.2.1.1.r0.symm
+    · intro s ⟨⟨hc, hp, hf, hr, hs, ht, hy, ha⟩, hl⟩
+      refine WP.mono_syms (combStore_ok hc .r12 combInput (by decide) (by decide)) fun u ⟨ur, uf, um⟩ syu => ?_
+      have sub : ∀ r ∈ [(⟨State.addr b + BitVec.ofNat 64 combInput, 4⟩ : Region)], r.Sub ⟨State.addr b, 8192⟩ := by
+        intro r hr; rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by decide)
+      have ce : Rest powersClob u u.callEntry := ⟨fun r hr => State.callEntry_gpr _ (by
+        revert hr; cases r <;> decide), rfl, rfl, rfl⟩
+      have hcu := hc.of_rest ur (by decide)
+      have tu : TblAt u T := ht.of_frame (by rw [ur.rd, ur.wr]) uf fun r hr => ha.sub_right (sub r hr)
+      refine ⟨hcu.of_rest ce (by decide), ?_, hf, ?_, hs, ⟨tu.fit, tu.rd, tu.words⟩, ?_, ha,
+        combTemp_lim (.inl rfl) uf hl⟩
+      · rw [State.callEntry_mem, um, Mem.readW_writeW_self32, hp]
+      · rw [State.callEntry_rd, State.callEntry_wr, ur.rd, ur.wr]; exact hr
+      · change u.syms combSym = T; rw [syu]; exact hy
+  have retState {a b c : State} (h : isa.ret a b = some c) : b = c := by
+    change (if b.gpr .lr = a.gpr .lr then some b else none) = some c at h
+    split at h
+    · exact Option.some.inj h
+    · cases h
+  refine RelCT.seq spill ?_
+  intro x y tx ty u v hp ex ey
+  cases ex with
+  | call cx ex rx =>
+    cases ey with
+    | call cy ey ry =>
+      rw [call_callEntry, Option.some.injEq] at cx cy
+      subst cx; subst cy
+      obtain ⟨ht, hq⟩ := combMultiplyFn_ct b p T _ _ _ _ _ _ hp ex ey
+      obtain rfl := retState rx
+      obtain rfl := retState ry
+      exact ⟨by simpa only [isa, List.map_nil, List.nil_append, List.append_nil] using ht, hq⟩
 
 theorem scalarBaseEngine_ct (base ptr T : BitVec 32) :
     CT (fun x y => BaseCTPre base ptr T x ∧ BaseCTPre base ptr T y)
@@ -518,8 +599,8 @@ theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
-      simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
+      simp only [combRegions, combReturnRegion, combReturn, pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0

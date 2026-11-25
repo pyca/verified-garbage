@@ -1991,7 +1991,7 @@ theorem publicKey_codeOk (umaal : Bool) : CodeOk (PublicKey.codeExpanded umaal) 
   simp only [
     CodeOk, Impl.Ed25519.Arm.PublicKey.codeExpanded, Impl.Ed25519.Arm.PublicKey.bodyFrom,
     Impl.Ed25519.Arm.PublicKey.copyExpanded, Impl.Ed25519.Arm.Whole.wrap, Impl.Ed25519.Arm.scalarBase,
-    Impl.Ed25519.Arm.scalarBaseEngine, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combPrepare,
+    Impl.Ed25519.Arm.scalarBaseEngine, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combMultiplyFn, Impl.Ed25519.Arm.combMultiplyInline, Impl.Ed25519.Arm.combPrepare,
     Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg,
     Impl.Ed25519.Arm.pointEncode, Impl.Ed25519.Arm.pointAffine, Impl.Ed25519.Arm.invert,
     Impl.Ed25519.Arm.asFn,
@@ -2021,7 +2021,7 @@ theorem signExpanded_codeOk (umaal : Bool) : CodeOk (SignCached.codeExpanded uma
   rw [Nat.le_zero] at i1 u1 f1
   simp only [
     CodeOk, i1, i2, u1, u2, f1, f2, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.combStep,
-    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply,
+    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combMultiplyFn, Impl.Ed25519.Arm.combMultiplyInline,
     Impl.Ed25519.Arm.mulCall, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.pointAffine,
     Impl.Ed25519.Arm.pointEncode, Impl.Ed25519.Arm.sqn,
     Impl.Ed25519.Arm.chain250,
@@ -2052,7 +2052,7 @@ theorem verify_codeOk (umaal : Bool) : CodeOk (VerifyMessage.code umaal) 280 := 
   rw [Nat.le_zero] at i1 u1 f1
   simp only [
     CodeOk, i1, i2, u1, u2, f1, f2, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.combStep,
-    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply,
+    Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combMultiplyFn, Impl.Ed25519.Arm.combMultiplyInline,
     Impl.Ed25519.Arm.pointAdd, Impl.Ed25519.Arm.pointDouble, Impl.Ed25519.Arm.fieldZero,
     Impl.Ed25519.Arm.fieldEqual, Impl.Ed25519.Arm.constPoint, Impl.Ed25519.Arm.copyPointToQ,
     Impl.Ed25519.Arm.mulCall, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.Point16.addFn,
