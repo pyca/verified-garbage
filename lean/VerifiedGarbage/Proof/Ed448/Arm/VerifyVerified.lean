@@ -1409,11 +1409,11 @@ theorem vcombIf_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv
   refine WP.ite (decide (n < 114)) (by rw [VG.Proof.X25519.Arm.eval_ne, uz, Bool.not_not])
     (fun hrow => ?_) (fun hno => ?_)
   · obtain hlt : n < 114 := of_decide_eq_true hrow
-    refine WP.seq (VG.Proof.X25519.Arm.WP.append (vcombDigit_ok (S := S) (D := D) hsu hlt hD
+    refine WP.seq (WP.mono (vcombDigit_ok (S := S) (D := D) hsu hlt hD
       (by rw [uk.1 _ (by decide)]; exact hb) (by rw [um]; exact hbits)) fun v ⟨vd, vk, vm⟩ => ?_)
     obtain kv : Keep base u v := ⟨vk.mono (by decide), by rw [vm]; exact Outside2.refl _ _ _ _ _ _⟩
-    refine WP.mono (combSelect_ok (kv.scr hsu) (by rw [vm, um]; exact hbd) (combDigit_lt S n) vd)
-      fun w ⟨kw, bw, ew⟩ => ?_
+    refine WP.seq (WP.mono (combSelectCall_ok (kv.scr hsu) (by rw [vm, um]; exact hbd) (combDigit_lt S n) vd)
+      fun w ⟨kw, bw, ew⟩ => ?_)
     rw [show addAt 8 9 10 ++ vtake = (addF 8 9 10 ++ takeF).map FieldOp.impl from rfl]
     refine WP.mono (ops_ok (kw.scr (kv.scr hsu)) bw (addF 8 9 10 ++ takeF)) fun x ⟨kx, bx, ex⟩ =>
       ⟨ku.trans (kv.trans (kw.trans kx)), bx, ?_⟩

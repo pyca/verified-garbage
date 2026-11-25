@@ -2566,6 +2566,10 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_comb_select.rs"]
+pub(crate) mod vg_ed448_comb_select;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_base.rs"]
 pub(crate) mod vg_ed448_scalar_base;
 

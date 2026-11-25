@@ -346,7 +346,7 @@ def vcombDigit : List Instr :=
 selected into slots 8–9 (`combSelect`) and added to `Q`. -/
 def vcombIf (u : Bool) : Prog isa :=
   .seq (.block vrowTest)
-    (.ite .ne (.seq (.block (vcombDigit ++ combSelect)) (ops u (addAt 8 9 10 ++ vtake))) (.block []))
+    (.ite .ne (.seq (.block vcombDigit) (.seq combSelectCall (ops u (addAt 8 9 10 ++ vtake)))) (.block []))
 
 /-- A bit, with its byte in `r8`: `Q` doubled, the comb's entry added in the comb's rows, the
 entry of `k`'s digit added if the digit is not zero, and the counter compared with zero. -/

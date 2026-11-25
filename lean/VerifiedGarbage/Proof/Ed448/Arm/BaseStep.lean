@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.Call
+
 public import VerifiedGarbage.Proof.Ed448.CombRef
 import VerifiedGarbage.Proof.X448.Arm.Counters
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
@@ -520,6 +522,33 @@ structure CombInv (base : Addr) (k : Nat) (s₀ s : State) (n : Nat) : Prop wher
   one : E s.mem base 10 = 1
   d : E s.mem base 11 = Spec.Ed448.d
 
+/-- The shared selector has the inline selector's result and memory frame.
+Its straight-line body leaves the call's link intact; only the volatile call
+registers and the selector's original clobbers need be allowed by the caller. -/
+theorem combSelectCall_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEnv s.mem base) {d : Nat}
+    (hd : d < 16) (h5 : s.gpr .r5 = BitVec.ofNat 32 d) :
+    WP isa combSelectCall s fun t => Keep base s t ∧ BoundedEnv t.mem base ∧
+      E t.mem base = selEnv d (E s.mem base) := by
+  have ce : Keeps workRegs s s.callEntry := ⟨fun r hr => State.callEntry_gpr _ (by
+    revert hr; cases r <;> decide), rfl, rfl⟩
+  obtain ⟨tr, t, he, hk, hb, hv⟩ := combSelect_ok (hs.of_keeps ce (by decide)) hbd hd
+    ((State.callEntry_gpr s (by decide)).trans h5)
+  have lr : t.gpr .lr = s.callEntry.gpr .lr := Exec.gpr (by
+    intro i hi
+    simp only [instrs, combSelect, List.mem_cons, List.mem_append, List.mem_flatMap, or_assoc] at hi
+    rcases hi with rfl | hi | hi | ⟨n, _, hi⟩
+    · rfl
+    · simp only [zeroSlot, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hi
+      obtain ⟨j, _, rfl⟩ := hi; rfl
+    · simp only [zeroSlot, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hi
+      obtain ⟨j, _, rfl⟩ := hi; rfl
+    · simp only [selEntry, selMask, selCoord, selLimb, List.mem_append, List.mem_cons,
+        List.mem_flatMap, List.not_mem_nil, or_false, or_assoc] at hi
+      rcases hi with rfl | rfl | rfl | rfl | rfl | ⟨j, _, hi⟩ | ⟨j, _, hi⟩ <;>
+        (try rcases hi with rfl | rfl | rfl | rfl | rfl) <;> rfl) he (.inl rfl)
+  refine ⟨_, t, Exec.call (call_callEntry s) he ?_, ⟨ce.trans hk.regs, hk.mem⟩, hb, hv⟩
+  simp only [isa, VG.Arm.ret, lr, ite_true]
+
 theorem combStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 114)
     (hbits : ∀ t < 456, s₀.mem (off base (BITS + t)) = BitVec.ofNat 8 ((k >>> t) &&& 1))
     (hi : CombInv base k s₀ s (n + 1)) :
@@ -541,9 +570,9 @@ theorem combStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 114)
       hi.mem _ (by rw [ofs_off' base (by omega_using [ht, hB])]; omega_using [hB])
         (by rw [ofs_off' base (by omega_using [ht, hB])]; omega_using [ht, hB, hA])]
     exact hbits t ht
-  refine WP.seq (VG.Proof.X25519.Arm.WP.append (combDigit_ok hs₂ hn b₂ bits₂) fun s₃ ⟨d₃, k₃, m₃⟩ => ?_)
+  refine WP.seq (WP.mono (combDigit_ok hs₂ hn b₂ bits₂) fun s₃ ⟨d₃, k₃, m₃⟩ => ?_)
   obtain hs₃ := hs₂.of_keeps k₃ (by decide)
-  refine WP.mono (combSelect_ok hs₃ (m₃ ▸ bb₂) (combDigit_lt k n) d₃) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_
+  refine WP.seq (WP.mono (combSelectCall_ok hs₃ (m₃ ▸ bb₂) (combDigit_lt k n) d₃) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
   obtain hs₄ := k₄.scr hs₃
   rw [← addTake_impl]
   refine WP.seq (WP.mono (ops_ok hs₄ bb₄ (addFields ++ takeFields)) fun s₅ ⟨k₅, bb₅, e₅⟩ => ?_)

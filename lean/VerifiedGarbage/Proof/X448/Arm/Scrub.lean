@@ -524,7 +524,7 @@ theorem ops_shape (u : Bool) (os : List Impl.X448.Arm.Op) : (Impl.X448.Arm.ops u
 
 theorem x448Base_noFrames (u : Bool) : (Impl.X448.Arm.x448Base u).noFrames = true := by
   simp only [
-    Impl.Ed448.Arm.combStep, Impl.Ed448.Arm.combLoop, Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code,
+    Impl.Ed448.Arm.combStep, Impl.Ed448.Arm.combSelectCall, Impl.Ed448.Arm.combLoop, Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code,
     Impl.X448.Arm.ops, Impl.X448.Arm.sqn, Impl.X448.Arm.invert, Impl.X448.Arm.bits,
     Impl.X448.Arm.finish, Impl.X448.Arm.finishT, Impl.X448.Arm.x448Base, Code.noFrames,
     (Proof.X448.Arm.Scrub.ops_shape _ _).1, (Proof.X448.Arm.Scrub.mulFn_shape _).1, Bool.and_self]

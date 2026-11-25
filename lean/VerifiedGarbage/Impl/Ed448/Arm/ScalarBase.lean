@@ -164,6 +164,10 @@ and 9. -/
 def combSelect : List Instr :=
   .mov .r3 (.imm 0) :: zeroSlot (slot 8) ++ zeroSlot (slot 9) ++ (List.range 16).flatMap selEntry
 
+/-- The table selector is identical for ordinary and UMAAL multiplication, and for
+signing and verification. The outer functions already save their incoming link. -/
+def combSelectCall : Prog isa := .call "vg_ed448_comb_select" (.block combSelect)
+
 /-- `T` (slots 3–5) into `R` (slots 0–2). -/
 def takeOps : List Op := [.copy (slot 0) (slot 3), .copy (slot 1) (slot 4), .copy (slot 2) (slot 5)]
 
@@ -171,7 +175,7 @@ def takeOps : List Op := [.copy (slot 0) (slot 3), .copy (slot 1) (slot 4), .cop
 into `Q`, `R = R + Q`, and the counter compared with zero. -/
 def combStep (u : Bool) : Prog isa :=
   .seq (.block [.dp .sub .r11 .r11 (.imm 1)]) <| .seq (ops u doubleOps) <|
-  .seq (.block (combDigit ++ combSelect)) <| .seq (ops u (addOps ++ takeOps)) (.block [.cmp .r11 (.imm 0)])
+  .seq (.block combDigit) <| .seq combSelectCall <| .seq (ops u (addOps ++ takeOps)) (.block [.cmp .r11 (.imm 0)])
 
 /-- The 114 rows, from 113 down to 0. -/
 def combLoop (u : Bool) : Prog isa := .seq (.block [.movw .r11 114]) (.loop (combStep u) .ne)
