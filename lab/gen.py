@@ -652,8 +652,81 @@ B['sn5'] = ldstfix(['mov x19, #100'] + st_n6(sq2, False, False))
 B['sn6'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2, True, False))
 B['sn6k'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2k, True, False))
 B['sn7'] = ldstfix(['mov x19, #100'] + KREG + st_n6(sq2, True, True))
+
+# ---- experiment 12: four-word scalar code, NEON pairs of squares ----
+def split4(o1, o2, dst, m26=31, m25=30):
+    """Four words each of [o1], [o2] into dst[k] = [lo1, lo2, hi1, hi2]; temporaries v20..v29."""
+    r = [f'ldr q{m25}, [x0, #{KM25}]', f'ldr q20, [x0, #{o1}]', f'ldr q21, [x0, #{o2}]', f'ldr q22, [x0, #{o1+16}]', f'ldr q23, [x0, #{o2+16}]',
+         v2('trn1', 24, 20, 21), v2('trn2', 25, 20, 21), v2('trn1', 26, 22, 23), v2('trn2', 27, 22, 23)]   # W0..W3
+    r += [vand(20, 24, m26), v2('ushr', 21, 24, '#26'), vand(21, 21, m25), f'uzp1 v{dst[0]}.4s, v20.4s, v21.4s']
+    r += [v2('shl', 20, 25, '#13'), v2('sri', 20, 24, '#51'), vand(20, 20, m26), v2('ushr', 21, 25, '#13'), vand(21, 21, m25), f'uzp1 v{dst[1]}.4s, v20.4s, v21.4s']
+    r += [v2('ushr', 20, 25, '#38'), vand(21, 26, m25), f'uzp1 v{dst[2]}.4s, v20.4s, v21.4s']
+    r += [v2('ushr', 20, 26, '#25'), vand(20, 20, m26), v2('shl', 21, 27, '#13'), v2('sri', 21, 26, '#51'), vand(21, 21, m25), f'uzp1 v{dst[3]}.4s, v20.4s, v21.4s']
+    r += [v2('ushr', 20, 27, '#12'), vand(20, 20, m26), v2('ushr', 21, 27, '#38'), f'uzp1 v{dst[4]}.4s, v20.4s, v21.4s']
+    return r
+def pack(o, dst, rr=('x2','x3','x8','x9','x16','x17')):
+    """The five limbs at [o] as four words in dst (and x11 a temporary)."""
+    a, b, c, d, e, t = rr
+    r = [f'ldp {a}, {b}, [x0, #{o}]', f'ldp {c}, {d}, [x0, #{o+16}]', f'ldr {e}, [x0, #{o+32}]']
+    r += [f'lsl {t}, {b}, #51', f'adds {dst[0]}, {a}, {t}', f'lsr {b}, {b}, #13', f'lsl {t}, {c}, #38', f'adcs {dst[1]}, {b}, {t}', f'lsr {c}, {c}, #26', f'lsl {t}, {d}, #25', f'adcs {dst[2]}, {c}, {t}',
+          f'lsr {d}, {d}, #39', f'lsl {t}, {e}, #12', f'adc {dst[3]}, {d}, {t}']
+    return r
+VO1, VO2 = 1024, 1072
+def sq2_4(a1, a2, o1, o2): return sq2(o1, None, o2, None, split4(a1, a2, [0,1,2,3,4]))
+def x3t_pre4(d, c):
+    """DA + CB and DA - CB + 4p of the four-word [d], [c], as limb vectors (an operand < 2^28)."""
+    r = split4(d, c, [0,1,2,3,4])      # [d_lo, c_lo, d_hi, c_hi]
+    r += [f'ldr q28, [x0, #{KP4A}]', f'ldr q29, [x0, #{KP4B}]']
+    for k in range(5):
+        # s = [d + c, d - c + 4p]: [d, d] + [c, -c]
+        r += [f'trn1 v20.4s, v{k}.4s, v{k}.4s', f'trn2 v21.4s, v{k}.4s, v{k}.4s', 'add v22.4s, v20.4s, v21.4s', f'add v20.4s, v20.4s, v{28 if k == 0 else 29}.4s', 'sub v20.4s, v20.4s, v21.4s', f'trn1 v{k}.4s, v22.4s, v20.4s']
+    return r
+KP4A, KP4B = 816, 832
+def lo_hi(x): return (x & (2**26-1), x >> 26)
+_p4 = [4 * (2**51 - 19)] + [4 * (2**51 - 1)] * 4
+# 4p with every limb large: lo part 2 x 2^27.., as [lo, lo, hi, hi] with lo = 4 (2^26 - 1), hi = 4 (2^25 - 1), lo_0 = 4 (2^26 - 19)
+def kq(lo, hi): return lo | lo << 32 | hi << 64 | hi << 96
+def setq(off, v):
+    r = []
+    for h in range(2):
+        w = v >> 64 * h & 2**64 - 1
+        r += [f'mov x2, #{w & 0xffff}'] + [f'movk x2, #{w >> 16*j & 0xffff}, lsl #{16*j}' for j in (1, 2, 3)] + [f'str x2, [x0, #{off+8*h}]']
+    return r
+KC += setq(KP4A, kq(2*(2**26-19), 2*(2**25-1))) + setq(KP4B, kq(2*(2**26-1), 2*(2**25-1)))
+def h_step(s1, rest, pair2=False):
+    Dr = ['x12','x13','x14','x15']
+    def sq(o, a): return ldw(slot(a), Dr) + sqrR(slot(o), True)
+    ops = {'DA': lambda: mulA(slot(12), slot(8), slot(5)), 'CB': lambda: mulA(slot(13), slot(7), slot(6)),
+      'P': lambda: pack(VO1, R1) + stw(slot(9), R1) + pack(VO2, R2) + stw(slot(10), R2),
+      'E': lambda: sub4(Dr, R1, R2) + stw(slot(11), Dr),
+      'x3': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + add3(Dr, R1, R2) + sqrR(slot(3)),
+      't': lambda: ldw(slot(12), R1) + ldw(slot(13), R2) + sub4(Dr, R1, R2) + sqrR(slot(4)),
+      'z3': lambda: mulA(slot(4), slot(0), slot(4)), 'x2': lambda: mulA(slot(1), slot(9), slot(10)),
+      'z2': lambda: ldw(slot(9), R1) + ldw(slot(11), Dr) + a24 + stw(slot(2), Dr) + mulA(slot(2), slot(11), slot(2)),
+      'P3': lambda: pack(VO1, R1) + stw(slot(3), R1) + pack(VO2, R2) + stw(slot(4), R2)}
+    go = lambda t: minflags(sum((ops[k]() for k in t.split()), []))
+    r = FR + weave(go(s1), sq2_4(slot(5), slot(6), VO1, VO2))
+    if pair2:
+        a, b = rest
+        return r + weave(go(a), sq2(VO1 + 96, None, VO2 + 96, None, x3t_pre4(slot(12), slot(13)))) + [l.replace(f'#{VO1}', f'#{VO1+96}').replace(f'#{VO1+16}', f'#{VO1+112}').replace(f'#{VO1+32}', f'#{VO1+128}') for l in []] + go_p3(ops, go, b)
+    return r + go(rest)
+def go_p3(ops, go, b):
+    return minflags(pack(VO1 + 96, R1) + stw(slot(3), R1) + pack(VO2 + 96, R2) + stw(slot(4), R2) + go(b))
+H0 = ['mov w10, #0', 'mov x19, #100']
+B['h1'] = H0 + h_step('DA CB', 'P E x2 z2 t x3 z3'); B['h1b'] = H0 + h_step('DA CB', 't x3 P E z3 x2 z2')
+B['h2'] = H0 + h_step('DA CB t', 'P E x3 x2 z2 z3'); B['h3'] = H0 + h_step('DA CB t x3', 'P E z3 x2 z2')
+B['h4'] = H0 + h_step('DA CB', ('P E x2 z2', 'z3'), True)
+for k in ('h1','h1b','h2','h3','h4'): B[k] = ldstfix([l for l in B[k]])
+def fixldp(b):
+    out = []
+    for l in b:
+        m = re_.match(r'(ld|st)p (x\d+), (x\d+), \[x0, #(\d+)\]', l)
+        if m and int(m[4]) > 504: out += [f'{m[1]}r {m[2]}, [x0, #{m[4]}]', f'{m[1]}r {m[3]}, [x0, #{int(m[4])+8}]']
+        else: out.append(l)
+    return out
+for k in ('h1','h1b','h2','h3','h4'): B[k] = fixldp(B[k])
 if __name__ == '__main__':
-    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
+    for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7','h1','h3','h4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))
 ALL = dict(B)
 KEEP = sys.argv[1].split() if len(sys.argv) > 1 else None
 if KEEP: B = {k: v for k, v in B.items() if k in KEEP}

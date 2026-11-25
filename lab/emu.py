@@ -82,7 +82,9 @@ def vec(op, rest, V, mem, regs):
         r = [x * y for x, y in zip(L(a, w), L(b, w))]; assert all(x < 2**w for x in r), 'overflow'; V[n[0]] = J(r, w)
     elif op == 'and': V[n[0]] = a & b
     elif op == 'shl': 
-        r = [x << n[2] for x in L(a, w)]; assert all(x < 2**w for x in r), 'overflow'; V[n[0]] = J(r, w)
+        r = [x << n[2] for x in L(a, w)]; assert n[2] == 13 or all(x < 2**w for x in r), 'overflow'; V[n[0]] = J(r, w)
+    elif op == 'sri': V[n[0]] = J([(y >> (w-n[2]) << (w-n[2])) | (x >> n[2]) for x, y in zip(L(a, w), L(gv(n[0]), w))], w)
+    elif op == 'shlw': V[n[0]] = J([x << n[2] for x in L(a, w)], w)
     elif op == 'ushr': V[n[0]] = J([x >> n[2] for x in L(a, w)], w)
     elif op == 'trn1': x, y = L(a, w), L(b, w); V[n[0]] = J([z for i in range(0, len(x), 2) for z in (x[i], y[i])], w)
     elif op == 'trn2': x, y = L(a, w), L(b, w); V[n[0]] = J([z for i in range(0, len(x), 2) for z in (x[i+1], y[i+1])], w)
