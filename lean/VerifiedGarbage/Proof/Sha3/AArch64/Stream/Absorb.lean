@@ -489,6 +489,149 @@ theorem body_ok (v : Permutation) {s₀ : State} (hp : Pre s₀) {c : Nat} (hc :
     rw [hst]
     simp [bytesAt, xorAt_single]
 
+/-! ## Whole blocks -/
+
+theorem xorAt_zero (A : Spec.Sha3.State) (bs : List Byte) (h : bs.length ≤ 200) : xorAt A 0 bs = Spec.Sha3.xorBytes A bs :=
+  Proof.Sha3.ext_bytes fun i hi => by
+    rw [byteOf_xorAt _ _ _ hi, byteOf_xorBytes _ _ hi, Nat.sub_zero, Nat.zero_add]
+    by_cases hl : i < bs.length
+    · rw [ite_eq_left ⟨Nat.zero_le _, hl⟩]
+    · rw [ite_eq_right fun h => hl h.2, List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_arith)]
+      simp
+
+/-- `n` whole blocks from position `c`, absorbed from the state of what comes before. -/
+theorem rep_blocks {s₀ : State} (hp : Pre s₀) {c : Nat} {msg : List Byte} (hl : (msg ++ D s₀ c).length % rt s₀ = 0)
+    (m : Mem) (hm : ∀ i < len s₀, m (dp s₀ + BitVec.ofNat 64 i) = s₀.mem (dp s₀ + BitVec.ofNat 64 i)) : ∀ n, c + rt s₀ * n ≤ len s₀ →
+    Blocks.absorbed (rt s₀) m (dp s₀ + BitVec.ofNat 64 c) (Rep (rt s₀) (msg ++ D s₀ c)) n =
+      Rep (rt s₀) (msg ++ D s₀ (c + rt s₀ * n))
+  | 0, _ => by simp [Blocks.absorbed]
+  | n + 1, h => by
+    have ⟨hr₀, hr₁⟩ := hp.rt_pos
+    have hmul : rt s₀ * (n + 1) = rt s₀ * n + rt s₀ := by rw [Nat.mul_add, Nat.mul_one]
+    have hd : bytesAt m (dp s₀ + BitVec.ofNat 64 c + BitVec.ofNat 64 (rt s₀ * n)) (rt s₀) =
+        bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 (c + rt s₀ * n)) (rt s₀) := by
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact bytesAt_congr fun i hi => by
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact hm _ (by omega_arith)
+    have hl' : (msg ++ D s₀ (c + rt s₀ * n)).length % rt s₀ = 0 := by
+      rw [List.length_append, bytesAt_length] at hl ⊢
+      rw [← Nat.add_assoc, Nat.add_mul_mod_self_left]; exact hl
+    rw [Blocks.absorbed_succ, rep_blocks hp hl m hm n (by omega_arith), hd, hmul, ← Nat.add_assoc]
+    generalize c + rt s₀ * n = q at hl' ⊢
+    rw [show D s₀ (q + rt s₀) = D s₀ q ++ bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 q) (rt s₀) from bytesAt_add _ _ _ _,
+      ← List.append_assoc, rep_append hr₀ (by omega_arith) (msg ++ D s₀ q) _ (by rw [bytesAt_length]; exact hr₀)
+      (by rw [bytesAt_length, hl']; omega_arith), bytesAt_length, hl', Nat.zero_add, ite_eq_left rfl, xorAt_zero _ _
+      (by rw [bytesAt_length]; omega_arith)]
+
+theorem tryBlocks_ok (v : Permutation) {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s₀ c s) :
+    WP isa (tryBlocks v.callee) s fun s' => ∃ c', c ≤ c' ∧ c' ≤ len s₀ ∧ Inv s₀ c' s' := by
+  have same : ∃ c', c ≤ c' ∧ c' ≤ len s₀ ∧ Inv s₀ c' s := ⟨c, Nat.le_refl _, hI.c_le, hI⟩
+  unfold tryBlocks
+  rcases hb : v.callee.blocks with _ | ⟨name, code⟩
+  · exact wp_nil same
+  have ⟨hr₀, hr₁⟩ := hp.rt_pos
+  obtain hl := len_lt s₀
+  have hc := hI.c_le
+  refine WP.ite _ (eval_nonzero _ _) (fun _ => wp_nil same) (fun h22 => ?_)
+  have hpos : (pos s₀ + c) % rt s₀ = 0 := by
+    have h0 : s.gpr .x22 = 0 := by simpa using h22
+    rw [hI.x22] at h0
+    have := congrArg BitVec.toNat h0
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.mod_lt (pos s₀ + c) hr₀; omega_arith)] at this
+    exact this
+  have keep : ∀ {t : State}, (∀ r, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x9] → t.gpr r = s.gpr r) → t.mem = s.mem → t.rd = s.rd →
+      t.wr = s.wr → t.sp = s.sp → t.v = s.v → Inv s₀ c t := fun hg hm hrd hwr hsp hv =>
+    { hI.toCommon.of_gpr (fun r hr => hg r (by revert r; decide)) hm hrd hwr hsp hv with
+      x22 := by rw [hg _ (by decide)]; exact hI.x22
+      repr := fun msg h => by rw [hm]; exact hI.repr msg h }
+  refine WP.seq (wp_sub fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => wp_nil ?_)
+  have g₂ : ∀ r, r ≠ .x9 → s₂.gpr r = s.gpr r := fun r hr => by rw [u₂.other r hr, u₁.other r hr]
+  have hI₂ : Inv s₀ c s₂ := keep (fun r hr => g₂ r (by rintro rfl; exact hr (by decide))) (by rw [u₂.mem, u₁.mem])
+    (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr]) (by rw [u₂.sp, u₁.sp]) (by rw [u₂.vec, u₁.vec])
+  refine WP.ite _ (eval_nonzero _ _) (fun _ => wp_nil ⟨c, Nat.le_refl _, hc, hI₂⟩) (fun h9 => ?_)
+  have hfit : rt s₀ ≤ len s₀ - c := by
+    have h0 : s₂.gpr .x9 = 0 := by simpa using h9
+    rw [u₂.gpr, u₁.gpr, hI.x24, hI.x21] at h0
+    have := Blocks.sign_sub _ _ hr₁ h0
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+  refine WP.seq (wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ => wp_mov fun s₇ u₇ => wp_nil ?_)
+  have g₇ : ∀ r, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x9] → s₇.gpr r = s.gpr r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨n0, n1, n2, n3, n4, n9⟩ := hr
+    rw [u₇.other r n4, u₆.other r n3, u₅.other r n2, u₄.other r n1, u₃.other r n0, g₂ r n9]
+  have hI₇ : Inv s₀ c s₇ := keep g₇ (by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem])
+    (by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr])
+    (by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp]) (by rw [u₇.vec, u₆.vec, u₅.vec, u₄.vec, u₃.vec, u₂.vec, u₁.vec])
+  have a0 : s₇.gpr .x0 = st s₀ := by
+    rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂ _ (by decide), hI.x19]
+  have a1 : s₇.gpr .x1 = s₀.gpr .x1 := by
+    rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂ _ (by decide), hI.x21]
+  have a2 : s₇.gpr .x2 = dp s₀ + BitVec.ofNat 64 c := by
+    rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide), hI.x23]
+  have a3 : s₇.gpr .x3 = BitVec.ofNat 64 (len s₀ - c) := by
+    rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide), hI.x24]
+  have a4 : s₇.gpr .x4 = scr s₀ := by
+    rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide), hI.x20]
+  have l3 : (BitVec.ofNat 64 (len s₀ - c)).toNat = len s₀ - c := toNat_ofNat_lt (by omega_arith)
+  have hsub : Region.Sub ⟨dp s₀ + BitVec.ofNat 64 c, len s₀ - c⟩ (dR s₀) := sub_offset (by omega_arith) (by omega_arith)
+  have ce : ∀ r, r ∉ linkRegs → s₇.callEntry.gpr r = s₇.gpr r := fun r hr => State.callEntry_gpr _ hr
+  refine WP.seq (WP.callV (k := Blocks.blocksK) (v.blocksOk name code hb)
+    (rd := [⟨dp s₀ + BitVec.ofNat 64 c, len s₀ - c⟩]) (wr := [stR s₀, ⟨scr s₀, 512⟩]) ?_ ?_ ?_ ?_ (v.blocksNoFrames name code hb))
+  · simp only [Blocks.blocksK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
+    rw [ce _ (by decide), ce _ (by decide), ce _ (by decide), ce _ (by decide), ce _ (by decide), a0, a1, a2, a3, a4, l3]
+    exact ⟨rfl, rfl, hp.st_scr.sub_right (Region.sub_prefix (by omega_arith)), hp.d_st.sub_left hsub,
+      (hp.d_scr.sub_left hsub).sub_right (Region.sub_prefix (by omega_arith)), hp.rate, hfit⟩
+  · rw [hI₇.rd, hI₇.wr, hp.rd, hp.wr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨dR s₀, by simp, c, by simp, by simp only; omega_arith⟩
+    · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scR s₀, by simp, 0, by simp, by simp⟩
+  · rw [hI₇.wr, hp.wr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨scR s₀, by simp, 0, by simp, by simp⟩
+  · intro s₈ rd₈ wr₈ sp₈ f₈ cs₈ _ vc₈ hpost
+    simp only [Blocks.blocksK, State.withRegions_gpr, State.withRegions_mem] at hpost
+    rw [ce _ (by decide), ce _ (by decide), ce _ (by decide), ce _ (by decide), a0, a1, a2, a3, l3] at hpost
+    obtain ⟨n, hn0, hn, hx0, hst⟩ := hpost
+    have hn : rt s₀ * n ≤ len s₀ - c := l3 ▸ hn
+    have hx0 : s₈.gpr .x0 = BitVec.ofNat 64 (len s₀ - c - rt s₀ * n) := l3 ▸ hx0
+    have hC₈ := hI₇.toCommon.after_call hp rd₈ wr₈ sp₈ cs₈ vc₈ f₈
+    refine wp_sub fun s₉ u₉ => wp_add fun s₁₀ u₁₀ => wp_mov fun s₁₁ u₁₁ => wp_nil ⟨c + rt s₀ * n, by omega_arith, by omega_arith, ?_⟩
+    have hx9 : s₁₀.gpr .x9 = BitVec.ofNat 64 (rt s₀ * n) := by
+      rw [u₁₀.other _ (by decide), u₉.gpr, hC₈.x24, hx0, sub_ofNat (by omega_arith)]
+      congr 1; omega_arith
+    have g : ∀ r, r ∉ [Reg.x9, .x23, .x24] → s₁₁.gpr r = s₈.gpr r := fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      rw [u₁₁.other r hr.2.2, u₁₀.other r hr.2.1, u₉.other r hr.1]
+    have m₁₁ : s₁₁.mem = s₈.mem := by rw [u₁₁.mem, u₁₀.mem, u₉.mem]
+    refine ⟨⟨by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [m₁₁]; exact hC₈.frame, by rw [m₁₁]; exact hC₈.saved,
+      fun r hr => by rw [u₁₁.vec, u₁₀.vec, u₉.vec]; exact hC₈.vcs r hr, fun r hr => ?_⟩, ?_, fun msg hm => ?_⟩
+    · rw [u₁₁.rd, u₁₀.rd, u₉.rd, hC₈.rd]
+    · rw [u₁₁.wr, u₁₀.wr, u₉.wr, hC₈.wr]
+    · rw [g _ (by decide), hC₈.x19]
+    · rw [g _ (by decide), hC₈.x20]
+    · rw [u₁₁.sp, u₁₀.sp, u₉.sp, hC₈.sp]
+    · rw [g _ (by decide), hC₈.x21]
+    · rw [u₁₁.other _ (by decide), u₁₀.gpr, ← u₁₀.other .x9 (by decide), hx9, u₉.other _ (by decide), hC₈.x23, BitVec.add_assoc,
+        ← BitVec.ofNat_add]
+    · rw [u₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), hx0]
+      congr 1; omega_arith
+    · rw [g r (by revert r; decide)]; exact hC₈.untouched r hr
+    · rw [g _ (by decide), cs₈ _ (by decide) (by decide), hI₇.x22, ← Nat.add_assoc, Nat.add_mul_mod_self_left]
+    · have hl0 : (msg ++ D s₀ c).length % rt s₀ = 0 := by
+        rw [List.length_append, bytesAt_length, ← Nat.mod_add_mod, ← hm.2, hpos]
+      rw [m₁₁, hst]
+      show Blocks.absorbed (rt s₀) s₇.mem _ (stateAt s₇.mem (st s₀)) n = _
+      rw [hI₇.repr msg hm]
+      exact rep_blocks hp hl0 s₇.mem (fun i hi => hI₇.data hp hi) n (by omega_arith)
+
 /-! ## The epilogue -/
 
 /-- The epilogue's postcondition. -/
@@ -519,8 +662,9 @@ theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (l
 /-! ## The whole function -/
 
 theorem absorb_eq (v : Permutation) : (absorbMainWith v.callee) = .seq (.block setup)
-    (.seq (.ite (.zero .x .x24) (.block []) (.loop (absorbBodyWith v.callee) (.nonzero .x .x24)))
-      (.block (Impl.Sha3.AArch64.mov .x0 .x22 :: restore))) := rfl
+    (.seq (tryBlocks v.callee)
+    (.seq (.ite (.zero .x .x24) (.block []) (.loop (.seq (absorbBodyWith v.callee) (tryBlocks v.callee)) (.nonzero .x .x24)))
+      (.block (Impl.Sha3.AArch64.mov .x0 .x22 :: restore)))) := rfl
 
 /-- `absorb` without its frame: the callee-saved registers but `x30` are kept. -/
 theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
@@ -533,26 +677,29 @@ theorem correctMain (v : Permutation) {s₀ : State} (hp : Pre s₀) :
     ⟨fun r hr h30 => ?_, hsp, hv, hpost⟩
   · rw [(absorb_eq v)]
     refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI => ?_)
+    refine WP.seq (WP.mono (tryBlocks_ok v hp hI) fun s₁ ⟨c, _, hc, hI⟩ => ?_)
     refine WP.seq (WP.mono (Q := Inv s₀ (len s₀)) ?_ fun s₂ hI₂ => epilogue_ok hp hI₂)
-    refine WP.ite (decide (len s₀ = 0))
+    refine WP.ite (decide (len s₀ - c = 0))
       (by show VG.AArch64.eval (.zero .x .x24) s₁ = _
-          rw [eval_zero, hI.x24, Nat.sub_zero, ofNat_beq_zero (by omega_arith)])
+          rw [eval_zero, hI.x24, ofNat_beq_zero (by omega_arith)])
       (fun hb => ?_) (fun hb => ?_)
     · simp only [decide_eq_true_eq] at hb
-      exact wp_nil (hb ▸ hI)
+      rw [show c = len s₀ by omega_arith] at hI
+      exact wp_nil hI
     · simp only [decide_eq_false_iff_not] at hb
-      refine WP.loop (M := isa) (fun n s => ∃ c, n = len s₀ - c ∧ c < len s₀ ∧ Inv s₀ c s) ?_ (len s₀) s₁
-        ⟨0, rfl, by omega_arith, hI⟩
+      refine WP.loop (M := isa) (fun n s => ∃ c, n = len s₀ - c ∧ c < len s₀ ∧ Inv s₀ c s) ?_ (len s₀ - c) s₁
+        ⟨c, rfl, by omega_arith, hI⟩
       rintro n s ⟨c, rfl, hcl, hI⟩
-      refine WP.mono ((body_ok v) hp hcl hI) fun s' ⟨c', hcc, hc', hI'⟩ => ?_
-      obtain hz : isa.eval (.nonzero .x .x24) s' = some (decide (len s₀ - c' ≠ 0)) := by
+      refine WP.seq (WP.mono ((body_ok v) hp hcl hI) fun s' ⟨c', hcc, hc', hI'⟩ => ?_)
+      refine WP.mono (tryBlocks_ok v hp hI') fun s' ⟨c'', hcc', hc', hI'⟩ => ?_
+      obtain hz : isa.eval (.nonzero .x .x24) s' = some (decide (len s₀ - c'' ≠ 0)) := by
         show VG.AArch64.eval (.nonzero .x .x24) s' = _
         rw [eval_nonzero, hI'.x24, bne, ofNat_beq_zero (by omega_arith)]
         simp
-      by_cases he : len s₀ - c' = 0
+      by_cases he : len s₀ - c'' = 0
       · refine .inl ⟨by rw [hz]; simp [he], ?_⟩
-        rwa [show c' = len s₀ by omega_arith] at hI'
-      · exact .inr ⟨by rw [hz]; simp [he], len s₀ - c', by omega_arith, c', rfl, by omega_arith, hI'⟩
+        rwa [show c'' = len s₀ by omega_arith] at hI'
+      · exact .inr ⟨by rw [hz]; simp [he], len s₀ - c'', by omega_arith, c'', rfl, by omega_arith, hI'⟩
   · rcases preserved_cases r hr h30 with ⟨k, hk, rfl⟩ | hu'
     · exact hsv k hk
     · exact hu r hu'
@@ -562,7 +709,7 @@ abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
 theorem correct (v : Permutation) {s₀ : State} (hp : Pre s₀) (hs : Stack s₀) :
-    WP isa (absorbGenericWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha3.absorbAArch64.post s₀ s' := by
+    WP isa (absorbWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sha3.absorbAArch64.post s₀ s' := by
   obtain hpi : Pre (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr, hp.rate, hp.pos_lt⟩
   refine WP.frameReg (hn := by rw [v.absorbMain_depth]; decide) hs.sp16 (fun R hR => ?_) 
     (WP.mono ((correctMain v) hpi) fun s' ⟨hk, hsp, hv, hpost⟩ mm u f => ?_)
@@ -606,13 +753,8 @@ def sat : State where
   wr := [⟨0x1000, 200⟩, ⟨0x3000, 640⟩]
 
 theorem absorb_correct (v : Permutation) (s : State) (hs : Proof.Sha3.absorbAArch64.pre s) :
-    ∃ t s', Exec isa (absorbWith v.callee) s t s' ∧ abiPreserved s s' ∧ Proof.Sha3.absorbAArch64.post s s' := by
-  cases h : v.callee.absorbOverride with
-  | none =>
-    obtain ⟨t, s', he, hpost⟩ := (correct v) (pre_of hs).1 (pre_of hs).2
-    exact ⟨t, s', by simpa only [absorbWith, h] using he, hpost⟩
-  | some code =>
-    simpa only [absorbWith, h] using v.absorbOverrideOk code h s hs
+    ∃ t s', Exec isa (absorbWith v.callee) s t s' ∧ abiPreserved s s' ∧ Proof.Sha3.absorbAArch64.post s s' :=
+  (correct v) (pre_of hs).1 (pre_of hs).2
 
 theorem absorb_ct (v : Permutation) : ConstantTime isa Proof.Sha3.absorbAArch64.pre Proof.Sha3.absorbAArch64.pub
     (absorbWith v.callee) := by

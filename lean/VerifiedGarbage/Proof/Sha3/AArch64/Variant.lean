@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+public import VerifiedGarbage.Proof.Sha3.AArch64.Blocks
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Impl.Sha3.AArch64.Instances
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
@@ -229,11 +230,8 @@ structure Permutation where
   calls it needs of it, so that each proves the rest of its own instructions
   only, whatever the implementation. -/
   scrub : AArch64.Scrub.calleeSide callee.code callee.clear = true
-  /-- An absorb the implementation gives as a whole writes only what
-  `vg_sha3_*_update` clears: `Impl.Sha3.AArch64.Fn.updateOwn` and
-  `callee.clear`. -/
-  absorbOverrideScrub : ∀ code, callee.absorbOverride = some code →
-    AArch64.Scrub.calleeSide code (Impl.Sha3.AArch64.Fn.updateOwn.union callee.clear) = true
+  /-- The same of its function for whole blocks. -/
+  blocksScrub : ∀ n code, callee.blocks = some (n, code) → AArch64.Scrub.calleeSide code callee.clear = true
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
@@ -244,14 +242,10 @@ structure Permutation where
   /-- The summaries of the sponge's and the permutation's calls (`Callers.sums`), with
   which callers' constant-time checks are decided once for every backend. -/
   callerSums : Taint.AllOk VectorTaint.taint (Callers.sums callee)
-  /-- An absorb override must prove the same functional and SIMD ABI contract
-  as the general loop; it need not obey that loop's syntactic register shape. -/
-  absorbOverrideOk : ∀ code, callee.absorbOverride = some code →
-    ∀ s, Proof.Sha3.absorbAArch64.pre s →
-      ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧
-        Proof.Sha3.absorbAArch64.post s s'
-  absorbOverrideDepth : ∀ code, callee.absorbOverride = some code → code.aarch64Depth = 1
-  absorbOverrideNoDit : ∀ code, callee.absorbOverride = some code → code.all (fun i => !i.touchesDit) = true
+  blocksOk : ∀ n code, callee.blocks = some (n, code) → ∀ s, Blocks.blocksK.pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ Blocks.blocksK.post s s'
+  blocksNoFrames : ∀ n code, callee.blocks = some (n, code) → code.noFrames = true
+  blocksNoDit : ∀ n code, callee.blocks = some (n, code) → code.all (fun i => !i.touchesDit) = true
   absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true
   padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
@@ -288,19 +282,20 @@ structure Permutation where
 theorem fdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
   induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
 
+theorem Permutation.tryBlocks_depth (v : Permutation) : (Impl.Sha3.AArch64.Stream.tryBlocks v.callee).aarch64Depth = 0 := by
+  rcases h : v.callee.blocks with _ | ⟨n, code⟩
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, h, Code.aarch64Depth]
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, h, Code.aarch64Depth, fdepth_of_noFrames (v.blocksNoFrames n code h),
+      Nat.max_self]
+
 theorem Permutation.absorbMain_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.absorbMainWith v.callee).aarch64Depth = 0 := by
   simp only [Impl.Sha3.AArch64.Stream.absorbMainWith, Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, Code.aarch64Depth,
-    fdepth_of_noFrames v.noFrames, Nat.max_self]
+    fdepth_of_noFrames v.noFrames, v.tryBlocks_depth, Nat.max_self]
 
 theorem Permutation.absorb_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.absorbWith v.callee).aarch64Depth = 1 := by
-  cases h : v.callee.absorbOverride with
-  | none =>
-    simp only [Impl.Sha3.AArch64.Stream.absorbWith, h,
-      Impl.Sha3.AArch64.Stream.absorbGenericWith, Code.aarch64Depth, Instr.frameUnits, v.absorbMain_depth]
-  | some code =>
-    simpa only [Impl.Sha3.AArch64.Stream.absorbWith, h] using v.absorbOverrideDepth code h
+  simp only [Impl.Sha3.AArch64.Stream.absorbWith, Code.aarch64Depth, Instr.frameUnits, v.absorbMain_depth]
 
 theorem Permutation.padMain_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.padMainWith v.callee).aarch64Depth = 0 := by
@@ -320,16 +315,19 @@ theorem Permutation.squeeze_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.squeezeWith v.callee).aarch64Depth = 1 := by
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
 
+theorem Permutation.tryBlocks_noDit (v : Permutation) :
+    (Impl.Sha3.AArch64.Stream.tryBlocks v.callee).all (fun i => !i.touchesDit) = true := by
+  rcases h : v.callee.blocks with _ | ⟨n, code⟩
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, h, Code.all]; decide
+  · simp only [Impl.Sha3.AArch64.Stream.tryBlocks, h, Code.all, v.blocksNoDit n code h]
+    decide
+
 theorem Permutation.absorb_noDit (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.absorbWith v.callee).all (fun i => !i.touchesDit) = true := by
-  cases h : v.callee.absorbOverride with
-  | none =>
-    simp only [Impl.Sha3.AArch64.Stream.absorbWith, h, Impl.Sha3.AArch64.Stream.absorbGenericWith,
-      Impl.Sha3.AArch64.Stream.absorbMainWith, Impl.Sha3.AArch64.Stream.absorbBodyWith,
-      Impl.Sha3.AArch64.Stream.permuteAtWith, Code.all, v.noDit, Bool.and_true]
-    decide
-  | some code =>
-    simpa only [Impl.Sha3.AArch64.Stream.absorbWith, h] using v.absorbOverrideNoDit code h
+  simp only [Impl.Sha3.AArch64.Stream.absorbWith, Impl.Sha3.AArch64.Stream.absorbMainWith,
+    Impl.Sha3.AArch64.Stream.absorbBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, Code.all, v.noDit,
+    v.tryBlocks_noDit, Bool.and_true]
+  decide
 
 theorem Permutation.pad_noDit (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.padWith v.callee).all (fun i => !i.touchesDit) = true := by
@@ -376,14 +374,14 @@ def Permutation.scalar : Permutation where
   callee := .scalar
   features := []
   scrub := by lit_decide
-  absorbOverrideScrub := by intro code h; cases h
+  blocksScrub := by intro _ _ h; cases h
   ok := permute_correct
   noFrames := permute_noFrames
   noDit := by lit_decide
   callerSums := scalarSums
-  absorbOverrideOk := by intro code h; cases h
-  absorbOverrideDepth := by intro code h; cases h
-  absorbOverrideNoDit := by intro code h; cases h
+  blocksOk := by intro _ _ h; cases h
+  blocksNoFrames := by intro _ _ h; cases h
+  blocksNoDit := by intro _ _ h; cases h
   absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
   padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
   squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
