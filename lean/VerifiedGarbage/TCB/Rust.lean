@@ -160,8 +160,9 @@ type's alignment.
 
 An artifact may take tables of functions (`Artifact.tables`,
 `Abi.withTables`): read-only arrays of pointer-sized words (`Param.table`,
-`*const [usize; k]`), each holding one of the tables of an interface, whose code calls their functions by indirect calls
-(`Code.icall`). `files` writes each table once per target, in a file of its
+`*const [usize; k]`), each holding one of the tables of an interface, the one
+its signature names (`TableIface`), whose code calls their functions by
+indirect calls (`Code.icall`). `files` writes each table once per target, in a file of its
 own, `fn_tables/<name>.rs` (its name in lowercase), and `fn_tables/mod.rs`
 declares the type of each interface, which only these statics have (its
 fields are private to the module), and re-exports each table's items:
@@ -195,10 +196,14 @@ its words (`repr(C)`: the pointer-sized addresses, then the data, each a
 parameter points: word `i`, of the target's pointer width, at offset `i *
 size_of::<usize>()`, the address of each function, the linker's resolution
 of its symbol (`ISA.fnAddr`), then the data, which `checkFnTables` checks
-fits in a word. `checkFnTables` checks that each parameter that takes
-tables is a table parameter (`Param.table`) of their length,
-that it lists every table of their interface on the target (the Rust caller
-may pass the `as_ptr()` of any static of the type), that tables of one name
+fits in a word. `checkFnTables` checks that the registration lists tables
+for each table parameter (`Param.table`) of the signature and for nothing
+else, each one a table of the interface the signature gives the parameter
+(`checkFnTable`: its interface, its shape, its name and the data a table of
+that name starts with), and that it lists every table of the interface on
+the target (the Rust caller may pass the `as_ptr()` of any static of the
+type): so a registration cannot choose which tables its proof is about, nor
+list tables that the contract says nothing of; that tables of one name
 are one table and tables of one interface have one shape, and that every
 function a table names is emitted, as an artifact or an internal function,
 with the code the model runs for every call of it, indirect calls included
@@ -1212,14 +1217,40 @@ def fnTableFeatures (ps : List Prepared) (hs : List Internal) (t : String) (T : 
     | some q => q.art.features
     | none => ((internal? hs t f).map (·.features)).getD [])
 
+/-- The words that the data of a table named `n` of the interface `I` starts
+with (`TableIface.tables`): those of the table of `I` of that name, or else
+of the one of the longest name that `n` is with a suffix (so `VG_T_512_256`
+is a table of its own, if `I` has it, and not `VG_T_512` with a suffix). -/
+def tableData? (I : TableIface) (n : String) : Option (List (BitVec 64)) :=
+  let named := I.tables.filter fun (b, _) => n == b || n.startsWith (b ++ "_")
+  ((named.mergeSort fun a b => b.1.length ≤ a.1.length).head?).map (·.2)
+
+/-- `T` is a table of the interface `I` (`TableIface`): of its name, its number
+of words and its number of functions, named as one of its tables is or as one
+with a suffix, with the data that a table of that name starts with. What a
+contract reads of a table (the hash function it names, `hashAt`) is in those
+words, at the place the number of functions gives. -/
+def checkFnTable (I : TableIface) (T : FnTable) : Except String Unit := do
+  unless T.iface == I.name do
+    throw s!"the table of functions {T.name} is of the interface {T.iface}, not {I.name}"
+  unless T.fns.length == I.fns && T.fns.length + T.data.length == I.words do
+    throw s!"the table of functions {T.name} is not of the {I.words} words, the first {I.fns} of \
+      them functions', of {I.name}"
+  let some d := tableData? I T.name
+    | throw s!"{T.name} is not the name of a table of functions of {I.name}"
+  unless T.data.take d.length == d do
+    throw s!"the data of the table of functions {T.name} does not start with that of a table of \
+      {I.name} of its name"
+
 /-- The tables of functions `p`'s artifact takes (`Artifact.tables`), checked
 against those of the artifacts of `ps` and the internal functions `hs`:
 its target's code can name a `static`, and has pointers of 32 or 64 bits,
 the width of each table's words (`Abi.withTables`, `fnTableFile`), every
 word of data of each table fitting in it; each names a distinct table
-parameter (`Param.table k`, a `*const [usize; k]`), and tables
-of one interface, each of `k` words, named as `tableName` and `ifaceName`
-require, distinct, and every table of that interface that any artifact of
+parameter (`Param.table`, a `*const [usize; k]`), and every table parameter
+is one of them; its tables are of the parameter's interface (`checkFnTable`),
+named as `tableName` and `ifaceName`
+require, distinct, at least one, and every table of that interface that any artifact of
 the target takes: the Rust caller may pass the words of any static of the
 interface's type, which the emitter writes for every one of them. Every table
 of a name, of any artifact of the target, is the same table, and every table
@@ -1231,21 +1262,25 @@ at distinct addresses, as distinct naked functions are. -/
 def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
     Except String Unit := do
   let a := p.art
-  if a.tables.isEmpty then return
   let t := a.target.name
+  let params := a.tables.map (·.1)
+  for (x, q) in a.sig.params do
+    if q matches .table _ then
+      unless params.contains x do
+        throw s!"{t}: {a.name} lists no tables of functions for its parameter `{x}`"
+  if a.tables.isEmpty then return
   let w := a.target.abi.ptrBits
   unless a.target.abi.sym.isSome && (w == 32 || w == 64) do
     throw s!"{t}: {a.name} takes tables of functions, which its target's code cannot name or \
       whose pointers are neither 32 nor 64 bits"
-  let params := a.tables.map (·.1)
   unless (dedup params).length == params.length do
     throw s!"{t}: {a.name} gives a parameter two lists of tables of functions"
   let others := (ps.filter (·.art.target.name == t)).flatMap fun q => q.art.tables.flatMap (·.2)
   for (x, ts) in a.tables do
-    let some (.table k) := a.sig.params.lookup x
+    let some (.table I) := a.sig.params.lookup x
       | throw s!"{t}: {a.name}'s table of functions `{x}` is not a table parameter (`Param.table`)"
-    let some T₀ := ts.head?
-      | throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
+    if ts.isEmpty then
+      throw s!"{t}: {a.name}'s parameter `{x}` has no tables of functions"
     let names := ts.map (·.name)
     unless (dedup names).length == names.length do
       throw s!"{t}: {a.name} lists a table of functions twice for `{x}`"
@@ -1253,10 +1288,7 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
       unless tableName T.name && ifaceName T.iface do
         throw s!"{t}: {a.name}'s table of functions {T.name} of {T.iface} is not named as a Rust \
           constant starting with `VG_` of a Rust type"
-      unless T.iface == T₀.iface do
-        throw s!"{t}: {a.name}'s parameter `{x}` has tables of two interfaces"
-      unless T.fns.length + T.data.length == k do
-        throw s!"{t}: {a.name}'s table of functions {T.name} is not of the {k} words of `{x}`"
+      (checkFnTable I T).mapError (s!"{t}: {a.name}'s parameter `{x}`: " ++ ·)
       unless T.data.all (·.toNat < 2 ^ w) do
         throw s!"{t}: {a.name}'s table of functions {T.name} has a word of data wider than \
           its target's {w}-bit pointers"
@@ -1266,7 +1298,7 @@ def checkFnTables (ps : List Prepared) (hs : List Internal) (p : Prepared) :
           throw s!"{t}: the table of functions {T.name} names {f}, which is neither an \
             artifact nor an internal function"
     for U in others do
-      if U.iface == T₀.iface && !names.contains U.name then
+      if U.iface == I.name && !names.contains U.name then
         throw s!"{t}: {a.name}'s parameter `{x}` does not list the table of functions {U.name} \
           of {U.iface}, which its caller may pass"
   for T in a.tables.flatMap (·.2) do

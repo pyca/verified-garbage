@@ -101,6 +101,24 @@ inductive IntTy | u32 | u64 | usize
 def IntTy.bits (ptrBits : Nat) : IntTy → Nat | .u32 => 32 | .u64 => 64 | .usize => ptrBits
 def IntTy.rust : IntTy → String | .u32 => "u32" | .u64 => "u64" | .usize => "usize"
 
+/-- An interface of tables of functions (`Abi.withTables`): what a parameter
+taking a table of it (`Param.table`) may point to. Nothing in a contract but
+`words` depends on it: the emitter checks that the tables a registration
+gives each parameter are of its interface (`Rust.checkFnTable`), so that the
+contract, not the registration, says which tables the proof is about. -/
+structure TableIface where
+  /-- The name of the interface, its tables' Rust type (`FnTable.iface`). -/
+  name : String
+  /-- The number of words of a table: its functions', then its data. -/
+  words : Nat
+  /-- The number of functions of a table. -/
+  fns : Nat
+  /-- The tables of the interface: for each, its name, and the words that its
+  data, and that of every table named as it is with a suffix (`_shani`), start
+  with: what a contract reads to find what the table computes. -/
+  tables : List (String × List (BitVec 64))
+  deriving DecidableEq, Repr
+
 /-- A parameter of a generated function. -/
 inductive Param
   /-- An integer; `pub` says whether it is public for constant-time purposes. -/
@@ -119,11 +137,12 @@ inductive Param
   slices are (their addresses and lengths) is public, as a slice's address
   and length are, and their contents are not. -/
   | slices (elem : Elem) (count : String)
-  /-- A `*const [usize; n]` standing for a `&[usize; n]`: a table of
-  functions (`Abi.withTables`), `n` pointer-sized words, read-only. Its
-  region, of `n` words of the target's pointer width, is among the read-only
-  memory `Sig.lists` gives, which knows that width. -/
-  | table (n : Nat)
+  /-- A `*const [usize; n]` standing for a `&[usize; n]`, `n` being
+  `iface.words`: a table of functions (`Abi.withTables`) of the interface
+  `iface`, `n` pointer-sized words, read-only. Its region, of `n` words of the
+  target's pointer width, is among the read-only memory `Sig.lists` gives,
+  which knows that width. -/
+  | table (iface : TableIface)
   /-- Source and destination pointers followed by their shared element count. Equal
   pointers designate one writable buffer. Distinct pointers designate a read-only
   source and a writable destination, which the ordinary separation rule keeps apart. -/
@@ -287,7 +306,7 @@ def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))
 /-! ## Tables of functions
 
 A function may take a table of functions: a read-only array of `k`
-pointer-sized words (`Param.table k`, a `*const [usize; k]`: `u64`s on a
+pointer-sized words (`Param.table`, a `*const [usize; k]`: `u64`s on a
 target with 64-bit pointers, `u32`s on one with 32-bit pointers) that holds
 one of the `static`s the emitter
 writes for an interface (`FnTable`, `TCB/Rust.lean`), as a `&'static`
@@ -295,7 +314,8 @@ reference to it: the addresses of its functions (`ISA.fnAddr`, each a
 pointer-sized word), then its words of data. Its code calls them by an
 indirect call (`Code.icall`). `A.withTables sig ts` is the calling convention as
 a contract for such a function sees it, where each `(param, tables)` of
-`ts` names an array parameter of `sig` and the tables it may point to: the
+`ts` names a table parameter of `sig` and the tables it may point to, those
+of the interface the parameter names (`Rust.checkFnTables` checks it): the
 memory there holds the words of one of them, at the state's addresses of
 its functions; the functions of distinct names are at distinct addresses
 (distinct functions, whose code is not empty, are: the emitter emits each
@@ -460,7 +480,7 @@ def Sig.lists (ptrBits : Nat) (m : Mem) : List (String × Param) → List (BitVe
   | (_, .slice ..) :: ps, _ :: _ :: vs => Sig.lists ptrBits m ps vs
   | (_, .slices e _) :: ps, p :: n :: vs =>
     Sig.descRegion ptrBits p n.toNat :: Sig.listed ptrBits m e p n.toNat ++ Sig.lists ptrBits m ps vs
-  | (_, .table n) :: ps, p :: vs => Sig.tableRegion ptrBits p n :: Sig.lists ptrBits m ps vs
+  | (_, .table I) :: ps, p :: vs => Sig.tableRegion ptrBits p I.words :: Sig.lists ptrBits m ps vs
   | (_, .inOutSlice ..) :: ps, _ :: _ :: _ :: vs => Sig.lists ptrBits m ps vs
   | _, _ => []
 
@@ -503,7 +523,7 @@ def Param.rust (name : String) : Param → String
   | .slice w e len => s!"{name}: *{if w then "mut" else "const"} {e.rust}, {len}: usize"
   | .inOutSlice e dst len => s!"{name}: *const {e.rust}, {dst}: *mut {e.rust}, {len}: usize"
   | .slices _ count => s!"{name}: *const [usize; 2], {count}: usize"
-  | .table n => s!"{name}: *const [usize; {n}]"
+  | .table I => s!"{name}: *const [usize; {I.words}]"
 
 /-- The Rust parameter list and return type. -/
 def Sig.rust (sig : Sig) : String :=
