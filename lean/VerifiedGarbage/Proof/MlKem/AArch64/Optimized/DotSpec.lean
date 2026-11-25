@@ -5,10 +5,9 @@ public import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common

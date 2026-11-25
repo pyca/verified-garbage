@@ -24,14 +24,13 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Halves
 import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Narrow16
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
