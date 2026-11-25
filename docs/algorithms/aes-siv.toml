@@ -1,5 +1,0 @@
-name = "AES-SIV (256-, 384- and 512-bit keys)"
-family = "AEADs"
-specs = ["Aes", "Cmac", "Siv"]
-modules = ["src/aead/aes_siv.rs"]
-asm = ["aes_siv"]

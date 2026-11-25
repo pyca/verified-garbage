@@ -1,5 +1,0 @@
-name = "RC4"
-family = "Ciphers"
-specs = ["Rc4"]
-modules = ["src/cipher/rc4.rs"]
-asm = ["rc4"]

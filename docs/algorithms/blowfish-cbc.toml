@@ -1,5 +1,0 @@
-name = "Blowfish-CBC"
-family = "Ciphers"
-specs = ["Blowfish", "Cbc"]
-modules = ["src/cipher/blowfish/cbc.rs"]
-asm = ["blowfish_cbc"]

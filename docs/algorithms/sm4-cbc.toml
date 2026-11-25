@@ -1,5 +1,0 @@
-name = "SM4-CBC"
-family = "Ciphers"
-specs = ["Sm4", "Cbc"]
-modules = ["src/cipher/sm4/cbc.rs"]
-asm = ["sm4_cbc"]

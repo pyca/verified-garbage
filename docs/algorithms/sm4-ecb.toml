@@ -1,5 +1,0 @@
-name = "SM4-ECB"
-family = "Ciphers"
-specs = ["Sm4"]
-modules = ["src/cipher/sm4/ecb.rs"]
-asm = ["sm4"]

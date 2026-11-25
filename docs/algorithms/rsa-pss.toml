@@ -1,8 +1,0 @@
-name = "RSASSA-PSS"
-family = "RSA"
-specs = ["RsaPss", "Mgf1"]
-modules = ["src/rsa/pss.rs"]
-asm = [
-  "rsa_pss",
-  "rsa",
-]

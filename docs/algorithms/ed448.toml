@@ -1,5 +1,0 @@
-name = "Ed448"
-family = "Signatures"
-specs = ["Ed448"]
-modules = ["src/ed448.rs"]
-asm = ["ed448", "gf448_r16", "gf448_r32", "gf448_r64"]

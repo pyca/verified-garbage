@@ -1,5 +1,0 @@
-name = "ECDH P-384"
-family = "Key agreement"
-specs = ["Weierstrass", "P384", "EcKey", "Ecdh"]
-modules = ["src/ec/ecdh/p384.rs"]
-asm = ["ecdh_p384", "ec_p384", "p384_mont"]

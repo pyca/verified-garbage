@@ -1,5 +1,0 @@
-name = "IDEA-CBC"
-family = "Ciphers"
-specs = ["Idea", "Cbc"]
-modules = ["src/cipher/idea/cbc.rs"]
-asm = ["idea_cbc"]

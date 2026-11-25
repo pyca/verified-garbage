@@ -1,5 +1,0 @@
-name = "3DES-OFB"
-family = "Ciphers"
-specs = ["TripleDes", "Ofb"]
-modules = ["src/cipher/triple_des/ofb.rs"]
-asm = ["triple_des_ofb"]

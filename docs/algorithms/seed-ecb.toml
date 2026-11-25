@@ -1,5 +1,0 @@
-name = "SEED-ECB"
-family = "Ciphers"
-specs = ["Seed"]
-modules = ["src/cipher/seed/ecb.rs"]
-asm = ["seed"]

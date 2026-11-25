@@ -1,5 +1,0 @@
-name = "scrypt"
-family = "KDFs"
-specs = ["Scrypt"]
-modules = ["src/kdf/scrypt.rs"]
-asm = ["scrypt"]

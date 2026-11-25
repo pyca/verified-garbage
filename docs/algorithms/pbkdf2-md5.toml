@@ -1,5 +1,0 @@
-name = "PBKDF2-HMAC-MD5"
-family = "KDFs"
-specs = ["Pbkdf2", "Md5"]
-modules = ["src/kdf/pbkdf2_hmac/md5.rs"]
-asm = ["pbkdf2_md5"]

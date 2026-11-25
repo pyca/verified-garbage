@@ -1,5 +1,0 @@
-name = "SEED-OFB"
-family = "Ciphers"
-specs = ["Seed", "Ofb"]
-modules = ["src/cipher/seed/ofb.rs"]
-asm = ["seed_ofb"]

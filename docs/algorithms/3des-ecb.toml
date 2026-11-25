@@ -1,5 +1,0 @@
-name = "3DES-ECB"
-family = "Ciphers"
-specs = ["TripleDes"]
-modules = ["src/cipher/triple_des/ecb.rs"]
-asm = ["triple_des"]

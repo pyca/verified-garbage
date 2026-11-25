@@ -1,5 +1,0 @@
-name = "DSA"
-family = "DSA"
-specs = ["Dsa"]
-modules = ["src/dsa.rs"]
-asm = ["dsa"]

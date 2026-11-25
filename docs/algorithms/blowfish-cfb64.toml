@@ -1,5 +1,0 @@
-name = "Blowfish-CFB64"
-family = "Ciphers"
-specs = ["Blowfish", "Cfb"]
-modules = ["src/cipher/blowfish/cfb.rs"]
-asm = ["blowfish_cfb"]

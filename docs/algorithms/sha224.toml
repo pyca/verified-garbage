@@ -1,5 +1,0 @@
-name = "SHA-224"
-family = "Hashes"
-specs = ["Sha256"]
-modules = ["src/hashes/sha224.rs"]
-asm = ["sha256"]

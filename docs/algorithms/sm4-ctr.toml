@@ -1,5 +1,0 @@
-name = "SM4-CTR"
-family = "Ciphers"
-specs = ["Sm4", "Ctr"]
-modules = ["src/cipher/sm4/ctr.rs"]
-asm = ["sm4_ctr"]

@@ -1,5 +1,0 @@
-name = "MD5"
-family = "Hashes"
-specs = ["Md5"]
-modules = ["src/hashes/md5.rs"]
-asm = ["md5"]

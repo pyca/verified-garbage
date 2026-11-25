@@ -1,5 +1,0 @@
-name = "Finite-field Diffie–Hellman (FFDH)"
-family = "Key agreement"
-specs = ["Ffdh"]
-modules = ["src/ffdh.rs"]
-asm = ["ffdh"]

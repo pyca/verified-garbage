@@ -1,5 +1,0 @@
-name = "X448"
-family = "Key agreement"
-specs = ["X448"]
-modules = ["src/x448.rs"]
-asm = ["x448", "gf448_r16", "gf448_r32", "gf448_r64"]

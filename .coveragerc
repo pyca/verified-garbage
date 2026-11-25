@@ -1,3 +1,0 @@
-# Used by ci/merge_rust_coverage.py: the lcov paths are repository-relative.
-[run]
-relative_files = True

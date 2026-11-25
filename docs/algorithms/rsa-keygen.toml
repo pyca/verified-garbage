@@ -1,5 +1,0 @@
-name = "RSA key generation"
-family = "RSA"
-specs = ["RsaKeyGen"]
-modules = ["src/rsa/keygen.rs"]
-asm = ["rsa_keygen"]
