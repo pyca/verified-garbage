@@ -67,6 +67,10 @@ theorem invMc1_check : check (lanes 64 9) cfg (invMixColumns true) (env p)
 def form1T (j p : Nat) : List (Nat × Nat) := [(j, posAt 4 false (byteAt 4 true p) (p % 4))]
 theorem form1_check : check (lanes 64 9) cfg form1 (env q) (post q (atoms form1T)) = true := by decide +kernel
 
+/-- `moveBack`: slices as they are. -/
+def idT (j p : Nat) : List (Nat × Nat) := [(j, p)]
+theorem move_check : check (lanes 64 9) cfg moveBack (env p) (post q (atoms idT)) = true := by decide +kernel
+
 /-- The slots the S-boxes spill to. -/
 def spillCfg : Cfg := { base := .r9, slots := 9 }
 
