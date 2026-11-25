@@ -1,5 +1,6 @@
 module
 
+-- separate module: WinJLoop's generic window is for every curve, and already near 900 lines; these are P-521's alone
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.LazyP521
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
@@ -18,7 +19,10 @@ import VerifiedGarbage.Proof.Framework.PowLit
 # P-521 on x86-64 with BMI2 and ADX: the lazy operations
 
 The carry chains of `Impl/Weierstrass/X86_64/LazyP521.lean` on the numbers in
-memory.
+memory (`add_ok`, `sub_ok`, …), the halving (`half_ok`), the products' calls
+(`sqrCall_ok`, `mulCall_ok`), programs of operations whose slots' bounds
+`check` checks (`prog_ok`), and the doublings and mixed addition of the window
+method (`quadLazy_ok`, `maddLazy_ok`).
 -/
 
 @[expose] public section
