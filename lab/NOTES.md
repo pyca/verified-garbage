@@ -357,3 +357,9 @@ xe 324, xf 326, xg 326. xh is taken: projected 320.9 x 255 + 4.9k = 86.7k = 25.5
 For the proof: the constants are loaded from the working space (written by the setup),
 v8-v15 saved and restored around the ladder; the woven scalar block's ldp and stp are
 two loads and two stores to the interleaving proof.
+
+## Erratum, 2026-11-25 (after the landing; the entries above are unchanged)
+
+Section 11 names `lab/sched.py`; the file is `lab/slist.py`. Section 22's `xh` also
+exchanges DA and CB; on `ue`'s order the 15 fewer instructions gained nothing (xe 324).
+Differences of 1-3 cycles above come from one run each.
