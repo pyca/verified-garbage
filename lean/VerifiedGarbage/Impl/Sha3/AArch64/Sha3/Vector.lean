@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Lanes
 public import VerifiedGarbage.Impl.Sha3.AArch64.RoundConstants
+public import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-!
 # Keccak-f[1600] on AArch64: two rounds in vector registers (FEAT_SHA3)
@@ -93,6 +94,13 @@ def rounds (b : Reg) : Prog isa :=
   .seq (.block [.addImm .x .x16 b 0, .movz .x .x17 12 0])
     (.loop (.block (body ++ ([.addImm .x .x16 .x16 32, .subImm .x .x17 .x17 1] : List Instr))) (.nonzero .x .x17))
 
+/-- ι of round `r`, the constant from the table in the code's constants, whose address is in `x16`. -/
+def iotaTbl (r : Nat) : List Instr := [.ldrqTbl .v31 .x16 (16 * r) sym2 rcs2, .vop (.logic .eor .v0 .v0 .v31)]
+
+/-- The 24 rounds, unrolled, for a caller with no memory for the table. -/
+def unrolled : List Instr :=
+  ([.adrSym .x16 sym2] : List Instr) ++ (List.range 24).flatMap fun r => round 0 0 (r % 2) ++ iotaTbl r
+
 /-! ## The permutation of one state
 
 `permute(state = x0, scratch = x1)`: in doubleword 0 of each register. -/
@@ -157,5 +165,14 @@ def absorbBlocks : Prog isa :=
   .seq (.block (save .x4 384 ++ rcStore .x4 0 ++ load .x0))
     (.seq (.loop absorbStep (.zero .x .x9))
       (.block (store .x0 ++ restore .x4 384 ++ ([.addImm .x .x0 .x3 0] : List Instr))))
+
+/-- The sponge's callee. -/
+def callee : Callee where
+  name := "vg_keccak_f1600_sha3"
+  code := permute
+  suffix := "_sha3"
+  clear := Callee.sha3Clear
+  pairedSha3 := true
+  blocks := some ("vg_keccak_absorb_blocks_sha3", absorbBlocks)
 
 end VG.Impl.Sha3.AArch64.Sha3.Vector

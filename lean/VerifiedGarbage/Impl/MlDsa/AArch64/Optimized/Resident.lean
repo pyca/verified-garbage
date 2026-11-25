@@ -15,7 +15,7 @@ open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 /-- Both 64-bit lanes of v0..v24 undergo the same Keccak permutation, its
 rounds in a loop with their constants from the table at `x15`. -/
 def permute : Prog isa :=
-  VG.Impl.Sha3.AArch64.Sha3.Vector.roundsLoop VG.Impl.Sha3.AArch64.Sha3.Vector.core .x15
+  VG.Impl.Sha3.AArch64.Sha3.Vector.rounds .x15
 
 /-- Where the samplers keep the table of the round constants, in their
 scratch space: 7296 bytes in, as two additions of an immediate. -/
@@ -38,7 +38,7 @@ def squeeze (words : Nat) (a b : Reg) : List Instr :=
     if words%2=1 then squeezeLast a b (words-1) else []
 
 /-- Keep both states in registers for all blocks. The public loop counter is
-x28; output pointers must be distinct from x6, x7, x15, x16 and x28. The table
+x28; output pointers must be distinct from x6, x7, x15, x16, x17 and x28. The table
 of the round constants is stored first, at `base + 2 oRc`, and `x15` points at it. -/
 def streamWith (core : Prog isa) (words blocks : Nat) (a b base : Reg) : Prog isa :=
   if blocks=0 then .block [] else

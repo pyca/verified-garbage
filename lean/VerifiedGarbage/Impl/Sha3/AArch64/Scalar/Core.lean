@@ -120,4 +120,12 @@ def absorbBlocks : Prog isa :=
   (.seq (.loop absorbStep (.zero .x .x17))
     (.block (([.umov .x .x16 .v29 0] : List Instr) ++ store .x16 8 0 ++ restore ++ ([.umov .x .x0 .v2 0] : List Instr))))
 
+/-- The sponge's callee. -/
+def callee : Callee where
+  name := "vg_keccak_f1600"
+  code := permute
+  suffix := ""
+  clear := Callee.generalClear
+  blocks := some ("vg_keccak_absorb_blocks", absorbBlocks)
+
 end VG.Impl.Sha3.AArch64.Scalar

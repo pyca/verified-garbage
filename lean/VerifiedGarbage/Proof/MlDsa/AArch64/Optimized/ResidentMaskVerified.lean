@@ -724,15 +724,14 @@ theorem sponge_ok (core : Resident.Core) {σ s : State} (hp : Pre σ) (he : Env 
       rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega_using [hj]))
     (by decide) (by decide) (by decide) (by decide) (by rw [he.base])
     (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega_using [hk]))
-    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega_using [hk]))
     (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))
     (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))) ?_
   intro t ht
-  have hk : RegKeep [.x6,.x7,.x15,.x16,.x24,.x25,.x28] s t := by
+  have hk : RegKeep [.x6,.x7,.x15,.x16,.x17,.x24,.x25,.x28] s t := by
     refine ⟨?_,ht.2.2.2.2.2.1,ht.2.2.2.2.2.2.1,ht.2.2.2.2.2.2.2⟩
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
-    exact ht.2.2.2.2.1 r hr.2.2.2.2.1 hr.2.2.2.2.2.1 hr.2.2.2.2.2.2 hr.1 hr.2.1 hr.2.2.2.1 hr.2.2.1
+    exact ht.2.2.2.2.1 r hr.2.2.2.2.2.1 hr.2.2.2.2.2.2.1 hr.2.2.2.2.2.2.2 hr.1 hr.2.1 ⟨hr.2.2.2.1,hr.2.2.2.2.1⟩ hr.2.2.1
   refine ⟨he.lowStep hk ht.2.2.2.1 (by decide) ?_,ht.2.1,ht.2.2.1⟩
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr

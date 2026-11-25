@@ -13,18 +13,6 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lit
 
 @[expose] public section
 
-namespace VG.Impl.Sha3.AArch64.Scalar
-
-/-- The sponge's callee. -/
-def callee : Callee where
-  name := "vg_keccak_f1600"
-  code := permute
-  suffix := ""
-  clear := Callee.generalClear
-  blocks := some ("vg_keccak_absorb_blocks", absorbBlocks)
-
-end VG.Impl.Sha3.AArch64.Scalar
-
 namespace VG.Proof.Sha3.AArch64.Scalar
 
 open VG VG.AArch64

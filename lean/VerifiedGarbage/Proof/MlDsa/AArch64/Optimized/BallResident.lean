@@ -395,11 +395,12 @@ section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64
-open VG.Proof.Sha3.AArch64.Sha3.ResidentBackend
+open VG.Proof.Sha3.AArch64.Sha3.Vector
+open VG.Impl.Sha3.AArch64.Sha3.Vector (callee)
 
 taint_summary residentFirstSponge : VectorTaint.taint SpongePublic
   (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 136)
-  using RSums.absorb RSums.pad RSums.squeeze
+  using Sums.absorb Sums.pad Sums.squeeze
 
 theorem resident_spongeCursor : SpongeCursor callee := by
   obtain ⟨hint,τ,hcheck,hpost,_⟩ := residentFirstSponge SpongePublic (by decide)
@@ -411,12 +412,12 @@ theorem resident_spongeCursor : SpongeCursor callee := by
   exact ⟨he,hh.1.2 .x0 (by decide)⟩
 
 theorem resident_prefixTiming : PrefixTiming callee := by
-  have hh : ∃hint,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x25]) (secondPrefix callee) hint).isSome=true := by sponge_taint_decide RSums
+  have hh : ∃hint,(VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x25]) (secondPrefix callee) hint).isSome=true := by sponge_taint_decide Sums
   obtain ⟨hint,hh⟩ := hh
   exact RelCT.taint (A := VectorTaint.taint) _ (fun _ _ h => h) hh
 
 theorem resident_verified : Verified AArch64.target
-    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith Impl.MlDsa.AArch64.Optimized.Ball.residentCallee)
+    (Impl.MlDsa.AArch64.Optimized.Ball.codeWith callee)
     (Proof.MlDsa.sampleInBallContract AArch64.abi 16) :=
   sampleInBall_verifiedWith backend resident_spongeCursor resident_prefixTiming
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

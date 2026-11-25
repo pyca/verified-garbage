@@ -23,9 +23,9 @@ This is an internal fragment; its enclosing sampler saves the ABI registers. -/
 theorem maskPairWith_ok (core : Core) {s : State} {p a b T : Addr} {rp ra rb base : Reg} {A B : Spec.Sha3.State}
     (hp : PairAt s.mem p A B) (hrp : s.gpr rp=p) (ha : s.gpr ra=a) (hb : s.gpr rb=b)
     (hra : rp ≠ ra) (hrb : rp ≠ rb) (hr28 : rp ≠ .x28)
-    (hr6 : rp ≠ .x6) (hr7 : rp ≠ .x7) (hr16 : rp ≠ .x16)
-    (ha6 : ra ≠ .x6) (ha7 : ra ≠ .x7) (ha16 : ra ≠ .x16) (ha28 : ra ≠ .x28)
-    (hb6 : rb ≠ .x6) (hb7 : rb ≠ .x7) (hb16 : rb ≠ .x16) (hb28 : rb ≠ .x28)
+    (hr6 : rp ≠ .x6) (hr7 : rp ≠ .x7) (hr16 : (rp ≠ .x16 ∧ rp ≠ .x17))
+    (ha6 : ra ≠ .x6) (ha7 : ra ≠ .x7) (ha16 : (ra ≠ .x16 ∧ ra ≠ .x17)) (ha28 : ra ≠ .x28)
+    (hb6 : rb ≠ .x6) (hb7 : rb ≠ .x7) (hb16 : (rb ≠ .x16 ∧ rb ≠ .x17)) (hb28 : rb ≠ .x28)
     (hab : ra ≠ rb)
     (hd : (Region.mk a 680).Disjoint ⟨b,680⟩)
     (hpa : (Region.mk a 680).Disjoint (pairR p))
@@ -38,14 +38,13 @@ theorem maskPairWith_ok (core : Core) {s : State} {p a b T : Addr} {rp ra rb bas
     (hwbl : ∀ j < 5, InRegions s.wr ((b+BitVec.ofNat 64 (136*j))+BitVec.ofNat 64 128) 8)
     (hrp15 : rp ≠ .x15) (ha15 : ra ≠ .x15) (hb15 : rb ≠ .x15)
     (hbase : base ≠ .x28) (hT : s.gpr base + BitVec.ofNat 64 7296 = T)
-    (hwT : ∀ i < 48, InRegions s.wr (T + BitVec.ofNat 64 (8 * i)) 8)
     (hwT16 : ∀ r < 24, InRegions s.wr (T + BitVec.ofNat 64 (16 * r)) 16)
     (hTa : (Region.mk T 384).Disjoint ⟨a,680⟩) (hTb : (Region.mk T 384).Disjoint ⟨b,680⟩) :
     WP isa (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core.code rp ra rb base) s fun t =>
       PairAt t.mem p (permuted A 5) (permuted B 5) ∧
       StreamOutput t.mem a 8 5 A ∧ StreamOutput t.mem b 8 5 B ∧
       Frame [⟨a,680⟩,⟨b,680⟩,pairR p,⟨T,384⟩] s.mem t.mem ∧
-      (∀ r, r ≠ ra → r ≠ rb → r ≠ .x28 → r ≠ .x6 → r ≠ .x7 → r ≠ .x16 → r ≠ .x15 → t.gpr r=s.gpr r) ∧
+      (∀ r, r ≠ ra → r ≠ rb → r ≠ .x28 → r ≠ .x6 → r ≠ .x7 → (r ≠ .x16 ∧ r ≠ .x17) → r ≠ .x15 → t.gpr r=s.gpr r) ∧
       t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp := by
   unfold Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith
   apply WP.seq
@@ -57,7 +56,7 @@ theorem maskPairWith_ok (core : Core) {s : State} {p a b T : Addr} {rp ra rb bas
     ha6 ha7 ha16 ha28 hb6 hb7 hb16 hb28 hab hd
     (by simpa only [hu.1.wr] using hwa) (by simpa only [hu.1.wr] using hwb)
     (by simpa only [hu.1.wr] using hwal) (by simpa only [hu.1.wr] using hwbl)
-    ha15 hb15 hTa hTb hbase (by rw [hu.1.gpr]; exact hT) (by simpa only [hu.1.wr] using hwT)
+    ha15 hb15 hTa hTb hbase (by rw [hu.1.gpr]; exact hT)
     (by simpa only [hu.1.wr] using hwT16)) ?_
   intro v hv
   refine WP.mono (VG.Proof.Sha3.AArch64.Neon.store_ok (p := p) (r := rp)

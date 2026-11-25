@@ -258,4 +258,53 @@ theorem rounds_ok {b : Reg} {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A 
   refine WP.mono (loop_ok body_ok (A := A) (B := B) (fun i hi => by rw [e.vec, d.vec]; exact hp i hi) (hT.core c)
     (by rw [e.other _ (by decide), d.gpr]; simp) (by rw [e.gpr]; rfl)) fun w ⟨k, h⟩ => ⟨c.trans k, h⟩
 
+/-! ## Unrolled -/
+
+theorem iotaTbl_run {r n : Nat} (hr : r < 3) (hn : n < 24) {s : State} {A B : Spec.Sha3.State}
+    (h : Vec.Pairs r s (core A) (core B)) (h16 : s.gpr .x16 = s.syms sym2) :
+    ∃ t, runBlock isa (iotaTbl n) s = some t ∧ Vec.Pairs r t (rnd A n) (rnd B n) ∧ OnlyV s t := by
+  let s₁ := s.setV .v31 (ofVDwords (RC n) (RC n))
+  let s₂ := s₁.setV .v0 (s₁.v .v0 ^^^ s₁.v .v31)
+  have hrc := RoundConstants.rcs2_eq n hn
+  have e₁ : exec (.ldrqTbl .v31 .x16 (16 * n) sym2 rcs2) s = some s₁ := by
+    simp only [exec]
+    rw [ite_eq_left ⟨h16, by omega, by omega, by rw [RoundConstants.rcs2_length]; omega⟩,
+      show 16 * n / 8 = 2 * n by omega, hrc.1, hrc.2]
+    rfl
+  have e₂ : exec (.vop (.logic .eor .v0 .v0 .v31)) s₁ = some s₂ := rfl
+  refine ⟨s₂, ?_, iota_pairs hr h ?_ fun v h0 h31 => ?_, (OnlyV.setV _ _ _).trans (.setV _ _ _)⟩
+  · rw [iotaTbl, runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_nil]
+  · simp only [s₂, s₁, RegUpd.v_setV, ite_true]
+    rw [ite_eq_right (by decide)]
+  · simp only [s₂, s₁, RegUpd.v_setV]
+    rw [ite_eq_right h0, ite_eq_right h31]
+
+theorem pairs_mod (r : Nat) {s : State} {A B : Spec.Sha3.State} : Vec.Pairs (r % 2) s A B ↔ Vec.Pairs r s A B := by
+  simp only [Vec.Pairs, reg, home_mod r, home_mod (r % 2), Nat.mod_mod]
+
+theorem unrolled_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) :
+    WP isa (.block unrolled) s fun t => CoreKeep s t ∧ Pairs t (keccakF A) (keccakF B) := by
+  suffices h : ∀ n ≤ 24, WP isa (.block (([.adrSym .x16 sym2] : List Instr) ++ (List.range n).flatMap fun r =>
+      round 0 0 (r % 2) ++ iotaTbl r)) s fun t => CoreKeep s t ∧ t.gpr .x16 = t.syms sym2 ∧
+      Vec.Pairs n t ((List.range n).foldl rnd A) ((List.range n).foldl rnd B) from
+    WP.mono (h 24 (Nat.le_refl _)) fun t ⟨k, _, p⟩ => ⟨k, pairs_iff.mpr ((pairs_mod 24).mpr p)⟩
+  intro n hn
+  induction n with
+  | zero =>
+    refine WP.cons (s' := s.write .x .x16 (s.syms sym2)) rfl (wp_nil ⟨?_, ?_, pairs_iff.mp hp⟩)
+    · exact .upd (Upd.write64 _ _ _) (.inl rfl)
+    · rw [RegUpd.gpr_write, ite_eq_left rfl, BitVec.setWidth_eq]; rfl
+  | succ n ih =>
+    rw [List.range_succ, List.flatMap_append, ← List.append_assoc, WP.block_append_iff]
+    refine WP.mono (ih (by omega)) fun t ⟨k, h16, p⟩ => ?_
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    obtain ⟨u, x, pu, ou⟩ := Vec.round_ok (Nat.mod_lt n (by decide)) (pure_ok _ (Nat.mod_lt n (by decide))) ((pairs_mod n).mpr p)
+    have g : u.gpr = t.gpr ∧ u.syms = t.syms := by obtain ⟨v, rfl⟩ := ou; exact ⟨rfl, rfl⟩
+    obtain ⟨w, y, pw, ow⟩ := iotaTbl_run (r := n % 2 + 1) (n := n) (by omega) (by omega) pu (by rw [g.1, g.2, h16])
+    have g' : w.gpr = u.gpr ∧ w.syms = u.syms := by obtain ⟨v, rfl⟩ := ow; exact ⟨rfl, rfl⟩
+    refine WP.of_runBlock (M := isa) ⟨w, by rw [runBlock_append _ _ x, y], (k.trans (.onlyV ou)).trans (.onlyV ow), ?_, ?_⟩
+    · rw [g'.1, g'.2, g.1, g.2, h16]
+    · rw [List.foldl_append, List.foldl_append, ← pairs_mod, show (n + 1) % 2 = (n % 2 + 1) % 2 by omega, pairs_mod]
+      exact pw
+
 end VG.Proof.Sha3.AArch64.Sha3.Vector
