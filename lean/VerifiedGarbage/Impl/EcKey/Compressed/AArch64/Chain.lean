@@ -29,9 +29,36 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.
   | (k, d) => .seq (if k = 0 then .block [] else squares P k)
     (if d = 0 then .block [] else mul P P.acc P.acc (P.slot ((d - 1) / 2)))
 
- def steps (P : ChainCfg) : List (Nat × Nat) → Prog isa
+ def linearSteps (P : ChainCfg) : List (Nat × Nat) → Prog isa
   | [] => .block []
-  | st :: rest => .seq (step P st) (steps P rest)
+  | st :: rest => .seq (step P st) (linearSteps P rest)
+
+/-- Consecutive full windows equal to 15 at the start of the chain. -/
+def fullWindows : List (Nat × Nat) → Nat
+  | [] => 0
+  | st :: rest => if st = (4, 15) then fullWindows rest + 1 else 0
+
+/-- A few squarings in straight-line code, leaving the window counter alone. -/
+def straightSquares (P : ChainCfg) : Nat → Prog isa
+  | 0 => .block []
+  | k + 1 => .seq (straightSquares P k) (mul P P.acc P.acc P.acc)
+
+/-- One full window, with its four squarings unrolled. -/
+def fullWindow (P : ChainCfg) : Prog isa :=
+  .seq (straightSquares P 4) (mul P P.acc P.acc (P.slot 7))
+
+/-- Repeated full windows share one loop body and the existing x19 counter. -/
+def repeatWindows (P : ChainCfg) (n : Nat) : Prog isa :=
+  .seq (.block [.movz .x .x19 (BitVec.ofNat 16 n) 0])
+    (.loop (.seq (fullWindow P) (.block [decCounter])) (.nonzero .x .x19))
+
+/-- Long initial runs with inline products share one window body. The
+threshold leaves short runs inline; calls already keep larger fields compact. -/
+def steps (P : ChainCfg) (sts : List (Nat × Nat)) : Prog isa :=
+  let n := fullWindows sts
+  if Mont.rootCallOf P.M = none ∧ 16 ≤ n ∧ n < 2 ^ 16 then
+    .seq (repeatWindows P n) (linearSteps P (sts.drop n))
+  else linearSteps P sts
 
  def pow (P : ChainCfg) : Prog isa :=
   .seq (table P) (.seq (.block (copy P.M.n P.acc (P.slot ((P.first - 1) / 2)))) (steps P P.steps))
