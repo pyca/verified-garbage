@@ -42,3 +42,12 @@ Key expansion: SubWord with no transpose (lead): slices w >> j, S-box, gather th
 ## SM4, Camellia, SEED (AArch64 scalar, PPC64LE): ortho = 8x8 transpose of 8 dwords per byte
  (exchanges of word-number bits with in-byte bits), the same interface as the lead's x86-64 Linear
  (ortho, zip1, zip2, swap8). AArch64 4 ops a swapmove; PPC64LE 6 (rotldi, xor, and, xor, rotldi, xor).
+
+# Amendments after reading the remaining (unlisted) code and proofs
+* AArch64's baseline functions use vperm and tbl, so no scalar AES engine or scalar SubWord is needed.
+* The remaining loop proofs keep 128 bytes of round key slices from byte 128 of the scratch buffer.
+  Doing that with the tbl expansion above costs the first batch no more vector operations than
+  expanding on the fly, and saves 11 a round afterwards: adopted, so those proofs' loops can stay.
+* The remaining proofs and callers count on v8-v15 not being written: 24 registers (v0-v7, v16-v31),
+  a few spills, permutation indices reloaded from slots 64-127 (four: SR, SR+rot1, InvSR, rot1).
+  State in v0-v7 before SubBytes, v16-v23 after it.
