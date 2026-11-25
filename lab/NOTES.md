@@ -66,3 +66,30 @@ possible alone. Hypothesis H4: flag-setting operations share the two multiply
 pipes, with at most one other: (41 + 45)/3 = 29, or worse. Experiment 3:
 mixtures of `mul` with `adds`, `adcs` chains, `add`, at two ratios, and
 additions that take their operand from a multiply.
+
+## 4. Experiment 3's result (run 45677858987)
+
+Cycles for a body: 50 `mul` + 50 `adds` 25.5 (4 a cycle: no shared limit, H4
+false); 100 `mul` + 25 chains of 4: 53.3 (floor 50); 100 `add` + the same
+chains 52.6; 50 `mul` + the same chains 47.7 (floor 37.5); the chains alone 34.4;
+the chains each on the one before's words 51 (latency alone would be 28);
+12 chains of 8: 45.3 (2.1 a cycle). `adc`, which reads the flags but does not
+write them: 4 a cycle.
+
+H5: every flag-setting instruction takes a renamed flag register until a later
+one retires, and there are only some 40 of them. A product sets flags 45 times,
+so the window is about one product whatever the reorder buffer: which explains
+why neither independence nor alternating rows helped.
+
+What follows if so: (a) write the flags as rarely as possible: end a chain with
+`adc`, not `adcs x, zero, zero`: a product could have 24 + 9 rather than 45;
+(b) let the flag setters of an operation be short-lived: have the multiplies
+before them, and arrange the chains as a tree rather than one after the other.
+
+Tree: the four rows' products on their own (3 setters each: `adds, adcs, adcs,
+adc`), P0 + 2^64 P1 and P2 + 2^64 P3 (4 each), and their sum (5): 25 setters,
+depth about 4 + 5 + 6 against 8 chains after each other.
+
+Experiment 4: (i) two independent chains of 12 `umulh` (36 cycles) with N
+`adds` (or `add`) after each: 36 cycles while the window holds both, 72 when not:
+find N. (ii) `mulA`: rows as now with `adc` ends; `mulT`: the tree.
