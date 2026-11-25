@@ -270,7 +270,7 @@ theorem round2_ok {s : State} {t0 t1 t2 t3 t4 t5 m0 m1 v : Reg} (h : RoundOk t0 
     rw [k₁₄.gpr _ (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨p2.2.2.2.2.2.2.symm,
       p3.2.2.2.2.2.2.symm, p4.2.2.2.2.2.2.symm, p5.2.2.2.2.2.2.symm, pm.2.2.2.2.2.2.symm⟩), hz₁₃]
   have z0 : (0 : BitVec 64).toNat = 0 := rfl
-  simp only [regsVal, hz₈, hz₁₀, hz₁₁, hz₁₂, z0, ite_true, Bool.toNat_false, Nat.add_zero, Nat.mul_zero, m0₈, m1₈, v₈, x1₈,
+  simp only [regsVal, hz₁₀, z0, ite_true, Bool.toNat_false, Nat.add_zero, Nat.mul_zero, m0₈, m1₈, v₈, x1₈,
     List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul] at e₉ e₁₀
   have hb := sub_borrow (s₁₀.gpr m0) (s₁₀.gpr v) true
   simp only [ite_true] at e₁₁ c₁₁
@@ -345,7 +345,7 @@ abbrev redW : List Reg := [.x1, .x2, .x3, .x16, .x24, .x25, .x17, .x22, .x23, .x
 /-- Three rounds, two words each, are Montgomery's reduction. -/
 theorem rounds_arith {L R₁ R₂ R₃ M₁ M₂ M₃ H V : Nat} (h₁ : 2 ^ 128 * R₁ = L + M₁ * p)
     (h₂ : 2 ^ 128 * R₂ = R₁ + M₂ * p) (h₃ : 2 ^ 128 * R₃ = R₂ + M₃ * p) (hM₁ : M₁ < 2 ^ 128) (hM₂ : M₂ < 2 ^ 128)
-    (hM₃ : M₃ < 2 ^ 128) (hL : L < 2 ^ 384) (hT : L + 2 ^ 384 * H < 2 ^ 384 * p) (hV : V = R₃ + H) :
+    (hM₃ : M₃ < 2 ^ 128) (hT : L + 2 ^ 384 * H < 2 ^ 384 * p) (hV : V = R₃ + H) :
     V < 2 * p ∧ V * 2 ^ (64 * 6) % p = (L + 2 ^ 384 * H) % p := by
   have e : V * 2 ^ (64 * 6) = L + 2 ^ 384 * H + (M₁ + 2 ^ 128 * M₂ + 2 ^ 256 * M₃) * p := by
     rw [hV]
@@ -388,7 +388,6 @@ theorem reduce_ok {s : State} (hz : s.gpr .x7 = 0) (hT : regsVal s (tl ++ th) < 
   have hV : regsVal t rs + 2 ^ 384 * (t.gpr .x13).toNat = regsVal s₃ rs + regsVal s th := by
     rw [regsVal_keep k₅ (by decide), e₅, ← regsVal_keep (rs := th) K₃ (by decide)]
     simpa using e₄
-  refine ⟨_, hV, rounds_arith e₁ e₂ e₃ hM₁ hM₂ hM₃ ?_ hT rfl⟩
-  exact regsVal_lt s tl
+  refine ⟨_, hV, rounds_arith e₁ e₂ e₃ hM₁ hM₂ hM₃ hT rfl⟩
 
 end VG.Proof.Mont.AArch64.P384Field
