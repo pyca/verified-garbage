@@ -96,3 +96,25 @@ separate integer `vg_ghash` can only be slower, and needs no less of the ISA.
 So no integer code on AArch64: the baseline variants call `vg_ghash_neon`,
 and `store_powers` multiplies with its `mul`, seven times in a row
 (`H^(k+1) = H^k * H`), without a stack frame.
+
+## ARM, corrected before its code
+
+The model's `umaal` needs a CPU feature (`Instr.requires`): the baseline
+includes Cortex-M3, whose long multiplies take a time that depends on their
+operands, so only `mul` and `mla` (32 bits of the product) are usable and B
+with `umaal` is out.
+
+`mul` is exact for 16-bit operands. Three classes modulo 3: a class has at
+most 6 of the 16 bits, and 6 < 2^3, so a product of two classes is right in
+its class; the three products of a class are XORed (not added: 3*6 > 7) and
+masked: 9 mul, 6 eor, 3 and, 2 eor per 16x16 product. Four classes would allow
+no `mla` either: 16 pairs meet in column 15 and 16 = 2^4. Karatsuba three
+times: 27 products a block, 243 `mul`. Registers: 3 masks (one set serves
+operands and products: 0x49249249 and its shifts), 3 + 3 classes, accumulator,
+temporary, result, pointer: 12 of 14. The key's 27 halves take 108 of the 256
+bytes of scratch (81 class words would not fit: 324), so its classes are
+masked out again for each product, 81 more `and`.
+
+Reduction by 32-bit words: word i of the product (i = 0..3, ascending) adds
+w ^ w>>1 ^ w>>2 ^ w>>7 to word i+4 and w<<31 ^ w<<30 ^ w<<25 to word i+3,
+with shifted operands (`eor d, d, w, lsr #k`): 7 instructions a word.
