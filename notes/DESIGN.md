@@ -132,3 +132,11 @@ SEED's matrices mRows, p0Rows, p1Rows:
   bytes in every byte, perm an involution of the 4 bytes per 32-bit half, a' -> c_b - a' mod 4: one
   or two exchanges of bytes. X: fold by 16 and 8, mask, spread by 8 and 16.
 * Transpose back, add the constant, store.
+
+## x86-64 key setup, second version (after measuring: one-block calls spend 40% of their time here)
+A round key is the same in all four block places k, so the transpose works on copies. In the order
+P3,P4,P5 (and then P2) the exchanges act on the two halves of the key alone: 4 exchanges on one
+pair of registers, after which the word has index bits [j0 j1 c c r r], j2 the register: already the
+slices' layout with j0 j1 where k goes. So form 1 can be made there, on 2 registers rather than 8
+(a copy; the high quadword, the odd key, takes the copy). Then the exchanges of j1 and j0 with k
+work on copies (1 of each 2, then all 4 pairs). About 150 instructions for two keys, from 314.
