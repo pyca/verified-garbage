@@ -240,30 +240,32 @@ structure Masks (a : A) : Prop where
   m2 : a.g .r3 = c3 2
 
 /-- What a product overwrites. -/
-abbrev work : List Reg := [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
+abbrev work : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 
 theorem Masks.keeps {rs : List Reg} {a b : A} (h : Masks a) (k : Keeps rs a b) (h1 : Reg.r1 ∉ rs) (h2 : Reg.r2 ∉ rs)
     (h3 : Reg.r3 ∉ rs) : Masks b :=
   ⟨by rw [k _ h1, h.m0], by rw [k _ h2, h.m1], by rw [k _ h3, h.m2]⟩
 
-theorem classes_ok (x : Reg) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
+theorem classes_ok (x : Reg) (hx : x = .r11 ∨ x = .lr) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
     WA (classes x j) a fun a' =>
       (a'.g .r4 = a.g x >>> 16 &&& c3 0 ∧ a'.g .r5 = a.g x >>> 16 &&& c3 1 ∧ a'.g .r6 = a.g x >>> 16 &&& c3 2) ∧
       (a'.g .r7 = a.m j &&& c3 0 ∧ a'.g .r8 = a.m j &&& c3 1 ∧ a'.g .r9 = a.m j &&& c3 2) ∧
       Keeps work a a' ∧ a'.m = a.m := by
-  simp only [WA, classes, ld, lsrI, evalA, stepA, opA, dpA, shiftA, slotOf_slot hj, Option.map_some, Option.bind_some, A.g_set,
-    A.m_set, hM.m0, hM.m1, hM.m2, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left',
+  have h4 : x ≠ .r4 := by rcases hx with rfl | rfl <;> decide
+  have h5 : x ≠ .r5 := by rcases hx with rfl | rfl <;> decide
+  simp only [WA, classes, ld, evalA, stepA, opA, dpA, shiftA, slotOf_slot hj, Option.map_some, Option.bind_some, A.g_set,
+    A.m_set, h4, h5, hM.m0, hM.m1, hM.m2, reduceCtorEq, ite_false, ite_true, Option.some.injEq, exists_eq_left',
     Nat.reduceLeDiff, and_self, BitVec.and_comm (c3 _)]
   refine ⟨trivial, trivial, fun r hr => ?_, trivial⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem classSum_ok (q : Reg) (hq : q = .r0 ∨ q = .r10) (r : Nat) (hr : r < 3) (x y : BitVec 32) (a : A) (hM : Masks a)
+theorem classSum_ok (q : Reg) (hq : q = .r0 ∨ q = .r10 ∨ q = .lr) (r : Nat) (hr : r < 3) (x y : BitVec 32) (a : A) (hM : Masks a)
     (hx : a.g .r4 = x &&& c3 0 ∧ a.g .r5 = x &&& c3 1 ∧ a.g .r6 = x &&& c3 2)
     (hy : a.g .r7 = y &&& c3 0 ∧ a.g .r8 = y &&& c3 1 ∧ a.g .r9 = y &&& c3 2) :
     WA (classSum q r) a fun a' => a'.g q = meet3 x y r &&& c3 r ∧ Keeps [q, .r11] a a' ∧ a'.m = a.m := by
   have h3 : r = 0 ∨ r = 1 ∨ r = 2 := by omega
-  rcases hq with rfl | rfl <;> rcases h3 with rfl | rfl | rfl <;>
+  rcases hq with rfl | rfl | rfl <;> rcases h3 with rfl | rfl | rfl <;>
   · simp only [WA, classSum, eor, kc, maskReg, evalA, stepA, opA, dpA, Option.map_some, Option.bind_some, A.g_set, A.m_set,
       hx.1, hx.2.1, hx.2.2, hy.1, hy.2.1, hy.2.2, hM.m0, hM.m1, hM.m2, reduceCtorEq, ite_false, ite_true,
       Option.some.injEq, exists_eq_left', meet3, Nat.reduceMod, Nat.reduceAdd]
@@ -279,29 +281,51 @@ theorem eor_ok (d n m : Reg) (hd : d ≠ .r12) (a : A) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem prod_ok (x : Reg) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
-    WA (prod x j) a fun a' => a'.g .r0 = cm16 (a.g x >>> 16) (a.m j) ∧ Keeps work a a' ∧ a'.m = a.m := by
-  rw [prod, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
-  refine WA.append ((classes_ok x j hj a hM).mono fun b ⟨hX, hY, kb, mb⟩ => ?_)
-  have hMb := hM.keeps kb (by decide) (by decide) (by decide)
-  refine WA.append ((classSum_ok .r0 (.inl rfl) 0 (by decide) _ _ b hMb hX hY).mono fun c ⟨e₀, kc, mc⟩ => ?_)
-  have hMc := hMb.keeps kc (by decide) (by decide) (by decide)
-  refine WA.append ((classSum_ok .r10 (.inr rfl) 1 (by decide) (a.g x >>> 16) (a.m j) c hMc
-    ⟨by rw [kc _ (by decide), hX.1], by rw [kc _ (by decide), hX.2.1], by rw [kc _ (by decide), hX.2.2]⟩
-    ⟨by rw [kc _ (by decide), hY.1], by rw [kc _ (by decide), hY.2.1], by rw [kc _ (by decide), hY.2.2]⟩).mono
-    fun d ⟨e₁, kd, md⟩ => ?_)
-  refine WA.append ((eor_ok .r0 .r0 .r10 (by decide) d).mono fun e ⟨e₂, ke, me⟩ => ?_)
-  have kbe : Keeps [.r0, .r10, .r11] b e :=
-    (kc.mono (by decide)).trans ((kd.mono (by decide)).trans (ke.mono (by decide)))
-  have hMe := hMb.keeps kbe (by decide) (by decide) (by decide)
-  refine WA.append ((classSum_ok .r10 (.inr rfl) 2 (by decide) (a.g x >>> 16) (a.m j) e hMe
-    ⟨by rw [kbe _ (by decide), hX.1], by rw [kbe _ (by decide), hX.2.1], by rw [kbe _ (by decide), hX.2.2]⟩
-    ⟨by rw [kbe _ (by decide), hY.1], by rw [kbe _ (by decide), hY.2.1], by rw [kbe _ (by decide), hY.2.2]⟩).mono
-    fun f ⟨e₃, kf, mf⟩ => ?_)
-  refine (eor_ok .r0 .r0 .r10 (by decide) f).mono fun g ⟨e₄, kg, mg⟩ => ⟨?_, ?_, ?_⟩
-  · rw [e₄, kf _ (by decide), e₂, kd _ (by decide), e₀, e₁, e₃, cm16]
-  · exact kb.trans ((kbe.mono (by decide)).trans ((kf.mono (by decide)).trans (kg.mono (by decide))))
-  · rw [mg, mf, me, md, mc, mb]
+theorem prod_ok (q : Reg) (hq : q = .r0 ∨ q = .lr) (x : Reg) (hx : x = .r11 ∨ x = .lr) (j : Nat) (hj : j < 64) (a : A) (hM : Masks a) :
+    WA (prod q x j) a fun a' => a'.g q = cm16 (a.g x >>> 16) (a.m j) ∧ Keeps (q :: work) a a' ∧ a'.m = a.m := by
+  rcases hq with rfl | rfl
+  · rw [prod, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+    refine WA.append ((classes_ok x hx j hj a hM).mono fun b ⟨hX, hY, kb, mb⟩ => ?_)
+    have hMb := hM.keeps kb (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .r0 (.inl rfl) 0 (by decide) _ _ b hMb hX hY).mono fun c ⟨e₀, kc, mc⟩ => ?_)
+    have hMc := hMb.keeps kc (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .r10 (.inr (.inl rfl)) 1 (by decide) (a.g x >>> 16) (a.m j) c hMc
+      ⟨by rw [kc _ (by decide), hX.1], by rw [kc _ (by decide), hX.2.1], by rw [kc _ (by decide), hX.2.2]⟩
+      ⟨by rw [kc _ (by decide), hY.1], by rw [kc _ (by decide), hY.2.1], by rw [kc _ (by decide), hY.2.2]⟩).mono
+      fun d ⟨e₁, kd, md⟩ => ?_)
+    refine WA.append ((eor_ok .r0 .r0 .r10 (by decide) d).mono fun e ⟨e₂, ke, me⟩ => ?_)
+    have kbe : Keeps [.r0, .r10, .r11] b e :=
+      (kc.mono (by decide)).trans ((kd.mono (by decide)).trans (ke.mono (by decide)))
+    have hMe := hMb.keeps kbe (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .r10 (.inr (.inl rfl)) 2 (by decide) (a.g x >>> 16) (a.m j) e hMe
+      ⟨by rw [kbe _ (by decide), hX.1], by rw [kbe _ (by decide), hX.2.1], by rw [kbe _ (by decide), hX.2.2]⟩
+      ⟨by rw [kbe _ (by decide), hY.1], by rw [kbe _ (by decide), hY.2.1], by rw [kbe _ (by decide), hY.2.2]⟩).mono
+      fun f ⟨e₃, kf, mf⟩ => ?_)
+    refine (eor_ok .r0 .r0 .r10 (by decide) f).mono fun g ⟨e₄, kg, mg⟩ => ⟨?_, ?_, ?_⟩
+    · rw [e₄, kf _ (by decide), e₂, kd _ (by decide), e₀, e₁, e₃, cm16]
+    · exact (kb.mono (by decide)).trans ((kbe.mono (by decide)).trans ((kf.mono (by decide)).trans (kg.mono (by decide))))
+    · rw [mg, mf, me, md, mc, mb]
+  · rw [prod, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+    refine WA.append ((classes_ok x hx j hj a hM).mono fun b ⟨hX, hY, kb, mb⟩ => ?_)
+    have hMb := hM.keeps kb (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .lr (.inr (.inr rfl)) 0 (by decide) _ _ b hMb hX hY).mono fun c ⟨e₀, kc, mc⟩ => ?_)
+    have hMc := hMb.keeps kc (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .r10 (.inr (.inl rfl)) 1 (by decide) (a.g x >>> 16) (a.m j) c hMc
+      ⟨by rw [kc _ (by decide), hX.1], by rw [kc _ (by decide), hX.2.1], by rw [kc _ (by decide), hX.2.2]⟩
+      ⟨by rw [kc _ (by decide), hY.1], by rw [kc _ (by decide), hY.2.1], by rw [kc _ (by decide), hY.2.2]⟩).mono
+      fun d ⟨e₁, kd, md⟩ => ?_)
+    refine WA.append ((eor_ok .lr .lr .r10 (by decide) d).mono fun e ⟨e₂, ke, me⟩ => ?_)
+    have kbe : Keeps [.lr, .r10, .r11] b e :=
+      (kc.mono (by decide)).trans ((kd.mono (by decide)).trans (ke.mono (by decide)))
+    have hMe := hMb.keeps kbe (by decide) (by decide) (by decide)
+    refine WA.append ((classSum_ok .r10 (.inr (.inl rfl)) 2 (by decide) (a.g x >>> 16) (a.m j) e hMe
+      ⟨by rw [kbe _ (by decide), hX.1], by rw [kbe _ (by decide), hX.2.1], by rw [kbe _ (by decide), hX.2.2]⟩
+      ⟨by rw [kbe _ (by decide), hY.1], by rw [kbe _ (by decide), hY.2.1], by rw [kbe _ (by decide), hY.2.2]⟩).mono
+      fun f ⟨e₃, kf, mf⟩ => ?_)
+    refine (eor_ok .lr .lr .r10 (by decide) f).mono fun g ⟨e₄, kg, mg⟩ => ⟨?_, ?_, ?_⟩
+    · rw [e₄, kf _ (by decide), e₂, kd _ (by decide), e₀, e₁, e₃, cm16]
+    · exact (kb.mono (by decide)).trans ((kbe.mono (by decide)).trans ((kf.mono (by decide)).trans (kg.mono (by decide))))
+    · rw [mg, mf, me, md, mc, mb]
 
 /-- The halves of the key's word `t` and their sum. -/
 def KeyOk (a : A) (t : Nat) (k : BitVec 32) : Prop :=
@@ -313,7 +337,7 @@ theorem mul32_ok (k t : Nat) (hk : k < 48) (ht : t < 9) (kw : BitVec 32) (a : A)
     WA (VG.Impl.Gcm.Arm.mul32 k t) a fun a' =>
       a'.g .r4 = (mul32 (a.m k) kw).1 ∧ a'.g .r5 = (mul32 (a.m k) kw).2 ∧ Keeps workLr a a' ∧
       ∀ j, j < 48 ∨ 50 ≤ j → a'.m j = a.m j := by
-  rw [VG.Impl.Gcm.Arm.mul32, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+  rw [VG.Impl.Gcm.Arm.mul32, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
   refine WA.append (WA.mono (Q := fun b => b.g .lr = a.m k ∧ b.g .r11 = a.m k <<< 16 ∧ Keeps workLr a b ∧ b.m = a.m)
     ?_ fun b ⟨l₁, r₁, k₁, m₁⟩ => ?_)
   · simp only [WA, ld, lslI, evalA, stepA, opA, shiftA, slotOf_slot (show k < 64 by omega), Option.map_some, Option.bind_some,
@@ -322,41 +346,36 @@ theorem mul32_ok (k t : Nat) (hk : k < 48) (ht : t < 9) (kw : BitVec 32) (a : A)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
   have hM₁ := hM.keeps k₁ (by decide) (by decide) (by decide)
-  refine WA.append ((prod_ok .r11 (3 * t) (by omega) b hM₁).mono fun c ⟨e₂, k₂, m₂⟩ => ?_)
-  refine WA.append (WA.mono (Q := fun d => d.g = c.g ∧ d.m t0S = c.g .r0 ∧ ∀ j, j ≠ t0S → d.m j = c.m j) ?_
-    fun d ⟨g₃, e₃, m₃⟩ => ?_)
-  · simp only [WA, st, t0S, evalA, stepA, slotOf_slot (show 48 < 64 by decide), Option.map_some, Option.bind_some,
-      A.g_put, A.m_put, Option.some.injEq, exists_eq_left', ite_true]
-    exact ⟨trivial, trivial, fun j hj => ite_eq_right hj⟩
-  have k₃ : Keeps workLr a d := fun r hr => by
-    rw [g₃, (k₂.mono (by decide) : Keeps workLr b c) r hr, k₁ r hr]
-  have hM₃ := hM.keeps k₃ (by decide) (by decide) (by decide)
-  have l₃ : d.g .lr = a.m k := by rw [g₃, k₂ _ (by decide), l₁]
-  have M₃ : ∀ j, j < 48 ∨ 50 ≤ j → d.m j = a.m j := fun j hj => by rw [m₃ j (by unfold t0S; omega), m₂, m₁]
-  refine WA.append ((prod_ok .lr (3 * t + 1) (by omega) d hM₃).mono fun e ⟨e₄, k₄, m₄⟩ => ?_)
-  refine WA.append (WA.mono (Q := fun f => f.g .r11 = e.g .lr ^^^ e.g .lr <<< 16 ∧ Keeps [.r11] e f ∧
-    f.m t1S = e.g .r0 ∧ ∀ j, j ≠ t1S → f.m j = e.m j) ?_ fun f ⟨r₅, k₅, e₅, m₅⟩ => ?_)
-  · simp only [WA, st, t1S, evalA, stepA, opA, shiftA, dpA, slotOf_slot (show 49 < 64 by decide), Option.map_some,
+  refine WA.append ((prod_ok .r0 (.inl rfl) .r11 (.inl rfl) (3 * t) (by omega) b hM₁).mono fun c ⟨e₂, k₂, m₂⟩ => ?_)
+  refine WA.append (WA.mono (Q := fun d => d.g .r11 = c.g .lr ^^^ c.g .lr <<< 16 ∧ Keeps [.r11] c d ∧ d.m t0S = c.g .r0 ∧
+    ∀ j, j ≠ t0S → d.m j = c.m j) ?_ fun d ⟨r₃, k₃, e₃, m₃⟩ => ?_)
+  · simp only [WA, st, t0S, evalA, stepA, opA, shiftA, dpA, slotOf_slot (show 48 < 64 by decide), Option.map_some,
       Option.bind_some, A.g_put, A.m_put, A.g_set, A.m_set, reduceCtorEq, Option.some.injEq, exists_eq_left', ite_true,
       ite_false, Nat.reduceLeDiff, and_self]
     refine ⟨trivial, fun r hr => ?_, trivial, fun j hj => ite_eq_right hj⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [A.g_set, A.g_put, hr, ite_false]
-  have k₅' : Keeps workLr a f := k₃.trans ((k₄.mono (by decide)).trans (k₅.mono (by decide)))
-  have hM₅ := hM.keeps k₅' (by decide) (by decide) (by decide)
-  have M₅ : ∀ j, j < 48 ∨ 50 ≤ j → f.m j = a.m j := fun j hj => by rw [m₅ j (by unfold t1S; omega), m₄, M₃ j hj]
-  refine WA.append ((prod_ok .r11 (3 * t + 2) (by omega) f hM₅).mono fun h ⟨e₆, k₆, m₆⟩ => ?_)
+  have l₂ : c.g .lr = a.m k := by rw [k₂ _ (by decide), l₁]
+  have k₃' : Keeps workLr a d := k₁.trans ((k₂.mono (by decide)).trans (k₃.mono (by decide)))
+  have hM₃ := hM.keeps k₃' (by decide) (by decide) (by decide)
+  have l₃ : d.g .lr = a.m k := by rw [k₃ _ (by decide), l₂]
+  have M₃ : ∀ j, j < 48 ∨ 49 ≤ j → d.m j = a.m j := fun j hj => by rw [m₃ j (by unfold t0S; omega), m₂, m₁]
+  refine WA.append ((prod_ok .r0 (.inl rfl) .r11 (.inl rfl) (3 * t + 2) (by omega) d hM₃).mono fun e ⟨e₄, k₄, m₄⟩ => ?_)
+  have k₄' : Keeps workLr a e := k₃'.trans (k₄.mono (by decide))
+  have hM₄ := hM.keeps k₄' (by decide) (by decide) (by decide)
+  refine WA.append ((prod_ok .lr (.inr rfl) .lr (.inr rfl) (3 * t + 1) (by omega) e hM₄).mono fun h ⟨e₆, k₆, m₆⟩ => ?_)
+  have M₆ : ∀ j, j < 48 ∨ 49 ≤ j → h.m j = a.m j := fun j hj => by rw [m₆, m₄, M₃ j hj]
   have hp0 : h.m 48 = cm16 (lo16 (a.m k)) (lo16 kw) := by
-    rw [m₆, m₅ 48 (by decide), m₄, show d.m 48 = c.g .r0 from e₃, e₂, r₁, m₁, hK.1]; rfl
-  have hp1 : h.m 49 = cm16 (hi16 (a.m k)) (hi16 kw) := by
-    rw [m₆, show f.m 49 = e.g .r0 from e₅, e₄, l₃, M₃ _ (by omega), hK.2.1]; rfl
+    rw [m₆, m₄, show d.m 48 = c.g .r0 from e₃, e₂, r₁, m₁, hK.1]; rfl
+  have hp1 : h.g .lr = cm16 (hi16 (a.m k)) (hi16 kw) := by
+    rw [e₆, k₄ _ (by decide), l₃, m₄, M₃ _ (by omega), hK.2.1]; rfl
   have hp2 : h.g .r0 = cm16 (lo16 (a.m k) ^^^ hi16 (a.m k)) (lo16 kw ^^^ hi16 kw) := by
-    rw [e₆, r₅, k₄ _ (by decide), l₃, sum16, M₅ _ (by omega), hK.2.2]
-  simp only [WA, ld, eor, t0S, t1S, evalA, stepA, opA, shiftA, dpA, slotOf_slot (show 48 < 64 by decide),
-    slotOf_slot (show 49 < 64 by decide), Option.map_some, Option.bind_some, A.g_set, A.m_set, reduceCtorEq,
-    Option.some.injEq, exists_eq_left', ite_true, ite_false, Nat.reduceLeDiff, and_self, hp0, hp1, hp2, Spread.mul32]
-  refine ⟨trivial, trivial, fun r hr => ?_, fun j hj => by rw [m₆, M₅ j hj]⟩
-  have hk := (k₅'.trans (k₆.mono (by decide))) r hr
+    rw [k₆ _ (by decide), e₄, r₃, l₂, sum16, M₃ _ (by omega), hK.2.2]
+  simp only [WA, ld, eor, t0S, evalA, stepA, opA, shiftA, dpA, slotOf_slot (show 48 < 64 by decide), Option.map_some,
+    Option.bind_some, A.g_set, A.m_set, reduceCtorEq, Option.some.injEq, exists_eq_left', ite_true, ite_false,
+    Nat.reduceLeDiff, and_self, hp0, hp1, hp2, Spread.mul32]
+  refine ⟨trivial, trivial, fun r hr => ?_, fun j hj => M₆ j (by omega)⟩
+  have hk := (k₄'.trans (k₆.mono (by decide))) r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [A.g_set, hr, ite_false, hk]
 
@@ -371,12 +390,13 @@ theorem keep_ok (b : Nat) (hb : b + 1 < 64) (a : A) :
 /-- The four words at `b`. -/
 def At (a : A) (b : Nat) (w : W4) : Prop := a.m b = w.w0 ∧ a.m (b + 1) = w.w1 ∧ a.m (b + 2) = w.w2 ∧ a.m (b + 3) = w.w3
 
-theorem mul64_ok (t b : Nat) (ht : t + 2 < 9) (hb : b = 36 ∨ b = 40 ∨ b = 44) (k0 k1 : BitVec 32) (a : A) (hM : Masks a)
+theorem mulRegs_ok (t b : Nat) (ht : t + 2 < 9) (hb : b = 36 ∨ b = 40 ∨ b = 44) (k0 k1 : BitVec 32) (a : A) (hM : Masks a)
     (hK : KeyOk a t k0 ∧ KeyOk a (t + 1) k1 ∧ KeyOk a (t + 2) (k0 ^^^ k1))
     (hS : a.m (27 + (t + 2)) = a.m (27 + t) ^^^ a.m (27 + (t + 1))) :
-    WA (mul64 t b) a fun a' => At a' b (mulW4 Spread.mul32 (a.m (27 + (t + 1))) (a.m (27 + t)) k1 k0) ∧ Keeps workLr a a' ∧
+    WA (mulRegs t b) a fun a' => (let w := mulW4 Spread.mul32 (a.m (27 + (t + 1))) (a.m (27 + t)) k1 k0
+        (a'.g .r6 = w.w0 ∧ a'.g .r7 = w.w1 ∧ a'.g .r8 = w.w2 ∧ a'.g .r9 = w.w3) ∧ a'.m b = w.w0 ∧ a'.m (b + 3) = w.w3) ∧ Keeps workLr a a' ∧
       ∀ j, j < 48 ∨ 50 ≤ j → (j < b ∨ b + 4 ≤ j) → a'.m j = a.m j := by
-  rw [mul64, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+  rw [mulRegs, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
   refine WA.append ((mul32_ok (27 + t) t (by omega) (by omega) k0 a hM hK.1).mono fun c ⟨p0, p1, kc, mc⟩ => ?_)
   refine WA.append ((keep_ok b (by omega) c).mono fun d ⟨q0, q1, md, gd⟩ => ?_)
   have kd : Keeps workLr a d := fun r hr => by rw [gd, kc r hr]
@@ -406,17 +426,28 @@ theorem mul64_ok (t b : Nat) (ht : t + 2 < 9) (hb : b = 36 ∨ b = 40 ∨ b = 44
   have w2 : g.m (b + 2) = (mul32 (a.m (27 + (t + 1))) k1).1 := by rw [mg _ (by omega), q2, p2]
   have w3 : g.m (b + 3) = (mul32 (a.m (27 + (t + 1))) k1).2 := by
     rw [mg _ (by omega), show f.m (b + 3) = e.g .r5 from q3, p3]
-  simp only [WA, ld, st, eor, evalA, stepA, opA, dpA, slotOf_slot (show b < 64 by omega),
+  simp only [WA, ld, eor, evalA, stepA, opA, dpA, slotOf_slot (show b < 64 by omega),
     slotOf_slot (show b + 1 < 64 by omega), slotOf_slot (show b + 2 < 64 by omega), slotOf_slot (show b + 3 < 64 by omega),
-    Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put, reduceCtorEq,
-    Option.some.injEq, exists_eq_left', ite_true, ite_false, w0, w1, w2, w3, p4, p5, At, mulW4,
-    show ¬ b = b + 1 by omega, show ¬ b = b + 2 by omega, show ¬ b + 1 = b + 2 by omega,
-    show ¬ b + 3 = b + 1 by omega, show ¬ b + 3 = b + 2 by omega]
-  refine ⟨⟨trivial, trivial, trivial, trivial⟩, fun r hr => ?_, fun j hj h => ?_⟩
+    Option.map_some, Option.bind_some, A.g_set, A.m_set, reduceCtorEq,
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, w0, w1, w2, w3, p4, p5, mulW4]
+  refine ⟨⟨⟨trivial, trivial, trivial, trivial⟩, trivial, trivial⟩, fun r hr => ?_, fun j hj h => ?_⟩
   · have hk := (kf.trans kg) r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [A.g_set, A.g_put, hr, ite_false, hk]
-  · rw [ite_eq_right (by omega), ite_eq_right (by omega), mg j hj, Mf j hj h]
+    simp only [A.g_set, hr, ite_false, hk]
+  · rw [mg j hj, Mf j hj h]
+
+theorem mul64_ok (t b : Nat) (ht : t + 2 < 9) (hb : b = 36 ∨ b = 40 ∨ b = 44) (k0 k1 : BitVec 32) (a : A) (hM : Masks a)
+    (hK : KeyOk a t k0 ∧ KeyOk a (t + 1) k1 ∧ KeyOk a (t + 2) (k0 ^^^ k1))
+    (hS : a.m (27 + (t + 2)) = a.m (27 + t) ^^^ a.m (27 + (t + 1))) :
+    WA (mul64 t b) a fun a' => At a' b (mulW4 Spread.mul32 (a.m (27 + (t + 1))) (a.m (27 + t)) k1 k0) ∧ Keeps workLr a a' ∧
+      ∀ j, j < 48 ∨ 50 ≤ j → (j < b ∨ b + 4 ≤ j) → a'.m j = a.m j := by
+  refine WA.append ((mulRegs_ok t b ht hb k0 k1 a hM hK hS).mono fun c ⟨⟨⟨_, w1, w2, _⟩, w0, w3⟩, kc, mc⟩ => ?_)
+  simp only [WA, st, evalA, stepA, slotOf_slot (show b + 1 < 64 by omega), slotOf_slot (show b + 2 < 64 by omega),
+    Option.map_some, Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left', At, ite_true, w0, w1, w2, w3,
+    show ¬ b = b + 1 by omega, show ¬ b = b + 2 by omega, show ¬ b + 1 = b + 2 by omega,
+    show ¬ b + 3 = b + 1 by omega, show ¬ b + 3 = b + 2 by omega, ite_false]
+  refine ⟨⟨trivial, trivial, trivial, trivial⟩, kc, fun j hj h => ?_⟩
+  rw [ite_eq_right (by omega), ite_eq_right (by omega), mc j hj h]
 
 /-! ## The reduction and the key -/
 
@@ -436,101 +467,94 @@ theorem foldUp_ok (d q : Reg) (hd : d ≠ .r12) (hdq : q ≠ d) (a : A) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h) (hc : At a 44 c) :
-    WA reduce a fun a' => (a'.m 27 = (redW4 l h c).w0 ∧ a'.m 28 = (redW4 l h c).w1 ∧ a'.m 30 = (redW4 l h c).w2 ∧
-      a'.m 31 = (redW4 l h c).w3) ∧ (∀ k, k ≠ 27 → k ≠ 28 → k ≠ 30 → k ≠ 31 → a'.m k = a.m k) ∧ Keeps workLr a a' := by
+theorem reduce_ok {a : A} {l h c : W4} (hl : At a 36 l) (hh : At a 40 h)
+    (hc : a.g .r6 = c.w0 ∧ a.g .r7 = c.w1 ∧ a.g .r8 = c.w2 ∧ a.g .r9 = c.w3) :
+    WA reduce a fun a' => (a'.g .r0 = (redW4 l h c).w0 ∧ a'.g .lr = (redW4 l h c).w1 ∧ a'.g .r10 = (redW4 l h c).w2 ∧
+      a'.g .r11 = (redW4 l h c).w3) ∧ a'.m = a.m ∧ Keeps workLr a a' := by
   obtain ⟨l0, l1, l2, l3⟩ := hl
   obtain ⟨h0, h1, h2, h3⟩ := hh
   obtain ⟨c0, c1, c2, c3⟩ := hc
-  simp only [Nat.reduceAdd] at l1 l2 l3 h1 h2 h3 c1 c2 c3
+  simp only [Nat.reduceAdd] at l1 l2 l3 h1 h2 h3
   rw [reduce, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
-    List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
-    List.append_assoc]
-  refine WA.append (WA.mono (Q := fun b => (b.g .r4 = l.w0 ∧ b.g .r5 = l.w1 ∧ b.g .r6 = l.w2 ∧ b.g .r7 = l.w3 ∧
-      b.g .r8 = h.w0 ∧ b.g .r9 = h.w1 ∧ b.g .r10 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 ∧
-      b.g .r11 = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3) ∧ Keeps workLr a b ∧ b.m = a.m) ?_
-      fun b₁ ⟨⟨g4, g5, g6, g7, g8, g9, g10, g11⟩, k₁, m₁⟩ => ?_)
-  · simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, lS, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+    List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc]
+  refine WA.append (WA.mono (Q := fun b => (b.g .r4 = l.w0 ∧ b.g .r5 = l.w1 ∧ b.g .r10 = l.w2 ∧ b.g .r11 = l.w3 ∧
+      b.g .r0 = h.w0 ∧ b.g .lr = h.w1 ∧ b.g .r6 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 ∧
+      b.g .r7 = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ∧ b.g .r8 = c.w2 ∧ b.g .r9 = c.w3) ∧ Keeps workLr a b ∧ b.m = a.m) ?_
+      fun b₁ ⟨⟨g4, g5, g10, g11, g0, glr, g6, g7, g8, g9⟩, k₁, m₁⟩ => ?_)
+  · simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, lS, hS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
       Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', l0, l1, l2, l3, h0, h1,
-      c0, c1]
+      c0, c1, c2, c3]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
-  refine WA.append ((foldDn_ok .r11 .r4 (by decide) (by decide) b₁).mono fun b₂ ⟨e₂, k₂, m₂⟩ => ?_)
-  rw [g11, g4] at e₂
-  refine WA.append (WA.mono (Q := fun b => (b.g .r8 = h.w0 ^^^ (c.w2 ^^^ l.w2 ^^^ h.w2) ^^^ l.w0 ∧ b.g .lr = h.w2) ∧
-      Keeps [.r0, .lr, .r8] b₂ b ∧ b.m = a.m) ?_ fun b₃ ⟨⟨e₃, lr₃⟩, k₃, m₃⟩ => ?_)
-  · have e8 : b₂.g .r8 = h.w0 := by rw [k₂ _ (by decide), g8]
-    have e6 : b₂.g .r6 = l.w2 := by rw [k₂ _ (by decide), g6]
+  refine WA.append ((foldDn_ok .r7 .r4 (by decide) (by decide) b₁).mono fun b₂ ⟨e₂, k₂, m₂⟩ => ?_)
+  rw [g7, g4] at e₂
+  refine WA.append (WA.mono (Q := fun b => (b.g .r0 = h.w0 ^^^ (c.w2 ^^^ l.w2 ^^^ h.w2) ^^^ l.w0 ∧ b.g .r10 = h.w2) ∧
+      Keeps [.r0, .r10, .r8] b₂ b ∧ b.m = a.m) ?_ fun b₃ ⟨⟨e₃, t₃⟩, k₃, m₃⟩ => ?_)
+  · have e0 : b₂.g .r0 = h.w0 := by rw [k₂ _ (by decide), g0]
+    have e8 : b₂.g .r8 = c.w2 := by rw [k₂ _ (by decide), g8]
+    have e10 : b₂.g .r10 = l.w2 := by rw [k₂ _ (by decide), g10]
     have e4 : b₂.g .r4 = l.w0 := by rw [k₂ _ (by decide), g4]
-    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₂, m₁, h2, c2, e8, e6, e4]
+    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₂, m₁, h2, e0, e8, e10, e4]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
-  refine WA.append ((foldUp_ok .r8 .r4 (by decide) (by decide) b₃).mono fun b₄ ⟨e₄, k₄, m₄⟩ => ?_)
-  refine WA.append ((foldDn_ok .r8 .r5 (by decide) (by decide) b₄).mono fun b₅ ⟨e₅, k₅, m₅⟩ => ?_)
+  refine WA.append ((foldUp_ok .r0 .r4 (by decide) (by decide) b₃).mono fun b₄ ⟨e₄, k₄, m₄⟩ => ?_)
+  refine WA.append ((foldDn_ok .r0 .r5 (by decide) (by decide) b₄).mono fun b₅ ⟨e₅, k₅, m₅⟩ => ?_)
   rw [e₄, e₃, k₃ _ (by decide), k₂ _ (by decide), g4, k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g5,
     BitVec.xor_assoc _ (up32 _)] at e₅
-  refine WA.append (WA.mono (Q := fun b => (b.g .r9 = h.w1 ^^^ (c.w3 ^^^ l.w3 ^^^ h.w3) ^^^ l.w1 ∧ b.g .r7 = h.w3) ∧
-      Keeps [.r6, .r7, .r9] b₅ b ∧ b.m = a.m) ?_ fun b₆ ⟨⟨e₆, e₆'⟩, k₆, m₆⟩ => ?_)
-  · have e9 : b₅.g .r9 = h.w1 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g9]
-    have e7 : b₅.g .r7 = l.w3 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g7]
+  refine WA.append (WA.mono (Q := fun b => (b.g .lr = h.w1 ^^^ (c.w3 ^^^ l.w3 ^^^ h.w3) ^^^ l.w1 ∧ b.g .r11 = h.w3) ∧
+      Keeps [.lr, .r11, .r9] b₅ b ∧ b.m = a.m) ?_ fun b₆ ⟨⟨e₆, e₆'⟩, k₆, m₆⟩ => ?_)
+  · have elr : b₅.g .lr = h.w1 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), glr]
+    have e11 : b₅.g .r11 = l.w3 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g11]
+    have e9 : b₅.g .r9 = c.w3 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g9]
     have e5 : b₅.g .r5 = l.w1 := by rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g5]
-    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, cS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
-      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₅, m₄, m₃, h3, c3, e9,
-      e7, e5]
+    simp only [reduceCtorEq, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, ld, eor, hS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some,
+      Option.bind_some, A.g_set, A.m_set, Option.some.injEq, exists_eq_left', m₅, m₄, m₃, h3, elr, e11, e9, e5]
     refine ⟨trivial, fun r hr => ?_, trivial⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [A.g_set, hr, ite_false]
-  refine WA.append ((foldUp_ok .r9 .r5 (by decide) (by decide) b₆).mono fun b₇ ⟨e₇, k₇, m₇⟩ => ?_)
-  refine WA.append ((foldDn_ok .r9 .r10 (by decide) (by decide) b₇).mono fun b₈ ⟨e₈, k₈, m₈⟩ => ?_)
-  have x10 : b₇.g .r10 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 := by
-    rw [k₇ _ (by decide), k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g10]
+  refine WA.append ((foldUp_ok .lr .r5 (by decide) (by decide) b₆).mono fun b₇ ⟨e₇, k₇, m₇⟩ => ?_)
+  refine WA.append ((foldDn_ok .lr .r6 (by decide) (by decide) b₇).mono fun b₈ ⟨e₈, k₈, m₈⟩ => ?_)
+  have x6 : b₇.g .r6 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 := by
+    rw [k₇ _ (by decide), k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g6]
   have x5 : b₆.g .r5 = l.w1 := by
     rw [k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), g5]
-  rw [e₇, e₆, x5, x10] at e₈
-  refine WA.append ((eor_ok .lr .lr .r10 (by decide) b₈).mono fun b₉ ⟨e₉, k₉, m₉⟩ => ?_)
-  refine WA.append ((foldUp_ok .lr .r10 (by decide) (by decide) b₉).mono fun b₁₀ ⟨e₁₀, k₁₀, m₁₀⟩ => ?_)
-  refine WA.append ((foldDn_ok .lr .r11 (by decide) (by decide) b₁₀).mono fun b₁₁ ⟨e₁₁, k₁₁, m₁₁⟩ => ?_)
-  have xlr : b₈.g .lr = h.w2 := by
-    rw [k₈ _ (by decide), k₇ _ (by decide), k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), lr₃]
-  have y10 : b₈.g .r10 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 := by rw [k₈ _ (by decide), x10]
-  have x11 : b₁₀.g .r11 = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ^^^ dn32 l.w0 := by
+  rw [e₇, e₆, x5, x6] at e₈
+  refine WA.append ((eor_ok .r10 .r10 .r6 (by decide) b₈).mono fun b₉ ⟨e₉, k₉, m₉⟩ => ?_)
+  refine WA.append ((foldUp_ok .r10 .r6 (by decide) (by decide) b₉).mono fun b₁₀ ⟨e₁₀, k₁₀, m₁₀⟩ => ?_)
+  refine WA.append ((foldDn_ok .r10 .r7 (by decide) (by decide) b₁₀).mono fun b₁₁ ⟨e₁₁, k₁₁, m₁₁⟩ => ?_)
+  have x10 : b₈.g .r10 = h.w2 := by
+    rw [k₈ _ (by decide), k₇ _ (by decide), k₆ _ (by decide), k₅ _ (by decide), k₄ _ (by decide), t₃]
+  have y6 : b₈.g .r6 = c.w0 ^^^ l.w0 ^^^ h.w0 ^^^ l.w2 := by rw [k₈ _ (by decide), x6]
+  have x7 : b₁₀.g .r7 = c.w1 ^^^ l.w1 ^^^ h.w1 ^^^ l.w3 ^^^ dn32 l.w0 := by
     rw [k₁₀ _ (by decide), k₉ _ (by decide), k₈ _ (by decide), k₇ _ (by decide), k₆ _ (by decide), k₅ _ (by decide),
       k₄ _ (by decide), k₃ _ (by decide), e₂]
-  rw [e₁₀, e₉, k₉ _ (by decide), xlr, y10, x11, BitVec.xor_assoc _ (up32 _)] at e₁₁
-  refine WA.append ((eor_ok .r7 .r7 .r11 (by decide) b₁₁).mono fun b₁₂ ⟨e₁₂, k₁₂, m₁₂⟩ => ?_)
-  refine WA.append ((foldUp_ok .r7 .r11 (by decide) (by decide) b₁₂).mono fun b₁₃ ⟨e₁₃, k₁₃, m₁₃⟩ => ?_)
-  have x7 : b₁₁.g .r7 = h.w3 := by
-    rw [k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), k₈ _ (by decide), k₇ _ (by decide), e₆']
-  rw [e₁₂, k₁₂ _ (by decide), x7, k₁₁ _ (by decide), x11] at e₁₃
-  have y8 : b₁₃.g .r8 = (redW4 l h c).w0 := by
-    rw [k₁₃ _ (by decide), k₁₂ _ (by decide), k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), k₈ _ (by decide),
+  rw [e₁₀, e₉, k₉ _ (by decide), x10, y6, x7, BitVec.xor_assoc _ (up32 _)] at e₁₁
+  refine WA.append ((eor_ok .r11 .r11 .r7 (by decide) b₁₁).mono fun b₁₂ ⟨e₁₂, k₁₂, m₁₂⟩ => ?_)
+  refine (foldUp_ok .r11 .r7 (by decide) (by decide) b₁₂).mono fun b₁₃ ⟨e₁₃, k₁₃, m₁₃⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [k₁₃ _ (by decide), k₁₂ _ (by decide), k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), k₈ _ (by decide),
       k₇ _ (by decide), k₆ _ (by decide), e₅, redW4]
-  have y9 : b₁₃.g .r9 = (redW4 l h c).w1 := by
-    rw [k₁₃ _ (by decide), k₁₂ _ (by decide), k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), e₈, redW4]
-  have ylr : b₁₃.g .lr = (redW4 l h c).w2 := by rw [k₁₃ _ (by decide), k₁₂ _ (by decide), e₁₁, redW4]
-  have y7 : b₁₃.g .r7 = (redW4 l h c).w3 := by rw [e₁₃, redW4]
-  have hm : b₁₃.m = a.m := by rw [m₁₃, m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆]
-  have hk : Keeps workLr a b₁₃ :=
-    k₁.trans <| (k₂.mono (by decide)).trans <| (k₃.mono (by decide)).trans <| (k₄.mono (by decide)).trans <|
-    (k₅.mono (by decide)).trans <| (k₆.mono (by decide)).trans <| (k₇.mono (by decide)).trans <|
-    (k₈.mono (by decide)).trans <| (k₉.mono (by decide)).trans <| (k₁₀.mono (by decide)).trans <|
-    (k₁₁.mono (by decide)).trans <| (k₁₂.mono (by decide)).trans <| k₁₃.mono (by decide)
-  simp only [Nat.reduceEqDiff, Nat.reduceLT, and_self, ↓reduceIte, WA, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot, Option.map_some,
-    Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left', y8, y9, ylr, y7, hm]
-  refine ⟨trivial, fun k h1 h2 h3 h4 => ?_, hk⟩
-  rw [ite_eq_right h4, ite_eq_right h3, ite_eq_right h2, ite_eq_right h1]
+  · rw [k₁₃ _ (by decide), k₁₂ _ (by decide), k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), e₈, redW4]
+  · rw [k₁₃ _ (by decide), k₁₂ _ (by decide), e₁₁, redW4]
+  · have x11 : b₁₁.g .r11 = h.w3 := by
+      rw [k₁₁ _ (by decide), k₁₀ _ (by decide), k₉ _ (by decide), k₈ _ (by decide), k₇ _ (by decide), e₆']
+    rw [e₁₃, e₁₂, k₁₂ _ (by decide), x11, k₁₁ _ (by decide), x7, redW4]
+  · rw [m₁₃, m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆]
+  · exact k₁.trans <| (k₂.mono (by decide)).trans <| (k₃.mono (by decide)).trans <| (k₄.mono (by decide)).trans <|
+      (k₅.mono (by decide)).trans <| (k₆.mono (by decide)).trans <| (k₇.mono (by decide)).trans <|
+      (k₈.mono (by decide)).trans <| (k₉.mono (by decide)).trans <| (k₁₀.mono (by decide)).trans <|
+      (k₁₁.mono (by decide)).trans <| (k₁₂.mono (by decide)).trans <| k₁₃.mono (by decide)
 
 theorem addX_ok (a : A) :
     WA addX a fun a' =>
-      (a'.m 31 = rev (a.g .r4) ^^^ a.m 31 ∧ a'.m 30 = rev (a.g .r5) ^^^ a.m 30 ∧ a'.m 28 = rev (a.g .r6) ^^^ a.m 28 ∧
-        a'.m 27 = rev (a.g .r7) ^^^ a.m 27) ∧
+      (a'.m 31 = rev (a.g .r4) ^^^ a.g .r11 ∧ a'.m 30 = rev (a.g .r5) ^^^ a.g .r10 ∧ a'.m 28 = rev (a.g .r6) ^^^ a.g .lr ∧
+        a'.m 27 = rev (a.g .r7) ^^^ a.g .r0) ∧
       (a'.m 29 = a'.m 27 ^^^ a'.m 28 ∧ a'.m 32 = a'.m 30 ^^^ a'.m 31 ∧ a'.m 33 = a'.m 27 ^^^ a'.m 30 ∧
         a'.m 34 = a'.m 28 ^^^ a'.m 31 ∧ a'.m 35 = a'.m 33 ^^^ a'.m 34) ∧
       (∀ k, k < 27 ∨ 36 ≤ k → a'.m k = a.m k) ∧ Keeps workLr a a' := by
-  simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, addX, revBlk, List.cons_append, List.nil_append, ld, st, eor, y0S, y1S, y2S,
+  simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceLT, Nat.reduceAdd, and_self, ↓reduceIte, WA, addX, revBlk, List.cons_append, List.nil_append, st, eor, y0S, y1S, y2S,
     y3S, opS, evalA, stepA, opA, dpA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set, A.g_put, A.m_put,
     Option.some.injEq, exists_eq_left', and_self]
   refine ⟨trivial, trivial, fun k hk => ?_, fun r hr => ?_⟩
@@ -663,15 +687,15 @@ theorem setMask_ok (r : Nat) (a : A) :
     simp only [A.g_set, hq, ite_false]
 
 /-- A block's arithmetic, its words in `r4`–`r7`. -/
-def core : List Instr := addX ++ mul64 0 lS ++ mul64 3 hS ++ mul64 6 cS ++ reduce
+def core : List Instr := addX ++ mul64 0 lS ++ mul64 3 hS ++ mulRegs 6 cS ++ reduce
 
-/-- The block of the words `y₃` to `y₀` in `scratch`. -/
-def yOf (a : A) : BitVec 128 := w4 (a.m 31) (a.m 30) (a.m 28) (a.m 27)
+/-- The block of the words `y₃` to `y₀` in registers. -/
+def yOf (a : A) : BitVec 128 := w4 (a.g .r11) (a.g .r10) (a.g .lr) (a.g .r0)
 
 theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hM : Masks a) (hK : KeysTo a (kws h3 h2 h1 h0) 9) :
     WA core a fun a' =>
-      yOf a' = Spec.Gcm.mul (w4 (rev (a.g .r4) ^^^ a.m 31) (rev (a.g .r5) ^^^ a.m 30) (rev (a.g .r6) ^^^ a.m 28)
-        (rev (a.g .r7) ^^^ a.m 27)) (w4 h3 h2 h1 h0) ∧
+      yOf a' = Spec.Gcm.mul (w4 (rev (a.g .r4) ^^^ a.g .r11) (rev (a.g .r5) ^^^ a.g .r10) (rev (a.g .r6) ^^^ a.g .lr)
+        (rev (a.g .r7) ^^^ a.g .r0)) (w4 h3 h2 h1 h0) ∧
       (∀ k, k < 27 ∨ 50 ≤ k → a'.m k = a.m k) ∧ Keeps workLr a a' := by
   have hKm : ∀ {b : A}, (∀ k < 27, b.m k = a.m k) → KeysTo b (kws h3 h2 h1 h0) 9 := fun {b} hb t ht => by
     obtain ⟨k1, k2, k3⟩ := hK t ht
@@ -690,7 +714,7 @@ theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hM : Masks a) (hK : KeysTo a 
   have Kd := hKm (b := d) fun k hk => by rw [md k (by omega) (by omega), mc k (by omega) (by omega), mb k (.inl hk)]
   have gd' := gc'.trans gd
   have Md : ∀ k < 36, d.m k = b.m k := fun k hk => by rw [md k (by omega) (by omega), mc k (by omega) (by omega)]
-  refine WA.append ((mul64_ok 6 44 (by decide) (.inr (.inr rfl)) _ _ d (hM.keeps gd' (by decide) (by decide) (by decide))
+  refine WA.append ((mulRegs_ok 6 44 (by decide) (.inr (.inr rfl)) _ _ d (hM.keeps gd' (by decide) (by decide) (by decide))
     ⟨Kd 6 (by decide), Kd 7 (by decide), Kd 8 (by decide)⟩ (by
       rw [Md _ (by decide), Md _ (by decide), Md _ (by decide)]; exact s8)).mono
     fun e ⟨pe, ge, me⟩ => ?_)
@@ -700,7 +724,7 @@ theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hM : Masks a) (hK : KeysTo a 
     by rw [me _ (by decide) (by decide), md _ (by decide) (by decide)]; exact pc.2.2.2⟩
   have pd' : At e 40 _ := ⟨by rw [me _ (by decide) (by decide)]; exact pd.1, by rw [me _ (by decide) (by decide)]; exact pd.2.1,
     by rw [me _ (by decide) (by decide)]; exact pd.2.2.1, by rw [me _ (by decide) (by decide)]; exact pd.2.2.2⟩
-  refine (reduce_ok pc' pd' pe).mono fun f ⟨⟨z0, z1, z2, z3⟩, mf, gf⟩ => ⟨?_, fun k hk => ?_, ?_⟩
+  refine (reduce_ok pc' pd' pe.1).mono fun f ⟨⟨z0, z1, z2, z3⟩, mf, gf⟩ => ⟨?_, fun k hk => ?_, ?_⟩
   · have y33 : d.m 33 = b.m 27 ^^^ b.m 30 := by rw [Md _ (by decide), s6]
     have y34 : d.m 34 = b.m 28 ^^^ b.m 31 := by rw [Md _ (by decide), s7]
     have y30 : c.m 30 = b.m 30 := mc _ (by decide) (by decide)
@@ -708,7 +732,7 @@ theorem core_ok {a : A} {h3 h2 h1 h0 : BitVec 32} (hM : Masks a) (hK : KeysTo a 
     simp only [Nat.reduceAdd, y33, y34, y30, y31] at z0 z1 z2 z3
     rw [yOf, z0, z1, z2, z3, ← x3, ← x2, ← x1, ← x0, w4_eq, w4_eq, w4_eq]
     exact mul_words32 Spread.isMul_mul32 ..
-  · rw [mf k (by omega) (by omega) (by omega) (by omega), me k (by omega) (by omega), md k (by omega) (by omega),
+  · rw [mf, me k (by omega) (by omega), md k (by omega) (by omega),
       mc k (by omega) (by omega), mb k (by omega)]
   · exact gd'.trans (ge.trans gf)
 
@@ -785,7 +809,7 @@ structure Blk (s₀ : State) (p : Addr) (a a' : A) : Prop where
   k : Keeps [.r4, .r5, .r6, .r7] a a'
   m : a'.m = a.m
 
-theorem loadBlk_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {b : Reg} (hb : b = .r0 ∨ b = .r1 ∨ b = .r11) {R : Region}
+theorem loadBlk_ok {s₀ s : State} {a : A} (h : Rel s₀ s a) {b : Reg} (hb : b = .r0 ∨ b = .r1 ∨ b = .r8) {R : Region}
     {p : BitVec 32} (hR : R ∈ s₀.rd ++ s₀.wr) (hdis : R.Disjoint (scrR s₀)) (hp : a.g b = p) (hf : p.toNat + 16 ≤ 2 ^ 32)
     (hc : ∀ o ≤ 12, R.Contains (State.addr p + BitVec.ofNat 64 o) 4) :
     WP isa (.block (loadBlk b)) s fun s' => ∃ a', Rel s₀ s' a' ∧ Blk s₀ (State.addr p) a a' := by
@@ -859,8 +883,8 @@ theorem load_ok (d : Reg) (hd : d ≠ .r12) (k : Nat) (hk : k < 64) (a : A) :
   simp only [A.g_set, hr, ite_false]
 
 theorem advance_ok (a : A) :
-    WA [.dp .add .r11 .r11 (.imm 16), st .r11 dpS] a fun a' => a'.m dpS = a.g .r11 + 16 ∧
-      (∀ k, k ≠ dpS → a'.m k = a.m k) ∧ Keeps [.r11] a a' := by
+    WA [.dp .add .r8 .r8 (.imm 16), st .r8 dpS] a fun a' => a'.m dpS = a.g .r8 + 16 ∧
+      (∀ k, k ≠ dpS → a'.m k = a.m k) ∧ Keeps [.r8] a a' := by
   have e : encodable 16 = true := by decide
   simp only [WA, st, dpS, evalA, stepA, opA, dpA, e, slotOf_slot (show 60 < 64 by decide), reduceCtorEq, Option.map_some,
     Option.bind_some, A.g_set, A.m_set, A.m_put, ite_false, ite_true, Option.some.injEq, exists_eq_left']
@@ -884,14 +908,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hf := hp.fd
   have hn : nb s₀ < 2 ^ 32 := (s₀.gpr .r3).isLt
   obtain ⟨-, a, hr, ha⟩ := hI
-  have hbody : body = [ld .r11 dpS] ++ (loadBlk .r11 ++ ([.dp .add .r11 .r11 (.imm 16), st .r11 dpS] ++
+  have hbody : body = [ld .r8 dpS] ++ (loadBlk .r8 ++ ([.dp .add .r8 .r8 (.imm 16), st .r8 dpS] ++
       (core ++ (next ++ [.cmp .r4 (.imm 0)])))) := by simp only [body, core, loadX, List.append_assoc]
   obtain ⟨hba, hbf⟩ : State.addr (blk s₀ i) = dp s₀ + BitVec.ofNat 64 (16 * i) ∧ (blk s₀ i).toNat + 16 ≤ 2 ^ 32 := by
     have e : (blk s₀ i).toNat = (s₀.gpr .r2).toNat + 16 * i := by
       rw [blk, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16 * i) (by omega), Nat.mod_eq_of_lt (by omega)]
     exact ⟨addr_add (by omega), by omega⟩
   rw [hbody, WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr hr (load_ok .r11 (by decide) dpS (by decide) a)) fun s₁ ⟨a₁, r₁, e₁, k₁, m₁⟩ => ?_
+  refine WP.mono (WA.sound hp.toScr hr (load_ok .r8 (by decide) dpS (by decide) a)) fun s₁ ⟨a₁, r₁, e₁, k₁, m₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (loadBlk_ok r₁ (.inr (.inr rfl)) hp.mem_d hp.d_s (e₁.trans ha.dp) hbf (fun o ho => by
     rw [hba, Offset.add_add]
@@ -925,9 +949,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     obtain ⟨h1, h2, h3⟩ := hq' q hq
     rw [m₅' _ h1 h2 h3, ha.sav q hq]
   · have e : yOf a₅ = yOf a₄ := by
-      rw [yOf, m₅ 31 (by decide), m₅ 30 (by decide), m₅ 28 (by decide), m₅ 27 (by decide)]; rfl
-    rw [e, y₄, m₃' 31 (by decide), m₃' 30 (by decide), m₃' 28 (by decide), m₃' 27 (by decide), k₃ _ (by decide),
-      k₃ _ (by decide), k₃ _ (by decide), k₃ _ (by decide), B.r4, B.r5, B.r6, B.r7, w4_xor, wd_block, wd_block, hba,
+      rw [yOf, k₅ _ (by decide), k₅ _ (by decide), k₅ _ (by decide), k₅ _ (by decide)]; rfl
+    have hk : ∀ r ∈ [Reg.r11, .r10, .lr, .r0], a₃.g r = a.g r := fun r hr => by
+      have h : ∀ r ∈ [Reg.r11, .r10, .lr, .r0], r ∉ [Reg.r8] ∧ r ∉ [Reg.r4, .r5, .r6, .r7] := by decide
+      rw [k₃ r (h r hr).1, B.k r (h r hr).2, k₁ r (h r hr).1]
+    rw [e, y₄, k₃ .r4 (by decide), k₃ .r5 (by decide), k₃ .r6 (by decide), k₃ .r7 (by decide), hk .r11 (by decide),
+      hk .r10 (by decide), hk .lr (by decide), hk .r0 (by decide), B.r4, B.r5, B.r6, B.r7, w4_xor, wd_block, wd_block, hba,
       ghashFrom_blocksAt_succ, ← ha.y, BitVec.xor_comm]
     rfl
   · rw [m₅' ypS (by decide) (by decide) (by decide), ha.yp]
@@ -954,25 +981,25 @@ theorem rev_ok (a : A) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [A.g_set, hr, ite_false]
 
-theorem storeYs_ok (a : A) :
-    WA storeYs a fun a' => yOf a' = w4 (a.g .r4) (a.g .r5) (a.g .r6) (a.g .r7) ∧
-      (∀ k, k < 27 ∨ 32 ≤ k → a'.m k = a.m k) ∧ a'.g = a.g := by
-  simp only [Nat.reduceEqDiff, Nat.reduceLT, ↓reduceIte, WA, storeYs, yOf, st, y0S, y1S, y2S, y3S, evalA, stepA, slotOf_slot,
-    Option.map_some, Option.bind_some, A.g_put, A.m_put, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun k hk => ?_, trivial⟩
-  rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]
+theorem moveYs_ok (a : A) :
+    WA moveYs a fun a' => yOf a' = w4 (a.g .r4) (a.g .r5) (a.g .r6) (a.g .r7) ∧ a'.m = a.m := by
+  simp only [WA, moveYs, yOf, mv, evalA, stepA, opA, reduceCtorEq, Option.map_some, Option.bind_some, A.g_set, A.m_set,
+    ite_false, ite_true, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial⟩
 
 theorem masks_ok (a : A) :
-    WA (setMask 0 ++ (setMask 1 ++ (setMask 2 ++ [ld .r4 nS]))) a fun a' => Masks a' ∧ a'.g .r4 = a.m nS ∧ a'.m = a.m := by
+    WA (setMask 0 ++ (setMask 1 ++ (setMask 2 ++ [ld .r4 nS]))) a fun a' => Masks a' ∧ a'.g .r4 = a.m nS ∧ a'.m = a.m ∧
+      Keeps [.r1, .r2, .r3, .r4] a a' := by
   refine WA.append ((setMask_ok 0 a).mono fun b ⟨e₁, k₁, m₁⟩ => ?_)
   refine WA.append ((setMask_ok 1 b).mono fun c ⟨e₂, k₂, m₂⟩ => ?_)
   refine WA.append ((setMask_ok 2 c).mono fun d ⟨e₃, k₃, m₃⟩ => ?_)
-  refine (load_ok .r4 (by decide) nS (by decide) d).mono fun e ⟨e₄, k₄, m₄⟩ => ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩
+  refine (load_ok .r4 (by decide) nS (by decide) d).mono fun e ⟨e₄, k₄, m₄⟩ => ⟨⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · rw [k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide)]; exact e₁
   · rw [k₄ _ (by decide), k₃ _ (by decide)]; exact e₂
   · rw [k₄ _ (by decide)]; exact e₃
   · rw [e₄, m₃, m₂, m₁]
   · rw [m₄, m₃, m₂, m₁]
+  · exact (k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans (k₄.mono (by decide))))
 
 theorem revKey_ok {s₀ : State} {a₁ a : A} {p : Addr} (B : Blk s₀ p a₁ a) :
     WA (revBlk ++ keyCode) a fun a' => KeysTo a' (kws (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12)) 9 ∧
@@ -982,16 +1009,15 @@ theorem revKey_ok {s₀ : State} {a₁ a : A} {p : Addr} (B : Blk s₀ p a₁ a)
   rwa [e4, e5, e6, e7, B.r4, B.r5, B.r6, B.r7] at K
 
 theorem revY_ok {s₀ : State} {a₁ a : A} {p : Addr} (B : Blk s₀ p a₁ a) :
-    WA (revBlk ++ storeYs) a fun a' => yOf a' = w4 (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12) ∧
-      (∀ k, k < 27 ∨ 32 ≤ k → a'.m k = a.m k) := by
+    WA (revBlk ++ moveYs) a fun a' => yOf a' = w4 (wd s₀ p 0) (wd s₀ p 4) (wd s₀ p 8) (wd s₀ p 12) ∧ a'.m = a.m := by
   refine WA.append ((rev_ok a).mono fun b ⟨⟨e4, e5, e6, e7⟩, _, mb⟩ => ?_)
-  refine (storeYs_ok b).mono fun c ⟨y, mc, _⟩ => ⟨?_, fun k hk => by rw [mc k hk, mb]⟩
+  refine (moveYs_ok b).mono fun c ⟨y, mc⟩ => ⟨?_, mc.trans mb⟩
   rw [y, e4, e5, e6, e7, B.r4, B.r5, B.r6, B.r7]
 
 theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
     WP isa (.block prologue) s₀ fun s' => Inv s₀ 0 s' ∧ s'.z = decide (nb s₀ = 0) := by
   have hpr : prologue = .ldrSp .r12 0 :: ((save ++ [st .r1 ypS, st .r2 dpS, st .r3 nS]) ++ (loadBlk .r0 ++
-      ((revBlk ++ keyCode) ++ (loadBlk .r1 ++ ((revBlk ++ storeYs) ++ ((setMask 0 ++ (setMask 1 ++ (setMask 2 ++
+      ((revBlk ++ keyCode) ++ (loadBlk .r1 ++ ((revBlk ++ moveYs) ++ ((setMask 0 ++ (setMask 1 ++ (setMask 2 ++
       [ld .r4 nS]))) ++ [.cmp .r4 (.imm 0)])))))) := by
     simp only [prologue, List.append_assoc, List.cons_append, List.nil_append]
   have hsp : State.addr (s₀.sp + BitVec.ofNat 32 0) = stackArgAddr s₀ 0 := rfl
@@ -1024,28 +1050,28 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
   refine WP.mono (WA.sound hp.toScr r₄ (revY_ok C)) fun s₅ ⟨a₅, r₅, y₅, m₅⟩ => ?_
   rw [C.m] at m₅
   rw [WP.block_append_iff]
-  refine WP.mono (WA.sound hp.toScr r₅ (masks_ok a₅)) fun s₆ ⟨a₆, r₆, M₆, n₆, m₆⟩ => ?_
-  have hm : ∀ k, 32 ≤ k → a₆.m k = a₁.m k := fun k hk => by rw [m₆, m₅ k (.inr hk), m₃ k (by omega)]
+  refine WP.mono (WA.sound hp.toScr r₅ (masks_ok a₅)) fun s₆ ⟨a₆, r₆, M₆, n₆, m₆, k₆⟩ => ?_
+  have hm : ∀ k, 32 ≤ k → a₆.m k = a₁.m k := fun k hk => by rw [m₆, m₅, m₃ k (by omega)]
   have hcnt : a₆.m nS = BitVec.ofNat 32 (nb s₀) := by
     rw [hm _ (by decide), hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]; exact gs .r3 (by decide)
   refine WP.mono (cmp_ok r₆ (s₀.gpr .r3).isLt (n₆.trans (by rw [← m₆]; exact hcnt))) fun s₇ ⟨r₇, z₇⟩ =>
     ⟨⟨Nat.zero_le _, a₆, r₇, M₆, fun t ht => ?_, fun q hq => ?_, ?_, ?_, ?_, hcnt⟩, z₇⟩
   · obtain ⟨k1, k2, k3⟩ := K₃ t ht
-    exact ⟨by rw [m₆, m₅ _ (by omega), k1], by rw [m₆, m₅ _ (by omega), k2], by rw [m₆, m₅ _ (by omega), k3]⟩
+    exact ⟨by rw [m₆, m₅, k1], by rw [m₆, m₅, k2], by rw [m₆, m₅, k3]⟩
   · have hq' : ∀ q ∈ saved, 32 ≤ q.2 ∧ q.1 ≠ .r12 := by decide
     rw [hm _ (hq' q hq).1, hs q hq]; exact gs _ (hq' q hq).2
-  · rw [yOf, m₆, ghashFrom_blocksAt_zero]; exact y₅.trans (wd_block s₀ (yp s₀))
+  · rw [yOf, k₆ _ (by decide), k₆ _ (by decide), k₆ _ (by decide), k₆ _ (by decide), ghashFrom_blocksAt_zero]
+    exact y₅.trans (wd_block s₀ (yp s₀))
   · rw [hm _ (by decide), hy]; exact gs .r1 (by decide)
   · rw [hm _ (by decide), hd]
     refine (gs .r2 (by decide)).trans ?_
     rw [blk, Nat.mul_zero]; exact (BitVec.add_zero _).symm
 
 theorem restore_ok (a : A) :
-    WA (([ld .r0 y3S, ld .r1 y2S, ld .r2 y1S, ld .r3 y0S, .rev .r0 .r0, .rev .r1 .r1, .rev .r2 .r2, .rev .r3 .r3] : List Instr) ++
-        restore) a
-      fun a' => (a'.g .r0 = rev (a.m 31) ∧ a'.g .r1 = rev (a.m 30) ∧ a'.g .r2 = rev (a.m 28) ∧ a'.g .r3 = rev (a.m 27)) ∧
+    WA (([.rev .r3 .r0, .rev .r2 .lr, .rev .r1 .r10, .rev .r0 .r11] : List Instr) ++ restore) a
+      fun a' => (a'.g .r0 = rev (a.g .r11) ∧ a'.g .r1 = rev (a.g .r10) ∧ a'.g .r2 = rev (a.g .lr) ∧ a'.g .r3 = rev (a.g .r0)) ∧
         (∀ q ∈ saved, a'.g q.1 = a.m q.2) ∧ a'.m = a.m := by
-  simp only [reduceCtorEq, Nat.reduceLT, and_self, ↓reduceIte, WA, restore, saved, ld, y0S, y1S, y2S, y3S, List.map_cons, List.map_nil,
+  simp only [reduceCtorEq, Nat.reduceLT, and_self, ↓reduceIte, WA, restore, saved, ld, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, evalA, stepA, slotOf_slot, Option.map_some, Option.bind_some, A.g_set, A.m_set,
     Option.some.injEq, exists_eq_left', List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, and_self]
