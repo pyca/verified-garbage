@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.Covers

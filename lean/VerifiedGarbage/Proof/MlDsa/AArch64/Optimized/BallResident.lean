@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.Bits
@@ -14,11 +13,10 @@ import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitialTiming
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.ResidentBackend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlKem.Bits

@@ -4,17 +4,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Boundary
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 
 /-! ### `MlDsa.AArch64.Sign.CommitTailModel`, which this module and modules that import it used -/
 

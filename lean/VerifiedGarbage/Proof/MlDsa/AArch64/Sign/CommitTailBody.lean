@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -14,12 +13,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Boundary
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Rounds
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes

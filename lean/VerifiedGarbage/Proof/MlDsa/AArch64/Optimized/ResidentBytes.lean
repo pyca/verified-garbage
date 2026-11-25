@@ -1,9 +1,8 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Offset

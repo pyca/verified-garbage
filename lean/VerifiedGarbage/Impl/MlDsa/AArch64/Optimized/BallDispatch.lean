@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
-public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 
 @[expose] public section
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.TCB.Axioms
@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms

@@ -6,15 +6,14 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
-public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.RoundLoop
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRound
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ### `MlDsa.AArch64.Optimized.ResidentBlock`, which this module and modules that import it used -/

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreV
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreG
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract

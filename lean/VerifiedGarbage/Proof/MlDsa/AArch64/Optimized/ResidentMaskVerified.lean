@@ -20,13 +20,11 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
@@ -37,14 +35,12 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
