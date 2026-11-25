@@ -73,7 +73,7 @@ def adjust : List Instr :=
   foldDn .t4 .t5 .t6 ++ ([xorI .t3 .t4 .t2] : List Instr)
 
 def classStore (i : Nat) (r : Reg) (j : Nat) : List Instr :=
-  [andI .a7 r (maskReg j), .store .d .a7 FP (8 * (4 * i + j))]
+  [andI .a6 r (maskReg j), .store .d .a6 FP (8 * (4 * i + j))]
 
 /-- The four classes of the word in `r`, the key's word `i` of 32 bits. -/
 def operand (i : Nat) (r : Reg) : List Instr := (List.range 4).flatMap (classStore i r)

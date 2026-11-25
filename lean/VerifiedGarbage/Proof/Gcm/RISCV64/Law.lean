@@ -633,22 +633,22 @@ theorem keyOf (h1 h0 : BitVec 64) : KeyOf (ghashOperand (w2 h1 h0)) (kdOf h1 h0)
 
 theorem classStore_ok (i : Nat) (r : Reg) (j : Nat) (hi : i < 9) (hj : j < 4) {a : A} (hM : Masks a) :
     WA .s9 true (classStore i r j) a fun a' => a'.m (4 * i + j) = a.g r &&& m4 j ∧
-      (∀ k, k ≠ 4 * i + j → a'.m k = a.m k) ∧ Keeps [.a7] a a' := by
+      (∀ k, k ≠ 4 * i + j → a'.m k = a.m k) ∧ Keeps [.a6] a a' := by
   have hs := slot_ok hi hj
-  have hm : ∀ j < 4, maskReg j ≠ .a7 := by decide
+  have hm : ∀ j < 4, maskReg j ≠ .a6 := by decide
   simp only [WA, classStore, andI, evalA, stepA, logicV, Option.bind_some, A.g_set, A.m_set, A.m_put, reduceCtorEq, hs,
     ite_false, ite_true, ne_eq, not_true_eq_false, or_self, Option.some.injEq, exists_eq_left', hM j hj]
   refine ⟨trivial, fun k hk => by simp only [hk, ite_false], fun q hq => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   simp only [A.g_put, A.g_set, hq, ite_false]
 
-theorem operand_ok (i : Nat) (r : Reg) (hi : i < 9) (hr : r ≠ .a7) {a : A} (hM : Masks a) :
+theorem operand_ok (i : Nat) (r : Reg) (hi : i < 9) (hr : r ≠ .a6) {a : A} (hM : Masks a) :
     WA .s9 true (operand i r) a fun a' => (∀ j < 4, a'.m (4 * i + j) = a.g r &&& m4 j) ∧
-      (∀ k, k < 4 * i ∨ 4 * i + 4 ≤ k → a'.m k = a.m k) ∧ Keeps [.a7] a a' := by
-  have hr' : r ∉ [Reg.a7] := by simp [hr]
+      (∀ k, k < 4 * i ∨ 4 * i + 4 ≤ k → a'.m k = a.m k) ∧ Keeps [.a6] a a' := by
+  have hr' : r ∉ [Reg.a6] := by simp [hr]
   have h : ∀ n ≤ 4, WA .s9 true ((List.range n).flatMap (classStore i r)) a fun a' =>
       (∀ j < n, a'.m (4 * i + j) = a.g r &&& m4 j) ∧
-      (∀ k, k < 4 * i ∨ 4 * i + 4 ≤ k → a'.m k = a.m k) ∧ Keeps [.a7] a a' := by
+      (∀ k, k < 4 * i ∨ 4 * i + 4 ≤ k → a'.m k = a.m k) ∧ Keeps [.a6] a a' := by
     intro n
     induction n with
     | zero => exact fun _ => ⟨a, rfl, fun _ h => absurd h (by omega), fun _ _ => rfl, fun _ _ => rfl⟩
@@ -664,7 +664,7 @@ theorem operand_ok (i : Nat) (r : Reg) (hi : i < 9) (hr : r ≠ .a7) {a : A} (hM
       · rw [g2 k (by omega), h2 k hk]
   exact h 4 (Nat.le_refl 4)
 
-abbrev opRegs : List Reg := [.t0, .t5, .t6, .a7]
+abbrev opRegs : List Reg := [.t0, .t5, .t6, .a6]
 
 theorem operands_ok (t : Nat) (r : Reg) (ht : t < 3) (hr : r ∉ opRegs) {a : A} (hM : Masks a) :
     WA .s9 true (operands t r) a fun a' => (∀ j < 4, a'.m (4 * (3 * t) + j) = lo32 (a.g r) &&& m4 j) ∧
@@ -719,7 +719,7 @@ theorem adjust_ok (a : A) :
 theorem keyCode_eq : keyCode = maskCode ++ (adjust ++ (operands 0 .t4 ++ (operands 1 .t2 ++ operands 2 .t3))) := by
   simp only [keyCode, List.append_assoc]
 
-abbrev keyRegs : List Reg := [.t0, .t2, .t3, .t4, .t5, .t6, .a7]
+abbrev keyRegs : List Reg := [.t0, .t2, .t3, .t4, .t5, .t6, .a6]
 
 theorem key_ok (h1 h0 : BitVec 64) {a : A} (hM : Masks a) (e1 : a.g .t1 = h1) (e2 : a.g .t2 = h0) :
     WA .s9 true (adjust ++ (operands 0 .t4 ++ (operands 1 .t2 ++ operands 2 .t3))) a fun a' =>

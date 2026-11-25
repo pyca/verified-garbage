@@ -22,7 +22,7 @@ open VG VG.RISCV64
 open VG.Impl.Gcm.RISCV64 (HP FP prep)
 
 /-- The registers `prep` writes. -/
-def prepWrites : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .a7]
+def prepWrites : List Reg := [.s0, .s1, .s2, .s3, .t0, .t1, .t2, .t3, .t4, .t5, .t6, .a6]
 
 class PrepLaw : Prop where
   ok : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr HP) 16 →

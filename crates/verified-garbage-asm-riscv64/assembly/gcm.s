@@ -2416,86 +2416,86 @@ vg_aes_gcm_bitslice:
 	srli t5, t5, 32
 	srli t6, t4, 32
 	xor t0, t5, t6
-	and a7, t5, s0
-	sd a7, 0(s9)
-	and a7, t5, s1
-	sd a7, 8(s9)
-	and a7, t5, s2
-	sd a7, 16(s9)
-	and a7, t5, s3
-	sd a7, 24(s9)
-	and a7, t6, s0
-	sd a7, 32(s9)
-	and a7, t6, s1
-	sd a7, 40(s9)
-	and a7, t6, s2
-	sd a7, 48(s9)
-	and a7, t6, s3
-	sd a7, 56(s9)
-	and a7, t0, s0
-	sd a7, 64(s9)
-	and a7, t0, s1
-	sd a7, 72(s9)
-	and a7, t0, s2
-	sd a7, 80(s9)
-	and a7, t0, s3
-	sd a7, 88(s9)
+	and a6, t5, s0
+	sd a6, 0(s9)
+	and a6, t5, s1
+	sd a6, 8(s9)
+	and a6, t5, s2
+	sd a6, 16(s9)
+	and a6, t5, s3
+	sd a6, 24(s9)
+	and a6, t6, s0
+	sd a6, 32(s9)
+	and a6, t6, s1
+	sd a6, 40(s9)
+	and a6, t6, s2
+	sd a6, 48(s9)
+	and a6, t6, s3
+	sd a6, 56(s9)
+	and a6, t0, s0
+	sd a6, 64(s9)
+	and a6, t0, s1
+	sd a6, 72(s9)
+	and a6, t0, s2
+	sd a6, 80(s9)
+	and a6, t0, s3
+	sd a6, 88(s9)
 	slli t5, t2, 32
 	srli t5, t5, 32
 	srli t6, t2, 32
 	xor t0, t5, t6
-	and a7, t5, s0
-	sd a7, 96(s9)
-	and a7, t5, s1
-	sd a7, 104(s9)
-	and a7, t5, s2
-	sd a7, 112(s9)
-	and a7, t5, s3
-	sd a7, 120(s9)
-	and a7, t6, s0
-	sd a7, 128(s9)
-	and a7, t6, s1
-	sd a7, 136(s9)
-	and a7, t6, s2
-	sd a7, 144(s9)
-	and a7, t6, s3
-	sd a7, 152(s9)
-	and a7, t0, s0
-	sd a7, 160(s9)
-	and a7, t0, s1
-	sd a7, 168(s9)
-	and a7, t0, s2
-	sd a7, 176(s9)
-	and a7, t0, s3
-	sd a7, 184(s9)
+	and a6, t5, s0
+	sd a6, 96(s9)
+	and a6, t5, s1
+	sd a6, 104(s9)
+	and a6, t5, s2
+	sd a6, 112(s9)
+	and a6, t5, s3
+	sd a6, 120(s9)
+	and a6, t6, s0
+	sd a6, 128(s9)
+	and a6, t6, s1
+	sd a6, 136(s9)
+	and a6, t6, s2
+	sd a6, 144(s9)
+	and a6, t6, s3
+	sd a6, 152(s9)
+	and a6, t0, s0
+	sd a6, 160(s9)
+	and a6, t0, s1
+	sd a6, 168(s9)
+	and a6, t0, s2
+	sd a6, 176(s9)
+	and a6, t0, s3
+	sd a6, 184(s9)
 	slli t5, t3, 32
 	srli t5, t5, 32
 	srli t6, t3, 32
 	xor t0, t5, t6
-	and a7, t5, s0
-	sd a7, 192(s9)
-	and a7, t5, s1
-	sd a7, 200(s9)
-	and a7, t5, s2
-	sd a7, 208(s9)
-	and a7, t5, s3
-	sd a7, 216(s9)
-	and a7, t6, s0
-	sd a7, 224(s9)
-	and a7, t6, s1
-	sd a7, 232(s9)
-	and a7, t6, s2
-	sd a7, 240(s9)
-	and a7, t6, s3
-	sd a7, 248(s9)
-	and a7, t0, s0
-	sd a7, 256(s9)
-	and a7, t0, s1
-	sd a7, 264(s9)
-	and a7, t0, s2
-	sd a7, 272(s9)
-	and a7, t0, s3
-	sd a7, 280(s9)
+	and a6, t5, s0
+	sd a6, 192(s9)
+	and a6, t5, s1
+	sd a6, 200(s9)
+	and a6, t5, s2
+	sd a6, 208(s9)
+	and a6, t5, s3
+	sd a6, 216(s9)
+	and a6, t6, s0
+	sd a6, 224(s9)
+	and a6, t6, s1
+	sd a6, 232(s9)
+	and a6, t6, s2
+	sd a6, 240(s9)
+	and a6, t6, s3
+	sd a6, 248(s9)
+	and a6, t0, s0
+	sd a6, 256(s9)
+	and a6, t0, s1
+	sd a6, 264(s9)
+	and a6, t0, s2
+	sd a6, 272(s9)
+	and a6, t0, s3
+	sd a6, 280(s9)
 	ld s0, 320(a5)
 	ld s1, 328(a5)
 	ld s2, 336(a5)
