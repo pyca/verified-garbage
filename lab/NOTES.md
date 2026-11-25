@@ -218,3 +218,22 @@ Dispatch: about 380 + 780 = 1160 operations, 232 cycles at 5. Predicted 235-250
 Slots 48 bytes apart for `ldr q`. Constants (masks, 19) in memory, loaded.
 Experiment 8: `sq2`, `mu2` alone, and the step with the two branches woven
 (`st_neon`), and unwoven (`st_neon_seq`).
+
+## 11. Experiment 8's result (run 45681381157), and the base's step
+
+Cycles: `sq2` 116, `mu2` 173, woven step 341, unwoven 520, o3 360. The vector
+side is the longer (its multiplier idles while a pair is split and reduced, as
+the window does not reach the next pair), so more weaving alone will not help;
+Karatsuba in the pair of halves (75 and 45 multiplies for 100 and 55) and
+storing by `stp` for `ldr q` to forward would, to an estimated 310.
+
+The base: 26.93 us = 91.6k cycles; this code's 31.16 us = 105.9k of which the
+ladder is 255 x 396 = 101.0k, so the rest is 4.9k, and the base's step about
+340. The target is therefore below 340.
+
+Scalar first, as its proof is much smaller: experiment 9, `lab/sched.py`: the
+step in SSA form, list scheduled over whole operations with each carry chain
+kept together, registers allocated again (x1-x17, x20-x28), several settings
+measured at once. Constants 19 and 38 kept in registers; DA + CB and DA - CB
+formed from one load. If it pays, equality with the plain code can be proven by
+a checked value numbering of both.
