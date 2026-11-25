@@ -206,13 +206,17 @@ theorem candidateEntry_base {s : State} (c : PcCtx s) :
     refine ⟨c.bits1, c.bits2, c.len, c.gen, ?_, c.room, c.scr.congr k.2.2,
       ⟨fun i hi => by rw [k.2.2]; exact c.out.wr i hi, c.out.sep⟩, c.usedMem.congr k.2.2,
       ⟨fun i hi => by rw [k.2.2]; exact c.used.wr i hi, c.used.sep⟩,
-      c.rand.congrK hframe k, ?_, c.outUsed, hsp, c.stackSize, c.stackScr.symm, ?_, ?_⟩
+      c.rand.congrK hframe k, ?_, c.outUsed, hsp, c.stackSize, c.stackScr.symm, ?_, ?_, ?_⟩
     · change (pcRand s).length < 2 ^ 64
       rw [bytesAt_length]
       exact (stackArg s 0).isLt
     · change Apart (s.gpr .rdi) (s.gpr .rsi).toNat (s.gpr .r9) (pcRand s).length
       rw [bytesAt_length]
       exact c.outRand
+    · intro i hi
+      change i < (s.gpr .rsi).toNat at hi
+      apply c.stackOut.symm
+      exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi, (s.gpr .rsi).isLt])
     · intro i hi
       change i < (pcRand s).length at hi
       apply c.stackRand.symm

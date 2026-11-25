@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy

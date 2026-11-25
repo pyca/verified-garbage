@@ -53,11 +53,15 @@ sieve's count: p's, for q as well. -/
 def sieveBits : List Instr := [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oBits))]
 
 /-- Oddness, then the sieve: ZF means acceptance. -/
-def primeCheck : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
+def primeCheckInline : Prog isa := .seq (.block oddTest) (.ite .e (.seq (.block sieveBits) sieve) (.block []))
 
 /-- Oddness, then the table's first words (`sieveFirst`): ZF means neither
 rejects the candidate. -/
-def earlyCheck : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+def earlyCheckInline : Prog isa := .seq (.block oddTest) (.ite .e sieveFirst (.block []))
+
+/-- Share the whole checks, including their small-prime tables. -/
+def primeCheck : Prog isa := .call "vg_ffdh_prime_check" primeCheckInline
+def earlyCheck : Prog isa := .call "vg_ffdh_early_check" earlyCheckInline
 
 /-- Save the ABI arguments and callee-saved registers in the outer header. -/
 def entry : List Instr :=

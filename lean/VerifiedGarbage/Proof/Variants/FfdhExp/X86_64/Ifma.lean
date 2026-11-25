@@ -124,6 +124,55 @@ theorem vecs_free : (VG.Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay2048).allInstrs (ha
     (VG.Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay4096).allInstrs (hasBits bFree) = true := by
   lit_decide
 
+private theorem conversion_inline {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {code : Prog isa}
+    (h : code.noCalls = true) : (VG.Impl.Ffdh.X86_64.Ifma.conversionCall l code).inline = code := by
+  unfold VG.Impl.Ffdh.X86_64.Ifma.conversionCall
+  split
+  · rfl
+  · split
+    · rfl
+    · exact Code.inline_of_noCalls h
+
+private theorem map_inline_conversions {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {cs : List (Prog isa)}
+    (h : cs.all Code.noCalls = true) :
+    (cs.map (VG.Impl.Ffdh.X86_64.Ifma.conversionCall l)).map Code.inline = cs := by
+  rw [List.map_map]
+  calc
+    _ = cs.map id := List.map_congr_left fun c hc => conversion_inline (List.all_eq_true.mp h c hc)
+    _ = cs := List.map_id cs
+
+private def ConversionsFree (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop :=
+  (CrtIfma.arrLoop l 0).allInstrs Instr.rspFree = true ∧
+  ((CrtIfma.result l 0).headD (.block [])).allInstrs Instr.rspFree = true
+
+private theorem conversions_free : ConversionsFree PubIfma.pay2048 ∧
+    ConversionsFree PubIfma.pay3072 ∧ ConversionsFree PubIfma.pay4096 := by
+  unfold ConversionsFree
+  lit_decide
+
+private theorem conversion_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hf : ConversionsFree l)
+    {code : Prog isa} (hn : code.noCalls = true) (hk : code.InlineOk = true) :
+    (VG.Impl.Ffdh.X86_64.Ifma.conversionCall l code).InlineOk = true := by
+  unfold VG.Impl.Ffdh.X86_64.Ifma.conversionCall
+  split
+  · rename_i he
+    change code.noCalls && code.allInstrs Instr.rspFree = true
+    rw [Bool.and_eq_true]
+    exact ⟨hn, by rw [he]; exact hf.1⟩
+  · split
+    · rename_i he
+      change code.noCalls && code.allInstrs Instr.rspFree = true
+      rw [Bool.and_eq_true]
+      exact ⟨hn, by rw [he]; exact hf.2⟩
+    · exact hk
+
+private theorem all_conversion_ok {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hf : ConversionsFree l)
+    {cs : List (Prog isa)} (hn : cs.all Code.noCalls = true) (hk : cs.all Code.InlineOk = true) :
+    (cs.map (VG.Impl.Ffdh.X86_64.Ifma.conversionCall l)).all Code.InlineOk = true := by
+  rw [List.all_map, List.all_eq_true]
+  intro c hc
+  exact conversion_ok hf (List.all_eq_true.mp hn c hc) (List.all_eq_true.mp hk c hc)
+
 /-- `expC` inlines to `exp`. -/
 theorem expC_inline {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : String)
     (h : (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl).all Code.noCalls = true) :
@@ -132,20 +181,21 @@ theorem expC_inline {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : Stri
   unfold VG.Impl.Ffdh.X86_64.Ifma.exp at h ⊢
   unfold VG.Impl.Ffdh.X86_64.Ifma.expC
   simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true] at h
-  simp only [List.map_append, List.map_cons, List.map_nil, Code.inline, map_inline_of_noCalls h.1.1.1.2,
-    map_inline_of_noCalls h.1.2]
+  simp only [List.map_append, List.map_cons, List.map_nil, Code.inline, map_inline_conversions h.1.1.1.2,
+    map_inline_conversions h.1.2]
 
 /-- `expC` can be inlined where `exp` can and its vector code touches no `rsp`. -/
-theorem expC_inlineOk {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : String)
+private theorem expC_inlineOk {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : String)
     (h : (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl).all Code.noCalls = true)
     (hk : (seqs (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl)).InlineOk = true)
-    (hv : (VG.Impl.Ffdh.X86_64.Ifma.vec l).allInstrs (hasBits bFree) = true) :
+    (hv : (VG.Impl.Ffdh.X86_64.Ifma.vec l).allInstrs (hasBits bFree) = true) (hf : ConversionsFree l) :
     (seqs (VG.Impl.Ffdh.X86_64.Ifma.expC l n sp sl)).InlineOk = true := by
   rw [inlineOk_seqs] at hk ⊢
   unfold VG.Impl.Ffdh.X86_64.Ifma.exp at h hk
   unfold VG.Impl.Ffdh.X86_64.Ifma.expC
   simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true] at h hk ⊢
-  refine ⟨⟨⟨hk.1.1.1, hk.1.1.2.1, ?_⟩, hk.1.2⟩, hk.2⟩
+  refine ⟨⟨⟨⟨hk.1.1.1.1, all_conversion_ok hf h.1.1.1.2 hk.1.1.1.2⟩, hk.1.1.2.1, ?_⟩,
+    all_conversion_ok hf h.1.2 hk.1.2⟩, hk.2⟩
   simp only [Code.InlineOk, Bool.and_eq_true]
   exact ⟨h.1.1.2.2, Code.rspFree_of_bits rfl hv⟩
 
@@ -185,9 +235,9 @@ theorem ifma_inlineOk (mul : Nat → Nat → Nat → Prog isa) (hm : ∀ o a b, 
   simp only [ExpImpl.base] at hb
   obtain ⟨a, b, c⟩ := lok hs
   rw [codeC_eq, List.all_cons, List.all_nil, Bool.and_true]
-  exact ok_seq a.2.1 (ok_ite (expC_inlineOk _ a.1 a.2.2.1 vecs_free.1) (ok_seq b.2.1
-    (ok_ite (expC_inlineOk _ b.1 b.2.2.1 vecs_free.2.1) (ok_seq c.2.1
-      (ok_ite (expC_inlineOk _ c.1 c.2.2.1 vecs_free.2.2) ((inlineOk_seqs _).trans hb))))))
+  exact ok_seq a.2.1 (ok_ite (expC_inlineOk _ a.1 a.2.2.1 vecs_free.1 conversions_free.1) (ok_seq b.2.1
+    (ok_ite (expC_inlineOk _ b.1 b.2.2.1 vecs_free.2.1 conversions_free.2.1) (ok_seq c.2.1
+      (ok_ite (expC_inlineOk _ c.1 c.2.2.1 vecs_free.2.2 conversions_free.2.2) ((inlineOk_seqs _).trans hb))))))
 
 theorem ifma_spSafe (mul : Nat → Nat → Nat → Prog isa)
     (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :

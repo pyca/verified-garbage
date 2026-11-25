@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCall
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestPCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestPCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrimeCheckCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

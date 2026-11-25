@@ -84,6 +84,7 @@ structure CandidateBase (p : CandidateP) (s : State) : Prop where
   sp : s.gpr .rsp = p.sp
   stackSize : 128 ≤ p.sp.toNat
   stackRoot : Region.Disjoint ⟨p.B, p.Z⟩ (below p.sp 128)
+  stackOut : ∀ i < p.k, ¬(below p.sp 128).Contains (off p.op i) 1
   stackRand : ∀ i < p.rand.length, ¬(below p.sp 128).Contains (off p.rp i) 1
   hdr : Slots s.mem p.B p.headers
 
@@ -128,7 +129,7 @@ theorem CandidateBase.keep {p : CandidateP} {s t : State} {regs : List Reg}
   refine ⟨h.bits1, h.bits2, h.len, h.gen, h.randLen, h.room, h.scr.congr k.2.2,
     ⟨fun i hi => by rw [k.2.2]; exact h.out.wr i hi, h.out.sep⟩, h.used.congr k.2.2,
     ⟨fun i hi => by rw [k.2.2]; exact h.usedOut.wr i hi, h.usedOut.sep⟩,
-    ⟨?_, ?_, h.rand.out⟩, h.outRand, h.outUsed, hsp, h.stackSize, h.stackRoot, h.stackRand, ?_⟩
+    ⟨?_, ?_, h.rand.out⟩, h.outRand, h.outUsed, hsp, h.stackSize, h.stackRoot, h.stackOut, h.stackRand, ?_⟩
   · intro i hi; rw [k.2.1, k.2.2]; exact h.rand.rd i hi
   · intro i hi
     rw [hf _ (h.rand.out i hi) (fun j hj he => h.outRand j hj i hi he.symm) (h.stackRand i hi)]
