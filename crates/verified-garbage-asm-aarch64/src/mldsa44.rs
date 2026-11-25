@@ -1607,3 +1607,5 @@ pub(crate) mod vg_mldsa_unpack_t1;
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_usehint_pack6.rs"]
 pub(crate) mod vg_mldsa_usehint_pack6;
+#[doc(hidden)] pub fn bench_vg_keccak_f1600_x2() -> unsafe extern "C" fn() { vg_keccak_f1600_x2::vg_keccak_f1600_x2 }
+#[doc(hidden)] pub fn bench_vg_keccak_f1600_x2_sha3() -> unsafe extern "C" fn() { vg_keccak_f1600_x2_sha3::vg_keccak_f1600_x2_sha3 }

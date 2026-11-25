@@ -26,6 +26,8 @@ verified-garbage = { path = "..", features = ["cpu-features-env", "internal-benc
 openssl-sys = { version = "0.9.117", optional = true }
 foreign-types = { version = "0.3", optional = true }
 
+verified-garbage-asm-aarch64 = { path = "../crates/verified-garbage-asm-aarch64" }
+
 [features]
 # OpenSSL 3.2+ supplies Argon2; the benchmark runners use 3.0.
 # On a supported host, use `cargo bench --features openssl-argon2` and

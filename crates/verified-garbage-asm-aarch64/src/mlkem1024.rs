@@ -673,3 +673,5 @@ pub(crate) mod vg_mlkem_decode_decompress;
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem_sub.rs"]
 pub(crate) mod vg_mlkem_sub;
+#[doc(hidden)] pub fn bench_vg_keccak_f1600_x3() -> unsafe extern "C" fn() { vg_keccak_f1600_x3::vg_keccak_f1600_x3 }
+#[doc(hidden)] pub fn bench_vg_keccak_f1600_x3_sha3() -> unsafe extern "C" fn() { vg_keccak_f1600_x3_sha3::vg_keccak_f1600_x3_sha3 }

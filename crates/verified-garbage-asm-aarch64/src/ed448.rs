@@ -602,3 +602,5 @@ pub(crate) mod vg_keccak_squeeze_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_squeeze_scratch_sha3.rs"]
 pub(crate) mod vg_keccak_squeeze_scratch_sha3;
+#[doc(hidden)] pub fn bench_vg_keccak_f1600() -> unsafe extern "C" fn() { vg_keccak_f1600::vg_keccak_f1600 }
+#[doc(hidden)] pub fn bench_vg_keccak_f1600_sha3() -> unsafe extern "C" fn() { vg_keccak_f1600_sha3::vg_keccak_f1600_sha3 }
