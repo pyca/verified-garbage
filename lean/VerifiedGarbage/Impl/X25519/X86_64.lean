@@ -360,7 +360,7 @@ def DU : Nat := 352
 def DV : Nat := 384
 
 /-- `ZF` is whether the bits `t` and `t + 1` of the scalar are equal, with
-`t + 1 - d` in `rbx`. -/
+`t - d` in `rbx`. -/
 def bitsDiffer (d : Nat) : List Instr :=
   [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((BITS + d : Nat) : Int) },
     .movzx8 .rcx { base := .rdi, index := some .rbx, disp := ((BITS + d + 1 : Nat) : Int) },
@@ -379,9 +379,10 @@ def choose2 (o x x' p y y' : Nat) : List Instr :=
   choose x x' .r8 .r9 .r10 .r11 ++ choose y y' .r12 .r13 .r14 .r15 ++
     store4 o ++ stores p .r12 .r13 .r14 .r15
 
-/-- An iteration but for its counter, for the bit `t = rbx + 2`. The
-operations of the doubling and of the differential addition alternate, so that
-one seldom waits for the one before it. -/
+/-- An iteration but for its counter, for the bit `t = rbx + 2`. The doubling
+starts first, up to its multiplication by `a24`, as its operations wait for
+each other longest; the differential addition's and the last products of both
+alternate after it. -/
 def iter (F : Field) : List Instr :=
   subCmov D X3 Z3 ++ addCmov A X2 Z2 ++ addCmov C X3 Z3 ++ subCmov B X2 Z2 ++
     bitsDiffer 2 ++ choose2 DU A C DV B D ++
