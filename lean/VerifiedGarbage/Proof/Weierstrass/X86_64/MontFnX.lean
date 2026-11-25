@@ -170,24 +170,26 @@ theorem Core.mid {m : Nat} {base : Addr} {A B : Nat} {s s' : State} (h : Core m 
 
 theorem fnTmp_val : (fnMod true).tmp = 4024 := rfl
 
-/-- The square, of a number whose square is below `2⁵⁷⁶ m`. -/
-theorem sqrCore_okP {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a m : Nat}
-    (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520) (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
-    (hB : wordsVal s.mem base a 9 * wordsVal s.mem base a 9 < (2 ^ 64) ^ 9 * m) :
-    WP isa (.block sqrCore) s
-      (Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base a 9) s) := by
+/-- The square, its low words in the temporary area and its high words in
+`xWin 9`, before its reduction. -/
+theorem sqrRows_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a : Nat}
+    (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520) :
+    WP isa (.block ((List.range 8).flatMap (sRowV (fnMod true) .rbx 0 0) ++ sDiag (fnMod true) .rbx 0 0)) s fun s' =>
+      KeepRegs (.rax :: .rcx :: .rdx :: xRegs) s s' ∧ Outside base fnTmp 72 s.mem s'.mem ∧
+      wordsVal s'.mem base (fnMod true).tmp 9 + (2 ^ 64) ^ 9 * hval (xg s') 9 9 =
+        wordsVal s.mem base a 9 * wordsVal s.mem base a 9 := by
   have hnw := hs.nowrap
   have hs₁ := hs.toC
   obtain hp := ptrC_of hs hbx (show a + 72 ≤ Z by omega_using [hZ, ha]) (by decide) (Or.inr (Or.inr rfl))
   obtain hat := apart_off base (show a + 72 ≤ (fnMod true).tmp ∨ _ by rw [fnTmp_val]; omega_using [ha])
     (show a + 72 ≤ 2 ^ 64 by omega_using [ha]) (k := 72)
   obtain htmp : (fnMod true).tmp + 72 ≤ Z := by rw [fnTmp_val]; omega_using [hZ]
-  rw [sqrCore, List.append_assoc, WP.block_append_iff]
+  rw [WP.block_append_iff]
   refine WP.mono (sRows_ok hs₁ hp (M := fnMod true) (a := 0) (by omega_using []) htmp hat 7 (by omega_using []))
     fun s₂ ⟨k₂, O₂, e₂⟩ => ?_
   obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   obtain hp₂ := hp.of_keepRegs k₂ (by decide)
-  rw [WP.block_append_iff, sDiag, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
+  rw [sDiag, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (storeXC_ok hs₂ (xAcc 8) (d := (fnMod true).tmp + 64) (by omega_using [htmp]))
     fun s₃ ⟨m₃, g₃, cf₃, of₃, rd₃, wr₃⟩ => ?_
   obtain hs₃ : ScrC s₃ base Z 0 := ⟨by rw [g₃]; exact hs₂.rdi, by rw [wr₃]; exact hs₂.wr, hs₂.nowrap⟩
@@ -258,29 +260,34 @@ theorem sqrCore_okP {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ 
     have : (2 ^ 64) ^ 18 * (c₆.toNat + o₆.toNat) < (2 ^ 64) ^ 18 * 1 := by omega_using [e₆, hAA]
     have := Nat.lt_of_mul_lt_mul_left this
     omega_arith
-  refine WP.mono (xRed_ok hs₆ (M := fnMod true) (by omega_using [htmp])) fun s₇ ⟨acc, e₇, k₇, O₇⟩ => ?_
-  rw [e₆'] at e₇
-  obtain hU : wordsVal s₇.mem base (fnMod true).tmp 9 < (2 ^ 64) ^ 9 := by
-    rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9
-  obtain ⟨hW1, hW2, eW⟩ := mulP_arith1P hm hB hU e₇.symm
-  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun x hx => ?_, hW1, hW2, _, eW⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun x hx => ?_, e₆'⟩
   · have hr' : ∀ k, xAcc k ≠ r := fun k h => hr (h ▸ List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (xAcc_ne k).2.2.2.2)))
-    rw [k₇.gpr r hr, k₆.gpr r hr, k₅.1 r (fun h => hr (by simp only [List.mem_singleton] at h; exact h ▸ List.mem_cons_self ..)),
+    rw [k₆.gpr r hr, k₅.1 r (fun h => hr (by simp only [List.mem_singleton] at h; exact h ▸ List.mem_cons_self ..)),
       k₄.1 r (by simpa using (hr' 17).symm), g₃, k₂.gpr r hr]
-  · rw [k₇.rd, k₆.rd, k₅.2.2.1, k₄.2.2.1, rd₃, k₂.rd]
-  · rw [k₇.wr, k₆.wr, k₅.2.2.2, k₄.2.2.2, wr₃, k₂.wr]
+  · rw [k₆.rd, k₅.2.2.1, k₄.2.2.1, rd₃, k₂.rd]
+  · rw [k₆.wr, k₅.2.2.2, k₄.2.2.2, wr₃, k₂.wr]
   · have hx' : ofs base x < (fnMod true).tmp ∨ (fnMod true).tmp + 72 ≤ ofs base x := by
       rw [fnTmp_val]; simpa only [fnTmp] using hx
-    rw [O₇ x (by omega_using [hx']), O₆ x hx', hm₅, O₃ x (by omega_using [hx']), O₂ x hx']
+    rw [O₆ x hx', hm₅, O₃ x (by omega_using [hx']), O₂ x hx']
 
 theorem sqrCore_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) {a m : Nat}
     (hbx : s.gpr .rbx = off base a) (ha : a + 72 ≤ 3520)
     (hm : m + 1 = 512 * (2 ^ 64) ^ 8) (hB : wordsVal s.mem base a 9 < m) :
     WP isa (.block sqrCore) s
-      (Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base a 9) s) :=
-  sqrCore_okP hs hZ hbx ha hm
-    (Nat.mul_lt_mul'' (by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9) hB)
+      (Core m base (wordsVal s.mem base a 9) (wordsVal s.mem base a 9) s) := by
+  obtain htmp : (fnMod true).tmp + 72 ≤ Z := by rw [fnTmp_val]; omega_using [hZ]
+  rw [sqrCore, WP.block_append_iff]
+  refine WP.mono (sqrRows_ok hs hZ hbx ha) fun s₆ ⟨k₆, O₆, e₆⟩ => ?_
+  obtain hs₆ : ScrC s₆ base Z 0 := hs.toC.of_keepRegs k₆ (by decide)
+  refine WP.mono (xRed_ok hs₆ (M := fnMod true) htmp) fun s₇ ⟨acc, e₇, k₇, O₇⟩ => ?_
+  rw [e₆] at e₇
+  obtain hU : wordsVal s₇.mem base (fnMod true).tmp 9 < (2 ^ 64) ^ 9 := by
+    rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9
+  obtain ⟨hW1, hW2, eW⟩ := mulP_arith1 hm (by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9) hB hU e₇.symm
+  refine ⟨⟨fun r hr => (k₇.gpr r hr).trans (k₆.gpr r hr), k₇.rd.trans k₆.rd, k₇.wr.trans k₆.wr⟩, fun x hx => ?_,
+    hW1, hW2, _, eW⟩
+  rw [O₇ x (by rw [fnTmp_val]; simp only [fnTmp] at hx; omega_using [hx]), O₆ x hx]
 
 /-! ## Moves -/
 

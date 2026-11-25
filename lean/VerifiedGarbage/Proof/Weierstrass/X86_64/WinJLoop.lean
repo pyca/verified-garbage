@@ -422,7 +422,7 @@ theorem maddP_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
         toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.z K.M.n)) =
         maddJF (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
           (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) := by
-  obtain ⟨-, -, ro_lt, -⟩ := hS.ro_tmv hL hF
+  obtain ⟨-, -, ro_lt, ro_z⟩ := hS.ro_tmv hL hF
   obtain oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
   obtain oE := pt_other (K := K) (p := K.E) (Or.inr (Or.inl rfl))
   obtain oD := pt_other (K := K) (p := K.D) (Or.inr (Or.inr rfl))
@@ -447,7 +447,7 @@ theorem maddP_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     · exact h2 _ (by simp) h
   rw [WinCfg.maddP]
   split
-  · refine WP.mono (LazyP521.maddLazy_ok ‹_› hL hp hS.scr hS.mod hltR hltE) fun s₁ ⟨k₁, lt₁, v₁⟩ => ?_
+  · refine WP.mono (LazyP521.maddLazy_ok ‹_› hL hp hS.scr hS.mod hltR hltE ro_z) fun s₁ ⟨k₁, lt₁, v₁⟩ => ?_
     obtain ⟨S₁, kr₁, -⟩ := LazyP521.progKeep_next oD hL hS k₁
     have sm : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z],
         wordsVal s₁.mem base x K.M.n = wordsVal s.mem base x K.M.n := fun x hx =>
