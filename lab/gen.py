@@ -819,6 +819,33 @@ for k, (w, r_) in {'a': ('DA CB t', 'PE x3 x2 z2 z3'), 'b': ('DA CB t', 'PE x2 x
     B['u' + k] = s15(w, r_)
 for k in 'ace': pass
 B['va'] = s15('DA CB t', 'PE x3 x2 z2 z3', True); B['vb'] = s15('DA CB t', 'PE x2 x3 z2 z3', True); B['vc'] = s15('DA CB x3', 'PE t x2 z2 z3', True); B['ve'] = s15('DA CB t x3', 'PE x2 z2 z3', True); B['vj'] = s15('DA CB', 'PE x3 t x2 z3 z2', True)
+
+# ---- experiment 16 ----
+def sq3(a1, a2, o1, o2):
+    """The pair of squares with the exchanged vectors doubled; constants loaded."""
+    Av, As, Dv, N = [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19]
+    r = [f'ldr q31, [x0, #{KM26}]'] + split4(a1, a2, Av)
+    r += [f'add v{Dv[k]}.4s, v{Av[k]}.4s, v{Av[k]}.4s' for k in range(5)]
+    r += [f'ext v{As[k]}.16b, v{Dv[k]}.16b, v{Dv[k]}.16b, #8' for k in range(5)]
+    r += [f'ldr q31, [x0, #{K19}]'] + [f'mul v{N[k]}.4s, v{Av[k]}.4s, v31.4s' for k in range(5)]
+    E, X = [20,21,22,23,24], [25,26,27,28,29]; acc = set()
+    for m in range(5):
+        for i in range(5):
+            j = (m - 1 - i) % 5
+            if i <= j: r += [um(acc, E[m], Av[i] if i == j else Dv[i], (N if i + j + 1 >= 5 else Av)[j], True)]
+        r += [v2('add', E[m], E[m], E[m])]
+        for i in range(5):
+            j = (m - i) % 5
+            if i <= j: r += [um(acc, E[m], Av[i] if i == j else Dv[i], (N if i + j >= 5 else Av)[j], False)]
+        for i in range(5):
+            j = (m - i) % 5; b = (N if i + j >= 5 else Av)[j]
+            if i == j: r += [um(acc, X[m], As[i], b, False)]
+            elif i < j: r += [um(acc, X[m], As[i], b, False), um(acc, X[m], As[i], b, True)]
+    return r + vreduce(E, X, o1, o2, (0, 1, 2, 3, 4, 5))
+def s16(w, rest):
+    go = lambda t: sum((OP15(k) for k in t.split()), [])
+    return H0 + fixldp(FR2 + weave(go(w), sq3(slot(5), slot(6), VO1, VO2)) + go(rest))
+B['xe'] = s16('DA CB t x3', 'PE x2 z2 z3'); B['xE'] = s16('DA CB x3 t', 'PE x2 z2 z3'); B['xc'] = s16('DA CB x3', 'PE t x2 z2 z3'); B['xi'] = s16('DA CB t', 'PE x3 z2 x2 z3'); B['xf'] = s16('DA CB t x3', 'PE z3 x2 z2'); B['xg'] = s16('DA CB t x3', 'PE x2 z3 z2'); B['xh'] = s16('CB DA t x3', 'PE x2 z2 z3')
 if __name__ == '__main__':
     open(pathlib.Path(__file__).parent / 'orders.txt', 'w').write('\n'.join(f'r{q} ' + ' '.join(o) for q, o in enumerate(ORDS)))
     for k in ('step','step_min','step_tree','mul','mul_min','mulA','mulT','sqr','sqr_min','sqrR','st_o0','st_o1','m51','s51','st51','sq2','mu2','sn1','src','sq2k','mu2k','sn3','sn4','sn5','sn6','sn7','h1','h3','h4') + tuple(k for k in B if k.startswith('sc_')): print(k, len(B[k]), setters(B[k]))

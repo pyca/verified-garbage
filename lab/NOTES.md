@@ -338,3 +338,14 @@ front, weave(DA CB t, AA|BB on NEON), then the pack and the rest. The pack leave
 AA and BB in the registers E reads them from, so E loads nothing. Also: the
 weave starting already at C and D (A and B, which the squares need, are stored
 first), and other orders of the rest. Expected 322-325.
+
+## 21. Experiment 15's result (run 45697622448), and experiment 16
+
+Cycles: ue 322.5 (DA CB t x3 woven; then the pack, E, x2, z2, z3), ui 323, vc 323,
+uc 324, ua 324.5, ve 324, others 327-330, two scalar products only (uj, vj) 349;
+the landed code 349.6, r2 347. ue is taken: 322.5 x 255 + 4.9k = 87.1k = 25.6 us.
+
+A saving seen while writing the kernel out: every product of X_m has an even
+coefficient (cross terms of a square), so the exchanged vectors are taken of 2a
+once (`ext` of D) and the 15 `add`s into a temporary go; 181 operations for 196.
+Experiment 16: ue, uc, ui with that (`xe`, `xc`, `xi`), `xE`: t after x3.
