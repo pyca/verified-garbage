@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
@@ -43,7 +44,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
 As `Verified.lean`, for `p384x` (`p384` multiplying modulo `p` with BMI2 and
 ADX): the same curve, so the same precondition and postcondition, and the same
-window method (`mulQJP384_ok`).
+window method, with the doubling in another order (`mulQJP384T_ok`).
 -/
 
 @[expose] public section
@@ -66,6 +67,13 @@ theorem post_of_x {s s' : State} (h : EPost p384x s s') : ecdhX86_64.post s s' :
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p384x.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+/-- `mulQJP384_ok` with the doubling in `dblJMulT`'s order. -/
+theorem mulQJP384T_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P384.curve)
+    (hL : Weierstrass.Law c.C) (hO : Weierstrass.PrimeOrder c.C) :
+    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c (Impl.Weierstrass.X86_64.doubleInT c.MH c.rcbSlots)) (mulQJAW c) :=
+  mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleInT_dblOk_inl
+    (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3 c.hot) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
+
 theorem ecdh_inlineOk_adx : exchangeP384Adx.InlineOk = true := by lit_decide
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
@@ -73,7 +81,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X8
     ∃ t s', Exec isa exchangeP384Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := 
     exchangeWith_ok (p384x_ok hI) hL
-    (mulQJP384_ok (p384x_ok hI) rfl rfl hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
+    (mulQJP384T_ok (p384x_ok hI) rfl rfl hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs

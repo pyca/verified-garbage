@@ -56,8 +56,8 @@ def publicJointAdxF : Joint.Cfg := { publicJointAdx with flat := true }
 temporary point. -/
 def jointDouble (K : WinCfg) : Prog isa := doubleIn K.M K.S K.R
 
-/-- The joint loop's doubler with BMI2 and ADX: in place (`doubleIn`), as in
+/-- The joint loop's doubler with BMI2 and ADX: in place (`doubleInT`), as in
 ECDH. -/
-def jointDoubleAdx (K : WinCfg) : Prog isa := doubleIn K.M K.S K.R
+def jointDoubleAdx (K : WinCfg) : Prog isa := doubleInT K.M K.S K.R
 
 end VG.Impl.P384.X86_64

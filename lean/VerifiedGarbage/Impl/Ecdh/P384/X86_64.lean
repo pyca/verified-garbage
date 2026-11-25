@@ -24,7 +24,7 @@ def exchangeP384 : Prog isa :=
 /-- `vg_ecdh_p384_adx`. -/
 def exchangeP384Adx : Prog isa :=
   Cfg.exchangeJA Impl.Ecdsa.X86_64.p384x
-    (Impl.Weierstrass.X86_64.doubleIn Impl.Ecdsa.X86_64.p384x.MH Impl.Ecdsa.X86_64.p384x.rcbSlots)
+    (Impl.Weierstrass.X86_64.doubleInT Impl.Ecdsa.X86_64.p384x.MH Impl.Ecdsa.X86_64.p384x.rcbSlots)
 
 end VG.Impl.Ecdh.X86_64
 

@@ -129,6 +129,37 @@ theorem doubleIn_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
       (dblIn_slots sl) hr) fun _ ht => ht.2).mono (fun _ _ h => h)
       (fun _ _ h => ⟨_,h.sub fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)⟩)
 
+/-- `doubleInT` of the accumulator is a doubler of the joint loop. -/
+theorem doubleInT_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
+    (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C)
+    (hnd : (rcbW c.K.S c.K.R).Nodup) (hct : ScratchCT (doubleInT c.K.M c.K.S c.K.R).inline) :
+    JointDoubler c C size (doubleInT c.K.M c.K.S c.K.R) := by
+  have hd : (dblInSlots c.K.S c.K.R).Nodup := by
+    simp only [rcbW, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
+    simp only [dblInSlots, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or]
+    grind
+  have sl : ∀ x∈dblInSlots c.K.S c.K.R,x∈jointSlots c := by
+    intro x hx; have := dblIn_sub c.K.S c.K.R hx; jslots
+  have wk : ∀ x∈dblInSlots c.K.S c.K.R,x∈jointWork c := by
+    intro x hx; have := dblIn_sub c.K.S c.K.R hx; jslots
+  have hr : readsOk (dblJMulT c.K.S c.K.R) (jointLive c) = true :=
+    readsOk_mono (dblInT_reads c.K.S c.K.R) (jointLive_R c)
+  have outs : ∀ x∈(dblJMulT c.K.S c.K.R).map FOp.out,x∈dblInSlots c.K.S c.K.R := by
+    intro x hx
+    obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hx
+    exact dblInT_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..)
+  constructor
+  · intro base u v Q A External s hExt hA h
+    refine WP.mono_syms (ForwardField.programB_ok hL.lookup.layout.lay hm _ h.field (dblInT_slots sl) hr)
+      fun t ⟨k,I⟩ st => ?_
+    have kw := k.mono fun x hx => wk x (outs x hx)
+    exact ⟨kw,h.next hL.lookup.layout kw (I.sub fun x hx => (mem_validAfter _ _).mpr (Or.inl hx))
+      (InvJ.dbl' hC ha hA h.point (dblInT_run c.K.S c.K.R _ hd)) (hExt s t kw st h.external)⟩
+  · intro base E
+    exact (fieldProgram_relCT hct fun _ hi => WP.mono (ForwardField.programB_ok hL.lookup.layout.lay hm _ hi
+      (dblInT_slots sl) hr) fun _ ht => ht.2).mono (fun _ _ h => h)
+      (fun _ _ h => ⟨_,h.sub fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)⟩)
+
 end VG.Proof.Weierstrass.X86_64
 
 end
@@ -299,7 +330,7 @@ theorem joint_doubler (hc : CfgOk p384v) (hC : Weierstrass.Law p384v.C) :
 
 theorem joint_adx_doubler (hc : CfgOk p384vx) (hC : Weierstrass.Law p384vx.C) :
     JointDoubler publicJointAdxF p384vx.C size (jointDoubleAdx publicJointAdxF.K) :=
-  doubleIn_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
+  doubleInT_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
     (by decide) jointDouble_adx_ct
 
 /-- `jointPrefix p384v` without its displacements, as a literal of shared blocks
