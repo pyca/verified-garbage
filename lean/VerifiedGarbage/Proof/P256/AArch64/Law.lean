@@ -18,9 +18,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0

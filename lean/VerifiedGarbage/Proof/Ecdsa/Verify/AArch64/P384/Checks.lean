@@ -34,9 +34,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
 import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
@@ -115,9 +112,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
 meta import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
 meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
