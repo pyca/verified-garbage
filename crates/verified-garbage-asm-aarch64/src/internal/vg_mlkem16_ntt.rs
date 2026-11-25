@@ -9,7 +9,7 @@
 ///
 /// * Only the verified functions of this crate may call it, as their code does: it is not visible outside the crate.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem16_ntt() {
+pub unsafe extern "C" fn vg_mlkem16_ntt() {
     core::arch::naked_asm!(
         r".inst 0x4e083d07,0x4e083d28,0x4e083d49,0x4e083d6a,0x4e083d8b,0x4e083dac,0x4e083dcd,0x4e083dee",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLKEM16_NTT_ZETAS}")),

@@ -153,3 +153,11 @@ mod tests {
         }
     }
 }
+
+/// Benchmark hook.
+#[cfg(target_arch = "aarch64")]
+#[allow(missing_docs)]
+pub mod ntt_hook {
+    pub use verified_garbage_asm_aarch64::mlkem1024::vg_mlkem16_inv_ntt::vg_mlkem16_inv_ntt as inv;
+    pub use verified_garbage_asm_aarch64::mlkem1024::vg_mlkem16_ntt::vg_mlkem16_ntt as fwd;
+}

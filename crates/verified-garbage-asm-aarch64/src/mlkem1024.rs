@@ -652,11 +652,11 @@ pub(crate) mod vg_mlkem16_cbd2;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem16_inv_ntt.rs"]
-pub(crate) mod vg_mlkem16_inv_ntt;
+pub mod vg_mlkem16_inv_ntt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem16_ntt.rs"]
-pub(crate) mod vg_mlkem16_ntt;
+pub mod vg_mlkem16_ntt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem_add.rs"]
