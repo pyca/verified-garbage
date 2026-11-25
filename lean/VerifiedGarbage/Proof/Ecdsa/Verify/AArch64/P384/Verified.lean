@@ -671,7 +671,7 @@ theorem step_ok {C : Curve} {base : Addr} {P G : Point C} {s₀ s : State} {u v 
  rw [jointPoint_step hC hG hP u v j 9] at ht
  exact ht
 
-/-- The public NAF's iteration with the allocated doubling also works on a joint accumulator. -/
+/-- The public NAF's iteration with the straight-line doubling also works on a joint accumulator. -/
 theorem peerStepD_ok {C : Curve} {base : Addr} {P A : Point C} {s₀ s : State} {v j : Nat}
  (hL : NafLay P384Joint.K 8192) (hp : UnitMod C.p (2^(64*P384Joint.K.M.n))) (hC : Law C)
  (hM3 : AM3 C) (hone : P384Joint.K.one<C.p) (hP : onCurve C P=true) (hA : onCurve C A=true)
@@ -2334,7 +2334,7 @@ namespace VG.Proof.Ecdsa.Verify.AArch64.P384
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P384
 
-/-- The allocated doubling does what the loop's must. -/
+/-- The straight-line doubling does what the loop's must. -/
 theorem dbl_spec (hI : Weierstrass.AArch64.InvSounds) (base : Addr) :
     Weierstrass.AArch64.DblSpec P384Joint.K p384.C base 8192 P384Joint.double P384Joint.K.R
       P384Joint.K.D (Weierstrass.AArch64.dblVR P384Joint.K) :=
