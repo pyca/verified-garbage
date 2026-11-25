@@ -96,7 +96,7 @@ def Param.sizeDoc : Param → Option String
   | .array _ e n => some s!"{n * e.size}"
   | .slice _ e len | .inOutSlice e _ len => some (if e.size = 1 then s!"`{len}`" else s!"`{e.size} * {len}`")
   | .slices _ count => some s!"`2 * size_of::<usize>() * {count}`"
-  | .table n => some s!"`{n} * size_of::<usize>()`"
+  | .table I => some s!"`{I.words} * size_of::<usize>()`"
 
 /-- The `# Safety` items stating the memory each buffer of `sig` must be
 valid for, in order: the region `Sig.contract` lets the function read
@@ -232,10 +232,10 @@ structure Artifact (target : Target) where
   consts : List (String × List (BitVec 64)) := []
   /-- The tables of functions the function takes (`Abi.withTables`): for
   each of its parameters that is one, the parameter's name and every table
-  it may point to. The emitter checks that each names a read-only array of
-  `u64` of the tables' length, and that it lists every table of their
-  interface on the target, of which the Rust caller may pass any
-  (`Rust.checkFnTables`). So `contract` is one for the calling convention
+  it may point to. The emitter checks that it lists, for every table
+  parameter (`Param.table`), tables of the interface the parameter names, and
+  every table of that interface on the target, of which the Rust caller may
+  pass any (`Rust.checkFnTables`). So `contract` is one for the calling convention
   `((target.abi.withConsts consts).withFns fns).withTables api.sig tables`. -/
   tables : List (String × List FnTable) := []
   /-- The functions whose addresses the contract makes public
