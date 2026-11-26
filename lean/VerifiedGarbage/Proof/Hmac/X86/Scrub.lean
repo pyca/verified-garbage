@@ -273,14 +273,13 @@ private def withBackend (M : Impl.Pbkdf2.Md.X86.Hash) (cn un fn : String) (c u f
 the three hashes, including the long-key path's calls. -/
 private theorem init_fill (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.X86.Hash)
     (F : Impl.Pbkdf2.Whole.X86.Fns) (cn un fn hin : String) (c u f : Prog isa)
-    (hc : calleeSide c 20 = true) (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true)
-    (hinit : Fill 20 M.st.initC M.st.initC) :
+    (hc : calleeSide c 20 = true) (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
     let stub := withBackend M M.compN M.st.updN M.st.finN (.block []) (.block []) (.block [])
     let md := withBackend M cn un fn c u f
     Fill 20 (initCode I stub.hmacInit { F with H := stub.st, hiC := stub.hmacInit })
       (initCode I md.hmacInit { F with H := md.st, hiN := hin, hiC := md.hmacInit }) := by
   dsimp only
-  fill_calls <;> exact hinit
+  fill_calls
 
 /-- Finalization calls the compression and streaming finalize functions. -/
 private theorem fin_fill (M : Impl.Pbkdf2.Md.X86.Hash) (bytes : Nat)
@@ -298,7 +297,7 @@ theorem sha1InitFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 
         (Proof.Sha1.X86.Variants.fns sfx cN c u f)) := by
   let F := Proof.Sha1.X86.Variants.fns sfx cN c u f
   exact init_fill Spec.Hmac.sha1I sha1MStub sha1FStub cN F.H.updN F.H.finN F.hiN
-    c u f hc hu hf (by fill_calls)
+    c u f hc hu hf
 
 theorem sha1FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hf : calleeSide f 20 = true) :

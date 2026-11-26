@@ -427,7 +427,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     theorem): closed code and code that is a `seq`, `ite` or `call` as it
     stands come first, and the lemmas are applied (`s16_xd`), or each is
     tried only where the code's head is its function (`code_head`,
-    `MlKem/AArch64/CallWipe`).
+    `MlKem/AArch64/CallWipe`). A relation between two codes that differ
+    only in what they call (`Fill`) is `fill_code`'s
+    (`Proof/Framework/FillCode.lean`), which unfolds the two together once
+    and stops where they are the same term (250 s of `refine`s to 5 s in
+    one module).
   * *`have`s kept in the context of every nested `by`.* A tactic
     `have x : T := proof` keeps the proof term in the local context (a
     non-dependent `let`), and every `by` nested in a term (`foo (by decide)

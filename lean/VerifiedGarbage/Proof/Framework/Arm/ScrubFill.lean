@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 
 /-!
@@ -73,13 +74,6 @@ theorem FillB.codeOk {a b : Prog isa} (h : FillB a b) : ∀ {n : Nat}, CodeOk a 
 `holeStub k`) and with an implementation (`b`), from hypotheses `CodeOk c k`
 of the implementation's code `c`: code the two share is matched as one term
 (`FillB.refl`, at reducible transparency, so it is not unfolded). -/
-macro "fill_holes" : tactic => `(tactic| repeat' (first
-  | with_reducible exact FillB.refl _
-  | exact FillB.hole (by with_reducible assumption)
-  | refine FillB.seq ?_ ?_
-  | refine FillB.ite _ ?_ ?_
-  | refine FillB.loop _ ?_
-  | refine FillB.call _ _ ?_
-  | refine FillB.frame _ _ ?_))
+macro "fill_holes" : tactic => `(tactic| fill_code)
 
 end VG.Arm.ScrubFill

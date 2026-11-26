@@ -1137,7 +1137,7 @@ theorem seal_fill (v : GcmImpl) (wide : Bool) :
   have h4 := calleeSide_mono l4 (Nat.le_refl 0) (ecbOf v).encSide
   generalize softLevel v wide (loopsOf v) = L at h1 h2 h3 h4 ⊢
   unfold sealWith
-  cases loopsOf v <;> fill_calls_refl
+  cases loopsOf v <;> fill_calls
 
 /-- `open`'s, as `seal_fill`. -/
 theorem open_fill (v : GcmImpl) (wide : Bool) :
@@ -1151,7 +1151,7 @@ theorem open_fill (v : GcmImpl) (wide : Bool) :
   have h4 := calleeSide_mono l4 (Nat.le_refl 0) (ecbOf v).encSide
   generalize softLevel v wide (loopsOf v) = L at h1 h2 h3 h4 ⊢
   unfold openWith
-  cases loopsOf v <;> fill_calls_refl
+  cases loopsOf v <;> fill_calls
 
 /-- `Spec.GcmSiv.sealApi`'s function over `v`'s callees, as emitted
 (`Impl.AesGcmSiv.X86_64.Fn.sealSoft`), meets its contract in constant time
