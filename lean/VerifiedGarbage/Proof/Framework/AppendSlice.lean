@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Contracts with one more read-only slice argument

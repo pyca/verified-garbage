@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Cfb.Final
 public import VerifiedGarbage.Spec.Ofb.Final
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # CFB and OFB of a message's last piece, with its working space as an argument

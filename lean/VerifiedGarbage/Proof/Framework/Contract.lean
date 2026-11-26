@@ -85,7 +85,7 @@ elab "realize_eqns " ids:ident* : command => liftTermElabM do
     discard <| getEqnsFor? n
     discard <| getUnfoldEqnFor? n (nonRec := true)
 
-realize_eqns Sig.bufs Sig.lists Sig.descs Curry.apply Curry.const Elem.size ArgWord.ofRaw Sig.contract Sig.words
+realize_eqns Sig.bufs Sig.alignedBufs Sig.lists Sig.descs Curry.apply Curry.const Elem.size ArgWord.ofRaw Sig.contract Sig.words
   Param.words Param.pubs ArgWord.bits IntTy.bits Sig.retBits stackBelow Sig.conj
 
 /-- Two regions that do not wrap around the end of the address space, one

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 import VerifiedGarbage.Proof.Ed25519.WholeLocal
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed25519 on RISC-V, without secret residue

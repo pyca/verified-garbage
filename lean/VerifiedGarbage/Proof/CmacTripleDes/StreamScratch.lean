@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming TDEA-CMAC with its working space as an argument

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Seed.Scratch
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SEED-OFB and -CFB128 with their working space as an argument

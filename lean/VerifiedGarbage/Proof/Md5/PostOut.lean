@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Md5.Contract
 import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # MD5's postconditions read only their buffers

@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_zeroize` and `vg_zeroize_avx` on x86-64, without secret residue

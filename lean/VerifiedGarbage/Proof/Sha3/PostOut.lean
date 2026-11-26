@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sha3.Instances
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-3's postconditions read the memory on return only within the buffers

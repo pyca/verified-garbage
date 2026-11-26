@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdh.Generic
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 -- separate module: the scrubbed registrations of ECDH and ECDSA's verification import it without the public keys' proofs
 
