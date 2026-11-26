@@ -144,7 +144,7 @@ theorem clears_side (cl : Clear) (hwf : wfB cl = true) :
     have e1 : (Instr.movz .x r 0 0).writesDit = false := rfl
     have e2 : dstOf (Instr.movz .x r 0 0) = some r := rfl
     have e3 : vdstOf (Instr.movz .x r 0 0) = none := rfl
-    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+    simp only [sideI_eq, keeps, vkeeps, e1, e2, e3, hk]; rfl
   · have hk : (RegSet.ofList (keptV cl)).mem w = false := Bool.eq_false_iff.mpr fun h => by
       have := RegSet.mem_ofList.mp h
       have ha := hv w hw
@@ -154,7 +154,7 @@ theorem clears_side (cl : Clear) (hwf : wfB cl = true) :
     have e1 : (Instr.vop (.movi0 w)).writesDit = false := rfl
     have e2 : dstOf (Instr.vop (.movi0 w)) = none := rfl
     have e3 : vdstOf (Instr.vop (.movi0 w)) = some w := rfl
-    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+    simp only [sideI_eq, keeps, vkeeps, e1, e2, e3, hk]; rfl
   · rfl
   · have hk : (RegSet.ofList (keptV cl)).mem w = false := Bool.eq_false_iff.mpr fun h => by
       have := RegSet.mem_ofList.mp h
@@ -165,7 +165,7 @@ theorem clears_side (cl : Clear) (hwf : wfB cl = true) :
     have e1 : (Instr.vop (.ins .d2 w 1 .x1)).writesDit = false := rfl
     have e2 : dstOf (Instr.vop (.ins .d2 w 1 .x1)) = none := rfl
     have e3 : vdstOf (Instr.vop (.ins .d2 w 1 .x1)) = some w := rfl
-    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+    simp only [sideI_eq, keeps, vkeeps, e1, e2, e3, hk]; rfl
 
 /-- `seal` as exported: its code, its clears, the result's bits, then the
 stack zeroed. -/

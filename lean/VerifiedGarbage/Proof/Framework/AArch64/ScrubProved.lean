@@ -48,7 +48,7 @@ theorem keeps_of_side {c : Prog isa} {W rb : Nat} {cl : Clear} {ts : List (Strin
       ∀ w ∈ keptV cl, vdstOf i ≠ some w := by
     intro i hi'
     have h1 := List.all_eq_true.mp ((Code.allInstrs_eq _ c).symm.trans hi) i hi'
-    simp only [sideI, Bool.and_eq_true] at h1
+    simp only [sideI_eq, Bool.and_eq_true] at h1
     refine ⟨h1.1.1, fun q hq => ?_, fun w hw he => ?_⟩
     · have h2 := (keeps_ofList (keptG cl) i).symm.trans h1.1.2
       simpa using List.all_eq_true.mp h2 q hq

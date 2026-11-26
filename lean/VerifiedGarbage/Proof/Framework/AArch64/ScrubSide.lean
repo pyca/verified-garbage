@@ -49,10 +49,35 @@ def vkeeps (vs : RegSet VReg) (i : Instr) : Bool :=
   | none => true
   | some w => !vs.mem w
 
-/-- What a function's cleanup needs of an instruction: it writes no
-PSTATE.DIT, and none of the registers `g` and `v`. -/
-def sideI (g : RegSet Reg) (v : RegSet VReg) (i : Instr) : Bool :=
-  !i.writesDit && keeps g i && vkeeps v i
+/-- `VOp.dst`, with its cases closed (`inline_match%`). -/
+def vopDstK : VOp → VReg := inline_match% VG.AArch64.VOp.dst
+
+theorem vopDstK_eq (op : VOp) : vopDstK op = op.dst := by cases op <;> rfl
+
+/-- `sideI`, the instruction first: one match. -/
+def sideFn : Instr → RegSet Reg → RegSet VReg → Bool
+  | .msrDitImm _ => fun _ _ => false
+  | .ldp t1 t2 _ _ => fun g _ => !g.mem t1 && !g.mem t2
+  | .vop op => fun _ v => !v.mem (vopDstK op)
+  | .ldrq d .. | .ldrqTbl d .. => fun _ v => !v.mem d
+  | i => match dstOf i with
+    | some d => fun g _ => !g.mem d
+    | none => fun _ _ => true
+
+/-- `sideFn`, with its cases closed (`inline_match%`). -/
+def sideFnK : Instr → RegSet Reg → RegSet VReg → Bool := inline_match% VG.AArch64.Scrub.sideFn VG.AArch64.dstOf
+
+/-- What a function's cleanup needs of an instruction (`sideI_eq`): it writes
+no PSTATE.DIT, and none of the registers `g` and `v`. The kernel evaluates it
+at every instruction of the code: it is one match, with its cases closed. -/
+def sideI (g : RegSet Reg) (v : RegSet VReg) (i : Instr) : Bool := sideFnK i g v
+
+theorem sideI_eq (g : RegSet Reg) (v : RegSet VReg) (i : Instr) :
+    sideI g v i = (!i.writesDit && keeps g i && vkeeps v i) := by
+  cases i <;> first
+    | rfl
+    | exact (Bool.and_true _).symm
+    | (rename_i op; show (!v.mem (vopDstK op)) = !v.mem op.dst; rw [vopDstK_eq])
 
 /-- `c.allInstrs p`, of code that calls nothing indirectly. Only the kernel
 evaluates it (`Code.allInstrs`). -/
@@ -100,7 +125,7 @@ theorem sideI_mono {g g' : List Reg} {v v' : List VReg} (hg : ∀ q, q ∈ g' �
     (hv : ∀ w, w ∈ v' → w ∈ v) {i : Instr}
     (h : sideI (RegSet.ofList g) (RegSet.ofList v) i = true) :
     sideI (RegSet.ofList g') (RegSet.ofList v') i = true := by
-  simp only [sideI, Bool.and_eq_true] at h ⊢
+  simp only [sideI_eq, Bool.and_eq_true] at h ⊢
   refine ⟨⟨h.1.1, ?_⟩, ?_⟩
   · have h2 := h.1.2
     rw [keeps_ofList, List.all_eq_true] at h2 ⊢

@@ -143,7 +143,7 @@ theorem calleeSide_low {c : Prog isa} {cl : Clear} (h : calleeSide c cl = true)
       sideI (RegSet.ofList (keptG ⟨allGprs, allVecs, []⟩)) (RegSet.ofList (keptV ⟨allGprs, allVecs, []⟩)) i =
         true := by
     intro i h1 h2
-    simp only [sideI, Bool.and_eq_true] at h1 ⊢
+    simp only [sideI_eq, Bool.and_eq_true] at h1 ⊢
     refine ⟨⟨h1.1.1, ?_⟩, ?_⟩
     · rw [keeps_ofList]; rfl
     · unfold vkeeps
