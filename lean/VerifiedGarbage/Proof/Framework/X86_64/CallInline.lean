@@ -440,7 +440,7 @@ def Instr.rspFree : Instr → Bool
   | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
   | .zop _ => true
   | .movdquTbl _ m .. | .vmovdquLoad _ _ m | .vmovdqu32Load _ m | .vmovdqu32Store m _
-    | .vbroadcasti32x4 _ m => m.noRsp
+    | .vbroadcasti32x4 _ m | .vpbroadcastdZ _ m | .zbcstd _ _ _ m => m.noRsp
   | .kLoad8 r _ m | .kStore8 m r _ => m.noRsp && r != .rsp
   | .eop op => op.rspFree
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m => m.noRsp
@@ -724,7 +724,7 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     split <;> rfl
   | vmovdquLoad len d m =>
     cases len <;> simp only [exec,ea_setRsp hi,Option.map_map] <;> rfl
-  | vmovdqu32Load d m | vbroadcasti32x4 d m =>
+  | vmovdqu32Load d m | vbroadcasti32x4 d m | vpbroadcastdZ d m | zbcstd _ d _ m =>
     simp only [exec,ea_setRsp hi,Option.map_map]; rfl
   | vmovdqu32Store m r =>
     simp only [exec, ea_setRsp hi, store512_setRsp]; rfl
@@ -747,7 +747,7 @@ theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rs
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
   case store | store32 | store8 | store16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load | vmovdquLoad | vmovdqu32Load | vmovdqu32Store | vbroadcasti32x4 =>
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load | vmovdquLoad | vmovdqu32Load | vmovdqu32Store | vbroadcasti32x4 | vpbroadcastdZ | zbcstd =>
     simp only [Instr.rspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
   case movzx8 | movzx16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]

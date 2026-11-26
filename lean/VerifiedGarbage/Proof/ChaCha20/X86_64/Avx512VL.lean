@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
@@ -44,6 +47,43 @@ theorem cmpLim_ok (s : State) :
     Option.bind_some, Option.some.injEq, exists_eq_left', se]
   exact ⟨⟨_, _, _, _, rfl⟩, rfl⟩
 
+/-- The existing stack allowance covers the shared kernel's return address.
+Its inline proof transfers to a call because the kernel never touches `rsp`. -/
+private theorem longCall_correct {s : State} (hp : (xorTo 16).pre s) :
+    WP isa (.call "vg_chacha20_xor_avx512" VG.Impl.ChaCha20.X86_64.Avx512.xor) s
+      fun t => gprPreserved s t ∧ (xorTo 16).post s t := by
+  obtain ht := Avx2.TPre.of s hp
+  have clear : Clear (hole (s.gpr .rsp)) s := by
+    intro r hr
+    rw [hp.1, hp.2.1] at hr
+    simp only [List.singleton_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (ht.stk_d.sub_left (Avx2.stk_ret s)).symm
+    · exact (ht.stk_st.sub_left (Avx2.stk_ret s)).symm
+    · exact (ht.stk_q.sub_left (Avx2.stk_ret s)).symm
+    · exact (ht.stk_b.sub_left (Avx2.stk_ret s)).symm
+  refine WP.mono (WP.of_inline (c := .call "vg_chacha20_xor_avx512" VG.Impl.ChaCha20.X86_64.Avx512.xor)
+    (by lit_decide) clear (Avx512.correct ht)) ?_
+  rintro t ⟨b, hv, u, heq, _, kb, hb⟩
+  subst t
+  have keep : gprPreserved s (b.patch (hole (s.gpr .rsp)) hv u) := by
+    refine ⟨?_, ?_⟩
+    · rw [State.patch_gpr]; exact kb.1
+    · rw [State.patch_readW (by decide) (fun _ hx => not_hole_of_above hx)]
+      exact kb.2
+  refine ⟨keep, ?_, ?_⟩
+  swap
+  · rw [State.patch_gpr]; exact hb.2
+  have same : Spec.ChaCha20.bytesAt (b.patch (hole (s.gpr .rsp)) hv u).mem (s.gpr .r8) (s.gpr .rdx).toNat =
+      Spec.ChaCha20.bytesAt b.mem (s.gpr .r8) (s.gpr .rdx).toNat := by
+    unfold Spec.ChaCha20.bytesAt
+    apply List.map_congr_left
+    intro i hi
+    apply State.patch_mem
+    intro hh
+    exact (ht.stk_q.sub_left (Avx2.stk_ret s)) _ hh (Avx2.in_eqR (List.mem_range.mp hi))
+  exact same.trans hb.1
+
 theorem correct {s₀ : State} (hp : (xorTo 16).pre s₀) :
     WP isa xorBy s₀ fun s' => gprPreserved s₀ s' ∧ (xorTo 16).post s₀ s' := by
   refine WP.seq (WP.mono (cmpLim_ok s₀) fun t ⟨⟨cf, of, zf, sf, e⟩, hc⟩ => ?_)
@@ -52,7 +92,7 @@ theorem correct {s₀ : State} (hp : (xorTo 16).pre s₀) :
   refine WP.ite (decide (eL s₀ < shortLim)) (by simp [eval, hc]) (fun _ => ?_) (fun _ => ?_)
   · obtain ⟨tr, s', he, ⟨h1, h2, -⟩, hpost⟩ := Avx2.xorWith_to true (by lit_decide) _ hp'
     exact ⟨tr, s', he, ⟨h1, h2⟩, hpost⟩
-  · exact Avx512.correct (Avx2.TPre.of _ hp')
+  · exact longCall_correct hp'
 
 theorem xor_to (s : State) (hs : (xorTo 16).pre s) :
     ∃ t s', Exec isa xorBy s t s' ∧ abiPreserved s s' ∧ (xorTo 16).post s s' := by

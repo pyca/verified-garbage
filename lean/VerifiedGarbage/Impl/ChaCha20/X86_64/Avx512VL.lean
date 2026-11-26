@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
 
 `xorBy`, with the contract of `vg_chacha20_xor`, for CPUs with AVX2,
 AVX-512F and AVX-512VL: fewer than `shortLim` bytes by the AVX2 kernel with
-AVX-512VL's `vprold` (`Avx2.xorVL`, on `ymm` registers), the rest by the
-AVX-512 kernel (`Avx512.xor`). On the CPUs that lower their clock for a
+AVX-512VL's `vprold` (`Avx2.xorVL`, on `ymm` registers), the rest by a call of the
+shared AVX-512 kernel (`Avx512.xor`). On the CPUs that lower their clock for a
 while after a 512-bit instruction (Skylake-SP and Cascade Lake), the code
 after a short run then keeps its speed.
 
@@ -25,6 +25,6 @@ open VG.X86_64
 def shortLim : Nat := 385
 
 def xorBy : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 shortLim))]) (.ite .b Avx2.xorVL Avx512.xor)
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 shortLim))]) (.ite .b Avx2.xorVL (.call "vg_chacha20_xor_avx512" Avx512.xor))
 
 end VG.Impl.ChaCha20.X86_64.Avx512VL
