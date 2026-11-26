@@ -240,8 +240,8 @@ this project writes when it is built (`TCB/AuditRecords.lean`; the
 `lean-modules` skill), so they run on a build restored without those parts
 ([Without the private parts](#without-the-private-parts)). `EmitOne.lean`
 asks Lake for its driver's setup (`lake setup-file`), which builds what the
-registration file imports. `Emit.lean` writes one setup for its six drivers
-itself, from the files of the build: it reads the build as it is and does
+registration file imports. `Emit.lean` writes one setup for its four drivers
+itself, by the project's sources: it reads the build as it is and does
 not check that it is current, so run it after `lake build`, as above and as
 CI does.
 

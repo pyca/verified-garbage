@@ -14,8 +14,9 @@ default `../crates`, relative to `lean/`). Run it from `lean/` after
 * `lake env lean --run Emit.lean --check [DIR]` writes nothing and fails if
   the files on disk differ from what would be generated; CI runs this.
 
-It writes a program for each target directory that imports its
-registration files (`.lake/emit/Driver<Target>.lean`, `VG.Emit.parts`) and
+It writes a program for each part, the target directories of `VG.Emit.parts` in four
+groups (`groups`), that imports their
+registration files (`.lake/emit/Driver<Targets>.lean`) and
 runs them at once, as processes with the same arguments, each auditing and
 emitting the artifacts of its targets (`VG.Emit.run`'s `--part`); and then,
 if they all pass, checks that no target is in two of them and writes or
@@ -115,6 +116,30 @@ def setupJson (libs : List System.FilePath) : IO String := do
     ",".intercalate files.toList ++ "},\"dynlibs\":[" ++ ",".intercalate libs ++
     "],\"plugins\":[],\"options\":{}}\n"
 
+/-- The parts `parts` (`VG.Emit.parts`: each target directory and its registration
+modules) in `n` groups or fewer: the largest first, by the size of its registration files, each into the
+group with the least so far. Each program loads the proofs that every target's share, over a
+second's work, and the run takes as long as the largest target's program in any case: so a
+program for each CPU takes less time than one for each target. How they are grouped only
+decides how long the run takes: the programs
+audit and emit the same artifacts. -/
+def groups (n : Nat) (parts : List (String × List String)) : IO (List (String × List String)) := do
+  let sized ← parts.mapM fun (t, mods) => do
+    let mut size := 0
+    for m in mods do
+      size := size + (← (System.FilePath.mk (m.replace "." "/" ++ ".lean")).metadata).byteSize.toNat
+    return (size, t, mods)
+  let mut out : Array (Nat × String × List String) := #[]
+  for (size, t, mods) in sized.mergeSort fun a b => b.1 ≤ a.1 do
+    if out.size < n then out := out.push (size, t, mods)
+    else
+      let mut least := 0
+      for i in [:out.size] do
+        if out[i]!.1 < out[least]!.1 then least := i
+      let (k, u, ms) := out[least]!
+      out := out.set! least (k + size, u ++ "-" ++ t, ms ++ mods)
+  return out.toList.map (·.2)
+
 /-- Milliseconds as seconds, to a tenth: `12.3 s`. -/
 def seconds (ms : Nat) : String :=
   s!"{ms / 1000}.{ms % 1000 / 100} s"
@@ -136,7 +161,7 @@ def main (args : List String) : IO UInt32 := do
   let some (check, none, _) := VG.Emit.parseArgs args
     | IO.eprintln VG.Emit.usage; return 2
   let parts ← match VG.Emit.parts (← VG.Emit.registrations) with
-    | .ok parts => pure parts
+    | .ok parts => groups 4 parts
     | .error e => do IO.eprintln e; return 1
   let emitDir : System.FilePath := ".lake" / "emit"
   IO.FS.createDirAll emitDir
