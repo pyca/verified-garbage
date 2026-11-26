@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Hkdf.X86.Extract
 public import VerifiedGarbage.Proof.Hkdf.X86.Expand
 public import VerifiedGarbage.Proof.Hkdf.X86.Table
 public import VerifiedGarbage.Proof.Hkdf.Common
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.HmacTable.X86.Up
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hkdf.X86.Fn
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -13,14 +14,6 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.Lit
-import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha256.X86.Lit
-import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -45,7 +38,7 @@ table, is evaluated once, with their literals (`keySide`).
 namespace VG.Proof.Hkdf.X86.Scrub
 
 open VG.X86 VG.X86.Scrub
-open VG.Proof.HmacTable.X86 (HVar tables fnsOf vars)
+open VG.Proof.HmacTable.X86 (HVar HmacUp tables fnsOf vars names stubFns fnsOf_up mem_tableFns vs_up)
 
 /-! ## The postconditions read only the buffers they write -/
 
@@ -110,11 +103,17 @@ theorem expandOut (vs : List HVar) : PostOut (specExpand vs) (Spec.Hkdf.expandSi
 section
 variable {vs : List HVar}
 
+theorem key_tfill (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill (names vs) (Impl.Hkdf.X86.key stubFns) (Impl.Hkdf.X86.key (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
+
 /-- `vg_hkdf_key` as emitted, cleanup included (`Impl.Hkdf.X86.Fn.key`),
 with the tables of `vs`: it meets its contract in constant time and returns
-without secret residue, given what the cleanup needs of its code. -/
+without secret residue, given what the cleanup needs of each variant's
+functions (`HmacUp`). -/
 theorem key_scrubbed (hO : OK vs) (hS : Streams vs)
-    (hs : scrubFSide (Impl.Hkdf.X86.key (fnsOf vs)) [("hmac", tables vs)] kStack = true) :
+    (hv : ∀ w ∈ vs, HmacUp w) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.key (fnsOf vs)) (specKey vs) 0 :=
   verifiedScrubbedAll (api := Spec.Hkdf.keyApi)
     { tables := [("hmac", tables vs)]
@@ -122,11 +121,16 @@ theorem key_scrubbed (hO : OK vs) (hS : Streams vs)
       contract := specKey vs
       verified := key_spec hO hS
       spSafe := frame_sp (keyBody_okP vs) }
-    (keyOut vs) (hs := hs)
+    (keyOut vs) (hs := (key_tfill hv).ok (fun _ h => mem_tableFns h) (by kernel_rfl))
+
+theorem extract_tfill (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill (names vs) (Impl.Hkdf.X86.extract stubFns) (Impl.Hkdf.X86.extract (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
 
 /-- `vg_hkdf_extract` as emitted, cleanup included (`Impl.Hkdf.X86.Fn.extract`). -/
 theorem extract_scrubbed (hO : OK vs)
-    (hs : scrubFSide (Impl.Hkdf.X86.extract (fnsOf vs)) [("hmac", tables vs)] xStack = true) :
+    (hv : ∀ w ∈ vs, HmacUp w) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.extract (fnsOf vs)) (specExtract vs) 0 :=
   verifiedScrubbedAll (api := Spec.Hkdf.extractApi)
     { tables := [("hmac", tables vs)]
@@ -134,11 +138,16 @@ theorem extract_scrubbed (hO : OK vs)
       contract := specExtract vs
       verified := extract_spec hO
       spSafe := frame_sp (extractBody_okP vs) }
-    (extractOut vs) (hs := hs)
+    (extractOut vs) (hs := (extract_tfill hv).ok (fun _ h => mem_tableFns h) (by kernel_rfl))
+
+theorem expand_tfill (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill (names vs) (Impl.Hkdf.X86.expand stubFns) (Impl.Hkdf.X86.expand (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
 
 /-- `vg_hkdf_expand` as emitted, cleanup included (`Impl.Hkdf.X86.Fn.expand`). -/
 theorem expand_scrubbed (hO : OK vs) (hS : Streams vs)
-    (hs : scrubFSide (Impl.Hkdf.X86.expand (fnsOf vs)) [("hmac", tables vs)] eStack = true) :
+    (hv : ∀ w ∈ vs, HmacUp w) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.expand (fnsOf vs)) (specExpand vs) 0 :=
   verifiedScrubbedAll (api := Spec.Hkdf.expandApi)
     { tables := [("hmac", tables vs)]
@@ -146,7 +155,7 @@ theorem expand_scrubbed (hO : OK vs) (hS : Streams vs)
       contract := specExpand vs
       verified := expand_spec hO hS
       spSafe := frame_sp (expandBody_okP vs) }
-    (expandOut vs) (hs := hs)
+    (expandOut vs) (hs := (expand_tfill hv).ok (fun _ h => mem_tableFns h) (by kernel_rfl))
 
 end
 
@@ -163,33 +172,21 @@ theorem vars_streams (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List 
     or_false] at hw
   rcases hw with rfl | ((⟨b, -, rfl⟩ | ⟨b, -, rfl⟩) | ⟨b, -, rfl⟩) | rfl | rfl | rfl | rfl <;> rfl
 
-/-- What the cleanup needs of `vg_hkdf_key`'s code, evaluated once. -/
-theorem keySide : scrubFSide (Impl.Hkdf.X86.key (fnsOf vs)) [("hmac", tables vs)] kStack = true := by
-  lit_decide
-
-/-- What the cleanup needs of `vg_hkdf_extract`'s code, evaluated once. -/
-theorem extractSide : scrubFSide (Impl.Hkdf.X86.extract (fnsOf vs)) [("hmac", tables vs)] xStack = true := by
-  lit_decide
-
-/-- What the cleanup needs of `vg_hkdf_expand`'s code, evaluated once. -/
-theorem expandSide : scrubFSide (Impl.Hkdf.X86.expand (fnsOf vs)) [("hmac", tables vs)] eStack = true := by
-  lit_decide
-
 /-- `vg_hkdf_key` as emitted, with the tables of the registrations' variants,
 given what the registration checks of them (`OK`). -/
 theorem key_scrubbedV (hO : OK vs) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.key (fnsOf vs)) (specKey vs) 0 :=
-  key_scrubbed hO (vars_streams _ _) keySide
+  key_scrubbed hO (vars_streams _ _) vs_up
 
 /-- `vg_hkdf_extract` as emitted, with the tables of the registrations' variants. -/
 theorem extract_scrubbedV (hO : OK vs) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.extract (fnsOf vs)) (specExtract vs) 0 :=
-  extract_scrubbed hO extractSide
+  extract_scrubbed hO vs_up
 
 /-- `vg_hkdf_expand` as emitted, with the tables of the registrations' variants. -/
 theorem expand_scrubbedV (hO : OK vs) :
     VerifiedScrubbed target (Impl.Hkdf.X86.Fn.expand (fnsOf vs)) (specExpand vs) 0 :=
-  expand_scrubbed hO (vars_streams _ _) expandSide
+  expand_scrubbed hO (vars_streams _ _) vs_up
 
 /-- No instruction of the functions as emitted writes `esp` but their frames'. -/
 theorem key_spSafe (vs : List HVar) :

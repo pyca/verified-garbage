@@ -4,9 +4,8 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.X86.Scrub
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
-import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -92,18 +91,15 @@ theorem brainpoolp320r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.cur
   exact signT_verified (R := brainpoolp320r1 hL) ⟨rfl, by decide, by decide⟩ rfl h.1
     (by rw [show (brainpoolp320r1 hL).E.combConsts = [("VG_BRAINPOOLP320R1_COMB", Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1W)] from Proof.Ecdsa.X86.BrainpoolP320r1.brainpoolp320r1Comb_consts]; exact hsat)
 
-/-- What the scrub of `vg_ecdsa_brainpoolp320r1_sign` needs of its code, with the
-tables of every HMAC implementation (`X86.Scrub.scrubFSide`): its frames and
-calls fit its stack, it calls indirectly only the functions of its table, and
-it has no MMX instruction. The code is the same for every proof of the group
-law, so it is evaluated at the curve's own. -/
-private theorem brainpoolp320r1T_scrubLaw :
-    VG.X86.Scrub.scrubFSide
-      (signCodeT (brainpoolp320r1 Proof.BrainpoolP320r1.X86.hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries
-        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))
-      [("hmac", Proof.HmacTable.X86.tables
-        (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))] stackT = true := by
-  lit_decide
+/-- What the cleanup needs of `vg_ecdsa_brainpoolp320r1_sign`'s code with the
+tables of every HMAC implementation (`X86.Scrub.scrubFSide`), evaluated once
+over stubs of them. -/
+private theorem brainpoolp320r1_side :
+    VG.X86.Scrub.scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (Proof.Ecdsa.X86.Scrub.cfgOf
+      Impl.Ecdsa.X86.brainpoolp320r1Comb false 0 "vg_ecdsa_brainpoolp320r1_sign_k"
+      Impl.Ecdsa.X86.signBrainpoolP320r1Comb Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries Proof.HmacTable.X86.vs))
+      [("hmac", Proof.HmacTable.X86.tables Proof.HmacTable.X86.vs)] stackT = true :=
+  Proof.Ecdsa.X86.Scrub.signSide_of_stub (by lit_decide)
 
 theorem brainpoolp320r1T_scrub (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VG.X86.Scrub.scrubFSide
@@ -111,7 +107,7 @@ theorem brainpoolp320r1T_scrub (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))
       [("hmac", Proof.HmacTable.X86.tables
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))] stackT = true :=
-  brainpoolp320r1T_scrubLaw
+  Proof.Ecdsa.X86.Scrub.signSide_of (R := brainpoolp320r1 hL) brainpoolp320r1_side
 
 /-- `vg_ecdsa_brainpoolp320r1_sign` as emitted (`Impl.Ecdsa.X86.Fn.signBrainpoolP320r1`), with
 the tables of every HMAC implementation, meets its contract in constant time and returns without
