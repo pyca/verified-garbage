@@ -396,10 +396,17 @@ theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (_hlen : len ≤ leftAt m
         rw [this, show 128 - n % 64 + (len + i) = 128 - (n % 64 - len) + i by omega_using [hi]]
       · rw [ite_neg hi, ite_neg (by omega_using [hi])]
         exact blk_congr (by omega_using [hlo]) (by omega_using [hlo])
-    · have e1 : (n - len) % 64 = 0 := by omega_using [t0, hlo]
+    · have hm : min (n % 64) len = n % 64 := Nat.min_eq_left (by omega_using [hlo])
+      rw [hm] at t0 ⊢
+      have e1 : (n - len) % 64 = 0 := by omega_using [t0, hlo]
       rw [e1, ite_neg (by omega_using []), ite_neg (by omega_using [e1])]
       exact blk_congr (by omega_using [t0, e1]) (by omega_using [t0, e1])
   · simp only [t0, ite_false] at hB ⊢
+    have hm : min (n % 64) len = n % 64 := Nat.min_eq_left (by
+      rcases Nat.le_total (n % 64) len with h | h
+      · exact h
+      · exact absurd (by rw [Nat.min_eq_right h, Nat.sub_self]) t0)
+    rw [hm] at t0 hB ⊢
     have e1 : (n - len) % 64 = 64 - (len - n % 64) % 64 := by omega_using [h₁, t0]
     rw [e1]
     by_cases hi : i < 64 - (len - n % 64) % 64
