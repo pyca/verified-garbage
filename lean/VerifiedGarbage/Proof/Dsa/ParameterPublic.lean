@@ -185,6 +185,6 @@ theorem parameterSearch_public {T : Target} {c : Prog T.isa} {A : Abi T.isa} {st
   have hp := hw.2.1
   refine List.cons_eq_cons.mpr ⟨congrArg BitVec.toNat ?_, rfl⟩
   rw [word3 hw₁, word3 hw₂, hq₁, hq₂, hw.1, map_toNat_inj hb]
-  exact congrArg (fun w : BitVec 64 => BitVec.ofNat 64 (requested w.toNat (parameterSearch w.toNat _ _))) hp
+  rw [show (A.mem s₁).readW ((vals s₁).getD 7 0 + 8) 64 = (A.mem s₂).readW ((vals s₂).getD 7 0 + 8) 64 from hp]
 
 end VG.Proof.Dsa

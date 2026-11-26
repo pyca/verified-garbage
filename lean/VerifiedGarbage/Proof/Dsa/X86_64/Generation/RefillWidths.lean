@@ -775,6 +775,46 @@ theorem search_pub {S : Nat} {s s' : State} (h : (Proof.Dsa.parameterSearchAsked
 
 /-! ## The choice -/
 
+/-! What `large_verified` and `widths_verified` use of the contracts, whose
+conditions on a state the elaborator would otherwise evaluate wherever it
+elaborates a proof of one. -/
+
+section
+variable {p S : Nat} {x : String} {xs : List String} {s s' u u' : State}
+
+private theorem refill_pre (ag : Agree u s) (h : (Refill.contract p abi S).pre s) :
+    (Refill.contract p (abi.withFns (x :: xs)) S).pre u := ag.preF.mpr h
+
+private theorem asked_pre_abi (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pre s) :
+    (Proof.Dsa.parameterSearchAskedContract abi S).pre s := h
+
+private theorem asked_pre (ag : Agree u s) (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pre s) :
+    (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pre u := ag.preF.mpr h
+
+private theorem refill_post (ag : Agree u s) (h : (Refill.contract p (abi.withFns (x :: xs)) S).post u s') :
+    (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).post s s' := ag.postF.mp h
+
+private theorem asked_post (ag : Agree u s)
+    (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).post u s') :
+    (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).post s s' := ag.postF.mp h
+
+private theorem asked_pub (ag : Agree u s) (ag' : Agree u' s')
+    (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s') :
+    (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u u' := (ag.pubF ag').mpr h
+
+private theorem refill_pub (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s') :
+    (Refill.contract p (abi.withFns (x :: xs)) S).pub s s' := h
+
+private theorem asked_pub_abi (h : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s') :
+    (Proof.Dsa.parameterSearchAskedContract abi S).pub s s' := (pub_withFns.mp h).1
+
+end
+
+section
+-- The elaborator would evaluate the contracts' conditions on a state wherever it
+-- elaborates a proof of one.
+attribute [local irreducible] Proof.Dsa.parameterSearchAskedContract Refill.contract
+
 theorem large_verified (S : Nat) {x : String} {xs : List String} {f₂₅₆ f₃₈₄ : List Instr}
     {n₂₅₆ n₃₈₄ : String} {c₂₅₆ c₃₈₄ : Prog isa}
     (h₂₅₆ : Verified target (Impl.Dsa.X86_64.ParameterSearch.width f₂₅₆ n₂₅₆ c₂₅₆)
@@ -789,11 +829,11 @@ theorem large_verified (S : Nat) {x : String} {xs : List String} {f₂₅₆ f�
     (fun s hs => ?_) ?_ hsat
   · obtain ⟨u, e, ag, ev⟩ := cmp_run 256 s
     obtain ⟨hk, hrax, h128⟩ := hs
-    refine ⟨u, e, ?_, fun hp => ⟨ag.preF.mpr (refill_of_search hk ?_), fun s' a q => ⟨ag.abiPreserved a, ag.postF.mp q⟩⟩,
-      fun hp => ⟨ag.preF.mpr (refill_of_search hk ?_), fun s' a q => ⟨ag.abiPreserved a, ag.postF.mp q⟩⟩⟩
+    refine ⟨u, e, ?_, fun hp => ⟨refill_pre ag (refill_of_search (asked_pre_abi hk) ?_), fun s' a q => ⟨ag.abiPreserved a, refill_post ag q⟩⟩,
+      fun hp => ⟨refill_pre ag (refill_of_search (asked_pre_abi hk) ?_), fun s' a q => ⟨ag.abiPreserved a, refill_post ag q⟩⟩⟩
     · rw [ev, show BitVec.signExtend 64 (256 : BitVec 32) = 256 from by decide, sub_beq_zero]
     · rw [← hrax, beq_iff_eq.mp hp]; rfl
-    · have hv := valid_of_search hk
+    · have hv := valid_of_search (asked_pre_abi hk)
       simp only [Spec.Dsa.generationPLenValid, Bool.or_eq_true, beq_iff_eq] at hv
       have h256 : (widthWord s).toNat ≠ 256 := fun h => by
         rw [← hrax] at h
@@ -806,10 +846,10 @@ theorem large_verified (S : Nat) {x : String} {xs : List String} {f₂₅₆ f�
     rw [e₀] at e; rw [e₀'] at e'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
-    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
+    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := asked_pub ag ag' hq
     obtain ⟨-, -, hw⟩ := search_pub (S := S)
-      (pub_withFns.mp (show (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s' from hq)).1
-    exact ⟨rfl, by simp only [hs.2.1, hs'.2.1, hw], fun _ => pu, fun _ => pu⟩
+      (asked_pub_abi (show (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub s s' from hq))
+    exact ⟨rfl, by simp only [hs.2.1, hs'.2.1, hw], fun _ => refill_pub pu, fun _ => refill_pub pu⟩
 
 theorem widths_verified (S : Nat) {x : String} {xs : List String} {f₁₂₈ f₂₅₆ f₃₈₄ : List Instr}
     {n₁₂₈ n₂₅₆ n₃₈₄ : String} {c₁₂₈ c₂₅₆ c₃₈₄ : Prog isa}
@@ -826,27 +866,29 @@ theorem widths_verified (S : Nat) {x : String} {xs : List String} {f₁₂₈ f�
   refine Verified.entryBranch (p := fun s => widthWord s == 128)
     (fun s => [.addr (stackArgAddr s 1), .addr (stackArg s 1 + 8)]) h₁₂₈
     (large_verified S h₂₅₆ h₃₈₄ hsatL) (fun s hs => ?_) ?_ hsat
-  · obtain ⟨i₁, i₂⟩ := search_in hs
+  · obtain ⟨i₁, i₂⟩ := search_in (asked_pre_abi hs)
     obtain ⟨u, e, ag, hrax, ev⟩ := widthOf_run 128 (by decide) s i₁ i₂
     have hw : widthWord u = widthWord s := by simp only [widthWord, ag.mem, ag.stackArg]
-    refine ⟨u, e, ev, fun hp => ⟨ag.preF.mpr (refill_of_search hs ?_), fun s' a q => ⟨ag.abiPreserved a, ag.postF.mp q⟩⟩,
-      fun hp => ⟨⟨ag.preF.mpr hs, by rw [hrax, hw], ?_⟩, fun s' a q => ⟨ag.abiPreserved a, ag.postF.mp q⟩⟩⟩
+    refine ⟨u, e, ev, fun hp => ⟨refill_pre ag (refill_of_search (asked_pre_abi hs) ?_), fun s' a q => ⟨ag.abiPreserved a, refill_post ag q⟩⟩,
+      fun hp => ⟨⟨asked_pre ag hs, by rw [hrax, hw], ?_⟩, fun s' a q => ⟨ag.abiPreserved a, asked_post ag q⟩⟩⟩
     · rw [beq_iff_eq.mp hp]; rfl
     · rw [hw]
       intro h
       have : widthWord s = 128 := BitVec.eq_of_toNat_eq h
       simp [this] at hp
   · intro s s' u u' hs hs' hq e e'
-    obtain ⟨i₁, i₂⟩ := search_in hs
-    obtain ⟨i₁', i₂'⟩ := search_in hs'
+    obtain ⟨i₁, i₂⟩ := search_in (asked_pre_abi hs)
+    obtain ⟨i₁', i₂'⟩ := search_in (asked_pre_abi hs')
     obtain ⟨u₀, e₀, ag, -, -⟩ := widthOf_run 128 (by decide) s i₁ i₂
     obtain ⟨u₀', e₀', ag', -, -⟩ := widthOf_run 128 (by decide) s' i₁' i₂'
     rw [e₀] at e; rw [e₀'] at e'
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
-    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := (ag.pubF ag').mpr hq
-    obtain ⟨hsp, hst, hw⟩ := search_pub (pub_withFns.mp hq).1
-    exact ⟨by simp only [stackArgAddr, hsp, hst], by simp only [hw], fun _ => pu, fun _ => pu⟩
+    have pu : (Proof.Dsa.parameterSearchAskedContract (abi.withFns (x :: xs)) S).pub u₀ u₀' := asked_pub ag ag' hq
+    obtain ⟨hsp, hst, hw⟩ := search_pub (asked_pub_abi hq)
+    exact ⟨by simp only [stackArgAddr, hsp, hst], by simp only [hw], fun _ => refill_pub pu, fun _ => pu⟩
+
+end
 
 /-! ## Satisfiable with the forwarding frame's stack -/
 
