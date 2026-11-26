@@ -24,6 +24,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Proof.Sha3.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Sha3.RISCV64.Lit
+import VerifiedGarbage.Proof.Sha3.RcLit
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
@@ -35,6 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Wp
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Alloc
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Sha3.RcLit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
@@ -1132,7 +1134,7 @@ def keepsU : Option Reg → Bool
   | _ => true
 
 theorem untouched_keep : main.allInstrs (fun i => keepsU (dstOf i)) = true := by
-  decide +kernel
+  lit_decide
 
 theorem main_noCalls : main.noCalls = true := by decide +kernel
 
