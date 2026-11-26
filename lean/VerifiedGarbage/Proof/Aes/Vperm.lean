@@ -404,7 +404,7 @@ theorem x3_tab (z : BitVec 8) : nib x3u (ioB (D z)) ^^^ nib x3t (joB (D z)) =
   pair_map (t := x3u) (t' := x3t) (u := dbou) (u' := dbot) (g := fun x => Dl (aesMul 0x09 x)) g3_xor (by decide +kernel) _ _
 
 /-- A byte, from its nibbles. -/
-theorem nibbles : ∀ x : BitVec 8, (x &&& (0x0f : BitVec 8)).toNat < 16 ∧ (x >>> 4).toNat < 16 ∧
+theorem nibs_eq : ∀ x : BitVec 8, (x &&& (0x0f : BitVec 8)).toNat < 16 ∧ (x >>> 4).toNat < 16 ∧
     (x &&& (0x0f : BitVec 8)) ^^^ ((x >>> 4) <<< 4) = x := by decide +kernel
 
 /-- A pair of tables is an affine function if each is on the 16 nibbles. -/
@@ -413,7 +413,7 @@ theorem Yb_of {l h : BitVec 128} {g : BitVec 8 → BitVec 8} {c : BitVec 8}
     (ht : ∀ v < 16, nib l (BitVec.ofNat 8 v) = g (BitVec.ofNat 8 v) ^^^ nib l 0 ∧
       nib h (BitVec.ofNat 8 v) = g (BitVec.ofNat 8 v <<< 4) ^^^ nib h 0)
     (hc : nib l 0 ^^^ nib h 0 = c) (x : BitVec 8) : Yb l h x = g x ^^^ c := by
-  obtain ⟨h1, h2, h3⟩ := nibbles x
+  obtain ⟨h1, h2, h3⟩ := nibs_eq x
   have e1 := (ht _ h1).1
   have e2 := (ht _ h2).2
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq] at e1 e2
