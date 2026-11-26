@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.ForallLength
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # RSASSA-PSS on AArch64, without secret residue
@@ -81,9 +82,25 @@ open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 open VG.Proof.RsaPkcs1Sig.AArch64 (privP_side privP_depth)
 open VG.Proof.MdHashTable.AArch64 (tables fnsOf)
 
+/-- The registrations' hash functions of the same name have the same code. -/
+theorem variants_mdCoh : MdHashTable.AArch64.Coh variants := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first variants (·.H.initN) (·.H.initC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.compN) (·.H.compC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants MdHashTable.AArch64.digName
+      (Impl.MdHashTable.AArch64.digest ·.H.P) (by kernel_rfl) w hw w' hw'⟩
+
+/-- The registrations' hash functions of the same name have the same code. -/
+theorem variants_coh : HashTable.AArch64.Coh variants := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first variants (·.H.initN) (·.H.initC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.finN) (·.H.finC) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions the registrations give meet what the functions need
 of them. -/
-theorem variants_ok : Proof.RsaPss.AArch64.OK variants := of_decide_eq_true (by kernel_rfl)
+theorem variants_ok : Proof.RsaPss.AArch64.OK variants := by
+  refine ⟨variants_mdCoh, variants_coh, ?_⟩
+  unfold DepthOK
+  exact of_decide_eq_true (by kernel_rfl)
 
 theorem fnsOf_hashes : Proof.HashTable.AArch64.fnsOf variants = Impl.RsaOaep.AArch64.Fn.fnsOf hashes := by
   kernel_rfl

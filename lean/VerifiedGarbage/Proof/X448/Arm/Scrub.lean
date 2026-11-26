@@ -433,6 +433,7 @@ theorem x448_icallFree (fv : Bool) : VG.Proof.Arm.Code.icallFree (Impl.X448.Arm.
 theorem x448_keepsR10 (fv : Bool) : VG.Proof.Arm.KeepsReg .r10 (Impl.X448.Arm.x448 fv) := by
   refine ⟨by decide, ?_⟩
   have h : (instrs (Impl.X448.Arm.x448 fv)).all (fun i => !clobbers i .r10) = true := by
+    rw [← Code.allInstrs_eq]
     cases fv <;> lit_decide
   simpa only [List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] using h
 

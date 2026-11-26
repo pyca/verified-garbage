@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # HKDF on AArch64, without secret residue
@@ -154,9 +155,15 @@ theorem expand_scrubbed {vs : List MdHash} (hO : Proof.Hkdf.AArch64.OK vs) (hS :
 
 open VG.Proof.Variants.MdHash.AArch64 (variants)
 
+/-- The registrations' hash functions of the same name have the same code. -/
+theorem variants_coh : HmacTable.AArch64.Coh variants := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first variants (·.H.hmacInitAnyN) (·.H.hmacInitAny) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.hmacFinN) (·.H.hmacFin) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions the registrations give meet what the functions need
 of them. -/
-theorem variants_ok : Proof.Hkdf.AArch64.OK variants := of_decide_eq_true (by kernel_rfl)
+theorem variants_ok : Proof.Hkdf.AArch64.OK variants := ⟨variants_coh, of_decide_eq_true (by kernel_rfl)⟩
 
 /-- Each variant's streaming states are the specification's. -/
 theorem variants_streams : Proof.Hkdf.AArch64.Streams variants := by
