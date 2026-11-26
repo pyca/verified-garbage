@@ -1041,7 +1041,7 @@ theorem masked_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     rw [hv i hi']
     split
     · rfl
-    · rw [if_congr hziff rfl rfl]
+    · rw [ite_congr (propext hziff) (fun _ => rfl) (fun _ => rfl)]
       split <;> rfl
   obtain ilt : ∀ x∈live,wordsVal t.mem base x 4<C.p := by
     intro x hx

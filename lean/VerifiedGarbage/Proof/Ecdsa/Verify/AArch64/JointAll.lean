@@ -1935,7 +1935,7 @@ theorem loop_ct (hct : StepCt c) {m : Nat} (hm : Rounds c m) {base : Addr} {P Q�
       exact hz hn
   refine ⟨eqtr,heq,?_,?_⟩
   · intro hz
-    rw [ev,Option.some.injEq,decide_eq_false_iff_not,ne_eq,not_not] at hz
+    rw [ev,Option.some.injEq,decide_eq_false_iff_not,ne_eq,Classical.not_not] at hz
     rw [hz] at hs' ht'
     exact ⟨hs',ht',sp'⟩
   · intro hn

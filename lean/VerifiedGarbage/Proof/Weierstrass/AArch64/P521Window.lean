@@ -50,7 +50,7 @@ theorem double_spec {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     · exact Or.inl hx
   · rw [dblJChoiceN_run]
     refine Eq.trans ?_ (doubleN_run fun y => E (rcbσ K.S p p o y))
-    exact congrArg₂ Prod.mk (ofN_run hN hAp E 6) (congrArg₂ Prod.mk (ofN_run hN hAp E 7) (ofN_run hN hAp E 8))
+    exact congr (congrArg Prod.mk (ofN_run hN hAp E 6)) (congr (congrArg Prod.mk (ofN_run hN hAp E 7)) (ofN_run hN hAp E 8))
 
 theorem doubles_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hsp : Impl.Weierstrass.AArch64.P521.supported K.M = true)

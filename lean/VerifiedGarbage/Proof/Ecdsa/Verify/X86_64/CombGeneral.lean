@@ -396,7 +396,7 @@ theorem sumC_ok (hc : BaseCfgOk c) {s : State} {base : Addr} {g : Reg → BitVec
     obtain vz := I₅.val _ (hD DZ (by simp))
     show (toM _ _ (sv c base s₈ RX), toM _ _ (sv c base s₈ RY), toM _ _ (sv c base s₈ RZ)) = _
     rw [x₈, y₈, z₈]
-    refine ((congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₅).trans ?_
+    refine ((congr (congrArg Prod.mk vx) (congr (congrArg Prod.mk vy) vz)).trans t₅).trans ?_
     rw [rcbAdd_comm]
     simp only [Impl.Ecdsa.X86_64.Cfg.rcbSlots, Impl.Ecdsa.X86_64.Cfg.pt]
     rw [show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem base (c.sl AP) c.n) = Fin.ofNat c.C.p c.C.a by

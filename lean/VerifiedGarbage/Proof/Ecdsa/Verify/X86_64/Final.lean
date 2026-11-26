@@ -238,7 +238,7 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
     show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
     simpa only [sn, tmv, sv, Impl.Ecdsa.X86_64.Cfg.rcbSlots, Impl.Ecdsa.X86_64.Cfg.pt] using
-      (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+      (congr (congrArg Prod.mk vx) (congr (congrArg Prod.mk vy) vz)).trans t₁
 
 /-! ## `[v]Q` -/
 
