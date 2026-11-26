@@ -787,10 +787,10 @@ theorem finalHash_length (iv : HashValue) (m : List Byte) : (Spec.Sha256.finalHa
   rwa [List.take_of_length_le (by simp)] at this
 
 theorem untouched_8 : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMainWith 8), dstOf i ≠ some r :=
-  keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+  keepsU_all _ (by rw [← Code.allInstrs_eq]; lit_decide)
 
 theorem untouched_7 : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMainWith 7), dstOf i ≠ some r :=
-  keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+  keepsU_all _ (by rw [← Code.allInstrs_eq]; lit_decide)
 
 /-- The initial taint: only the arguments are public. -/
 theorem agree₀ {s₁ s₂ : State} (hpub : (Proof.Sha256.finalizeNRISCV64 N).pub s₁ s₂) :

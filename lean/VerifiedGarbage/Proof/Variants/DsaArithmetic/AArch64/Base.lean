@@ -552,6 +552,18 @@ theorem checks_dit {l l' l'' : List (Prog isa)}
     (k : Nat) (hk : k < l''.length) : (l''[k]'hk).all (fun i => !i.touchesDit) = true :=
   List.all_eq_true.mp (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).2).2 _ (List.getElem_mem hk)
 
+open VG.Impl.Dsa.AArch64 in
+/-- What the cleanups need of the entry points, in one evaluation like `checks`. -/
+theorem scrubs :
+    Scrub.scrubSide (Prevalidated.validate Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (Prevalidated.verify Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (PrevalidatedSign.validate Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (Generate.deriveKey Mont.calledProductEight.mm) 0 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (RandomSign.code ("vg_dsa_sign_prevalidated" ++ "") (PrevalidatedSign.sign Mont.calledProductEight.mm)) 256 32 Fn.clear [] = true ∧
+    Scrub.scrubSide (GenerateKey.code ("vg_dsa_check_parameters" ++ "") ("vg_dsa_derive_key_checked" ++ "")
+      (Generate.checkParameters Mont.calledProductEight.mm) (Generate.deriveChecked Mont.calledProductEight.mm)) 256 32 Fn.clear [] = true := by
+  lit_decide
+
 def variant : Backend where
   mul := Mont.calledProductEight.mm
   suffix := ""
@@ -582,11 +594,11 @@ def variant : Backend where
   deriveCheckedNoDit := checks_dit checks 3 (by decide)
   deriveCheckedDepth := checks_depth checks 4 (by decide)
   stackBound := by decide
-  validateScrub := by lit_decide
-  prevalidatedScrub := by lit_decide
-  validatePrivateScrub := by lit_decide
-  deriveScrub := by lit_decide
-  randomSignScrub := by lit_decide
-  generateKeyScrub := by lit_decide
+  validateScrub := scrubs.1
+  prevalidatedScrub := scrubs.2.1
+  validatePrivateScrub := scrubs.2.2.1
+  deriveScrub := scrubs.2.2.2.1
+  randomSignScrub := scrubs.2.2.2.2.1
+  generateKeyScrub := scrubs.2.2.2.2.2
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base

@@ -844,7 +844,7 @@ theorem restore_nv : ∀ r ∈ nvRegs, ∀ i ∈ instrs (.block restore : Prog i
 
 /-- No instruction of `updateMain` writes the callee-saved registers it does not save. -/
 theorem untouched_ok : ∀ r ∈ untouched, ∀ i ∈ instrs updateMain, dstOf i ≠ some r :=
-  keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
+  keepsU_all _ (by rw [← Code.allInstrs_eq]; lit_decide)
 
 /-- `update`'s body, in its frame: the callee-saved registers are kept. -/
 theorem correctMain {s₀ : State} (hp : Pre s₀) :
