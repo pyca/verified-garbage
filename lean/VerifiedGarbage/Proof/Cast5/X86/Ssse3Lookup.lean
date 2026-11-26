@@ -316,40 +316,70 @@ theorem cst_M : ∀ i < 16, byte (cst oM) i = 0x0f#8 := by lit_decide
 
 theorem cst_S : ∀ i < 16, byte (cst oS) i = BitVec.ofNat 8 (4 * (i % 4)) := by lit_decide
 
-/-- The planes of one S-box, which the kernel evaluates in a declaration of
-their own (the eight S-boxes' in one take eight times the memory). -/
-theorem cst_plane0 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 0 p + 16 * r)) c = planeByte 0 p (16 * r + c) := by lit_decide
+/-- Byte `k` of eight bytes as a little-endian word. -/
+theorem byte_le8 (f : Nat → Byte) {k : Nat} (hk : k < 8) : (le8 f).extractLsb' (8 * k) 8 = f k := by
+  have hs {w : Nat} (x : BitVec w) (b : BitVec 8) (n : Nat) : (x ++ b).extractLsb' (n + 8) 8 = x.extractLsb' n 8 := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, ite_eq_right (by omega_arith), BitVec.getLsbD_extractLsb',
+      show n + 8 + i - 8 = n + i by omega_arith]
+  have hz {w : Nat} (x : BitVec w) (b : BitVec 8) : (x ++ b).extractLsb' 0 8 = b := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, ite_eq_left (by omega_arith), decide_eq_true hi,
+      Bool.true_and, Nat.zero_add]
+  have h0 (b : BitVec 8) : b.extractLsb' 0 8 = b := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    rw [BitVec.getLsbD_extractLsb', decide_eq_true hi, Bool.true_and, Nat.zero_add]
+  unfold le8
+  match k, hk with
+  | 0, _ => exact hz _ _
+  | 1, _ => exact (hs _ _ _).trans (hz _ _)
+  | 2, _ => exact (hs _ _ _).trans ((hs _ _ _).trans (hz _ _))
+  | 3, _ => exact (hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans (hz _ _)))
+  | 4, _ => exact (hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans (hz _ _))))
+  | 5, _ => exact (hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans (hz _ _)))))
+  | 6, _ =>
+    exact (hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans
+      ((hs _ _ _).trans (hz _ _))))))
+  | 7, _ =>
+    exact (hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans ((hs _ _ _).trans
+      ((hs _ _ _).trans ((hs _ _ _).trans (h0 _)))))))
 
-theorem cst_plane1 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 1 p + 16 * r)) c = planeByte 1 p (16 * r + c) := by lit_decide
+theorem planesOf_length (j : Nat) : (planesOf j).length = 128 := by
+  rw [planesOf, List.length_map, List.length_range]
 
-theorem cst_plane2 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 2 p + 16 * r)) c = planeByte 2 p (16 * r + c) := by lit_decide
+theorem planesOf_getD (j : Nat) {w : Nat} (hw : w < 128) :
+    (planesOf j).getD w 0 = le8 fun c => planeByte j (w / 32) (8 * (w % 32) + c) := by
+  rw [planesOf, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hw]; rfl
 
-theorem cst_plane3 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 3 p + 16 * r)) c = planeByte 3 p (16 * r + c) := by lit_decide
-
-theorem cst_plane4 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 4 p + 16 * r)) c = planeByte 4 p (16 * r + c) := by lit_decide
-
-theorem cst_plane5 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 5 p + 16 * r)) c = planeByte 5 p (16 * r + c) := by lit_decide
-
-theorem cst_plane6 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 6 p + 16 * r)) c = planeByte 6 p (16 * r + c) := by lit_decide
-
-theorem cst_plane7 : ∀ p < 4, ∀ r < 16, ∀ c < 16,
-    byte (cst (planeOff 7 p + 16 * r)) c = planeByte 7 p (16 * r + c) := by lit_decide
+/-- Word `w` of the planes of S-box `j`, in the table. -/
+theorem table_getD {j : Nat} (hj : j < 8) {w : Nat} (hw : w < 128) :
+    table.getD (128 * j + 48 * (j / 4) + w) 0 = (planesOf j).getD w 0 := by
+  have hc : consts.length = 48 := by decide
+  have hg (l : List (BitVec 64)) {a b : Nat} (h : a = b) : l.getD a 0 = l.getD b 0 := h ▸ rfl
+  have hp : planes.length = 512 := by simp only [planes, List.length_append, planesOf_length]
+  have hl := planesOf_length
+  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  simp (disch := omega_using [hw]) only [table, planes, keyPlanes, getD_append', List.length_append, hl, hc,
+    ↓ite_eq_left, ↓ite_eq_right] <;>
+  exact hg _ (by omega_using [hw])
 
 /-- **The planes are the S-boxes'**: byte `c` of row `r` of plane `p` of
 S-box `j`, in the table, is byte `p` of the S-box's entry `16 r + c`. -/
 theorem cst_plane : ∀ j < 8, ∀ p < 4, ∀ r < 16, ∀ c < 16,
     byte (cst (planeOff j p + 16 * r)) c = planeByte j p (16 * r + c) := by
-  intro j hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  exacts [cst_plane0, cst_plane1, cst_plane2, cst_plane3, cst_plane4, cst_plane5, cst_plane6, cst_plane7]
+  intro j hj p hp r hr c hc
+  have e₀ : (planeOff j p + 16 * r) / 8 = 128 * j + 48 * (j / 4) + (32 * p + 2 * r) := by
+    unfold planeOff; omega_arith
+  rw [cst, e₀, Nat.add_assoc _ (32 * p + 2 * r) 1, table_getD hj (w := 32 * p + 2 * r + 1) (by omega_arith),
+    table_getD hj (w := 32 * p + 2 * r) (by omega_arith), planesOf_getD j (w := 32 * p + 2 * r + 1) (by omega_arith),
+    planesOf_getD j (w := 32 * p + 2 * r) (by omega_arith), ByteMap.byte_append _ _ hc]
+  have hq : c % 8 < 8 := Nat.mod_lt _ (by decide)
+  by_cases h : c < 8
+  · rw [ite_eq_left h, byte_le8 _ hq, show (32 * p + 2 * r) / 32 = p by omega_arith,
+      show 8 * ((32 * p + 2 * r) % 32) + c % 8 = 16 * r + c by omega_arith]
+  · rw [ite_eq_right h, byte_le8 _ hq, show (32 * p + 2 * r + 1) / 32 = p by omega_arith,
+      show 8 * ((32 * p + 2 * r + 1) % 32) + c % 8 = 16 * r + c by omega_arith]
 
 theorem word_ext {x y : BitVec 32} (h : ∀ b < 4, x.extractLsb' (8 * b) 8 = y.extractLsb' (8 * b) 8) :
     x = y := by
