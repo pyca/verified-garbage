@@ -229,6 +229,23 @@ theorem preparedVerifyMessageOut :
 
 end
 
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides44 :
+    scrubSide (Impl.MlDsa.PPC64LE.KeyGen.keyGen44) 48 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa44) 48 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa44) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.sign44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.signPrepared44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign44Api.name ++ "_core") Impl.MlDsa.PPC64LE.Sign.sign44 Spec.MlDsa.mlDsa44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core") Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verify44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verifyPrepared44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify44Api.name ++ "_core") Impl.MlDsa.PPC64LE.Verify.verify44 Spec.MlDsa.mlDsa44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core") Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true := by
+  lit_decide
+
 /-- `Spec.MlDsa.keyGen44Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.keyGen44`) meets its contract in constant time and
 returns without secret residue. -/
@@ -242,7 +259,7 @@ theorem keyGen44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.1)
 
 /-- `Spec.MlDsa.pkTr44Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.pkTr44`)
 meets its contract in constant time and returns without secret residue. -/
@@ -254,7 +271,7 @@ theorem pkTr44_scrubbed :
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr44_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.1)
 
 /-- `(Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.preparePublic44`) meets its
@@ -269,7 +286,7 @@ theorem preparePublic44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inl rfl))
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.1)
 
 /-- `(Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.prepareSecret44`) meets its
@@ -284,7 +301,7 @@ theorem prepareSecret44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact secOut _ (.inl rfl))
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.1)
 
 /-- `Spec.MlDsa.sign44Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.sign44`)
 meets its contract in constant time and returns without secret residue. -/
@@ -298,7 +315,7 @@ theorem sign44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.signPrepared44`) meets its
@@ -313,7 +330,7 @@ theorem signPrepared44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.signMessage44Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.signMessage44`) meets its contract in constant time
@@ -330,7 +347,7 @@ theorem signMessage44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa44_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44`) meets its
 contract in constant time and returns without secret residue. -/
@@ -346,7 +363,7 @@ theorem preparedSignMessage44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.verify44Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.verify44`) meets its contract in constant time and
@@ -361,7 +378,7 @@ theorem verify44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.verifyPrepared44`) meets its
@@ -376,7 +393,7 @@ theorem verifyPrepared44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44"
 "ML-DSA-44")`'s function as emitted
@@ -394,7 +411,7 @@ theorem verifyMessageCached44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa44_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44`) meets its
 contract in constant time and returns without secret residue. -/
@@ -410,7 +427,24 @@ theorem preparedVerifyMessage44_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa44 _)
-    (by dsimp only; lit_decide)
+    (by exact sides44.2.2.2.2.2.2.2.2.2.2.2)
+
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides65 :
+    scrubSide (Impl.MlDsa.PPC64LE.KeyGen.keyGen65) 48 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa65) 48 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa65) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.sign65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.signPrepared65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign65Api.name ++ "_core") Impl.MlDsa.PPC64LE.Sign.sign65 Spec.MlDsa.mlDsa65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core") Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verify65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verifyPrepared65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify65Api.name ++ "_core") Impl.MlDsa.PPC64LE.Verify.verify65 Spec.MlDsa.mlDsa65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core") Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true := by
+  lit_decide
 
 /-- `Spec.MlDsa.keyGen65Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.keyGen65`) meets its contract in constant time and
@@ -425,7 +459,7 @@ theorem keyGen65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.1)
 
 /-- `Spec.MlDsa.pkTr65Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.pkTr65`)
 meets its contract in constant time and returns without secret residue. -/
@@ -437,7 +471,7 @@ theorem pkTr65_scrubbed :
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr65_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.1)
 
 /-- `(Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.preparePublic65`) meets its
@@ -452,7 +486,7 @@ theorem preparePublic65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inr (.inl rfl)))
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.1)
 
 /-- `(Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.prepareSecret65`) meets its
@@ -467,7 +501,7 @@ theorem prepareSecret65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact secOut _ (.inr (.inl rfl)))
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.1)
 
 /-- `Spec.MlDsa.sign65Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.sign65`)
 meets its contract in constant time and returns without secret residue. -/
@@ -481,7 +515,7 @@ theorem sign65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.signPrepared65`) meets its
@@ -496,7 +530,7 @@ theorem signPrepared65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.signMessage65Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.signMessage65`) meets its contract in constant time
@@ -513,7 +547,7 @@ theorem signMessage65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa65_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65`) meets its
 contract in constant time and returns without secret residue. -/
@@ -529,7 +563,7 @@ theorem preparedSignMessage65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.verify65Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.verify65`) meets its contract in constant time and
@@ -544,7 +578,7 @@ theorem verify65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.verifyPrepared65`) meets its
@@ -559,7 +593,7 @@ theorem verifyPrepared65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65"
 "ML-DSA-65")`'s function as emitted
@@ -577,7 +611,7 @@ theorem verifyMessageCached65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa65_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65`) meets its
 contract in constant time and returns without secret residue. -/
@@ -593,7 +627,24 @@ theorem preparedVerifyMessage65_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa65 _)
-    (by dsimp only; lit_decide)
+    (by exact sides65.2.2.2.2.2.2.2.2.2.2.2)
+
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides87 :
+    scrubSide (Impl.MlDsa.PPC64LE.KeyGen.keyGen87) 48 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa87) 48 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa87) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87) 144 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.sign87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Sign.signPrepared87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign87Api.name ++ "_core") Impl.MlDsa.PPC64LE.Sign.sign87 Spec.MlDsa.mlDsa87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core") Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verify87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Verify.verifyPrepared87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core") Impl.MlDsa.PPC64LE.Verify.verify87 Spec.MlDsa.mlDsa87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true ∧
+    scrubSide (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core") Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩ = true := by
+  lit_decide
 
 /-- `Spec.MlDsa.keyGen87Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.keyGen87`) meets its contract in constant time and
@@ -608,7 +659,7 @@ theorem keyGen87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact keyGenOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.1)
 
 /-- `Spec.MlDsa.pkTr87Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.pkTr87`)
 meets its contract in constant time and returns without secret residue. -/
@@ -620,7 +671,7 @@ theorem pkTr87_scrubbed :
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr87_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (by exact pkTrOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.1)
 
 /-- `(Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.preparePublic87`) meets its
@@ -635,7 +686,7 @@ theorem preparePublic87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact pubOut _ (.inr (.inr rfl)))
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.1)
 
 /-- `(Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.prepareSecret87`) meets its
@@ -650,7 +701,7 @@ theorem prepareSecret87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact secOut _ (.inr (.inr rfl)))
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.1)
 
 /-- `Spec.MlDsa.sign87Api`'s function as emitted (`Impl.MlDsa.PPC64LE.Fn.sign87`)
 meets its contract in constant time and returns without secret residue. -/
@@ -664,7 +715,7 @@ theorem sign87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.signPrepared87`) meets its
@@ -679,7 +730,7 @@ theorem signPrepared87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.signMessage87Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.signMessage87`) meets its contract in constant time
@@ -696,7 +747,7 @@ theorem signMessage87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact signMessageOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa87_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87`) meets its
 contract in constant time and returns without secret residue. -/
@@ -712,7 +763,7 @@ theorem preparedSignMessage87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedSignMessageOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.2.1)
 
 /-- `Spec.MlDsa.verify87Api`'s function as emitted
 (`Impl.MlDsa.PPC64LE.Fn.verify87`) meets its contract in constant time and
@@ -727,7 +778,7 @@ theorem verify87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s
 function as emitted (`Impl.MlDsa.PPC64LE.Fn.verifyPrepared87`) meets its
@@ -742,7 +793,7 @@ theorem verifyPrepared87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.2.2.2.1)
 
 /-- `(Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87"
 "ML-DSA-87")`'s function as emitted
@@ -760,7 +811,7 @@ theorem verifyMessageCached87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.2.2.2.2.1)
 
 /-- `vg_mldsa87_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87`) meets its
 contract in constant time and returns without secret residue. -/
@@ -776,6 +827,6 @@ theorem preparedVerifyMessage87_scrubbed :
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
        .v17, .v18, .v19]⟩
     (by exact preparedVerifyMessageOut Spec.MlDsa.mlDsa87 _)
-    (by dsimp only; lit_decide)
+    (by exact sides87.2.2.2.2.2.2.2.2.2.2.2)
 
 end VG.Proof.MlDsa.PPC64LE.Scrub

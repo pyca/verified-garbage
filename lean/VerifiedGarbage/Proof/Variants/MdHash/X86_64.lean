@@ -136,25 +136,99 @@ with AVX-512VL (`Sha512Avx512`). -/
 
 open Proof.Pbkdf2.Md.X86_64 (InitImpl)
 
-def md5Inits : List (InitImpl Spec.Hmac.md5I) := [md5.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+/-! ### What their cleanups need of their code
 
-def sha1Inits : List (InitImpl Spec.Hmac.sha1I) := [sha1ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha1AvxBmi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha1.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+`initSides` and `pbkdf2Side` of each, of the hash functions of a family over
+an implementation of its `compress` in one declaration: the kernel walks the
+code that they share once. -/
 
-def sha224Inits : List (InitImpl Spec.Hmac.sha224I) := [sha224ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha224Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha224.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+theorem both {a b : Bool} (h : (a && b) = true) : a = true ∧ b = true :=
+  (Bool.and_eq_true a b).mp h
 
-def sha256Inits : List (InitImpl Spec.Hmac.sha256I) := [sha256ShaNi.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha256Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha256.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+theorem md5_sides : (md5.initSides .sse && md5.pbkdf2Side .sse) = true := by lit_decide
+
+theorem sha1ShaNi_sides : (sha1ShaNi.initSides .sse && sha1ShaNi.pbkdf2Side .sse) = true := by lit_decide
+
+theorem sha1AvxBmi_sides : (sha1AvxBmi.initSides .avx && sha1AvxBmi.pbkdf2Side .avx) = true := by lit_decide
+
+theorem sha1_sides : (sha1.initSides .sse && sha1.pbkdf2Side .sse) = true := by lit_decide
+
+theorem sha256ShaNi_sides :
+    (sha224ShaNi.initSides .sse && sha224ShaNi.pbkdf2Side .sse) = true ∧
+    (sha256ShaNi.initSides .sse && sha256ShaNi.pbkdf2Side .sse) = true := by
+  lit_decide
+
+theorem sha256Avx2_sides :
+    (sha224Avx2.initSides .avx && sha224Avx2.pbkdf2Side .avx) = true ∧
+    (sha256Avx2.initSides .avx && sha256Avx2.pbkdf2Side .avx) = true := by
+  lit_decide
+
+theorem sha256_sides :
+    (sha224.initSides .sse && sha224.pbkdf2Side .sse) = true ∧
+    (sha256.initSides .sse && sha256.pbkdf2Side .sse) = true := by
+  lit_decide
+
+theorem sha512ShaNi_sides :
+    (sha384ShaNi.initSides .avx && sha384ShaNi.pbkdf2Side .avx) = true ∧
+    (sha512ShaNi.initSides .avx && sha512ShaNi.pbkdf2Side .avx) = true ∧
+    (sha512_224ShaNi.initSides .avx && sha512_224ShaNi.pbkdf2Side .avx) = true ∧
+    (sha512_256ShaNi.initSides .avx && sha512_256ShaNi.pbkdf2Side .avx) = true := by
+  lit_decide
+
+theorem sha512Avx2_sides :
+    (sha384Avx2.initSides .avx && sha384Avx2.pbkdf2Side .avx) = true ∧
+    (sha512Avx2.initSides .avx && sha512Avx2.pbkdf2Side .avx) = true ∧
+    (sha512_224Avx2.initSides .avx && sha512_224Avx2.pbkdf2Side .avx) = true ∧
+    (sha512_256Avx2.initSides .avx && sha512_256Avx2.pbkdf2Side .avx) = true := by
+  lit_decide
+
+theorem sha512_sides :
+    (sha384.initSides .sse && sha384.pbkdf2Side .sse) = true ∧
+    (sha512.initSides .sse && sha512.pbkdf2Side .sse) = true ∧
+    (sha512_224.initSides .sse && sha512_224.pbkdf2Side .sse) = true ∧
+    (sha512_256.initSides .sse && sha512_256.pbkdf2Side .sse) = true := by
+  lit_decide
+
+def md5Inits : List (InitImpl Spec.Hmac.md5I) := [md5.initSelB .sse (by decide) (by decide) (both md5_sides).1]
+
+def sha1Inits : List (InitImpl Spec.Hmac.sha1I) :=
+  [sha1ShaNi.initSelB .sse (by decide) (by decide) (both sha1ShaNi_sides).1,
+    sha1AvxBmi.initSelB .avx (by decide) (by decide) (both sha1AvxBmi_sides).1,
+    sha1.initSelB .sse (by decide) (by decide) (both sha1_sides).1]
+
+def sha224Inits : List (InitImpl Spec.Hmac.sha224I) :=
+  [sha224ShaNi.initSelB .sse (by decide) (by decide) (both sha256ShaNi_sides.1).1,
+    sha224Avx2.initSelB .avx (by decide) (by decide) (both sha256Avx2_sides.1).1,
+    sha224.initSelB .sse (by decide) (by decide) (both sha256_sides.1).1]
+
+def sha256Inits : List (InitImpl Spec.Hmac.sha256I) :=
+  [sha256ShaNi.initSelB .sse (by decide) (by decide) (both sha256ShaNi_sides.2).1,
+    sha256Avx2.initSelB .avx (by decide) (by decide) (both sha256Avx2_sides.2).1,
+    sha256.initSelB .sse (by decide) (by decide) (both sha256_sides.2).1]
 
 def sha384Inits : List (InitImpl Spec.Hmac.sha384I) :=
-  [sha384ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init384, sha384Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha384.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+  [sha384ShaNi.initSelB .avx (by decide) (by decide) (both sha512ShaNi_sides.1).1,
+    Sha512Avx512.init384,
+    sha384Avx2.initSelB .avx (by decide) (by decide) (both sha512Avx2_sides.1).1,
+    sha384.initSelB .sse (by decide) (by decide) (both sha512_sides.1).1]
 
 def sha512Inits : List (InitImpl Spec.Hmac.sha512I) :=
-  [sha512ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512, sha512Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+  [sha512ShaNi.initSelB .avx (by decide) (by decide) (both sha512ShaNi_sides.2.1).1,
+    Sha512Avx512.init512,
+    sha512Avx2.initSelB .avx (by decide) (by decide) (both sha512Avx2_sides.2.1).1,
+    sha512.initSelB .sse (by decide) (by decide) (both sha512_sides.2.1).1]
 
 def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
-  [sha512_224ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512_224, sha512_224Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512_224.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+  [sha512_224ShaNi.initSelB .avx (by decide) (by decide) (both sha512ShaNi_sides.2.2.1).1,
+    Sha512Avx512.init512_224,
+    sha512_224Avx2.initSelB .avx (by decide) (by decide) (both sha512Avx2_sides.2.2.1).1,
+    sha512_224.initSelB .sse (by decide) (by decide) (both sha512_sides.2.2.1).1]
 
 def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
-  [sha512_256ShaNi.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), Sha512Avx512.init512_256, sha512_256Avx2.initSel .avx [] (by decide) (by decide) (by lit_decide) (by lit_decide), sha512_256.initSel .sse [] (by decide) (by decide) (by lit_decide) (by lit_decide)]
+  [sha512_256ShaNi.initSelB .avx (by decide) (by decide) (both sha512ShaNi_sides.2.2.2).1,
+    Sha512Avx512.init512_256,
+    sha512_256Avx2.initSelB .avx (by decide) (by decide) (both sha512Avx2_sides.2.2.2).1,
+    sha512_256.initSelB .sse (by decide) (by decide) (both sha512_sides.2.2.2).1]
 
 /-! ## HMAC's `finalize`
 
@@ -186,20 +260,41 @@ order of the variants. -/
 
 open Proof.Pbkdf2.Md.X86_64 (Pbkdf2Impl)
 
-def md5Pbkdf2s : List Pbkdf2Impl := [⟨md5, .sse, by lit_decide⟩]
+def md5Pbkdf2s : List Pbkdf2Impl := [⟨md5, .sse, (both md5_sides).2⟩]
 
-def sha1Pbkdf2s : List Pbkdf2Impl := [⟨sha1ShaNi, .sse, by lit_decide⟩, ⟨sha1AvxBmi, .avx, by lit_decide⟩, ⟨sha1, .sse, by lit_decide⟩]
+def sha1Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha1ShaNi, .sse, (both sha1ShaNi_sides).2⟩,
+    ⟨sha1AvxBmi, .avx, (both sha1AvxBmi_sides).2⟩,
+    ⟨sha1, .sse, (both sha1_sides).2⟩]
 
-def sha224Pbkdf2s : List Pbkdf2Impl := [⟨sha224ShaNi, .sse, by lit_decide⟩, ⟨sha224Avx2, .avx, by lit_decide⟩, ⟨sha224, .sse, by lit_decide⟩]
+def sha224Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha224ShaNi, .sse, (both sha256ShaNi_sides.1).2⟩,
+    ⟨sha224Avx2, .avx, (both sha256Avx2_sides.1).2⟩,
+    ⟨sha224, .sse, (both sha256_sides.1).2⟩]
 
-def sha256Pbkdf2s : List Pbkdf2Impl := [⟨sha256ShaNi, .sse, by lit_decide⟩, ⟨sha256Avx2, .avx, by lit_decide⟩, ⟨sha256, .sse, by lit_decide⟩]
+def sha256Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha256ShaNi, .sse, (both sha256ShaNi_sides.2).2⟩,
+    ⟨sha256Avx2, .avx, (both sha256Avx2_sides.2).2⟩,
+    ⟨sha256, .sse, (both sha256_sides.2).2⟩]
 
-def sha384Pbkdf2s : List Pbkdf2Impl := [⟨sha384ShaNi, .avx, by lit_decide⟩, ⟨sha384Avx2, .avx, by lit_decide⟩, ⟨sha384, .sse, by lit_decide⟩]
+def sha384Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha384ShaNi, .avx, (both sha512ShaNi_sides.1).2⟩,
+    ⟨sha384Avx2, .avx, (both sha512Avx2_sides.1).2⟩,
+    ⟨sha384, .sse, (both sha512_sides.1).2⟩]
 
-def sha512Pbkdf2s : List Pbkdf2Impl := [⟨sha512ShaNi, .avx, by lit_decide⟩, ⟨sha512Avx2, .avx, by lit_decide⟩, ⟨sha512, .sse, by lit_decide⟩]
+def sha512Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha512ShaNi, .avx, (both sha512ShaNi_sides.2.1).2⟩,
+    ⟨sha512Avx2, .avx, (both sha512Avx2_sides.2.1).2⟩,
+    ⟨sha512, .sse, (both sha512_sides.2.1).2⟩]
 
-def sha512_224Pbkdf2s : List Pbkdf2Impl := [⟨sha512_224ShaNi, .avx, by lit_decide⟩, ⟨sha512_224Avx2, .avx, by lit_decide⟩, ⟨sha512_224, .sse, by lit_decide⟩]
+def sha512_224Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha512_224ShaNi, .avx, (both sha512ShaNi_sides.2.2.1).2⟩,
+    ⟨sha512_224Avx2, .avx, (both sha512Avx2_sides.2.2.1).2⟩,
+    ⟨sha512_224, .sse, (both sha512_sides.2.2.1).2⟩]
 
-def sha512_256Pbkdf2s : List Pbkdf2Impl := [⟨sha512_256ShaNi, .avx, by lit_decide⟩, ⟨sha512_256Avx2, .avx, by lit_decide⟩, ⟨sha512_256, .sse, by lit_decide⟩]
+def sha512_256Pbkdf2s : List Pbkdf2Impl :=
+  [⟨sha512_256ShaNi, .avx, (both sha512ShaNi_sides.2.2.2).2⟩,
+    ⟨sha512_256Avx2, .avx, (both sha512Avx2_sides.2.2.2).2⟩,
+    ⟨sha512_256, .sse, (both sha512_sides.2.2.2).2⟩]
 
 end VG.Proof.Variants.MdHash.X86_64

@@ -993,6 +993,22 @@ structure KemSides (c : Impl.MlKem.X86_64.Callee4) (k : Nat) : Prop where
   encaps1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.encaps1024 c) k 32 = true
   decaps1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.decaps1024 c) k 32 = true
 
+/-- `KemSides`, in one evaluation: the kernel walks what the functions call once for all of them. -/
+noncomputable def kemSides (c : Impl.MlKem.X86_64.Callee4) (k : Nat) : Bool :=
+  X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.keyGen c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.encapsH c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.encaps c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.decaps c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.keyGen1024 c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.encapsH1024 c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.encaps1024 c) k 32 &&
+  X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.decaps1024 c) k 32
+
+theorem kemSides_spec {c : Impl.MlKem.X86_64.Callee4} {k : Nat} (h : kemSides c k = true) : KemSides c k := by
+  simp only [kemSides, Bool.and_eq_true] at h
+  obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
+
 /-- An implementation of `vg_mlkem_sample_ntt4` on x86-64. -/
 structure Sample4Impl where
   /-- Its symbol and code. -/
@@ -1072,8 +1088,7 @@ theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = tru
 
 /-- What the cleanup of ML-KEM's functions over `scalar` needs of their code. -/
 theorem scalar_sides : KemSides .scalar Impl.Scrub.X86_64.VecLevel.sse.level :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide⟩
+  kemSides_spec (by lit_decide)
 
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
@@ -1114,8 +1129,7 @@ theorem avx2_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) :
 
 /-- What the cleanup of ML-KEM's functions over `avx2` needs of their code. -/
 theorem avx2_sides : KemSides .avx2 Impl.Scrub.X86_64.VecLevel.avx.level :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide⟩
+  kemSides_spec (by lit_decide)
 
 /-- The AVX2 implementation, `vg_mlkem16_sample_ntt4_avx2`: its callers run with 16-bit
 polynomials, and its functions of `u32`s, which they never run, are the baseline's. -/
@@ -1151,8 +1165,7 @@ theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) 
 
 /-- What the cleanup of ML-KEM's functions over `avx512` needs of their code. -/
 theorem avx512_sides : KemSides .avx512 Impl.Scrub.X86_64.VecLevel.evex.level :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide⟩
+  kemSides_spec (by lit_decide)
 
 /-- The AVX-512 implementation, `vg_mlkem16_sample_ntt4_avx512`: as `avx2`, with
 AVX-512VL quadword rotates, and sixteen iterations of `SampleNTT`'s loop at a

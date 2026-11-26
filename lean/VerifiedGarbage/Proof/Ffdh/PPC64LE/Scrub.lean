@@ -199,6 +199,18 @@ theorem cachedKeySearchOut (stack : Nat) (cs : List (String × List (BitVec 64))
 
 /-! ## The functions as emitted -/
 
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides :
+    scrubSide (Impl.Ffdh.PPC64LE.Domain.checkPublic) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Ffdh.PPC64LE.VettedValidation.code) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Ffdh.PPC64LE.Domain.exchange) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Ffdh.PPC64LE.Derive.derivePublic) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Ffdh.PPC64LE.Cached.Precompute.code) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode) 192 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true := by
+  lit_decide
+
 /-- `vg_ffdh_check_public` as emitted (`Impl.Ffdh.PPC64LE.Fn.checkPublic`) meets
 its contract in constant time and returns without secret residue. -/
 theorem checkPublic_scrubbed :
@@ -210,7 +222,7 @@ theorem checkPublic_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkPublicOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.1)
 
 /-- `vg_ffdh_check_domain` as emitted (`Impl.Ffdh.PPC64LE.Fn.checkDomain`) meets
 its contract in constant time and returns without secret residue. -/
@@ -224,7 +236,7 @@ theorem checkDomain_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkDomainOut 0 Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.1)
 
 /-- `vg_ffdh_exchange` as emitted (`Impl.Ffdh.PPC64LE.Fn.exchange`) meets its
 contract in constant time and returns without secret residue. -/
@@ -237,7 +249,7 @@ theorem exchange_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (exchangeOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.1)
 
 /-- `vg_ffdh_derive_public` as emitted (`Impl.Ffdh.PPC64LE.Fn.derivePublic`) meets
 its contract in constant time and returns without secret residue. -/
@@ -250,7 +262,7 @@ theorem derivePublic_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (derivePublicOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.1)
 
 /-- `vg_ffdh_check_private` as emitted (`Impl.Ffdh.PPC64LE.Fn.checkPrivate`) meets
 its contract in constant time and returns without secret residue. -/
@@ -263,7 +275,7 @@ theorem checkPrivate_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (checkPrivateOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.1)
 
 /-- `vg_ffdh_generate_key_precompute` as emitted
 (`Impl.Ffdh.PPC64LE.Fn.precompute`) meets its contract in constant time and
@@ -277,7 +289,7 @@ theorem precompute_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (generationPrecomputeOut 0 Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.1)
 
 /-- `vg_ffdh_generate_key_search_cached` as emitted
 (`Impl.Ffdh.PPC64LE.Fn.cachedKeySearch`) meets its contract in constant time
@@ -291,7 +303,7 @@ theorem cachedKeySearch_scrubbed :
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (cachedKeySearchOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.2)
 
 /-- What `verifiedScrubbedAll` needs of the parameter search with each Miller–Rabin
 round: evaluated here. -/

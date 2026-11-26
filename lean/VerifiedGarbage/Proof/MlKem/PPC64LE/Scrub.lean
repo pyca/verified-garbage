@@ -165,6 +165,21 @@ theorem checkEk1024Out (stack : Nat) :
     dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
     exact h
 
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides :
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.keyGen) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.encaps) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.encapsH) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.decaps) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.checkEk) 0 32 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩ = true ∧
+    scrubSide (Impl.MlKem1024.PPC64LE.checkEk1024) 0 32 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.keyGen1024) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.encaps1024) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.encapsH1024) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true ∧
+    scrubSide (Impl.MlKem.PPC64LE.Wipe.decaps1024) 96 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩ = true := by
+  lit_decide
+
 /-- `keyGen_scrubbed`, with the bytes of `scratch` it zeroes (`Scrubbed.keyGenContract`). -/
 theorem keyGen_wiped :
     VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.keyGen
@@ -173,7 +188,7 @@ theorem keyGen_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact keyGenOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.1)
 
 /-- `Spec.MlKem.keyGenApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.keyGen`)
 meets its contract in constant time and returns without secret residue. -/
@@ -196,7 +211,7 @@ theorem encaps_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.1)
 
 /-- `Spec.MlKem.encapsApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.encaps`)
 meets its contract in constant time and returns without secret residue. -/
@@ -219,7 +234,7 @@ theorem encapsH_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsHOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.1)
 
 /-- `Spec.MlKem.encapsHApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.encapsH`) meets its contract in constant time and
@@ -243,7 +258,7 @@ theorem decaps_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact decapsOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.1)
 
 /-- `Spec.MlKem.decapsApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.decaps`)
 meets its contract in constant time and returns without secret residue. -/
@@ -267,7 +282,7 @@ theorem checkEk_scrubbed :
   verifiedScrubbedAll (api := Spec.MlKem.checkEkApi) { code := Impl.MlKem.PPC64LE.checkEk, verified := Proof.MlKem.PPC64LE.CheckEk.verified }
     0 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩
     (by exact checkEkOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.1)
 
 /-- `Spec.MlKem1024.checkEkApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.checkEk1024`) meets its contract in constant time and
@@ -278,7 +293,7 @@ theorem checkEk1024_scrubbed :
   verifiedScrubbedAll (api := Spec.MlKem1024.checkEkApi) { code := Impl.MlKem1024.PPC64LE.checkEk1024, verified := Proof.MlKem1024.PPC64LE.CheckEk.verified }
     0 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩
     (by exact checkEk1024Out _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.1)
 
 /-- `keyGen1024_scrubbed`, with the bytes of `scratch` it zeroes (`Scrubbed.keyGen1024Contract`). -/
 theorem keyGen1024_wiped :
@@ -288,7 +303,7 @@ theorem keyGen1024_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact keyGen1024Out _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.2.1)
 
 /-- `Spec.MlKem1024.keyGenApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.keyGen1024`) meets its contract in constant time and
@@ -312,7 +327,7 @@ theorem encaps1024_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encaps1024Out _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.2.2.1)
 
 /-- `Spec.MlKem1024.encapsApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.encaps1024`) meets its contract in constant time and
@@ -336,7 +351,7 @@ theorem encapsH1024_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsH1024Out _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.2.2.2.1)
 
 /-- `Spec.MlKem1024.encapsHApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.encapsH1024`) meets its contract in constant time and
@@ -360,7 +375,7 @@ theorem decaps1024_wiped :
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact decaps1024Out _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2.2.2.2.2)
 
 /-- `Spec.MlKem1024.decapsApi`'s function as emitted
 (`Impl.MlKem.PPC64LE.Fn.decaps1024`) meets its contract in constant time and

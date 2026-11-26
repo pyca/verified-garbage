@@ -218,6 +218,19 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `lit_eq`, if every module that evaluates code using it imports the module
   with its literal (a literal module imports the literal modules of the
   code it contains). Materializing code checked only once does not pay.
+* **The same check of code that shares code:** what the kernel evaluated is
+  forgotten at the end of the declaration, so a check that every function of
+  a family is proven by on its own (`lit_decide` of a cleanup's side
+  conditions, for each mode, parameter set or implementation of a callee)
+  generates and walks the code they share once for each. Where that code is
+  not a literal (an implementation or a name in it is a variable, or it is
+  behind a structure with proofs), state the checks of the family as one
+  Boolean or one conjunction, evaluated in one declaration, and take each
+  function's from it (`stream_sides`, `Proof/Variants/MdHash/X86_64/`;
+  `sd_all`, `Proof/MlDsa/AArch64/Scrub.lean`: the module's kernel time from
+  68 s to 10 s). Of literals it gains nothing, nor where the checks
+  share code but not the term asked of each instruction (a mask that
+  differs), and `taint_decide` of different taints does not share.
 * **Constant time of many callers of the same function:** prove the
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every

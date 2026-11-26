@@ -460,7 +460,9 @@ lemmas and tactics to use; read it before writing a proof:
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
   function evaluated at every instruction matches on the instruction once
   (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
-  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). An
+  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). A check
+  that a family of functions all need is one declaration for the family, where
+  they share code that is not a literal. An
   analysis's step gives a state that is evaluated, whose fields it does
   not change are the terms they were (`Taint.forceT`, `keepBases`), but a
   numeral wider than 64 bits it changed, left as a term (the kernel hashes

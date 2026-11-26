@@ -1719,6 +1719,23 @@ theorem pw_cases {c : Calls} (h : CallsOk c) :
 /-- Hole 4: the implementation of `vg_ghash_with_powers`. -/
 def holeW : Impl.AesGcm.AArch64.Fn := ⟨"", hole 4⟩
 
+/-- What the cleanups need of the code with holes, in one evaluation: a function's frames of different
+sizes hold the same code. -/
+private theorem withPowersSides :
+    calleeSide (withStackArgScratch (1024 + 32) 2 (Impl.AesGcm.AArch64.Stitch.sealWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.Stitch.sealWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (768 + 32) 2 (Impl.AesGcm.AArch64.Fast.sealWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.Fast.sealWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (1024 + 32) 3 (Impl.AesGcm.AArch64.Stitch.openWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 32) 3 (Impl.AesGcm.AArch64.Stitch.openWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (768 + 32) 3 (Impl.AesGcm.AArch64.Fast.openWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 32) 3 (Impl.AesGcm.AArch64.Fast.openWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (1024 + 48) 5 (Impl.AesGcm.AArch64.Stitch.openToWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Stitch.openToWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (768 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW)) own = true ∧
+    calleeSide (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW)) own = true := by
+  lit_decide
+
 theorem sealWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
     scrubSide (withStackArgScratch (c.pwWn + 32) 2 (Impl.AesGcm.AArch64.Fn.sealPwCode c w.fn)) (c.pwWn + 32) 0 own [] =
       true := by
@@ -1726,9 +1743,13 @@ theorem sealWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
   rcases pw_cases hc with ⟨hs, h | h⟩ | ⟨hs, h | h⟩ <;>
     simp only [Impl.AesGcm.AArch64.Fn.sealPwCode, hs, h, ↓reduceIte, Bool.false_eq_true]
   · exact side_of_holes hc hw (withStackArgScratch (1024 + 32) 2 (Impl.AesGcm.AArch64.Stitch.sealWithPw holes holeW))
+      (he := withPowersSides.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.Stitch.sealWithPw holes holeW))
+      (he := withPowersSides.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (768 + 32) 2 (Impl.AesGcm.AArch64.Fast.sealWithPw holes holeW))
+      (he := withPowersSides.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.Fast.sealWithPw holes holeW))
+      (he := withPowersSides.2.2.2.1)
 
 theorem openWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
     scrubSide (withStackArgScratch (c.pwWn + 32) 3 (Impl.AesGcm.AArch64.Fn.openPwCode c w.fn)) (c.pwWn + 32) 32 own [] =
@@ -1737,9 +1758,13 @@ theorem openWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
   rcases pw_cases hc with ⟨hs, h | h⟩ | ⟨hs, h | h⟩ <;>
     simp only [Impl.AesGcm.AArch64.Fn.openPwCode, hs, h, ↓reduceIte, Bool.false_eq_true]
   · exact side_of_holes hc hw (withStackArgScratch (1024 + 32) 3 (Impl.AesGcm.AArch64.Stitch.openWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 32) 3 (Impl.AesGcm.AArch64.Stitch.openWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (768 + 32) 3 (Impl.AesGcm.AArch64.Fast.openWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 32) 3 (Impl.AesGcm.AArch64.Fast.openWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.2.1)
 
 theorem openToWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
     scrubSide (withStackArgScratch (c.pwWn + 48) 5 (Impl.AesGcm.AArch64.Fn.openToPwCode c w.fn)) (c.pwWn + 48) 32 own [] =
@@ -1748,9 +1773,13 @@ theorem openToWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
   rcases pw_cases hc with ⟨hs, h | h⟩ | ⟨hs, h | h⟩ <;>
     simp only [Impl.AesGcm.AArch64.Fn.openToPwCode, hs, h, ↓reduceIte, Bool.false_eq_true]
   · exact side_of_holes hc hw (withStackArgScratch (1024 + 48) 5 (Impl.AesGcm.AArch64.Stitch.openToWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Stitch.openToWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (768 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
+      (he := withPowersSides.2.2.2.2.2.2.2.2.2.2.2)
 
 end Scrubbed
 
@@ -1960,14 +1989,26 @@ open VG.Impl.AesGcm.AArch64.Fn (own)
 open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
 open Scrubbed
 
+/-- What the cleanups need of the code with holes, in one evaluation. -/
+private theorem generalSides :
+    calleeSide (withStackArgScratch (1024+32) 3 (body holes true)) own = true ∧
+    calleeSide (withStackArgScratch (2560+32) 3 (body holes true)) own = true ∧
+    calleeSide (withStackArgScratch (768+32) 3 (body holes false)) own = true ∧
+    calleeSide (withStackArgScratch (2560+32) 3 (body holes false)) own = true := by
+  lit_decide
+
 theorem generalSide {c : Calls} (h : CallsOk c) :
     scrubSide (framed c) (c.pwWn+32) 0 own [] = true := by
   unfold framed
   rcases pw_cases h with ⟨st,w|w⟩|⟨st,w|w⟩ <;> rw [st,w]
   · exact side_of_holes h fnOk_nil (withStackArgScratch (1024+32) 3 (body holes true))
+      (he := generalSides.1)
   · exact side_of_holes h fnOk_nil (withStackArgScratch (2560+32) 3 (body holes true))
+      (he := generalSides.2.1)
   · exact side_of_holes h fnOk_nil (withStackArgScratch (768+32) 3 (body holes false))
+      (he := generalSides.2.2.1)
   · exact side_of_holes h fnOk_nil (withStackArgScratch (2560+32) 3 (body holes false))
+      (he := generalSides.2.2.2)
 
 theorem generalSize {c : Calls} (h : CallsOk c) :
     768 ≤ c.pwWn ∧ c.pwWn ≤ 2560 ∧ c.pwWn % 16 = 0 := by
@@ -2890,19 +2931,51 @@ private theorem forwardedSide {c : Calls} (hc : CallsOk c) {w : Prog isa} (hw : 
   exact scrubSide_union (own := own) (cl := high) hW
     (Nat.le_trans (Nat.mul_le_mul_left 16 depth) (Nat.le_of_ble_eq_true hd)) (.inl rfl) side (by decide)
 
+private def standaloneHoles (wn : Nat) (pmull forward : Bool) :=
+  withStackArgScratch (wn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing holes (wn+48) pmull forward)
+
+/-- What the cleanups need of the code with holes, in one evaluation: a function's frames of different
+sizes hold the same code. -/
+private theorem holesSides :
+    calleeSide (preparedHoles 1024 false false) own = true ∧
+    calleeSide (preparedHoles 1024 true false) own = true ∧
+    calleeSide (preparedHoles 2560 false false) own = true ∧
+    calleeSide (preparedHoles 2560 true false) own = true ∧
+    calleeSide (preparedHoles 768 false false) own = true ∧
+    calleeSide (preparedHoles 768 true false) own = true ∧
+    calleeSide (preparedHoles 768 true true) Clear.all = true ∧
+    calleeSide (preparedHoles 2560 true true) Clear.all = true ∧
+    calleeSide (standaloneHoles 1024 false false) own = true ∧
+    calleeSide (standaloneHoles 1024 true false) own = true ∧
+    calleeSide (standaloneHoles 2560 false false) own = true ∧
+    calleeSide (standaloneHoles 2560 true false) own = true ∧
+    calleeSide (standaloneHoles 768 false false) own = true ∧
+    calleeSide (standaloneHoles 768 true false) own = true ∧
+    calleeSide (standaloneHoles 768 true true) Clear.all = true ∧
+    calleeSide (standaloneHoles 2560 true true) Clear.all = true := by
+  lit_decide
+
 theorem referenceSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
     scrubSide (withStackArgScratch (v.calls.pwWn+32) 3 (preparedBody v.callees g.fn f false))
       (v.calls.pwWn+32) 0 own [] = true := by
   have hw : FnOk (.call g.fn.name g.fn.code) := ⟨g.fnOk.side,g.fnOk.depth⟩
   rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases f
   · exact side_of_holes v.callsOk hw (preparedHoles 1024 false false)
+      (he := holesSides.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 1024 true false)
+      (he := holesSides.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+      (he := holesSides.2.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
+      (he := holesSides.2.2.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 768 false false)
+      (he := holesSides.2.2.2.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 768 true false)
+      (he := holesSides.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 2560 false false)
+      (he := holesSides.2.2.1)
   · exact side_of_holes v.callsOk hw (preparedHoles 2560 true false)
+      (he := holesSides.2.2.2.1)
 
 theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
     scrubSide (preparedFrame v.calls g.fn f) (v.calls.pwWn+32) 0 (preparedClear f (!v.calls.stitch)) [] = true := by
@@ -2923,10 +2996,9 @@ theorem preparedSide (v : GcmImpl) (g : GhashWithImpl) (f : Bool) :
       rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
       · simp [st] at bad
       · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 768 true true)
+          (he := holesSides.2.2.2.2.2.2.1)
       · rw [w]; exact forwardedSide v.callsOk hw (preparedHoles 2560 true true)
-
-private def standaloneHoles (wn : Nat) (pmull forward : Bool) :=
-  withStackArgScratch (wn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyUsing holes (wn+48) pmull forward)
+          (he := holesSides.2.2.2.2.2.2.2.1)
 
 private theorem standaloneReferenceSide (v : GcmImpl) :
     scrubSide (withStackArgScratch (v.calls.pwWn+32) 2 (Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith v.calls false))
@@ -2934,13 +3006,21 @@ private theorem standaloneReferenceSide (v : GcmImpl) :
   unfold Impl.AesGcm.AArch64.Contiguous.Standalone.bodyWith
   rcases pw_cases v.callsOk with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> cases v.calls.pmull
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 false false)
+      (he := holesSides.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 1024 true false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 false false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 768 true false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 false false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.1)
   · exact side_of_holes v.callsOk fnOk_nil (standaloneHoles 2560 true false)
+      (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.1)
 
 private theorem standaloneSide (v : GcmImpl) :
     scrubSide (Standalone.frame v.calls) (v.calls.pwWn+32) 0
@@ -2956,7 +3036,9 @@ private theorem standaloneSide (v : GcmImpl) :
       rcases pw_cases v.callsOk with ⟨bad,_⟩|⟨_,w|w⟩
       · simp [st] at bad
       · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 768 true true)
+          (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
       · rw [w]; exact forwardedSide v.callsOk fnOk_nil (standaloneHoles 2560 true true)
+          (he := holesSides.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2)
   · simpa only [Bool.not_true,Bool.and_false,Bool.false_eq_true,ite_false] using standaloneReferenceSide v
 
 theorem scratch_le (v : GcmImpl) : v.ctr.scratch ≤ v.calls.pwWn-512 := by

@@ -149,6 +149,17 @@ theorem parameterSearchOut (cs : List (String × List (BitVec 64))) (stack : Nat
 
 /-! ## The functions as emitted -/
 
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides :
+    scrubSide (Impl.Dsa.PPC64LE.Derive.derive) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Dsa.PPC64LE.RandomSign.code) 304 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Dsa.PPC64LE.Generate.code) 304 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Dsa.PPC64LE.Prevalidated.validate) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Dsa.PPC64LE.PrevalidatedSign.validate) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true ∧
+    scrubSide (Impl.Dsa.PPC64LE.Prevalidated.verify) 0 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩ = true := by
+  lit_decide
+
 /-- `vg_dsa_derive_key` as emitted (`Impl.Dsa.PPC64LE.Fn.deriveKey`) meets its
 contract in constant time and returns without secret residue. -/
 theorem deriveKey_scrubbed :
@@ -160,7 +171,7 @@ theorem deriveKey_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (deriveKeyOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.1)
 
 /-- `vg_dsa_sign_random_prevalidated` as emitted
 (`Impl.Dsa.PPC64LE.Fn.randomSignPrevalidated`) meets its contract in constant
@@ -174,7 +185,7 @@ theorem randomSignPrevalidated_scrubbed :
     304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (randomSignPrevalidatedOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.1)
 
 /-- `vg_dsa_generate_key` as emitted (`Impl.Dsa.PPC64LE.Fn.generateKey`) meets its
 contract in constant time and returns without secret residue. -/
@@ -187,7 +198,7 @@ theorem generateKey_scrubbed :
     304 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (generateKeyOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.1)
 
 /-- `vg_dsa_validate_public_key` as emitted
 (`Impl.Dsa.PPC64LE.Fn.validatePublicKey`) meets its contract in constant time
@@ -201,7 +212,7 @@ theorem validatePublicKey_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (validatePublicKeyOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.1)
 
 /-- `vg_dsa_validate_private_key` as emitted
 (`Impl.Dsa.PPC64LE.Fn.validatePrivateKey`) meets its contract in constant time
@@ -215,7 +226,7 @@ theorem validatePrivateKey_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (validatePrivateKeyOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.1)
 
 /-- `vg_dsa_verify_prevalidated` as emitted
 (`Impl.Dsa.PPC64LE.Fn.verifyPrevalidated`) meets its contract in constant time
@@ -229,7 +240,7 @@ theorem verifyPrevalidated_scrubbed :
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (verifyPrevalidatedOut _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2.2.2.2)
 
 /-- What `verifiedScrubbedAll` needs of the parameter search with each Miller-Rabin
 round: evaluated here. -/
