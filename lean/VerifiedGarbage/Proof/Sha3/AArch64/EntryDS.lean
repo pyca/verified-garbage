@@ -1017,7 +1017,7 @@ theorem sideI_clearDL_of (L : List (String × VReg)) {i : Instr} (hd : vdstOf i 
     (hw : i.writesDit = false) :
     sideI (RegSet.ofList (keptG (clearDL L))) (RegSet.ofList (keptV (clearDL L))) i = true := by
   have hg := keptG_clearDL L
-  simp only [sideI, hw, hg, keeps_ofList, List.all_nil, vkeeps, hd, Bool.not_false, Bool.and_self]
+  simp only [sideI_eq, hw, hg, keeps_ofList, List.all_nil, vkeeps, hd, Bool.not_false, Bool.and_self]
 
 open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
 /-- `sideI` of the cleanup `clearDL L` holds of the write of the low half of a
@@ -1036,7 +1036,7 @@ theorem sideI_clearDL_ins {L : List (String × VReg)} {v : VReg} (hv : v ∈ L.m
       rcases h' with ⟨h1, h2⟩ | ⟨-, h2⟩
       · exact (h2 v h1 rfl).elim
       · exact (h2 v hv rfl).elim
-  simp only [sideI, hg, keeps_ofList, List.all_nil, vkeeps, vdstOf, VOp.dst, hm, Bool.not_false,
+  simp only [sideI_eq, hg, keeps_ofList, List.all_nil, vkeeps, vdstOf, VOp.dst, hm, Bool.not_false,
     Bool.and_true]
   rfl
 
@@ -1193,7 +1193,7 @@ theorem noHi_of_side {F : Prog isa} {W rb : Nat} (hs : scrubSide F W rb ⟨allGp
   rw [Code.allInstrs_eq, List.all_eq_true] at hi
   have := hi i hi'
   have hk : keptV ⟨allGprs, allVecs, []⟩ = hiVecs := by decide
-  simp only [sideI, vkeeps, hv, hk, Bool.and_eq_true, Bool.not_eq_true'] at this
+  simp only [sideI_eq, vkeeps, hv, hk, Bool.and_eq_true, Bool.not_eq_true'] at this
   rw [RegSet.mem_ofList.mpr hw] at this
   exact absurd this.2 (by decide)
 

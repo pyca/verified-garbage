@@ -737,7 +737,7 @@ theorem of_side {F : Prog isa} {W rb : Nat} (hs : scrubSide F W rb ⟨allGprs, a
     | cons m ms => rw [hn, List.all_cons] at ht; simp [tableFns] at ht
   · rw [Code.allInstrs_eq, List.all_eq_true] at hi
     have := hi i hi'
-    simp only [sideI, vkeeps, hv, Bool.and_eq_true] at this
+    simp only [sideI_eq, vkeeps, hv, Bool.and_eq_true] at this
     exact absurd this.2 (by decide)
 
 open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in

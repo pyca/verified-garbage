@@ -333,7 +333,7 @@ theorem keepsV_of_gatherSide {c : Prog isa} {bytes : Nat}
   rw [Code.allInstrs_eq,List.all_eq_true]
   intro i hi
   have hi := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans side.1.2) i hi
-  simp only [sideI,Bool.and_eq_true] at hi
+  simp only [sideI_eq,Bool.and_eq_true] at hi
   have vk := hi.2
   unfold keepsV
   cases v : vdstOf i with

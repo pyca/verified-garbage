@@ -199,7 +199,7 @@ PSTATE.DIT, and it calls nothing indirectly. -/
 theorem sideAll_noDit_of_calleeSide {c : Prog isa} {cl : Clear} (h : calleeSide c cl = true) :
     sideAll (fun i => !i.writesDit) c = true :=
   sideAll_mono (fun _ hi => by
-    simp only [sideI, Bool.and_eq_true] at hi
+    simp only [sideI_eq, Bool.and_eq_true] at hi
     exact hi.1.1) h
 
 /-- `c`, which is the closed code `e` with its holes filled by the function
