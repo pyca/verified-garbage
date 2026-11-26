@@ -29,6 +29,8 @@ import VerifiedGarbage.Proof.Seed.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SEED on AArch64 returns without secret residue
@@ -53,9 +55,23 @@ abbrev expandKeyCode : Prog isa := Impl.Seed.AArch64.Fn.expandKey
 theorem expandKeyCode_verified : Verified AArch64.target expandKeyCode (Spec.Seed.expandKeyContract AArch64.abi 976) :=
   Clears.Verified.withClears (Proof.Seed.AArch64.expandKey_framed) (by decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 976).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.expandKey (doneG 976 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cbcEncryptChained (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cbcDecryptChained (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cfbEncrypt (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cfbDecrypt (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cfbEncryptFinal (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.cfbDecryptFinal (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.ofb (doneG 1456 0 []) ∧
+    (rtaintG 1456).Ends (RTaintB.init, some (0, 0, [])) Impl.Seed.AArch64.Fn.ofbFinal (doneG 1456 0 []) := by
+  taint_decide_ct_all
+
 theorem expandKeyCode_noResidue : NoResidue expandKeyCode (Spec.Seed.expandKeyContract AArch64.abi 976) 0 :=
   noResidue_of_doneG expandKeyCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.expandKeyApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.expandKeyApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.1
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 abbrev cbcEncryptChainedCode : Prog isa := Impl.Seed.AArch64.Fn.cbcEncryptChained
@@ -65,7 +81,7 @@ theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChain
 
 theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.Seed.cbcEncryptChainedContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.1
 
 /-- `vg_seed_cbc_decrypt_chained`. -/
 abbrev cbcDecryptChainedCode : Prog isa := Impl.Seed.AArch64.Fn.cbcDecryptChained
@@ -75,7 +91,7 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.Seed.cbcDecryptChainedContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.1
 
 /-- `vg_seed_cfb128_encrypt`. -/
 abbrev cfbEncryptCode : Prog isa := Impl.Seed.AArch64.Fn.cfbEncrypt
@@ -85,7 +101,7 @@ theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.S
 
 theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Seed.cfbEncryptContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.1
 
 /-- `vg_seed_cfb128_decrypt`. -/
 abbrev cfbDecryptCode : Prog isa := Impl.Seed.AArch64.Fn.cfbDecrypt
@@ -95,7 +111,7 @@ theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.S
 
 theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.Seed.cfbDecryptContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.1
 
 /-- `vg_seed_cfb128_encrypt_final`. -/
 abbrev cfbEncryptFinalCode : Prog isa := Impl.Seed.AArch64.Fn.cfbEncryptFinal
@@ -105,7 +121,7 @@ theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCo
 
 theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Seed.cfbEncryptFinalContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.1
 
 /-- `vg_seed_cfb128_decrypt_final`. -/
 abbrev cfbDecryptFinalCode : Prog isa := Impl.Seed.AArch64.Fn.cfbDecryptFinal
@@ -115,7 +131,7 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Seed.cfbDecryptFinalContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.1
 
 /-- `vg_seed_ofb`. -/
 abbrev ofbCode : Prog isa := Impl.Seed.AArch64.Fn.ofb
@@ -125,7 +141,7 @@ theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.Seed.ofbContrac
 
 theorem ofbCode_noResidue : NoResidue ofbCode (Spec.Seed.ofbContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.1
 
 /-- `vg_seed_ofb_final`. -/
 abbrev ofbFinalCode : Prog isa := Impl.Seed.AArch64.Fn.ofbFinal
@@ -135,7 +151,7 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Seed.
 
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Seed.ofbFinalContract AArch64.abi 1456) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Seed.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Seed.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/

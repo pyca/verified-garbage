@@ -39,6 +39,8 @@ meta import VerifiedGarbage.Proof.Idea.ScrubLocal
 meta import VerifiedGarbage.Proof.Idea.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # IDEA on ARMv7, without secret residue
@@ -280,6 +282,19 @@ theorem ecb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ecb (ecbContract Arm.abi 
     { code := Impl.Idea.Arm.ecbCode, verified := Proof.Idea.Arm.ecb_framed }
     (Scrub.ecbOut _) (scrubSideF_of Scrub.ecbCode_scrub Scrub.frameOk_32 _)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cbcDecryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cfbDecrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.cfbDecryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 96 []) Impl.Idea.Arm.Fn.ofbFinal (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `vg_idea_cbc_encrypt_chained`. -/
 theorem cbcEncryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcEncryptChained (cbcEncryptChainedContract Arm.abi 96) 0 :=
   verifiedScrubbedSel (api := cbcEncryptChainedApi) (W := 96)
@@ -287,7 +302,7 @@ theorem cbcEncryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcEncryptC
       verified := Proof.Idea.Arm.cbcEncryptChained_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cbcEncryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.1
 
 /-- `vg_idea_cbc_decrypt_chained`. -/
 theorem cbcDecryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcDecryptChained (cbcDecryptChainedContract Arm.abi 96) 0 :=
@@ -296,7 +311,7 @@ theorem cbcDecryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcDecryptC
       verified := Proof.Idea.Arm.cbcDecryptChained_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cbcDecryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.1
 
 /-- `vg_idea_cfb64_encrypt`. -/
 theorem cfbEncrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncrypt (cfbEncryptContract Arm.abi 96) 0 :=
@@ -305,7 +320,7 @@ theorem cfbEncrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncrypt (cfbEnc
       verified := Proof.Idea.Arm.cfbEncrypt_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cfbEncryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.1
 
 /-- `vg_idea_cfb64_decrypt`. -/
 theorem cfbDecrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecrypt (cfbDecryptContract Arm.abi 96) 0 :=
@@ -314,7 +329,7 @@ theorem cfbDecrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecrypt (cfbDec
       verified := Proof.Idea.Arm.cfbDecrypt_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cfbDecryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.2.1
 
 /-- `vg_idea_cfb64_encrypt_final`. -/
 theorem cfbEncryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncryptFinal (cfbEncryptFinalContract Arm.abi 96) 0 :=
@@ -323,7 +338,7 @@ theorem cfbEncryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncryptFin
       verified := Proof.Idea.Arm.cfbEncryptFinal_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cfbEncryptFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.2.2.1
 
 /-- `vg_idea_cfb64_decrypt_final`. -/
 theorem cfbDecryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecryptFinal (cfbDecryptFinalContract Arm.abi 96) 0 :=
@@ -332,7 +347,7 @@ theorem cfbDecryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecryptFin
       verified := Proof.Idea.Arm.cfbDecryptFinal_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.cfbDecryptFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.2.2.2.1
 
 /-- `vg_idea_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofb (ofbContract Arm.abi 96) 0 :=
@@ -341,7 +356,7 @@ theorem ofb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofb (ofbContract Arm.abi 
       verified := Proof.Idea.Arm.ofb_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.ofbOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.2.2.2.2.1
 
 /-- `vg_idea_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofbFinal (ofbFinalContract Arm.abi 96) 0 :=
@@ -350,6 +365,6 @@ theorem ofbFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofbFinal (ofbFinalCo
       verified := Proof.Idea.Arm.ofbFinal_framed }
     Impl.Idea.Arm.Fn.modeWords []
     (Scrub.ofbFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (by decide) hbp_nil residue.2.2.2.2.2.2.2
 
 end VG.Proof.Idea.Arm.Fn

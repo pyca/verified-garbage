@@ -46,6 +46,8 @@ meta import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86.FbFinalLit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # CAST5 on x86 (32-bit), without secret residue
@@ -222,6 +224,22 @@ theorem ofbFinalOut (stack : Nat) :
 
 /-! ## The functions as emitted -/
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 4 0) Impl.Cast5.X86.Fn.expandKey (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 4 0) Impl.Cast5.X86.Fn.ecbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 4 0) Impl.Cast5.X86.Fn.ecbDecrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cbcDecryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cfbDecrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.cfbDecryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 336 0) Impl.Cast5.X86.Fn.ofbFinal (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Cast5.expandKeyApi` as emitted (`Impl.Cast5.X86.Fn.expandKey`) meets its contract
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
@@ -229,7 +247,7 @@ theorem expandKey_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.expandKeyApi) (W := 4)
     { code := Impl.Cast5.X86.expandKey
       verified := Proof.Cast5.X86.expandKey_verified }
-    Impl.Cast5.X86.Fn.noWords (expandKeyOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.noWords (expandKeyOut _) (by decide) residue.1
 
 /-- `Spec.Cast5.ecbEncryptApi` as emitted (`Impl.Cast5.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -238,7 +256,7 @@ theorem ecbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ecbEncryptApi) (W := 4)
     { code := Impl.Cast5.X86.ecbEncrypt
       verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86.ecbEncrypt_verified }
-    Impl.Cast5.X86.Fn.noWords (ecbOut .encrypt _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.noWords (ecbOut .encrypt _) (by decide) residue.2.1
 
 /-- `Spec.Cast5.ecbDecryptApi` as emitted (`Impl.Cast5.X86.Fn.ecbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -247,7 +265,7 @@ theorem ecbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ecbDecryptApi) (W := 4)
     { code := Impl.Cast5.X86.ecbDecrypt
       verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86.ecbDecrypt_verified }
-    Impl.Cast5.X86.Fn.noWords (ecbOut .decrypt _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.noWords (ecbOut .decrypt _) (by decide) residue.2.2.1
 
 /-- `Spec.Cast5.cbcEncryptChainedApi` as emitted (`Impl.Cast5.X86.Fn.cbcEncryptChained`) meets its contract
 in constant time and returns without secret residue. -/
@@ -256,7 +274,7 @@ theorem cbcEncryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cbcEncryptChainedApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed }
-    Impl.Cast5.X86.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cbcEncryptOut _) (by decide) residue.2.2.2.1
 
 /-- `Spec.Cast5.cbcDecryptChainedApi` as emitted (`Impl.Cast5.X86.Fn.cbcDecryptChained`) meets its contract
 in constant time and returns without secret residue. -/
@@ -265,7 +283,7 @@ theorem cbcDecryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cbcDecryptChainedApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
       verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }
-    Impl.Cast5.X86.Fn.modeWords (cbcDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cbcDecryptOut _) (by decide) residue.2.2.2.2.1
 
 /-- `Spec.Cast5.cfbEncryptApi` as emitted (`Impl.Cast5.X86.Fn.cfbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -274,7 +292,7 @@ theorem cfbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86.ModeFns.cfbEncrypt_framed }
-    Impl.Cast5.X86.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cfbEncryptOut _) (by decide) residue.2.2.2.2.2.1
 
 /-- `Spec.Cast5.cfbDecryptApi` as emitted (`Impl.Cast5.X86.Fn.cfbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -283,7 +301,7 @@ theorem cfbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecrypt
       verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86.ModeFns.cfbDecrypt_framed }
-    Impl.Cast5.X86.Fn.modeWords (cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cfbDecryptOut _) (by decide) residue.2.2.2.2.2.2.1
 
 /-- `Spec.Cast5.cfbEncryptFinalApi` as emitted (`Impl.Cast5.X86.Fn.cfbEncryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -292,7 +310,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbEncryptFinal_framed }
-    Impl.Cast5.X86.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cfbEncryptFinalOut _) (by decide) residue.2.2.2.2.2.2.2.1
 
 /-- `Spec.Cast5.cfbDecryptFinalApi` as emitted (`Impl.Cast5.X86.Fn.cfbDecryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -301,7 +319,7 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbDecryptFinal_framed }
-    Impl.Cast5.X86.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (cfbDecryptFinalOut _) (by decide) residue.2.2.2.2.2.2.2.2.1
 
 /-- `Spec.Cast5.ofbApi` as emitted (`Impl.Cast5.X86.Fn.ofb`) meets its contract
 in constant time and returns without secret residue. -/
@@ -310,7 +328,7 @@ theorem ofb_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ofbApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofb
       verified := Proof.Cast5.ofb_keyed Proof.Cast5.X86.ModeFns.ofb_framed }
-    Impl.Cast5.X86.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (ofbOut _) (by decide) residue.2.2.2.2.2.2.2.2.2.1
 
 /-- `Spec.Cast5.ofbFinalApi` as emitted (`Impl.Cast5.X86.Fn.ofbFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -319,6 +337,6 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ofbFinalApi) (W := 336)
     { code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.X86.FbFinal.ofbFinal_framed }
-    Impl.Cast5.X86.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Cast5.X86.Fn.modeWords (ofbFinalOut _) (by decide) residue.2.2.2.2.2.2.2.2.2.2
 
 end VG.Proof.Cast5.X86.Scrub

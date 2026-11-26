@@ -463,7 +463,8 @@ lemmas and tactics to use; read it before writing a proof:
   (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
   `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). A check
   that a family of functions all need is one declaration for the family, where
-  they share code that is not a literal. An
+  they share code that is not a literal, or run the same code from the same
+  taint (`taint_decide_ct_all`). An
   analysis's step gives a state that is evaluated, whose fields it does
   not change are the terms they were (`Taint.forceT`, `keepBases`), but a
   numeral wider than 64 bits it changed, left as a term (the kernel hashes

@@ -29,6 +29,8 @@ import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Camellia on AArch64 returns without secret residue
@@ -53,9 +55,25 @@ abbrev expandKeyCode : Prog isa := Impl.Camellia.AArch64.Fn.expandKey
 theorem expandKeyCode_verified : Verified AArch64.target expandKeyCode (Spec.Camellia.expandKeyContract AArch64.abi 160) :=
   Clears.Verified.withClears expandKey_framed (by decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 160).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.expandKey (doneG 160 0 []) ∧
+    (rtaintG 3248).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.ecbEncrypt (doneG 3248 0 []) ∧
+    (rtaintG 3248).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.ecbDecrypt (doneG 3248 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cbcEncryptChained (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cbcDecryptChained (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cfbEncrypt (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cfbDecrypt (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cfbEncryptFinal (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.cfbDecryptFinal (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.ofb (doneG 3344 0 []) ∧
+    (rtaintG 3344).Ends (RTaintB.init, some (0, 0, [])) Impl.Camellia.AArch64.Fn.ofbFinal (doneG 3344 0 []) := by
+  taint_decide_ct_all
+
 theorem expandKeyCode_noResidue : NoResidue expandKeyCode (Spec.Camellia.expandKeyContract AArch64.abi 160) 0 :=
   noResidue_of_doneG expandKeyCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.expandKeySig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.expandKeySig) (by decide) (by decide) (Nat.le_refl _)) residue.1
 
 /-- `vg_camellia_ecb_encrypt`. -/
 abbrev ecbEncryptCode : Prog isa := Impl.Camellia.AArch64.Fn.ecbEncrypt
@@ -65,7 +83,7 @@ theorem ecbEncryptCode_verified : Verified AArch64.target ecbEncryptCode (Spec.C
 
 theorem ecbEncryptCode_noResidue : NoResidue ecbEncryptCode (Spec.Camellia.ecbContract AArch64.abi (specDir .encrypt) 3248) 0 :=
   noResidue_of_doneG ecbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.ecbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.ecbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.1
 
 /-- `vg_camellia_ecb_decrypt`. -/
 abbrev ecbDecryptCode : Prog isa := Impl.Camellia.AArch64.Fn.ecbDecrypt
@@ -75,7 +93,7 @@ theorem ecbDecryptCode_verified : Verified AArch64.target ecbDecryptCode (Spec.C
 
 theorem ecbDecryptCode_noResidue : NoResidue ecbDecryptCode (Spec.Camellia.ecbContract AArch64.abi (specDir .decrypt) 3248) 0 :=
   noResidue_of_doneG ecbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.ecbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.ecbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.1
 
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 abbrev cbcEncryptChainedCode : Prog isa := Impl.Camellia.AArch64.Fn.cbcEncryptChained
@@ -85,7 +103,7 @@ theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChain
 
 theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.Camellia.cbcEncryptChainedContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.1
 
 /-- `vg_camellia_cbc_decrypt_chained`. -/
 abbrev cbcDecryptChainedCode : Prog isa := Impl.Camellia.AArch64.Fn.cbcDecryptChained
@@ -95,7 +113,7 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.Camellia.cbcDecryptChainedContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.1
 
 /-- `vg_camellia_cfb128_encrypt`. -/
 abbrev cfbEncryptCode : Prog isa := Impl.Camellia.AArch64.Fn.cfbEncrypt
@@ -105,7 +123,7 @@ theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.C
 
 theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Camellia.cfbEncryptContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cfbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.1
 
 /-- `vg_camellia_cfb128_decrypt`. -/
 abbrev cfbDecryptCode : Prog isa := Impl.Camellia.AArch64.Fn.cfbDecrypt
@@ -115,7 +133,7 @@ theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.C
 
 theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.Camellia.cfbDecryptContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cfbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.1
 
 /-- `vg_camellia_cfb128_encrypt_final`. -/
 abbrev cfbEncryptFinalCode : Prog isa := Impl.Camellia.AArch64.Fn.cfbEncryptFinal
@@ -125,7 +143,7 @@ theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCo
 
 theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Camellia.cfbEncryptFinalContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.1
 
 /-- `vg_camellia_cfb128_decrypt_final`. -/
 abbrev cfbDecryptFinalCode : Prog isa := Impl.Camellia.AArch64.Fn.cfbDecryptFinal
@@ -135,7 +153,7 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Camellia.cfbDecryptFinalContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.1
 
 /-- `vg_camellia_ofb`. -/
 abbrev ofbCode : Prog isa := Impl.Camellia.AArch64.Fn.ofb
@@ -145,7 +163,7 @@ theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.Camellia.ofbCon
 
 theorem ofbCode_noResidue : NoResidue ofbCode (Spec.Camellia.ofbContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.ofbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.ofbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_camellia_ofb_final`. -/
 abbrev ofbFinalCode : Prog isa := Impl.Camellia.AArch64.Fn.ofbFinal
@@ -155,7 +173,7 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Camel
 
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Camellia.ofbFinalContract AArch64.abi 3344) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Camellia.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Camellia.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/

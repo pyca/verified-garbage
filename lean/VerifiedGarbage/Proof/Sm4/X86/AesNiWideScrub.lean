@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Sm4.X86.AesNiWideModes
 meta import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SM4's wide modes by the AES S-box on x86 (32-bit), without secret residue
@@ -40,6 +42,14 @@ namespace VG.Proof.Sm4.X86.AesNiWide.Scrub
 open VG.X86 VG.X86.Scrub
 open VG.Proof.Sm4.X86.Scrub (cbcDecryptOut cfbDecryptOut ctrOut)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 760 0) Impl.Sm4.X86.AesNiWide.Fn.cbcDecryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 760 0) Impl.Sm4.X86.AesNiWide.Fn.cfbDecrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 760 0) Impl.Sm4.X86.AesNiWide.Fn.ctr (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Sm4.cbcDecryptChainedApi` as emitted (`Impl.Sm4.X86.AesNiWide.Fn.cbcDecryptChained`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
@@ -47,7 +57,7 @@ theorem cbcDecryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Sm4.cbcDecryptChainedApi) (W := 760)
     { code := Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.cbcDecryptChained
       verified := Proof.Sm4.X86.AesNiWide.Modes.cbcDecryptChained_framed }
-    Impl.Sm4.X86.AesNiWide.Fn.modeWords (cbcDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Sm4.X86.AesNiWide.Fn.modeWords (cbcDecryptOut _) (by decide) residue.1
 
 /-- `Spec.Sm4.cfbDecryptApi` as emitted (`Impl.Sm4.X86.AesNiWide.Fn.cfbDecrypt`) meets its contract in constant
 time and returns without secret residue. -/
@@ -56,7 +66,7 @@ theorem cfbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Sm4.cfbDecryptApi) (W := 760)
     { code := Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.cfbDecrypt
       verified := Proof.Sm4.X86.AesNiWide.Modes.cfbDecrypt_framed }
-    Impl.Sm4.X86.AesNiWide.Fn.modeWords (cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Sm4.X86.AesNiWide.Fn.modeWords (cfbDecryptOut _) (by decide) residue.2.1
 
 /-- `Spec.Sm4.ctrApi` as emitted (`Impl.Sm4.X86.AesNiWide.Fn.ctr`) meets its contract in constant
 time and returns without secret residue. -/
@@ -65,6 +75,6 @@ theorem ctr_scrubbed :
   verifiedScrubbedSel (api := Spec.Sm4.ctrApi) (W := 760)
     { code := Impl.StackScratch.X86.withStackScratchWiped 756 4 182 Impl.Sm4.X86.AesNiWide.ctr
       verified := Proof.Sm4.X86.AesNiWide.Modes.ctr_framed }
-    Impl.Sm4.X86.AesNiWide.Fn.modeWords (ctrOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Sm4.X86.AesNiWide.Fn.modeWords (ctrOut _) (by decide) residue.2.2
 
 end VG.Proof.Sm4.X86.AesNiWide.Scrub
