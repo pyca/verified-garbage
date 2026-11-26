@@ -33,7 +33,7 @@ pub fn bench(c: &mut Criterion) {
     let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 16];
     let mut group = c.benchmark_group("seed-ofb");
-    for size in [15, 16, 17, 96, 112, 113, 256, 257, 1024, 16384] {
+    for size in [15, 16, 17, 64, 96, 112, 113, 256, 257, 1024, 16384] {
         group.throughput(Throughput::Bytes(size as u64));
         let data = vec![0x5a; size];
         let mut buffer = crate::InPlace::new(size, &data);

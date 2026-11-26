@@ -37,7 +37,7 @@ pub fn bench(c: &mut Criterion) {
         ("decrypt", false, Mode::Decrypt),
     ] {
         let mut group = c.benchmark_group(format!("seed-cfb-{operation}"));
-        for size in [15, 16, 17, 96, 112, 113, 256, 257, 1024, 16384] {
+        for size in [15, 16, 17, 64, 96, 112, 113, 256, 257, 1024, 16384] {
             group.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
             let mut buffer = crate::InPlace::new(size, &data);
