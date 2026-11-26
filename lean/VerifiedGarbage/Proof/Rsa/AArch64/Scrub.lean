@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSA's precomputation and key generation on AArch64, without secret residue
@@ -113,8 +114,9 @@ theorem keySearchOk (stack : Nat) (hW : 0 < stack := by decide) :
 
 theorem crtValuesOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.crtValuesContract abi stack) stack (Spec.Rsa.crtValuesSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.Rsa.crtValuesSig) fun
-    | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_args_pre_any (sig := Spec.Rsa.crtValuesSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro dp dpLen dq dqLen qinv qinvLen _ _ _ pLen _ qLen _ _ _ _ hp hb h
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -139,8 +141,9 @@ theorem crtValuesOk (stack : Nat) :
 
 theorem checkKeyOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.checkKeyContract abi stack) stack (Spec.Rsa.checkKeySig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Rsa.checkKeySig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  scrubAllOk_args_any (sig := Spec.Rsa.checkKeySig) fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 theorem recoverPrimesDetOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.recoverPrimesDetContract abi stack) stack (Spec.Rsa.recoverPrimesDetSig.retBits abi.ptrBits) :=
@@ -173,8 +176,9 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
 
 theorem pkcs1EncryptRandomOk (stack : Nat) :
     ScrubAllOk (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) stack (Spec.RsaPkcs1Enc.encryptRandomSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.encryptRandomSig) fun
-    | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.encryptRandomSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 15) ?_
+      intro out outLen tape _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -238,8 +242,9 @@ theorem writtenOutcome_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32}
 theorem pkcs1SignOk (stack : Nat) :
     ScrubAllOk (Spec.RsaPkcs1Sig.signPrecomputedContract abi stack) stack
       (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Sig.signPrecomputedSig) fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Sig.signPrecomputedSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 23) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp

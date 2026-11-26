@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSASSA-PSS on x86 (32-bit), without secret residue
@@ -72,8 +73,9 @@ theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits 32) :=
-  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 /-! ## The verification, with its cleanup -/
 
@@ -109,9 +111,9 @@ theorem signOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.signPrecomputedMdTableSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-        m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 26) ?_
+      intro out outLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPss.signPrecomputedMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp,
         Elem.size] at hb
       change @Curry.apply (Mem → Prop)

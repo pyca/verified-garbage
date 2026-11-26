@@ -33,6 +33,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSAES-OAEP on x86 (32-bit), without secret residue
@@ -71,8 +72,9 @@ theorem encryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.encryptMdTablesSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro out outLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
@@ -92,9 +94,9 @@ theorem decryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.decryptPrecomputedMdTablesSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, ml, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
-        m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 27) ?_
+      intro out outLen ml _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.decryptPrecomputedMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop)

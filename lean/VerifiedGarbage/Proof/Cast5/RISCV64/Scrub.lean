@@ -70,7 +70,7 @@ theorem ecbOut (d : Spec.Cast5.Direction) (stack : Nat) :
         forall_eq_or_imp, forall_eq] at hb
       show ∀ key, Spec.Cast5.KeySchedule m sch _ key → Spec.Cast5.blocksAt m₂ dt _ = _
       intro key hk
-      rw [blocksAt_of0 hb.2.1 (lenC ln 8)]
+      rw [Cast5.ScrubLocal.blocksAt_of0 hb.2.1 (lenC ln 8)]
       exact h key hk
 
 theorem cbcEncryptOut (stack : Nat) :
