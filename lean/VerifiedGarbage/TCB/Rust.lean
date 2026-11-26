@@ -1875,57 +1875,68 @@ run without its own code calling `vg_mcdt_enter` first (`mcdtOpen`):
 its dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
 def needsMcdt (a : EmitArtifact) : Bool := mcdtOpen a.target.printer a.code
 
-/-- `mcdtOpen P c`, with the answer for the code of each function gone
-through kept by the function's name: `seen` has those of the functions gone
-through before, and the result those and the ones `c` calls. The code of
+/-- `mcdtOpen P c`, but for the functions `c` calls: whether its own code has such an
+instruction, and the names of the functions it calls where one would count (`mcdtOpen`
+of their code). -/
+def mcdtOwn {M : ISA} (P : Printer M) : Code M.Instr M.Cond → Bool × List String
+  | .block is => (is.any P.mcdt, [])
+  | .seq (.call n _) (.seq (.block [i]) (.ite c fb rest)) =>
+    let (b, bs) := mcdtOwn P fb
+    if n == mcdtEnter && P.mcdtGuard i c then (b, n :: bs)
+    else
+      let (r, rs) := mcdtOwn P rest
+      (P.mcdt i || b || r, n :: bs ++ rs)
+  | .seq a b | .ite _ a b =>
+    let (x, xs) := mcdtOwn P a
+    let (y, ys) := mcdtOwn P b
+    (x || y, xs ++ ys)
+  | .loop b _ => mcdtOwn P b
+  | .call n _ => (false, [n])
+  | .frame i b j =>
+    let (x, xs) := mcdtOwn P b
+    (P.mcdt i || x || P.mcdt j, xs)
+  | .icall i n _ next =>
+    let (y, ys) := mcdtOwn P next
+    (P.mcdt i || y, n :: ys)
+
+/-- Whether the code of one of the functions `ns`, or of a function they call, has an
+instruction that counts, given `mcdtOwn` of each function by its name. `seen` has the
+answer for each function gone through before, and the result those and the ones gone
+through. `fuel` bounds the depth of the calls: no more than there are functions. Past it,
+or of a function `own` does not have, the answer is that it has. -/
+def mcdtReach (own : ByName (Bool × List String)) : (fuel : Nat) → List String → ByName Bool →
+    Bool × ByName Bool
+  | 0, _, seen => (true, seen)
+  | fuel + 1, ns, seen => ns.foldl (init := (false, seen)) fun (acc, seen) n =>
+    match seen.find? n with
+    | some a => (acc || a, seen)
+    | none =>
+      match own.find? n with
+      | none => (true, seen)
+      | some (x, calls) =>
+        let (y, seen) := mcdtReach own fuel calls seen
+        (acc || x || y, seen.insert n (x || y))
+
+/-- `needsMcdt` of each artifact of `l`, by its name, computed
+once for each: `targetFiles` asks it of an artifact several times (`checkMcdt`,
+and its dispatcher), after `checkCalls`. The code of
 each call of a function in the artifacts of a target prints as that function
 (`checkCalls`), and whether an instruction is one MCDT affects is a matter of
 its text (`Printer.mcdt`), as is where the printer lays out the code a
-successful `vg_mcdt_enter` guards: so the answer for the code of one call of
-a function holds for the function as emitted, and each function's code is
-gone through once, not once for each call of it and of every function that
-calls it. -/
-def mcdtOpenSeen {M : ISA} (P : Printer M) :
-    Code M.Instr M.Cond → ByName Bool → Bool × ByName Bool
-  | .block is, seen => (is.any P.mcdt, seen)
-  | .seq (.call n e) (.seq (.block [i]) (.ite c fb rest)), seen =>
-    let (a, seen) := match seen.find? n with
-      | some a => (a, seen)
-      | none => let (a, seen) := mcdtOpenSeen P e seen; (a, seen.insert n a)
-    let (b, seen) := mcdtOpenSeen P fb seen
-    if n == mcdtEnter && P.mcdtGuard i c then (a || b, seen)
-    else
-      let (r, seen) := mcdtOpenSeen P rest seen
-      (a || P.mcdt i || b || r, seen)
-  | .seq a b, seen =>
-    let (x, seen) := mcdtOpenSeen P a seen
-    let (y, seen) := mcdtOpenSeen P b seen
-    (x || y, seen)
-  | .ite _ t e, seen =>
-    let (x, seen) := mcdtOpenSeen P t seen
-    let (y, seen) := mcdtOpenSeen P e seen
-    (x || y, seen)
-  | .loop b _, seen => mcdtOpenSeen P b seen
-  | .call n b, seen =>
-    match seen.find? n with
-    | some a => (a, seen)
-    | none => let (a, seen) := mcdtOpenSeen P b seen; (a, seen.insert n a)
-  | .frame i b j, seen =>
-    let (x, seen) := mcdtOpenSeen P b seen
-    (P.mcdt i || x || P.mcdt j, seen)
-  | .icall i _ b n, seen =>
-    let (x, seen) := mcdtOpenSeen P b seen
-    let (y, seen) := mcdtOpenSeen P n seen
-    (P.mcdt i || x || y, seen)
-
-/-- `needsMcdt` of each artifact of `as`, a target's, by its name, computed
-once for each, going through the code of each function once
-(`mcdtOpenSeen`): `files` asks it of an artifact several times (`checkMcdt`,
-and its dispatcher), after `checkCalls`. -/
-def needsMcdtAll (as : List EmitArtifact) : ByName Bool :=
-  (as.foldl (init := (({} : ByName Bool), ({} : ByName Bool))) fun (acc, seen) a =>
-    let (r, seen) := mcdtOpenSeen a.target.printer a.code seen
-    (acc.insert a.name r, seen)).1
+successful `vg_mcdt_enter` guards: so the answer for the function as emitted is that for
+the code of each call of it, and each function's code is
+gone through once (`mcdtOwn`, on one of `tasks` tasks), not once for each call of it and of
+every function that calls it (`mcdtReach`). -/
+def needsMcdtAll {T : EmitTarget} (l : Linked T) : ByName Bool :=
+  let fns := l.ps.map (fun p => (p.own.name, p.own.code)) ++ l.hs.map fun h => (h.name, h.code)
+  let indexed := fns.zipIdx
+  let parts := (List.range tasks).map fun j => Task.spawn fun _ =>
+    (indexed.filter (·.2 % tasks == j)).map fun ((n, c), _) => (n, mcdtOwn T.printer c)
+  let own : ByName (Bool × List String) :=
+    (parts.flatMap Task.get).foldl (init := {}) fun m (n, r) => m.insertIfNew n r
+  -- The answer for each function, as the answer for the list of it alone.
+  (fns.foldl (init := ({} : ByName Bool)) fun seen (n, _) =>
+    (mcdtReach own (fns.length + 1) [n] seen).2)
 
 /-- `needsMcdt a`, as `known` (`needsMcdtAll`) has it, or computed if `known`
 does not list `a`. -/
@@ -2457,7 +2468,7 @@ def targetFiles (T : EmitTarget) (as : List (Artifact T.toTarget)) :
   forMPar as checkLayout
   forMPar as checkWritten
   forMPar as checkChoice
-  let needs := needsMcdtIn (needsMcdtAll as)
+  let needs := needsMcdtIn (needsMcdtAll l)
   let names := as.map (·.name)
   let fns ← (distinct as (·.module)).mapM fun m => do
     let ms := as.filter (·.module == m)

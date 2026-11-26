@@ -897,6 +897,29 @@ def testEax : Instr := .alu32 .test .rax (.reg .rax)
 #guard Rust.mcdtOpen printer (.call "vg_g" (.block [mulq]))
 #guard !Rust.mcdtOpen printer (guardSample testEax .e (.block []) (.call "vg_g" (.block [mulq])))
 #guard !Rust.mcdtOpen printer callSample
+-- `Rust.mcdtOwn`: the same, with the functions called by name.
+#guard Rust.mcdtOwn printer (guardSample testEax .e (.block []) (.block [mulq])) == (false, ["vg_mcdt_enter"])
+#guard Rust.mcdtOwn printer (.seq (guardSample testEax .e (.block []) (.block [mulq])) (.block [mulq])) ==
+  (true, ["vg_mcdt_enter"])
+#guard (Rust.mcdtOwn printer (guardSample testEax .ne (.block []) (.block [mulq]))).1
+#guard Rust.mcdtOwn printer (guardSample testEax .ne (.call "vg_f" (.block [])) (.call "vg_g" (.block [mulq]))) ==
+  (false, ["vg_mcdt_enter", "vg_f", "vg_g"])
+#guard Rust.mcdtOwn printer (guardSample testEax .e (.call "vg_f" (.block [])) (.call "vg_g" (.block [mulq]))) ==
+  (false, ["vg_mcdt_enter", "vg_f"])
+#guard Rust.mcdtOwn printer (.frame (.push [.rbx]) (.icall (.callr .r11) "vg_f" (.block [mulq])
+  (.icall (.callr .r11) "vg_g" (.block []) (.block []))) (.pop .rbx 8)) == (false, ["vg_f", "vg_g"])
+/-- `f` calls `g`, which calls `h`, which has an instruction that counts; `k` calls a
+function there is not. -/
+def ownSample : Rust.ByName (Bool × List String) :=
+  ((((({} : Rust.ByName (Bool × List String)).insert "f" (false, ["g"])).insert "g" (false, ["h", "e"])).insert
+    "h" (true, [])).insert "e" (false, [])).insert "k" (false, ["l"])
+#guard (Rust.mcdtReach ownSample 9 ["f"] {}).1 && (Rust.mcdtReach ownSample 9 ["k"] {}).1
+#guard !(Rust.mcdtReach ownSample 9 ["e"] {}).1 && (Rust.mcdtReach ownSample 9 ["e", "g"] {}).1
+-- What it keeps of those gone through.
+#guard (Rust.mcdtReach ownSample 9 ["f"] {}).2.find? "g" == some true &&
+  (Rust.mcdtReach ownSample 9 ["f"] {}).2.find? "e" == some false
+-- Too deep: as if it had one.
+#guard !(Rust.mcdtReach ownSample 2 ["e"] {}).1 && (Rust.mcdtReach ownSample 1 ["e"] {}).1
 -- The printer lays out the code run when it returned 1 right after the `je`.
 #guard text (printer.function (guardSample testEax .e (.block [.mov .rax (.reg .rdx)]) (.block [mulq]))) == [
   "<call vg_mcdt_enter>", "// test eax, eax", ".byte 0x85,0xc0", "je 20f",
