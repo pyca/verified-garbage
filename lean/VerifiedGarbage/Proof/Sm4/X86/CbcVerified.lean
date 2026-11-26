@@ -17,6 +17,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
 meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM4-CBC on x86 (32-bit) meets its contracts
@@ -88,11 +91,11 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 decPost).pre s₀) :
 
 theorem cbcEncryptChained_ct : ConstantTime isa (fbX86 encPost).pre (fbX86 encPost).pub cbcEncryptChained :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 theorem cbcDecryptChained_ct : ConstantTime isa (fbX86 decPost).pre (fbX86 decPost).pub cbcDecryptChained :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 /-! ## The contracts -/
 

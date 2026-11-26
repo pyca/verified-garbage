@@ -34,6 +34,9 @@ meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86.CallSum
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM4-CFB128 and SM4-OFB of a message's last piece on x86 (32-bit) meet their contracts
@@ -198,11 +201,11 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
 
 theorem cfbEncryptFinal_ct : ConstantTime isa (finalX86 encPost).pre (finalX86 encPost).pub cfbEncryptFinal :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 theorem cfbDecryptFinal_ct : ConstantTime isa (finalX86 decPost).pre (finalX86 decPost).pub cfbDecryptFinal :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 /-! ## The contracts -/
 
@@ -406,7 +409,7 @@ theorem ofbFinal_wp {s₀ : State} (hp : (finalX86 ofbPost).pre s₀) :
 
 theorem ofbFinal_ct : ConstantTime isa (finalX86 ofbPost).pre (finalX86 ofbPost).pub ofbFinal :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 /-- The final OFB function's contract with the working space as an argument. -/
 abbrev ofbScratch : Contract isa :=

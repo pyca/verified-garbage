@@ -310,6 +310,19 @@ def stepHint (τ : T) : Instr → Option T
   | .store8 m r => storeHint τ m 1 (pub τ r.reg) []
   | i => step τ i
 
+/-- `SseTaint.step` (`Proof/Framework/X86/SseTaint.lean`): SIMD values are
+secret, and their memory operands' addresses public. -/
+def sseStepHint (τ : T) : Instr → Option T
+  | .movdquLoad _ m | .movqLoad _ m => if memPub τ m then some τ else none
+  | .movdquStore m _ => storeHint τ m 16 false []
+  | .movqStore m _ | .mmxStore m _ => storeHint τ m 8 false []
+  | .xop _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .movdquTbl .. | .movqTbl .. => some τ
+  | .mop op =>
+    match op with
+    | .bin _ _ (.mem m) | .movq _ (.mem m) => if memPub τ m then some τ else none
+    | _ => some τ
+  | i => stepHint τ i
+
 def hintOps : VG.NativeHintOps isa where
   T := T
   step := stepHint
@@ -335,7 +348,21 @@ def frameOps : VG.NativeFrameOps isa where
   join m Φ := { m with regs := ⟨Nat.lor m.regs.bits Φ.regs.bits⟩, flags := m.flags || Φ.flags }
   frameOf τ F := { regs := τ.regs.inter F.regs, flags := τ.flags && F.flags }
 
+/-- The operations of the SIMD analysis `X86.sseTaint`, which shares
+`X86.taint`'s domain and every rule but the step. -/
+def sseHintOps : VG.NativeHintOps isa := { hintOps with step := sseStepHint }
+
+/-- Its frames, `X86.taint`'s (`instance : Taint.Frame X86.sseTaint`). -/
+def sseFrameOps : VG.NativeFrameOps isa := { frameOps with step := sseStepHint }
+
 end VG.NativeHints.X86
+
+namespace VG.NativeHints.X86.sseProvider
+/-- `provider`'s searches, for `X86.sseTaint`. -/
+def hintOfSize := VG.NativeHintOps.hintOfSize VG.NativeHints.X86.sseHintOps
+def hintWeakOfSize := VG.NativeHintOps.hintWeakOfSize VG.NativeHints.X86.sseHintOps
+def hintReport := VG.NativeFrameOps.hintReport VG.NativeHints.X86.sseFrameOps
+end VG.NativeHints.X86.sseProvider
 
 namespace VG.NativeHints.X86.provider
 /-- An untrusted native hint; `Taint.check` still checks every interval. -/

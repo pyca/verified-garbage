@@ -91,16 +91,16 @@ taint_summary subSumT : sseTaint (combCallτ true)
 
 /-- The taint checks of the comb's code. -/
 theorem combCT : CombRcbCT brainpoolp512r1Comb brainpoolp512r1d where
-  prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-  init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+  init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   step := fun b => by
     change RelCT isa _ combStep _
     cases b
     · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt false) combStep h).isSome = true := by
-        taint_decide_sum [mulSumF, addSumF, subSumF]
+        native_taint_decide_sum [mulSumF, addSumF, subSumF]
       exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
     · obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (combτAt true) combStep h).isSome = true := by
-        taint_decide_sum [mulSumT, addSumT, subSumT]
+        native_taint_decide_sum [mulSumT, addSumT, subSumT]
       exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
   sp := by
     change SpOk combStep 20

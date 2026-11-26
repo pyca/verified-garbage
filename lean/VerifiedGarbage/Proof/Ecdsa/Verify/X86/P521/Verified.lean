@@ -117,7 +117,7 @@ theorem ladderCT : VerifyLadderCT p521Comb where
   ladder := by
     change RelCT isa _ vLadderCode _
     obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false p521Comb.stk) vLadderCode h).isSome = true := by
-      taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
+      native_taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
     exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
 /-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
@@ -370,6 +370,6 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P521.curve) :
       (Spec.Ecdsa.P521.inst.verifyHashContract (X86.abi.withConsts p521Comb.combConsts)
         (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.p521_len (by decide) (verify_verified hL)
-    verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
+    verify_sp.1 verify_sp.2 (by native_taint_decide) ⟨_, vHashSat_pre⟩
 
 end VG.Proof.Ecdsa.Verify.X86.P521

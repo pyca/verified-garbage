@@ -176,7 +176,7 @@ theorem ecdh_ct : ConstantTime isa (ecdhAC false).pre (ecdhAC false).pub exchang
 
 theorem ecdhU_ct : ConstantTime isa (ecdhAC true).pre (ecdhAC true).pub exchangeBrainpoolP384r1U :=
   VG.Taint.constantTime (A := taintSymU [(brainpoolp384r1With true).constSym]) τ₀ (fun _ _ _ _ h => agreeC h)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where

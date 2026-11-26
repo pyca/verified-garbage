@@ -44,6 +44,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Blowfish's functions over its sixteen-block function by `pshufb` on x86 (32-bit) meet their contracts
@@ -126,7 +129,7 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : (Fb.fbX86 111 8 Cbc.decPost).p
 
 theorem cbcDecryptChained_ct : ConstantTime isa (Fb.fbX86 111 8 Cbc.decPost).pre (Fb.fbX86 111 8 Cbc.decPost).pub cbcDecryptChained :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (Fb.fbTaint 111 8) (fun _ _ h₁ h₂ hp => Fb.fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem cbcDecryptChained_implies :
     (Fb.wideContract 111 8 Cbc.decPost).Implies (Proof.Blowfish.cbcDecChainedScratchContract X86.abi 111 8) := by
@@ -181,7 +184,7 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : (Fb.fbX86 111 8 Fb.cfbDecPost).pre s�
 
 theorem cfbDecrypt_ct : ConstantTime isa (Fb.fbX86 111 8 Fb.cfbDecPost).pre (Fb.fbX86 111 8 Fb.cfbDecPost).pub cfbDecrypt :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (Fb.fbTaint 111 8) (fun _ _ h₁ h₂ hp => Fb.fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem cfbDecrypt_implies :
     (Fb.wideContract 111 8 Fb.cfbDecPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 111 Proof.Blowfish.cfbDecPost 8) := by
@@ -394,7 +397,7 @@ theorem ecbTaint_agree {up : Bool} {s₁ s₂ : State} (h₁ : (ecbX86 up).pre s
 
 theorem ecb_ct (up : Bool) : ConstantTime isa (ecbX86 up).pre (ecbX86 up).pub (ecb up) := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.sseTaint.check ecbTaint (ecb up) h).isSome = true := by
-    cases up <;> exact ⟨_, by taint_decide⟩
+    cases up <;> exact ⟨_, by native_taint_decide⟩
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree h₁ h₂ hp) h
 
 /-! ### The contracts -/

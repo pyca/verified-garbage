@@ -203,7 +203,7 @@ theorem combPk_ct : ConstantTime isa (combPkPre false) (combPkPub false) publicK
 
 theorem combPkU_ct : ConstantTime isa (combPkPre true) (combPkPub true) publicKeyBrainpoolP512r1CombU :=
   VG.Taint.constantTime (A := taintSymU [brainpoolp512r1Comb.tsym,(brainpoolp512r1With true).constSym]) (Taint.ofRegs [.r0,.r1,.r2])
-    (fun _ _ _ _ h => combPk_agree h) (by taint_decide)
+    (fun _ _ _ _ h => combPk_agree h) (by native_taint_decide)
 
 open VG.Proof.BrainpoolP512r1.Arm in
 /-- A state satisfying the precondition without the tables, which it holds

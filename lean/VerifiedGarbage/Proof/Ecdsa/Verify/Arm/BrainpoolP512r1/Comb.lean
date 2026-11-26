@@ -176,7 +176,7 @@ theorem pubLeaves : PubLeaves (brainpoolp512r1With false) := by
 theorem pubLeavesU : PubLeaves (brainpoolp512r1With true) := by
   apply PubLeaves.of_checks (A := VG.Arm.taintU) (τ := VG.Arm.Taint.ofRegs)
     (fun _ _ _ h => VG.Arm.Taint.agree_ofRegs h) (L := ctPiecesU) (extra := [_, _]) rfl <;>
-    taint_decide
+    native_taint_decide
 
 /-- Verification is constant time but in the key and the signature, given the
 taint analysis's checks of its parts. -/
@@ -218,8 +218,8 @@ theorem combVerifyU_ct (hC : Law Spec.BrainpoolP512r1.curve) :
         exacts [h0, h1, h2, h3]), fun n hn => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
         rcases hn with rfl | rfl
-        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by taint_decide))
-    (LeafCT.checkU (p := piece ctPiecesU 27) (by taint_decide))
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by native_taint_decide))
+    (LeafCT.checkU (p := piece ctPiecesU 27) (by native_taint_decide))
 
 open VG.Proof.BrainpoolP512r1.Arm in
 /-- A state satisfying the precondition without the tables, which it holds
@@ -309,7 +309,7 @@ theorem verifyHash_verified (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false verifyBrainpoolP512r1Comb)
       (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (Arm.abi.withConsts (combVerifyK false)) 96) :=
   VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide) (combVerify_verified hC)
-    ⟨_, by taint_decide⟩ (hash_sat false)
+    ⟨_, by native_taint_decide⟩ (hash_sat false)
 
 /-- `vg_ecdsa_brainpoolp512r1_verify_umaal`, taking the hash function's output: the
 verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
@@ -317,6 +317,6 @@ theorem verifyHashU_verified (hC : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false verifyBrainpoolP512r1CombU)
       (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (Arm.abi.withConsts (combVerifyK true)) 96) :=
   VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.brainpoolP512r1_len (by decide) (combVerifyU_verified hC)
-    ⟨_, by taint_decide⟩ (hash_sat true)
+    ⟨_, by native_taint_decide⟩ (hash_sat true)
 
 end VG.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1

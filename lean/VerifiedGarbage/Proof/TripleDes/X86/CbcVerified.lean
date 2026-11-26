@@ -16,6 +16,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Triple DES-CBC on x86 (32-bit) meets its contracts
@@ -81,13 +84,13 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : (fbX86 151 8 decPost).pre s₀
 theorem cbcEncryptChained_ct :
     ConstantTime isa (fbX86 118 8 encPost).pre (fbX86 118 8 encPost).pub cbcEncryptChained := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cbcEncryptChained h).isSome = true :=
-    by taint_decide_sum [encSum]
+    by native_taint_decide_sum [encSum]
   exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cbcDecryptChained_ct :
     ConstantTime isa (fbX86 151 8 decPost).pre (fbX86 151 8 decPost).pub cbcDecryptChained :=
   VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 151) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-! ## The contracts -/
 
