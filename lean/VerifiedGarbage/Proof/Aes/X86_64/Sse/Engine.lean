@@ -66,21 +66,37 @@ def toBsT (j p : Nat) : List (Nat × Nat) :=
 /-- `fromBs`: to those words. -/
 def fromBsT (w t : Nat) : List (Nat × Nat) := [(t % 8, posAt 4 false (8 * (w / 4) + t / 8) (w % 4))]
 
+/-- `post`, with the lanes of the outputs' words given as numbers. -/
+def postS (r : Nat → XReg) (S : Nat → Nat) (e : Env (Nat × Nat)) : Bool :=
+  ((List.range 8).all fun j => outOkS 64 9 (e.reg (r j)) (S j)) && keepsMasks e
+
+theorem check_of {is : List Instr} {e : Env (Nat × Nat)} {r : Nat → XReg} {T : Nat → Nat → List (Nat × Nat)}
+    {S : Nat → Nat} (hS : ∀ j, mk 64 (atoms T j) 64 = S j)
+    (h : check (lanes 64 9) cfg is e (postS r S) = true) : check (lanes 64 9) cfg is e (post r (atoms T)) = true := by
+  obtain ⟨e', he, hp⟩ := of_check _ _ h
+  rw [postS, Bool.and_eq_true] at hp
+  rw [check, he]
+  show (linPost 9 (outs r (atoms T)) e' && keepsMasks e') = true
+  rw [hp.2, Bool.and_true]
+  refine List.all_eq_true.mpr fun o ho => ?_
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ho
+  exact outOkW_of (hS j) (List.all_eq_true.mp hp.1 j hj)
+
 theorem toBs_check : check (lanes 64 9) cfg toBs (env q) (post q (atoms toBsT)) = true := by decide +kernel
 theorem fromBs_check : check (lanes 64 9) cfg fromBs (env q) (post q (atoms fromBsT)) = true := by decide +kernel
 theorem mc0_check : check (lanes 64 9) cfg (mixColumns false) (env p)
-    (post q (atoms (mixT mcCoeffs 4 false))) = true := by decide +kernel
+    (post q (atoms (mixT mcCoeffs 4 false))) = true := check_of (mixTS_eq 64 mcCoeffs 4 false) (by decide +kernel)
 theorem mc1_check : check (lanes 64 9) cfg (mixColumns true) (env p)
-    (post q (atoms (mixT mcCoeffs 4 true))) = true := by decide +kernel
+    (post q (atoms (mixT mcCoeffs 4 true))) = true := check_of (mixTS_eq 64 mcCoeffs 4 true) (by decide +kernel)
 theorem sr2p_check : check (lanes 64 9) cfg (sr2 p .xmm0 .xmm1) (env p) (post p (atoms (sr2T 4))) = true := by
   decide +kernel
 theorem sr2q_check : check (lanes 64 9) cfg (sr2 q .xmm8 .xmm9) (env q) (post q (atoms (sr2T 4))) = true := by
   decide +kernel
 
 theorem invMc0_check : check (lanes 64 9) cfg (invMixColumns false) (env p)
-    (post q (atoms (mixT invMcCoeffs 4 false))) = true := by decide +kernel
+    (post q (atoms (mixT invMcCoeffs 4 false))) = true := check_of (mixTS_eq 64 invMcCoeffs 4 false) (by decide +kernel)
 theorem invMc1_check : check (lanes 64 9) cfg (invMixColumns true) (env p)
-    (post q (atoms (mixT invMcCoeffs 4 true))) = true := by decide +kernel
+    (post q (atoms (mixT invMcCoeffs 4 true))) = true := check_of (mixTS_eq 64 invMcCoeffs 4 true) (by decide +kernel)
 
 /-- A round key's bits between `keyMid` and `keyOut`: `h` of the slice's number, in form `f`. -/
 def midT (f : Bool) (h p : Nat) : List (Nat × Nat) :=
@@ -320,7 +336,8 @@ theorem arkStep (r0 r1 t u : XReg) (i : Nat) (s : State)
         ((XOp.pshufd u t 0x44).exec (s.setXmm t (s.mem.readW (s.gpr kp + BitVec.ofNat 64 (16 * i)) 128)))))) := by
     simp only [dupLow, dupHigh, px, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, State.load128, hea,
       hin, ite_true, Option.map_some]
-  refine ⟨_, hrun, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
+  refine ⟨_, hrun, ?_, ?_, ?_, by simp only [XOp.exec, gpr_setXmm], by simp only [XOp.exec, mem_setXmm],
+    by simp only [XOp.exec, rd_setXmm], by simp only [XOp.exec, wr_setXmm]⟩
   · intro l hl
     simp only [XOp.exec, xmm_setXmm, h1, h2, h3, h4, h5, h6, h1.symm, h5.symm, h6.symm,
       ite_true, ite_false, XBinOp.eval, StraightY.qword_xor, qword_dup44 _ hl]
@@ -411,7 +428,8 @@ theorem mc_holds (f : Bool) {s : State} (he : Env0 s) {S : Nat → Spec.Aes.Stat
     ∃ s', runBlock isa (Impl.Aes.X86_64.Sse.mixColumns f) s = some s' ∧ Keep s s' ∧
       Holds f q s' fun k => Spec.Aes.mixColumns (S k) := by
   obtain ⟨s', e, k, h⟩ := layer_ok (is := Impl.Aes.X86_64.Sse.mixColumns f) (r := p) (r' := q)
-    (T := mixT mcCoeffs 4 f) (by cases f; exact mc0_check; exact mc1_check) (by cases f <;> decide +kernel)
+    (T := mixT mcCoeffs 4 f) (by cases f; exact mc0_check; exact mc1_check)
+    (fun j _ p hp => mixT_lt mcCoeffs f j (by decide) hp)
     (by cases f <;> decide) he
   exact ⟨s', e, k, fun l hl => (hS l hl).mixColumns fun j hj x hx => h l hl j hj x hx⟩
 
@@ -420,7 +438,7 @@ theorem invMc_holds (f : Bool) {s : State} (he : Env0 s) {S : Nat → Spec.Aes.S
       Holds f q s' fun k => Spec.Aes.invMixColumns (S k) := by
   obtain ⟨s', e, k, h⟩ := layer_ok (is := Impl.Aes.X86_64.Sse.invMixColumns f) (r := p) (r' := q)
     (T := mixT invMcCoeffs 4 f) (by cases f; exact invMc0_check; exact invMc1_check)
-    (by cases f <;> decide +kernel) (by cases f <;> decide) he
+    (fun j _ p hp => mixT_lt invMcCoeffs f j (by decide) hp) (by cases f <;> decide) he
   exact ⟨s', e, k, fun l hl => (hS l hl).invMixColumns fun j hj x hx => h l hl j hj x hx⟩
 
 theorem sr2_holds {s : State} (he : Env0 s) {S : Nat → Spec.Aes.State} (hS : Holds true p s S) :
@@ -639,7 +657,8 @@ theorem loadStep (q0 q4 : XReg) (k : Nat) (s : State) (h : q0 ≠ .xmm8 ∧ q4 �
     rw [bufAddr] at h1 h2
     simp only [ldx, mv, unpckl, unpckh, runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, State.load128,
       ea_slot, gpr_setXmm, rd_setXmm, wr_setXmm, mem_setXmm, bufAddr, h1, h2, ite_true, Option.map_some]
-  refine ⟨_, hrun, fun l hl => ?_, fun l hl => ?_, fun x c d e => ?_, rfl, rfl, rfl, rfl⟩
+  refine ⟨_, hrun, fun l hl => ?_, fun l hl => ?_, fun x c d e => ?_, by simp only [XOp.exec, gpr_setXmm],
+    by simp only [XOp.exec, mem_setXmm], by simp only [XOp.exec, rd_setXmm], by simp only [XOp.exec, wr_setXmm]⟩
   · simp only [XOp.exec, xmm_setXmm, a1, a3, a1.symm, a2.symm, ite_true, ite_false]
     rw [qword_unpckl _ _ hl]
     rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl

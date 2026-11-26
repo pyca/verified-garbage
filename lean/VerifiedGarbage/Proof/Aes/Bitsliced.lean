@@ -195,18 +195,159 @@ theorem BsRel.invSr2 {w B : Nat} {W W' : Nat → BitVec w} {S : Nat → Spec.Aes
 def mulTerms (c j : Nat) : List Nat :=
   (List.range 8).filter fun i => (Spec.Aes.mul (BitVec.ofNat 8 c) (1 <<< i)).getLsbD j
 
-theorem mulTerms_ok : ∀ c ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09], ∀ a : Byte, ∀ j < 8,
-    (Spec.Aes.mul (BitVec.ofNat 8 c) a).getLsbD j = (mulTerms c j).foldr (fun i b => a.getLsbD i ^^ b) false := by
-  decide +kernel
+/-- A byte is the XOR of its bits. -/
+theorem byte_bits : ∀ a : Byte,
+    a = (List.range 8).foldr (fun i b => (if a.getLsbD i then (1 <<< i : Byte) else 0) ^^^ b) 0 := by decide +kernel
+
+/-- A linear function of a byte, bit by bit. -/
+theorem linear_bits (g : Byte → Byte) (hg : ∀ a b, g (a ^^^ b) = g a ^^^ g b) (a : Byte) (j : Nat) :
+    (g a).getLsbD j = ((List.range 8).filter fun i => (g (1 <<< i)).getLsbD j).foldr
+      (fun i b => a.getLsbD i ^^ b) false := by
+  have h0 : g 0 = 0 := by
+    have := hg 0 0
+    rwa [BitVec.xor_self, BitVec.xor_self] at this
+  have hz : (0 : Byte).getLsbD j = false := BitVec.getLsbD_zero
+  have h (l : List Nat) : (g (l.foldr (fun i b => (if a.getLsbD i then (1 <<< i : Byte) else 0) ^^^ b) 0)).getLsbD j =
+      (l.filter fun i => (g (1 <<< i)).getLsbD j).foldr (fun i b => a.getLsbD i ^^ b) false := by
+    induction l with
+    | nil => rw [List.foldr_nil, h0]; exact BitVec.getLsbD_zero
+    | cons i l ih =>
+      rw [List.foldr_cons, hg, BitVec.getLsbD_xor, ih, List.filter_cons]
+      cases hj : (g (1 <<< i)).getLsbD j <;> cases ha : a.getLsbD i <;>
+        simp only [hj, ha, h0, hz, ↓reduceIte, List.foldr_cons, Bool.false_eq_true, Bool.false_xor]
+  rw [← h, ← byte_bits]
+
+theorem mulTerms_ok (c : Nat) (a : Byte) (j : Nat) :
+    (Spec.Aes.mul (BitVec.ofNat 8 c) a).getLsbD j = (mulTerms c j).foldr (fun i b => a.getLsbD i ^^ b) false :=
+  linear_bits _ (mul_xor_any _) a j
 
 /-- The byte `i` rows on in the column of byte `n`. -/
 def down (n i : Nat) : Nat := (n % 4 + i) % 4 + 4 * (n / 4)
+
+theorem down_lt {n i : Nat} (hn : n < 16) : down n i < 16 := by unfold down; omega
 
 /-- MixColumns with the coefficients `cs`, of a row's own byte and the next
 rows': slice `j`, position `p`, of states in form `f`. -/
 def mixT (cs : List Nat) (B : Nat) (f : Bool) (j p : Nat) : List (Nat × Nat) :=
   (List.range 4).flatMap fun i =>
     (mulTerms (cs.getD i 0) j).map fun b => (b, posAt B f (down (byteAt B f p) i) (p % B))
+
+/-! The lanes of a word of `mixT` (`mk`), computed from the four lanes of its
+positions alone: an evaluator's value for a layer is compared with `mixS`,
+whose positions the kernel evaluates once, rather than for each of the eight
+words, and each of the bits that a word XORs at a position. -/
+
+/-- The XOR of `g b` for `b` in `l`. -/
+def xorOver (l : List Nat) (g : Nat → Nat) : Nat := l.foldr (fun b acc => g b ^^^ acc) 0
+
+theorem xorOver_xor (l : List Nat) (g h : Nat → Nat) : xorOver l (fun b => g b ^^^ h b) = xorOver l g ^^^ xorOver l h := by
+  induction l with
+  | nil => exact (Nat.xor_zero 0).symm
+  | cons b l ih =>
+    show (g b ^^^ h b) ^^^ xorOver l _ = (g b ^^^ xorOver l g) ^^^ (h b ^^^ xorOver l h)
+    rw [ih]; ac_rfl
+
+theorem xorOver_congr {l : List Nat} {g h : Nat → Nat} (e : ∀ b, g b = h b) : xorOver l g = xorOver l h :=
+  congrArg (xorOver l) (funext e)
+
+theorem atomsAt_append (w q : Nat) (l l' : List Nat) : atomsAt w q (l ++ l') = atomsAt w q l ^^^ atomsAt w q l' := by
+  induction l with
+  | nil => exact (Nat.zero_xor _).symm
+  | cons a l ih => rw [List.cons_append, atomsAt, atomsAt, ih, Nat.xor_assoc]
+
+theorem atomsAt_flatMap (w q : Nat) (l : List Nat) (h : Nat → List Nat) :
+    atomsAt w q (l.flatMap h) = xorOver l fun b => atomsAt w q (h b) := by
+  induction l with
+  | nil => rfl
+  | cons b l ih => rw [List.flatMap_cons, atomsAt_append, ih]; rfl
+
+theorem mk_xorOver (w : Nat) (l : List Nat) {g : Nat → List Nat} {F : Nat → Nat → List Nat}
+    (h : ∀ q, atomsAt w q (g q) = xorOver l fun b => atomsAt w q (F b q)) (n : Nat) :
+    mk w g n = xorOver l fun b => mk w (F b) n := by
+  induction n with
+  | zero =>
+    have (l : List Nat) : xorOver l (fun _ => 0) = 0 := by
+      induction l with
+      | nil => rfl
+      | cons b l ih => show 0 ^^^ xorOver l _ = 0; rw [ih, Nat.xor_self]
+    exact (this l).symm
+  | succ n ih =>
+    rw [mk, ih, h, ← xorOver_xor]; rfl
+
+theorem mk_append (w : Nat) (g h : Nat → List Nat) (n : Nat) :
+    mk w (fun p => g p ++ h p) n = mk w g n ^^^ mk w h n := by
+  induction n with
+  | zero => exact (Nat.xor_zero 0).symm
+  | succ n ih => rw [mk, mk, mk, ih, atomsAt_append]; ac_rfl
+
+/-- The atoms of the word `b` on are those of word 0, `w w b` lanes' bits up. -/
+theorem mk_shift (w b : Nat) (g : Nat → List Nat) (n : Nat) :
+    mk w (fun p => (g p).map (w * b + ·)) n = mk w g n <<< (w * w * b) := by
+  have h (q : Nat) (l : List Nat) : atomsAt w q (l.map (w * b + ·)) = atomsAt w q l <<< (w * w * b) := by
+    induction l with
+    | nil => exact (Nat.zero_shiftLeft _).symm
+    | cons a l ih =>
+      rw [List.map_cons, atomsAt, ih, atomsAt, Nat.shiftLeft_xor_distrib, Nat.shiftLeft_eq (2 ^ _), ← Nat.pow_add]
+      congr 2
+      rw [Nat.mul_add, ← Nat.mul_assoc]; omega_using []
+  induction n with
+  | zero => exact (Nat.zero_shiftLeft _).symm
+  | succ n ih => rw [mk, mk, ih, h, Nat.shiftLeft_xor_distrib]
+
+/-- The lanes of the word whose bit at `p` is the XOR, for `i < 4`, of the bits `m i` of the bytes
+at `P i p`, of `w`-bit words. -/
+def mixS (w : Nat) (P : Nat → Nat → Nat) (m : Nat → List Nat) : Nat :=
+  xorOver [0, 1, 2, 3] fun i => xorOver (m i) fun b => mk w (fun p => [P i p]) w <<< (w * w * b)
+
+theorem mk_mix (w : Nat) (P : Nat → Nat → Nat) (m : Nat → List Nat) :
+    mk w (fun p => ((List.range 4).flatMap fun i => (m i).map fun b => (b, P i p)).map fun t => w * t.1 + t.2) w =
+      mixS w P m := by
+  refine (mk_xorOver w [0, 1, 2, 3] (F := fun i p => (m i).map fun b => w * b + P i p) (fun q => ?_) w).trans
+    (xorOver_congr fun i => (mk_xorOver w (m i) (F := fun b p => [w * b + P i p]) (fun q => ?_) w).trans
+      (xorOver_congr fun b => mk_shift w b (fun p => [P i p]) w))
+  · rw [List.map_flatMap, show List.range 4 = [0, 1, 2, 3] from rfl, atomsAt_flatMap]
+    exact xorOver_congr fun i => by rw [List.map_map]; rfl
+  · generalize m i = l
+    induction l with
+    | nil => rfl
+    | cons b l ih =>
+      rw [List.map_cons, atomsAt, ih]
+      show _ = (2 ^ _ ^^^ 0) ^^^ _
+      rw [Nat.xor_zero]
+      rfl
+
+/-- The lanes of word `j` of `mixT`. -/
+def mixTS (w : Nat) (cs : List Nat) (B : Nat) (f : Bool) (j : Nat) : Nat :=
+  mixS w (fun i p => posAt B f (down (byteAt B f p) i) (p % B)) fun i => mulTerms (cs.getD i 0) j
+
+theorem mixTS_eq (w : Nat) (cs : List Nat) (B : Nat) (f : Bool) (j : Nat) :
+    mk w (fun p => (mixT cs B f j p).map fun t => w * t.1 + t.2) w = mixTS w cs B f j := mk_mix ..
+
+theorem mixT_lt (cs : List Nat) {B : Nat} (f : Bool) (j : Nat) {p : Nat} (hB : 0 < B) (hp : p < 16 * B) :
+    ∀ t ∈ mixT cs B f j p, t.2 < 16 * B := by
+  intro t ht
+  simp only [mixT, List.mem_flatMap, List.mem_map] at ht
+  obtain ⟨i, _, b, _, rfl⟩ := ht
+  have hb : byteAt B f p < 16 := by
+    have h : p / B < 16 := Nat.div_lt_of_lt_mul (by rwa [Nat.mul_comm])
+    unfold byteAt; split <;> omega
+  exact posAt_lt f (down_lt hb) (Nat.mod_lt _ hB)
+
+/-- `outOkW`, with the lanes it compares with given as a number. -/
+def outOkS (w k : Nat) (v : Option (Nat × Nat)) (S : Nat) : Bool :=
+  match v with
+  | some v => Nat.beq v.1 0 && (Nat.beq v.2 S && Nat.blt v.2 (2 ^ (w * 2 ^ k)))
+  | none => false
+
+theorem outOkW_of {w k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat} {S : Nat} (hS : mk w g w = S)
+    (h : outOkS w k v S = true) : outOkW w k v g = true := by
+  cases v with
+  | none => cases h
+  | some v =>
+    obtain ⟨c, f⟩ := v
+    simp only [outOkS, Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq] at h
+    obtain ⟨rfl, rfl, h⟩ := h
+    simp only [outOkW, outWordW, hS, beq_self_eq_true, decide_eq_true h, Bool.and_self]
 
 def mcCoeffs : List Nat := [0x02, 0x03, 0x01, 0x01]
 def invMcCoeffs : List Nat := [0x0e, 0x0b, 0x0d, 0x09]
@@ -230,12 +371,9 @@ theorem termsXor_row {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → 
 theorem mulTerms_lt (c j : Nat) : ∀ b ∈ mulTerms c j, b < 8 := fun _ hb =>
   List.mem_range.mp (List.mem_filter.mp hb).1
 
-theorem down_lt {n i : Nat} (hn : n < 16) : down n i < 16 := by unfold down; omega
-
 /-- What the layer gives, byte by byte. -/
 theorem mixT_bit {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → Spec.Aes.State} (h : BsRel B f W S)
-    (cs : List Nat) (hc : ∀ i < 4, cs.getD i 0 ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09])
-    {j n k : Nat} (hj : j < 8) (hn : n < 16) (hk : k < B) :
+    (cs : List Nat) (j : Nat) {n k : Nat} (hn : n < 16) (hk : k < B) :
     termsXor W (mixT cs B f j (posAt B f n k)) =
       (Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 0 0)) ((S k).getD (down n 0) 0) ^^^
        Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 1 0)) ((S k).getD (down n 1) 0) ^^^
@@ -245,8 +383,7 @@ theorem mixT_bit {w B : Nat} {f : Bool} {W : Nat → BitVec w} {S : Nat → Spec
     List.append_nil, termsXor_append, byteAt_posAt f hn hk, posAt_mod f n hk, BitVec.getLsbD_xor]
   rw [termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _), termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _),
     termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _), termsXor_row h (down_lt hn) hk _ (mulTerms_lt _ _),
-    mulTerms_ok _ (hc 0 (by decide)) _ j hj, mulTerms_ok _ (hc 1 (by decide)) _ j hj,
-    mulTerms_ok _ (hc 2 (by decide)) _ j hj, mulTerms_ok _ (hc 3 (by decide)) _ j hj]
+    mulTerms_ok, mulTerms_ok, mulTerms_ok, mulTerms_ok]
   simp only [Bool.xor_assoc]
 
 theorem mul_one_byte : ∀ a : Byte, Spec.Aes.mul 1 a = a := by decide +kernel
@@ -256,7 +393,7 @@ theorem BsRel.mixColumns {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S : N
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = termsXor W (mixT mcCoeffs B f j p)) :
     BsRel B f W' fun k => Spec.Aes.mixColumns (S k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.mixColumns (S k)).getD n 0).getLsbD j
-  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h mcCoeffs (by decide) hj hn hk, Spec.Aes.mixColumns, getD_ofFn _ hn]
+  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h mcCoeffs j hn hk, Spec.Aes.mixColumns, getD_ofFn _ hn]
   simp only [mcCoeffs, List.getD_cons_zero, List.getD_cons_succ, down, mul_one_byte,
     show (BitVec.ofNat 8 1) = (1 : Byte) from rfl]
   rfl
@@ -266,7 +403,7 @@ theorem BsRel.invMixColumns {w B : Nat} {f : Bool} {W W' : Nat → BitVec w} {S 
     (hW : ∀ j < 8, ∀ p < 16 * B, (W' j).getLsbD p = termsXor W (mixT invMcCoeffs B f j p)) :
     BsRel B f W' fun k => Spec.Aes.invMixColumns (S k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.invMixColumns (S k)).getD n 0).getLsbD j
-  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h invMcCoeffs (by decide) hj hn hk, Spec.Aes.invMixColumns, getD_ofFn _ hn]
+  rw [hW j hj _ (posAt_lt f hn hk), mixT_bit h invMcCoeffs j hn hk, Spec.Aes.invMixColumns, getD_ofFn _ hn]
   rfl
 
 /-! ### Round keys -/
@@ -294,10 +431,6 @@ def rk63 (rk : List Byte) : List Byte := rk.map (· ^^^ 0x63)
 /-- The S-box without its constant. -/
 def sbox0 (b : Byte) : Byte := Spec.Aes.sbox b ^^^ 0x63
 
-theorem mc63 : ∀ c ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09], ∀ a : Byte,
-    Spec.Aes.mul (BitVec.ofNat 8 c) (a ^^^ 0x63) =
-      Spec.Aes.mul (BitVec.ofNat 8 c) a ^^^ Spec.Aes.mul (BitVec.ofNat 8 c) 0x63 := by decide +kernel
-
 theorem getD_c63 (s : Spec.Aes.State) {n : Nat} (hn : n < 16) : (c63 s).getD n 0 = s.getD n 0 ^^^ 0x63 :=
   getD_map _ s hn
 
@@ -320,12 +453,12 @@ theorem xor_consts (a b c d p q : Byte) :
   exact (by decide : ∀ a b c d p q : Bool, (((((a ^^ (p ^^ q)) ^^ (b ^^ p)) ^^ (c ^^ q)) ^^ (d ^^ q))) =
     ((((a ^^ b) ^^ c) ^^ d) ^^ q)) _ _ _ _ _ _
 
-theorem mc2 (a : Byte) : Spec.Aes.mul 0x02 (a ^^^ 0x63) = Spec.Aes.mul 0x02 a ^^^ Spec.Aes.mul 0x02 0x63 := mc63 2 (by decide) a
-theorem mc3 (a : Byte) : Spec.Aes.mul 0x03 (a ^^^ 0x63) = Spec.Aes.mul 0x03 a ^^^ Spec.Aes.mul 0x03 0x63 := mc63 3 (by decide) a
-theorem mce (a : Byte) : Spec.Aes.mul 0x0e (a ^^^ 0x63) = Spec.Aes.mul 0x0e a ^^^ Spec.Aes.mul 0x0e 0x63 := mc63 14 (by decide) a
-theorem mcb (a : Byte) : Spec.Aes.mul 0x0b (a ^^^ 0x63) = Spec.Aes.mul 0x0b a ^^^ Spec.Aes.mul 0x0b 0x63 := mc63 11 (by decide) a
-theorem mcd (a : Byte) : Spec.Aes.mul 0x0d (a ^^^ 0x63) = Spec.Aes.mul 0x0d a ^^^ Spec.Aes.mul 0x0d 0x63 := mc63 13 (by decide) a
-theorem mc9 (a : Byte) : Spec.Aes.mul 0x09 (a ^^^ 0x63) = Spec.Aes.mul 0x09 a ^^^ Spec.Aes.mul 0x09 0x63 := mc63 9 (by decide) a
+theorem mc2 (a : Byte) : Spec.Aes.mul 0x02 (a ^^^ 0x63) = Spec.Aes.mul 0x02 a ^^^ Spec.Aes.mul 0x02 0x63 := mul_xor_any _ _ _
+theorem mc3 (a : Byte) : Spec.Aes.mul 0x03 (a ^^^ 0x63) = Spec.Aes.mul 0x03 a ^^^ Spec.Aes.mul 0x03 0x63 := mul_xor_any _ _ _
+theorem mce (a : Byte) : Spec.Aes.mul 0x0e (a ^^^ 0x63) = Spec.Aes.mul 0x0e a ^^^ Spec.Aes.mul 0x0e 0x63 := mul_xor_any _ _ _
+theorem mcb (a : Byte) : Spec.Aes.mul 0x0b (a ^^^ 0x63) = Spec.Aes.mul 0x0b a ^^^ Spec.Aes.mul 0x0b 0x63 := mul_xor_any _ _ _
+theorem mcd (a : Byte) : Spec.Aes.mul 0x0d (a ^^^ 0x63) = Spec.Aes.mul 0x0d a ^^^ Spec.Aes.mul 0x0d 0x63 := mul_xor_any _ _ _
+theorem mc9 (a : Byte) : Spec.Aes.mul 0x09 (a ^^^ 0x63) = Spec.Aes.mul 0x09 a ^^^ Spec.Aes.mul 0x09 0x63 := mul_xor_any _ _ _
 
 theorem xor_consts4 (a b c d p q r s t : Byte) (h : p ^^^ q ^^^ r ^^^ s = t) :
     (a ^^^ p) ^^^ (b ^^^ q) ^^^ (c ^^^ r) ^^^ (d ^^^ s) = (a ^^^ b ^^^ c ^^^ d) ^^^ t := by

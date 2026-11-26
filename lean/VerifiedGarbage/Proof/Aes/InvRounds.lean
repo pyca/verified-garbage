@@ -83,7 +83,8 @@ private theorem foldl_mul_xor (b x y : Byte) (l : List Nat) (a₁ a₂ : Byte) :
     congr 1
     split <;> simp only [repeat_xtimes_xor] <;> ac_rfl
 
-private theorem mul_xor_any (b x y : Byte) : mul b (x ^^^ y) = mul b x ^^^ mul b y := by
+/-- The product is linear in its second operand. -/
+theorem mul_xor_any (b x y : Byte) : mul b (x ^^^ y) = mul b x ^^^ mul b y := by
   unfold mul; rw [foldl_mul_xor]; rfl
 
 /-- `mulBits c` gives the bits of `{c} • a`. -/
