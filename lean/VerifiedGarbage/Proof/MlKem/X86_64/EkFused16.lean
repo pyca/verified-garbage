@@ -8,6 +8,9 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
@@ -115,8 +118,15 @@ theorem SHPost16.b {oa oz : Nat} {s s' : State} (h : SHPost16 oa oz s s') :
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
     h.cs .rsp (by decide) (by decide), h.frame⟩
 
+theorem EkF.habs_congr (H : Spec.Sha3.State) {f g : Nat → List Byte} :
+    ∀ n, (∀ j < n, f j = g j) → SH.habs H f n = SH.habs H g n
+  | 0, _ => rfl
+  | n + 1, h => by
+    simp only [SH.habs]
+    rw [EkF.habs_congr H n fun j hj => h j (by omega_using [hj]), h n (by omega_using [])]
+
 /-- The fragment inlined, on the seeds at `scratch`, to the polynomials from `sc oa`. -/
-theorem sampleHAt16_ok {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} {s : State} (h : SHH16 oa oz s) :
+theorem sampleHAt16_inline_ok {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} {s : State} (h : SHH16 oa oz s) :
     WP isa (Encaps.sampleHAt b (sc oa) (sc oz)) s (SHPost16 oa oz s) := by
   refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -142,7 +152,7 @@ theorem sampleHAt16_ok {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} {s : Sta
   · rw [hm3]; exact hhs
 
 /-- Two runs of the fragment inlined, from the same seeds and pointers. -/
-theorem sampleHAt16_tr {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
+theorem sampleHAt16_inline_tr {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
     RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
       bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
       (Encaps.sampleHAt b (sc oa) (sc oz)) fun _ _ => True := by
@@ -169,6 +179,94 @@ theorem sampleHAt16_tr {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
   simp only [sample4K, State.withRegions_gpr, State.withRegions_mem, hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1,
     hv2.2.2, hm1, hm2, e4, hs1, hs2, e3]
   simp only [pa, e1, and_self]
+
+/-- The same matrix/hash arithmetic called from the caller's existing stack frame. -/
+theorem sampleHAt16_call_ok {name : String} {b : Prog isa} (hb : BatchHOk16 b)
+    {oa oz : Nat} {s : State} (h : SHH16 oa oz s) :
+    WP isa (Encaps.sampleHAt b (sc oa) (sc oz) (some name)) s (SHPost16 oa oz s) := by
+  have hd : 8 * b.depth = 0 := by
+    rw [← x86_64Depth_noSp hb.nosp, hb.xd]
+  refine WP.seq (WP.mono (s4Glue_ok oa oz h.offA h.offZ s) fun s1 ⟨⟨hv, hm⟩, k⟩ => ?_)
+  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
+  refine WP.seq (WP.call hb.ok hb.nosp (by omega_using [hd]) (s4_16Pre h.toS4H16 hv k)
+    (by rw [k.2.1, k.2.2]; exact h.c) (by rw [k.2.2]; exact h.w)
+    fun s2 hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ => ?_)
+  refine WP.mono (and15_ok s2) fun s3 ⟨⟨h15, hm3⟩, k3⟩ => ?_
+  have hsd : ∀ j < 3, seed4 s1.callEntry.mem (pa s (sc 0)) j = seed4 s.mem (pa s (sc 0)) j := by
+    intro j hj
+    unfold seed4
+    rw [ce_bytesAt s1 (n := 34) (by decide) (by
+      rw [hsp]; exact h.kS.sub_right (Offset.sub_base _ (by omega_using [hj]))), hm]
+  have hsCE : stateAt s1.callEntry.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oHS) =
+      stateAt s.mem (pa s (sc oz) + BitVec.ofNat 64 Sample4.oHS) := by
+    rw [← hm]
+    exact Proof.Sha3.stateAt_congr (ce_mem s1 (n := 200) (by decide) (by
+      rw [hsp]; exact h.kZ.sub_right (Offset.sub_base _ (by decide))))
+  have hbCE : ∀ j < 3,
+      bytesAt s1.callEntry.mem (pa s (sc oz) + BitVec.ofNat 64 (Sample4.oHB + 136 * j)) 136 =
+      bytesAt s.mem (pa s (sc oz) + BitVec.ofNat 64 (Sample4.oHB + 136 * j)) 136 := by
+    intro j hj
+    rw [ce_bytesAt s1 (n := 136) (by decide) (by
+      rw [hsp]; exact h.kZ.sub_right (Offset.sub_base _ (by
+        simp only [Sample4.oHB]; omega_using [hj]))), hm]
+  simp only [sampleHKW, State.withRegions_gpr, State.withRegions_mem,
+    ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp),
+    ce_gpr' s1 (by decide : Reg.rdx ≠ .rsp), hv.1, hv.2.1, hv.2.2, hm₂] at hpost
+  obtain ⟨hax, hres, hhs⟩ := hpost
+  rw [hg₂ .rax (by decide), range_all_congr fun j hj =>
+    congrArg (fun B => (sampleNTT minIterations B).isSome) (hsd j hj)] at hax
+  refine ⟨k3.2.1.trans (hrd.trans k.2.1), k3.2.2.trans (hwr.trans k.2.2), fun r hr h15' => ?_, ?_, ?_,
+    fun j hj f hjf => ?_, ?_⟩
+  · rw [k3.gpr (by simpa using h15'), hcs r hr, k.gpr (argRegs_cs r hr)]
+  · rw [hm3, ← hm, ← hsp]
+    exact Frame.below_mono hf (by omega_using [hd]) (by omega_using [])
+  · rw [h15, hcs .r15 (by decide), k.gpr (by decide), hax]
+  · rw [hm3]; exact hres j hj f (by rw [hsd j hj]; exact hjf)
+  · rw [hm3, hhs, hsCE, EkF.habs_congr _ 3 hbCE]
+
+/-- The matrix/hash fragment, inlined or shared, has the same result and frame. -/
+theorem sampleHAt16_ok {callName : Option String} {b : Prog isa} (hb : BatchHOk16 b)
+    {oa oz : Nat} {s : State} (h : SHH16 oa oz s) :
+    WP isa (Encaps.sampleHAt b (sc oa) (sc oz) callName) s (SHPost16 oa oz s) := by
+  cases callName with
+  | none => exact sampleHAt16_inline_ok hb h
+  | some n => exact sampleHAt16_call_ok hb h
+
+theorem sampleHAt16_call_tr {n : String} {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
+    RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
+      bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
+      (Encaps.sampleHAt b (sc oa) (sc oz) (some n)) fun _ _ => True := by
+  refine RelCT.seq (RelCT.postDep (Q := fun x1 y1 => ∃ x y, (SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧
+      x.gpr .rsp = y.gpr .rsp ∧ bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136) ∧
+      (((x1.gpr .rdi = pa x (sc 0) ∧ x1.gpr .rsi = pa x (sc oa) ∧ x1.gpr .rdx = pa x (sc oz)) ∧ x1.mem = x.mem) ∧
+        Keep argRegs x x1) ∧
+      (((y1.gpr .rdi = pa y (sc 0) ∧ y1.gpr .rsi = pa y (sc oa) ∧ y1.gpr .rdx = pa y (sc oz)) ∧ y1.mem = y.mem) ∧
+        Keep argRegs y y1))
+    (block_nomem_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
+    (fun x y ⟨hx, hy, _⟩ => ⟨s4Glue_ok oa oz hx.offA hx.offZ x, s4Glue_ok oa oz hy.offA hy.offZ y⟩)
+    fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩) (RelCT.seq (RelCT.callEx hb.ok hb.ct ?_)
+      (block_nomem_tr fun i hi s => by simp only [List.mem_singleton] at hi; subst hi; rfl))
+  rintro x1 y1 ⟨x, y, ⟨hx, hy, e1, e3, e4⟩, ⟨⟨hv1, hm1⟩, k1⟩, ⟨⟨hv2, hm2⟩, k2⟩⟩
+  have hs1 : x1.gpr .rsp = x.gpr .rsp := k1.gpr (by decide)
+  have hs2 : y1.gpr .rsp = y.gpr .rsp := k2.gpr (by decide)
+  refine ⟨_, _, _, _, s4_16Pre hx.toS4H16 hv1 k1, s4_16Pre hy.toS4H16 hv2 k2, ?_, by rw [k1.2.1, k1.2.2]; exact hx.c,
+    by rw [k1.2.2]; exact hx.w, by rw [k2.2.1, k2.2.2]; exact hy.c, by rw [k2.2.2]; exact hy.w,
+    by rw [hs1, hs2, e3]⟩
+  simp only [sampleHKW, sample4K, State.withRegions_gpr, State.withRegions_mem, State.callEntry_rsp,
+    ce_gpr' _ (by decide : Reg.rdi ≠ .rsp), ce_gpr' _ (by decide : Reg.rsi ≠ .rsp),
+    ce_gpr' _ (by decide : Reg.rdx ≠ .rsp), hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2]
+  rw [ce_bytesAt x1 (n := 136) (by decide) (by rw [hs1]; exact hx.kS),
+    ce_bytesAt y1 (n := 136) (by decide) (by rw [hs2]; exact hy.kS), hm1, hm2, e4]
+  simp only [pa, e1, hs1, hs2, e3, and_self]
+
+/-- Sharing a fragment adds only public call and return addresses to its trace. -/
+theorem sampleHAt16_tr {callName : Option String} {b : Prog isa} (hb : BatchHOk16 b) {oa oz : Nat} :
+    RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
+      bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
+      (Encaps.sampleHAt b (sc oa) (sc oz) callName) fun _ _ => True := by
+  cases callName with
+  | none => exact sampleHAt16_inline_tr hb
+  | some n => exact sampleHAt16_call_tr hb
 
 end VG.Proof.MlKem.X86_64
 
@@ -449,13 +547,6 @@ theorem allOk_add3 {k : Nat} {ρ : List Byte} {e : Nat} :
     · have := h3 (e' - e) (by omega_using [he])
       rwa [Nat.add_sub_cancel' he'] at this
 
-theorem habs_congr (H : Spec.Sha3.State) {f g : Nat → List Byte} :
-    ∀ n, (∀ j < n, f j = g j) → SH.habs H f n = SH.habs H g n
-  | 0, _ => rfl
-  | n + 1, h => by
-    simp only [SH.habs]
-    rw [habs_congr H n fun j hj => h j (by omega_using [hj]), h n (by omega_using [])]
-
 /-- Code whose runs are never related. -/
 theorem relFalse {P Q : State → State → Prop} {c : Prog isa} (h : ∀ x y, P x y → False) : RelCT isa P c Q :=
   fun _ _ _ _ _ _ hp _ _ => (h _ _ hp).elim
@@ -714,8 +805,8 @@ theorem blocks16_eq (F : Ek16FWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s 
     bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW + Sample4.oHB) + BitVec.ofNat 64 (136 * j)) 136
   rw [off_add, off_add, Nat.add_assoc]
 
-theorem frag16_ok (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} (hp : (encK K.L).pre σ) {i : Nat}
-    (hi : i < nb K.L) {s : State} (h : FI16 K σ i s) : WP isa (frag K b i) s (FI16 K σ (i + 1)) := by
+theorem frag16_ok {callName : Option String} (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} (hp : (encK K.L).pre σ) {i : Nat}
+    (hi : i < nb K.L) {s : State} (h : FI16 K σ i s) : WP isa (frag K b i callName) s (FI16 K σ (i + 1)) := by
   have W := F.toEcWfB
   have hsm := F.sm i hi
   simp only [smChk, Bool.and_eq_true] at hsm
@@ -752,9 +843,9 @@ theorem frag16_ok (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State
       habs_congr _ 3 fun j hj => blocks16_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega_using []]
     exact habs_blk hpart (by rw [hlen]; omega_using [hi, hl])
 
-theorem frags16_ok (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} (hp : (encK K.L).pre σ) {s : State}
-    (h : FI16 K σ 0 s) : WP isa (seqR (frag K b) 0 (nb K.L)) s (FI16 K σ (nb K.L)) := by
-  have := seqR_ok (I := FI16 K σ) (nb K.L) 0 (fun k _ hk s hs => frag16_ok F hb hp (by omega_using [hk]) hs) s h
+theorem frags16_ok {callName : Option String} (F : Ek16FWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} (hp : (encK K.L).pre σ) {s : State}
+    (h : FI16 K σ 0 s) : WP isa (seqR (fun i => frag K b i callName) 0 (nb K.L)) s (FI16 K σ (nb K.L)) := by
+  have := seqR_ok (I := FI16 K σ) (nb K.L) 0 (fun k _ hk s hs => frag16_ok (callName := callName) F hb hp (by omega_using [hk]) hs) s h
   rwa [Nat.zero_add] at this
 
 
@@ -910,9 +1001,9 @@ theorem entsM16_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) {σ
   exact WP.mono this fun _ h => h.2
 
 /-- `ρ` to `SB`, the fragments, `H(ek)` to `H`, and the remaining entries of `Â`. -/
-theorem matH16_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) {b : Prog isa} (hb : BatchHOk16 b)
+theorem matH16_ok {callName : Option String} {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) {b : Prog isa} (hb : BatchHOk16 b)
     {σ : State} (hp : (encK K.L).pre σ) {s : State} (h : ProOut K.L σ s) :
-    WP isa (matH K (n, c) b) s (MI16 K σ (K.L.k * K.L.k)) := by
+    WP isa (matH K (n, c) b callName) s (MI16 K σ (K.L.k * K.L.k)) := by
   unfold matH
   exact WP.seq (WP.mono (rho16_ok F hp h) fun _ h₁ => WP.seq (WP.mono (hz16_ok F hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (frags16_ok F.toEk16FWf hb hp h₂) fun _ h₃ => WP.seq (WP.mono (hcopy16_ok F hp h₃) fun _ h₄ =>
@@ -966,7 +1057,7 @@ theorem kemEncaps16_correct {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F :
   have hB := v.batchH16 b hb
   have hS := v.s16 n c hs
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok F.toEcWfB hp) fun s₁ h₁ =>
-    WP.seq (WP.mono (matH16_ok hS F hB hp h₁) fun s₂ h₂ =>
+    WP.seq (WP.mono (matH16_ok (callName := some v.callee.hashName) hS F hB hp h₁) fun s₂ h₂ =>
       WP.seq (WP.mono (hashesF16_ok F hp h₂) fun s₃ h₃ =>
         WP.seq (WP.mono (ifRest16_ok hK v F h₃) fun s₄ h₄ =>
           WP.seq (WP.mono (out16_ok F h₄) fun s₅ h₅ =>

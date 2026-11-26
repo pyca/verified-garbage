@@ -52,16 +52,16 @@ def jblk (i : Nat) : Prog isa :=
 
 /-- Fragment `i`: its blocks of `pad(z ‖ c)`, the seeds of entries `3i` to
 `3i + 3`, and `b`, which samples entries `3i` to `3i + 2`. -/
-def frag (b : Prog isa) (i : Nat) : Prog isa :=
+def frag (b : Prog isa) (i : Nat) (callName : Option String := none) : Prog isa :=
   .seq (jblk K i) (.seq (seedAt 0 ((3 * i) / K.L.k) ((3 * i) % K.L.k))
     (.seq (seedAt 1 ((3 * i + 1) / K.L.k) ((3 * i + 1) % K.L.k))
       (.seq (seedAt 2 ((3 * i + 2) / K.L.k) ((3 * i + 2) % K.L.k))
         (.seq (seedAt 3 ((3 * i + 3) / K.L.k) ((3 * i + 3) % K.L.k))
-          (Encaps.sampleHAt b (Top16.aP K (3 * i)) (sc K.oW))))))
+          (Encaps.sampleHAt b (Top16.aP K (3 * i)) (sc K.oW) callName)))))
 
 /-- `ρ` to `SB`, `Â`, and `J(z ‖ c)` to `KB`. -/
-def matJ (p : String × Prog isa) (b : Prog isa) : Prog isa :=
-  .seq (copy (sc oSB) (.rbp, 384 * K.L.k + 384 * K.L.k) 32) (.seq (.block (hzero K)) (.seq (seqR (frag K b) 0 (Encaps.nb K.L))
+def matJ (p : String × Prog isa) (b : Prog isa) (callName : Option String := none) : Prog isa :=
+  .seq (copy (sc oSB) (.rbp, 384 * K.L.k + 384 * K.L.k) 32) (.seq (.block (hzero K)) (.seq (seqR (fun i => frag K b i callName) 0 (Encaps.nb K.L))
     (.seq (copy (sc oKB) (sc (oHS K)) 32)
       (ents16 p K.L.k K.oA (sc K.oW) (3 * Encaps.nb K.L) (K.L.k * K.L.k - 3 * Encaps.nb K.L)))))
 
@@ -73,7 +73,7 @@ matrix's fragments, with 16-bit polynomials, with the samplers `p` and the
 fragment `b` of the implementation `c`. -/
 def kemDecapsJ16 (K : Kem16) (c : Callee4) (p : String × Prog isa) (b : Prog isa) : Prog isa :=
   .seq (.block pro) (.seq (K.L.kpkeDecAt (sc oM) (.rbp, 0) (.r14, 0) (sc K.oZ)) (.seq (hashG K)
-    (.seq (matJ K p b) (.seq (ifOk (Top16.encRest K c (.rbp, 384 * K.L.k) (sc oCT16)))
+    (.seq (matJ K p b (some c.hashName)) (.seq (ifOk (Top16.encRest K c (.rbp, 384 * K.L.k) (sc oCT16)))
       (.seq (selectAt oCT16 K.L.ctLen) (.block topEpi))))))
 
 /-- The decapsulation of an implementation of `vg_mlkem_sample_ntt4`: with

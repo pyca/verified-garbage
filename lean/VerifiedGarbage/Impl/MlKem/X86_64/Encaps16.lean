@@ -48,16 +48,16 @@ def hblk (i : Nat) : Prog isa :=
 
 /-- Fragment `i`: its blocks of `pad(ek)`, the seeds of entries `3i` to
 `3i + 3`, and `b`, which samples entries `3i` to `3i + 2`. -/
-def frag (b : Prog isa) (i : Nat) : Prog isa :=
+def frag (b : Prog isa) (i : Nat) (callName : Option String := none) : Prog isa :=
   .seq (hblk K i) (.seq (seedAt 0 ((3 * i) / K.L.k) ((3 * i) % K.L.k))
     (.seq (seedAt 1 ((3 * i + 1) / K.L.k) ((3 * i + 1) % K.L.k))
       (.seq (seedAt 2 ((3 * i + 2) / K.L.k) ((3 * i + 2) % K.L.k))
         (.seq (seedAt 3 ((3 * i + 3) / K.L.k) ((3 * i + 3) % K.L.k))
-          (Encaps.sampleHAt b (Top16.aP K (3 * i)) (sc K.oW))))))
+          (Encaps.sampleHAt b (Top16.aP K (3 * i)) (sc K.oW) callName)))))
 
 /-- `ρ` to `SB`, `Â` and `H(ek)` to `H`. -/
-def matH (p : String × Prog isa) (b : Prog isa) : Prog isa :=
-  .seq (copy (sc oSB) (.r14, 384 * K.L.k) 32) (.seq (.block (hzero K)) (.seq (seqR (frag K b) 0 (Encaps.nb K.L))
+def matH (p : String × Prog isa) (b : Prog isa) (callName : Option String := none) : Prog isa :=
+  .seq (copy (sc oSB) (.r14, 384 * K.L.k) 32) (.seq (.block (hzero K)) (.seq (seqR (fun i => frag K b i callName) 0 (Encaps.nb K.L))
     (.seq (copy (sc oH) (sc (oHS K)) 32)
       (ents16 p K.L.k K.oA (sc K.oW) (3 * Encaps.nb K.L) (K.L.k * K.L.k - 3 * Encaps.nb K.L)))))
 
@@ -68,7 +68,7 @@ open Encaps16 in
 16-bit polynomials, with the samplers `p` and the fragment `b` of the
 implementation `c`: the ciphertext straight to `ct`. -/
 def kemEncaps16 (K : Kem16) (c : Callee4) (p : String × Prog isa) (b : Prog isa) : Prog isa :=
-  .seq (.block Encaps.pro) (.seq (matH K p b) (.seq EncapsH.hashes
+  .seq (.block Encaps.pro) (.seq (matH K p b (some c.hashName)) (.seq EncapsH.hashes
     (.seq (ifOk (Top16.encRest K c (.r14, 0) (.r13, 0))) (.seq (copy (.r12, 0) (sc oG) 32) (.block topEpi)))))
 
 /-- The encapsulation (hashing the key) of an implementation of
