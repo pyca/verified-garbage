@@ -105,7 +105,7 @@ theorem search_asked (v : RoundImpl) :
     (Proof.Ffdh.X86_64.Scrub.sievedParameterSearchOut _)
     (by
       have hm := v.montSide
-      have hr := v.side
+      have hr := calleeSide_call v.side
       unfold Generation.searchCode ParameterCandidate.candidateCode
       fill_gen)
     (Nat.zero_le _) (Nat.le_refl _) (ha := search_stub)

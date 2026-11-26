@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.CodeWalk
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.TCB.X86_64.Residue
@@ -1923,6 +1924,27 @@ theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnT
   cases ts with
   | nil => simp [tableFns] at hf
   | cons t ts => exact h.2.1 f hf
+
+/-- `c.x86_64Depth`. Only the kernel evaluates it. -/
+noncomputable def depthK (c : Prog isa) : Nat := CodeWalk.depth Instr.frameBytes 8 c
+
+theorem depthK_eq (c : Prog isa) : depthK c = c.x86_64Depth := by
+  unfold depthK
+  induction c with
+  | block => rfl
+  | seq a b iha ihb => rw [CodeWalk.depth_seq, Code.x86_64Depth, iha, ihb]
+  | ite _ a b iha ihb => rw [CodeWalk.depth_ite, Code.x86_64Depth, iha, ihb]
+  | icall _ _ a b iha ihb => rw [CodeWalk.depth_icall, Code.x86_64Depth, iha, ihb]
+  | loop b _ ih => exact ih
+  | call _ b ih => rw [CodeWalk.depth_call, Code.x86_64Depth, ih]
+  | frame i b _ ih => rw [CodeWalk.depth_frame, Code.x86_64Depth, ih]
+
+theorem inames_walk (c : Prog isa) : CodeWalk.inames c = UpperLock.inames c := by
+  induction c with
+  | block => rfl
+  | seq a b iha ihb | ite _ a b iha ihb => rw [CodeWalk.inames, UpperLock.inames, iha, ihb]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih
+  | icall _ _ a b iha ihb => rw [CodeWalk.inames, UpperLock.inames, iha, ihb]
 
 /-- The code calls indirectly only the functions of the tables `ts`, whose
 addresses two runs agree on (`tables_pub_syms`). -/

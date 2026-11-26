@@ -299,7 +299,7 @@ theorem mxCalls {a b : Prog isa} (hf : Fill k n a b) (h : mxCallsS a = true) : m
   induction hf with
   | block => exact h
   | hole _ _ hd =>
-    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
+    simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true] at hd
     have hn : _ := (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi => by
       have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hd.1.2) i hi
       simp only [Bool.and_eq_true] at this; exact this.2)
@@ -327,7 +327,7 @@ theorem level {a b : Prog isa} (hf : Fill k n a b)
   induction hf with
   | block => exact ha
   | hole _ _ hd =>
-    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
+    simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true] at hd
     simp only [Code.allInstrs]
     exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi => by
       have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hd.1.2) i hi

@@ -539,7 +539,7 @@ theorem sealLeafF16_side (v : GcmVariant) : ∀ b ∈ sealLeafF16 v, calleeSide 
 theorem withSameDst_side (f : Fn) {k : Nat} (h : calleeSide f.code k 8 = true) :
     calleeSide f.withSameDst.code k 8 = true := by
   have level : (Instr.mov .r10 (.reg .r8)).vecLevel = 0 := rfl
-  simpa [level, Impl.AesGcm.X86_64.Fn.withSameDst, calleeSide, VG.X86_64.Scrub.lvAll_eq, Code.x86_64Depth, Code.allInstrs,
+  simpa [level, Impl.AesGcm.X86_64.Fn.withSameDst, calleeSide_eq, VG.X86_64.Scrub.lvAll_eq, Code.x86_64Depth, Code.allInstrs,
     UpperLock.inames, Instr.vecLevelR, loadsMxcsr] using h
 
 end SharedSeal
@@ -2287,7 +2287,7 @@ private theorem readyStub_ok : stubCallee readyStub 1 (fun _=>24) 56 = true := b
 
 private theorem of_side {p : Prog isa} {k : Nat} (sp : (Finished p).all (fun i => !isa.writesSp i)=true)
     (hc : calleeSide (Finished p) k 56=true) : CoreSafe p := by
-  simp only [calleeSide, lvAll_eq, Bool.and_eq_true,decide_eq_true_eq] at hc
+  simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true,decide_eq_true_eq] at hc
   refine ⟨sp,hc.1.1,?_⟩
   have both := (Code.allInstrs_eq _ _).symm.trans hc.1.2
   exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr (fun i hi => (Bool.and_eq_true_iff.mp (List.all_eq_true.mp both i hi)).2))
@@ -2660,7 +2660,7 @@ private theorem spDeferred (v : GcmImpl) {ctr : Fn} (ct : Sp ctr.code) :
 
 private theorem rawSafe {r : Prog isa} {k : Nat} (sp : Sp (core r)) (h : calleeSide (core r) k 24=true) :
     CoreSafe r := by
-  simp only [calleeSide, lvAll_eq, Bool.and_eq_true,decide_eq_true_eq] at h
+  simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true,decide_eq_true_eq] at h
   refine ⟨sp,h.1.1,?_⟩
   have both := (Code.allInstrs_eq _ _).symm.trans h.1.2
   exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi =>

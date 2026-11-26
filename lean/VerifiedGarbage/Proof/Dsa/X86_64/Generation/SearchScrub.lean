@@ -85,7 +85,7 @@ theorem prime_call_stub : stubCalleeG (primeStub true) VecLevel.sse.level primeS
 theorem prime_side (v : RoundImpl) :
     calleeSide (ProbablePrime.testCode v) v.level.level 184 = true := by
   have hm := v.inlineSide
-  have hr := v.side
+  have hr := calleeSide_call v.side
   by_cases h : v.arithSuffix = ""
   · refine calleeSide_of_fillG (n := primeStack) ?_ (Nat.zero_le _) prime_stub
     unfold primeStub ProbablePrime.testCode VG.Proof.MillerRabin.X86_64.Kernel.called
@@ -161,7 +161,7 @@ theorem body_side (h : MdHash) (v : RoundImpl) (p : Nat) (he : body h v p = fill
         n ∈ [h.H.stream.updN, h.H.stream.finN, (ProbablePrime.primeTest v).name] := by
   simp only [stubOk, Bool.and_eq_true] at hs
   have hp := prime_side v
-  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, List.isEmpty_iff] at hp
+  simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true, List.isEmpty_iff] at hp
   rw [he]
   refine ⟨fillI_allInstrs (fun f g d hf => ?_) _ (side_mono (level_join_left _ _) hs.1),
     fillI_inames (fun f g d hf => ?_) _ fun n hn => ?_⟩

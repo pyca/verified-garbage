@@ -42,7 +42,7 @@ def stub : Prog isa :=
 theorem stub_side : stubSideG stub VecLevel.sse.level stubStack 552 [] = true := by lit_decide
 
 theorem fill (v : RoundImpl) : FillG v.level.level stubStack stub (Generate.genCode v) := by
-  have hr := v.side
+  have hr := calleeSide_call v.side
   have hm := v.mmSide
   unfold stub Generate.genCode Generate.searchCall Search.searchCode Search.candidateCall
     sharedCandidateCode RoundImpl.name Generate.keyCall

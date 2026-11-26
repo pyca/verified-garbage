@@ -78,7 +78,7 @@ theorem dec_side (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
 
 theorem dec_depth (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) : (decCode h c).x86_64Depth ≤ 3480 := by
   have := dec_side h c
-  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at this
+  simp only [calleeSide_eq, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at this
   exact this.1.1
 
 /-- It writes `rsp` only in its frames, and its callee's. -/
