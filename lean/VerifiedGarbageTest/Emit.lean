@@ -339,6 +339,53 @@ run_cmd do
 #guard_msgs (drop info) in
 #assert_spec_apis [VG.Spec.MlDsa.keyGen44Api]
 
+/-! ## A registration that proves which `Api`s it is of (`declaredApis`) -/
+
+-- A list of two artifacts, not exposed, and the theorem of it.
+def declared : List VG.Api := [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api]
+theorem declared_specApis :
+    ∀ a ∈ declared, a ∈ [VG.Spec.Hmac.sha256I.pbkdf2Api, VG.Spec.Selftest.addApi] := by
+  simp [declared]
+#guard_msgs (drop info) in
+#assert_spec_apis declared
+
+-- Of an `Api` that is not `Spec/`'s.
+def declaredFake : List VG.Api := [VG.Test.Emit.fakeInstance.pbkdf2Api]
+theorem declaredFake_specApis : ∀ a ∈ declaredFake, a ∈ [VG.Test.Emit.fakeInstance.pbkdf2Api] := by
+  simp [declaredFake]
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis VG.Test.Emit.declaredFake") "not ones `Spec/` declares"
+
+-- Of another list than the one emitted.
+def declaredOther : List VG.Api := [VG.Test.Emit.fakeInstance.pbkdf2Api]
+theorem declaredOther_specApis : ∀ a ∈ declared, a ∈ [VG.Spec.Hmac.sha256I.pbkdf2Api, VG.Spec.Selftest.addApi] :=
+  declared_specApis
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis VG.Test.Emit.declaredOther") "type mismatch"
+
+-- Of a list that is not a literal one.
+def declaredNot : List VG.Api := [VG.Test.Emit.fakeInstance.pbkdf2Api]
+theorem declaredNot_specApis : ∀ a ∈ declaredNot, a ∈ declaredNot := fun _ h => h
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis VG.Test.Emit.declaredNot") "not a literal list"
+
+-- That says nothing.
+def declaredNone : List VG.Api := [VG.Test.Emit.fakeInstance.pbkdf2Api]
+theorem declaredNone_specApis : ∀ a ∈ declaredNone, a = a := fun _ _ => rfl
+run_cmd do
+  fails (← errorsOf "#assert_spec_apis VG.Test.Emit.declaredNone") "does not state"
+
+-- An axiom, or a theorem from one, proves nothing.
+def declaredAx : List VG.Api := [VG.Test.Emit.fakeInstance.pbkdf2Api]
+run_cmd do
+  fails (← errorsOf "namespace VG.Test.Emit\n\
+    public axiom declaredAx_specApis : ∀ a ∈ declaredAx, a ∈ [VG.Spec.Selftest.addApi]\n\
+    end VG.Test.Emit\n#assert_spec_apis VG.Test.Emit.declaredAx") "depends on non-standard axioms"
+run_cmd do
+  fails (← errorsOf "namespace VG.Test.Emit\npublic axiom bad : False\n\
+    public theorem declaredAx_specApis : ∀ a ∈ declaredAx, a ∈ [VG.Spec.Selftest.addApi] := bad.elim\n\
+    end VG.Test.Emit\n#assert_spec_apis VG.Test.Emit.declaredAx") "depends on non-standard axioms"
+
 end VG.Test.Emit
 
 end
