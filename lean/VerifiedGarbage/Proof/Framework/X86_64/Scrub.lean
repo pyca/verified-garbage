@@ -1206,43 +1206,6 @@ each call and each frame's release uses a number of unknowns its
 instruction fixes, the trace says which way each branch went, and which
 function each indirect call called (`Exec.unknowns_agree`). -/
 
-local macro "uk_leaf" : tactic => `(tactic| first
-  | exact Pres.none'
-  | (apply Pres.some'; rfl)
-  | (apply Pres.map'; intro _; rfl)
-  | (apply Pres.map'; intro _; split <;> rfl))
-
-local syntax "uk_go" : tactic
-macro_rules
-  | `(tactic| uk_go) => `(tactic| first
-    | uk_leaf
-    | (apply Pres.bind'; intro _; uk_go)
-    | (split <;> uk_go))
-
-private theorem exec_unknowns_pres (i : Instr) (s : State) :
-    Pres (fun x => x.unknowns = s.unknowns) (exec i s) := by
-  cases i
-  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
-  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
-  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
-  case evMaskAddQ k d a b => cases d <;> exact Pres.some' rfl
-  case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
-  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
-  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
-    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
-  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
-  case e5InsertLoad d _ _ _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
-  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
-      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
-      State.storeMasked512, State.storeMasked512B]
-  all_goals uk_go
-
-private theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
-  exec_unknowns_pres i s s' h
-
 theorem execBlock_unknowns : ∀ {is : List Instr} {s₁ s₂ a b : State} {t₁ t₂ : List Leak},
     execBlock isa is s₁ = some (a, t₁) → execBlock isa is s₂ = some (b, t₂) →
       t₁.length = t₂.length ∧ a.unknowns = s₁.unknowns ∧ b.unknowns = s₂.unknowns

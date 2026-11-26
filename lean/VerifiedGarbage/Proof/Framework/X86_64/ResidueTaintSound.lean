@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaint
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
@@ -44,30 +45,6 @@ macro_rules
     | (apply Pres.bind'; intro _; uk_go)
     | (split <;> uk_go))
 
-theorem exec_unknowns_pres (i : Instr) (s : State) :
-    Pres (fun x => x.unknowns = s.unknowns) (exec i s) := by
-  cases i
-  case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
-  case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
-  case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
-  case evMaskAddQ k d a b => cases d <;> exact Pres.some' rfl
-  case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
-  case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
-  case vmovdquLoad len _ _ | vmovdquStore len _ _ | vbinLoad _ len _ _ _ =>
-    cases len <;> simp only [reduceExec, State.store128, State.store256] <;> uk_go
-  case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
-  case e5InsertLoad d _ _ _ =>
-    simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVz_eq]
-  all_goals simp only [reduceExec, execAlu, execAluW, execAlu32, execShift32, execShift, execRorx32,
-      execRorx, execShld, execBtr, execMulx, execAdcx, execAdox, execCmov, State.store64,
-      State.store32, State.store8, State.store16, State.store128, State.store256, State.store512,
-      State.storeMasked512, State.storeMasked512B]
-  all_goals uk_go
-
-theorem exec_unknowns {i : Instr} {s s' : State} (h : exec i s = some s') : s'.unknowns = s.unknowns :=
-  exec_unknowns_pres i s s' h
-
 theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
     s'.wr = s.wr ∧ Frame s.wr s.mem s'.mem := by
   have e : execBlock isa [i] s = some (s', (addrs i s).map Leak.addr) := by
@@ -77,8 +54,7 @@ theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
 
 theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
     Pres (fun x => x.mem = s.mem) (exec i s) := by
-  cases i <;> simp only [writesMem, storeW, Option.isSome_some, Option.isSome_none, Bool.true_or,
-    Bool.false_or, reduceCtorEq] at h
+  cases i <;> first | (cases h; done) | skip
   case vop op => simp only [reduceExec]; rw [Taint.VOp.exec_eq]; exact Pres.some' rfl
   case zop op => simp only [reduceExec]; rw [Taint.ZOp.exec_eq]; exact Pres.some' rfl
   case xop op => simp only [reduceExec]; rw [Taint.XOp.exec_eq]; exact Pres.some' rfl
@@ -86,7 +62,7 @@ theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
   case eop op => simp only [reduceExec]; rw [Taint.EOp.exec_eq]; exact Pres.some' rfl
   case e5op op => simp only [reduceExec]; rw [Taint.E5Op.exec_eq]; exact Pres.some' rfl
   case vmovdquLoad len _ _ | vbinLoad _ len _ _ _ => cases len <;> simp only [reduceExec] <;> uk_go
-  case vmovdquStore len _ _ => cases len <;> simp at h
+  case vmovdquStore len _ _ => cases len <;> cases h
   case evLoad d _ | evMadd52Load _ d _ _ | evBroadcastLoad d _ =>
     simp only [reduceExec]; apply Pres.map'; intro _; rw [Taint.setVy_eq]
   case e5InsertLoad d _ _ _ =>
@@ -1708,7 +1684,8 @@ theorem wr_facts {τ : FT} {s₁ s₂ : State} (inv : RInv τ s₁ s₂) :
 theorem push_sound {τ τ' : FT} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : pushF τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
     isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
-  cases i <;> simp only [pushF, reduceCtorEq] at hs
+  cases i <;> first | (cases hs; done) | skip
+  simp only [pushF] at hs
   rename_i b
   split at hs <;> [rename_i hc; cases hs]
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at hc
@@ -1926,7 +1903,8 @@ theorem region_tail {s s' : State} {r : Region} (h : s.wr = r :: s'.wr) (i : Nat
 theorem pop_sound {τ τ' : FT} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : State} (ha : Agree τ b₁ b₂)
     (hs : popF τ j = some τ') (e₁ : isa.pop j a₁ b₁ = some c₁) (e₂ : isa.pop j a₂ b₂ = some c₂) :
     isa.addrs j b₁ = isa.addrs j b₂ ∧ Agree τ' c₁ c₂ := by
-  cases j <;> simp only [popF, reduceCtorEq] at hs
+  cases j <;> first | (cases hs; done) | skip
+  simp only [popF] at hs
   rename_i b
   split at hs <;> [rename_i hc; cases hs]
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq, List.all_eq_true] at hc
@@ -2245,21 +2223,25 @@ theorem plain_facts {i : Instr} (h : isPlain i = true) (τ : FT) :
     mbAfter τ i = τ.mb ∧ (∀ r, Taint.clobbers i r = (Taint.dstOf i == some r)) ∧ writesMem i = false := by
   cases i
   case alu op d src | alu32 op d src =>
-    cases op <;> cases src <;>
-      simp_all [isPlain, flOf, special, post, argPost, pbPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    cases op <;> cases src <;> first
+      | cases h; done
+      | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+      | exact ⟨rfl, fun _ => ite_eq_right (mt eq_of_beq (bne_iff_ne.mp h)), rfl, rfl, rfl, fun _ => rfl, rfl⟩
   case mov d src | mov32 d src =>
-    cases src <;>
-      simp_all [isPlain, flOf, special, post, argPost, pbPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+    cases src <;> first
+      | cases h; done
+      | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
   case xop op =>
     cases op
     case bin op x x' =>
-      cases op <;>
-        simp_all [isPlain, flOf, special, post, argPost, pbPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-    all_goals
-      simp_all [isPlain, flOf, special, post, argPost, pbPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
-  case vmovdquStore l _ _ => cases l <;> simp_all [isPlain]
-  all_goals
-    simp_all [isPlain, flOf, special, post, argPost, pbPost, ubNew, mbAfter, storeW, writesMem, Taint.clobbers]
+      cases op <;> first
+        | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+        | cases h; done
+    all_goals exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+  case vmovdquStore l _ _ => cases l <;> cases h
+  all_goals first
+    | exact ⟨rfl, fun _ => rfl, rfl, rfl, rfl, fun _ => rfl, rfl⟩
+    | cases h; done
 
 /-- An instruction that writes no memory leaves the public bytes of the regions. -/
 theorem pbAfter_of_not_writes {i : Instr} (h : writesMem i = false) (τ : FT) : pbAfter τ i = τ.pb := by
@@ -2735,7 +2717,7 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
         case xor =>
           cases src with
           | reg d' =>
-            have hd : d = d' := by simpa [isPlain] using hpl
+            have hd : d = d' := bne_eq_false_iff_eq.mp hpl
             subst hd
             refine fastG_eq hsp rfl
               (fun _ => by simp only [post, pbPost, argPost, beq_self_eq_true, ↓reduceIte, insReg_eq]) rfl rfl rfl ?_
@@ -2760,7 +2742,7 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
         case xor =>
           cases src with
           | reg d' =>
-            have hd : d = d' := by simpa [isPlain] using hpl
+            have hd : d = d' := bne_eq_false_iff_eq.mp hpl
             subst hd
             refine fastG_eq hsp rfl
               (fun _ => by simp only [post, pbPost, argPost, beq_self_eq_true, ↓reduceIte, insReg_eq]) rfl rfl rfl ?_
@@ -2808,8 +2790,9 @@ theorem isSp_eq (d : Reg) : isSp d = (some d == some Reg.rsp) := by cases d <;> 
 theorem isSpR_eq (d : Reg) : isSpR d = (d == Reg.rsp) := by cases d <;> rfl
 
 theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
-  unfold stepFn1 stepFn
-  simp only [isSp_eq, isSpR_eq, Taint.stepKeepFn_eq, slowFn_eq]
+  delta stepFn1 stepFn
+  rw [show isSp = _ from funext isSp_eq, show isSpR = _ from funext isSpR_eq,
+    show Taint.stepKeepFn = _ from funext Taint.stepKeepFn_eq, show slowFn = _ from funext slowFn_eq]
   cases i with
   | mov d src | mov32 d src => cases src <;> rfl
   | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl

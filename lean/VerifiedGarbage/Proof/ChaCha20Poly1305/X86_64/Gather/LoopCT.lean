@@ -356,7 +356,7 @@ theorem execBlock_unknowns_eq : ∀ {is : List Instr} {s s' : State} {t : List L
     · rename_i s₁ e
       obtain ⟨⟨s₂, t₂⟩, h₂, e₂⟩ := Option.map_eq_some_iff.mp h
       cases e₂
-      exact (execBlock_unknowns_eq h₂).trans (RTaint.exec_unknowns e)
+      exact (execBlock_unknowns_eq h₂).trans (VG.X86_64.exec_unknowns e)
 
 /-- Code of blocks, branches and loops only, with no call, frame or indirect
 call: its runs keep the unknowns (`Exec.unknowns_of_flat`), as the code
