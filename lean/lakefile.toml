@@ -161,7 +161,7 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaAll",
   "VerifiedGarbage.Proof.Framework.OmegaLit",
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
-  "VerifiedGarbage.Proof.Framework.RegionsSub",
+  "VerifiedGarbage.Proof.Framework.FillCode", "VerifiedGarbage.Proof.Framework.RegionsSub",
   "VerifiedGarbage.Proof.Framework.PlainSimp", "VerifiedGarbage.Proof.Framework.TacticTemplate",
   "VerifiedGarbage.Proof.Framework.UnfoldStep", "VerifiedGarbage.Proof.Framework.X86_64.Reduce",
   "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 public import VerifiedGarbage.Impl.ICall
@@ -248,22 +249,7 @@ a hypothesis `Fill n N a b` is closed by it. Where the
 function's code depends on the implementation otherwise, by an `if p`
 (`Fill.if_pos`, `Fill.if_neg`), a hypothesis `p` or `¬p` chooses the branch;
 where both choose by the same `if`, each branch is walked (`Fill.ite_same`). -/
-macro "fill_calls" : tactic => `(tactic| repeat' (first
-  | with_reducible exact Fill.refl _
-  | with_reducible assumption
-  | exact Fill.block _
-  | exact Fill.hole (by assumption)
-  | exact Fill.budget (by assumption)
-  | exact Fill.icalls _ (by assumption)
-  | refine Fill.seq ?_ ?_
-  | refine Fill.ite _ ?_ ?_
-  | refine Fill.loop _ ?_
-  | refine Fill.call _ _ ?_
-  | refine Fill.frame _ _ ?_
-  | refine Fill.icall _ _ ?_ ?_
-  | refine Fill.ite_same (fun _ => ?_) (fun _ => ?_)
-  | refine Fill.if_pos ?_ (by assumption)
-  | refine Fill.if_neg ?_ (by assumption)))
+macro "fill_calls" : tactic => `(tactic| fill_code)
 
 end Scrub
 

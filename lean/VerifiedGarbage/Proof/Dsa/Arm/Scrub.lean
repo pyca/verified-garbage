@@ -27,6 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Dsa.Arm.Leaves
+import VerifiedGarbage.Proof.Framework.FillCode
 
 /-!
 # DSA's functions on ARMv7, as emitted
@@ -218,31 +219,13 @@ theorem Fill.noIcall_of {a b : Prog isa} (h : Fill a b) (ha : noIcall a = true) 
 theorem Fill.codeOk {a b : Prog isa} {n : Nat} (h : Fill a b) (ha : CodeOk a n) : CodeOk b n :=
   ⟨Nat.le_trans h.armStack_le ha.1, h.noIcall_of ha.2⟩
 
-/-- Proves `Fill a b` of the stub's code `a` and the code `b` with a round,
-from a hypothesis `CodeOk c k` of the round's code `c`: code the two share
-is matched as one term (`Fill.refl`, at reducible transparency, which
-unfolds the geometries, `Impl.Dsa.Arm.Fn.geo`), and the rest is walked, its
-blocks matched last; the number of hashes of `p` (`Geo.count`), which its
-code recurses on, is evaluated first. -/
-macro "fill_round" : tactic => `(tactic| repeat' (first
-  | with_reducible exact Fill.refl _
-  | exact Fill.hole (by assumption)
-  | simp only [Impl.Dsa.Arm.Generation.Geo.count, Nat.reduceMul, Nat.reduceSub, Nat.reduceDiv]
-  | refine Fill.seq ?_ ?_
-  | refine Fill.ite _ ?_ ?_
-  | refine Fill.loop _ ?_
-  | refine Fill.call _ _ ?_
-  | refine Fill.frame _ _ ?_
-  | refine Fill.icall _ _ ?_ ?_
-  | exact Fill.refl _))
-
 theorem search_fill (umaal : Bool) (suffix name dname : String) {round mul dbl : Prog isa} (h : CodeOk round 104)
     (hm : CodeOk mul 40) (hd : CodeOk dbl 40) :
     Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 104) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))
         (Impl.Bignum.Arm.MontCall.op "" (holeStub 40) 4 7 4))
       (Impl.Dsa.Arm.Fn.search umaal suffix round (Impl.Bignum.Arm.MontCall.op name mul)
         (Impl.Bignum.Arm.MontCall.op dname dbl 4 7 4)) := by
-  fill_round
+  fill_code
 
 /-- The search's code with the stubs (the round, and the shared product and
 doubling its probable-prime test calls), with either multiplication, uses at

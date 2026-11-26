@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
@@ -65,6 +66,17 @@ inductive Fill (k : Nat) (n : String → Nat) : Prog isa → Prog isa → Prop
 namespace Fill
 
 variable {k : Nat} {n : String → Nat} {a b : Prog isa}
+
+/-- Any code is `Fill` of itself: each of its calls `.call f (.block [])` is
+its own `Fill.call` (an empty body needs nothing of `calleeSide`). -/
+theorem refl : ∀ a : Prog isa, Fill k n a a
+  | .block is => .block is
+  | .seq a b => .seq (refl a) (refl b)
+  | .ite c t e => .ite c (refl t) (refl e)
+  | .loop b c => .loop c (refl b)
+  | .call f b => .call f f (refl b)
+  | .frame i b j => .frame i j (refl b)
+  | .icall i f b x => .icall i f (refl b) (refl x)
 
 theorem depthH_call (f : String) (c : Prog isa) : depthH n c + 8 ≤ depthH n (.call f c) := by
   cases c with
@@ -230,19 +242,8 @@ theorem verifiedScrubbedAllSide {api : Api} (r : Unscrubbed api target) (v : Vec
 /-- Proves `Fill k n a b` of a function's code with a stub (`a`) and with
 implementations (`b`), from hypotheses `calleeSide c k n = true` of each
 implementation's code `c`: it walks the function's code, unfolding its
-definitions, and closes each place it calls an implementation by its
-hypothesis (`Fill.hole`). -/
-macro "fill_calls" : tactic => `(tactic| repeat' (first
-  | exact Fill.block _
-  | exact Fill.hole _ _ (by assumption)
-  | refine Fill.seq ?_ ?_
-  | refine Fill.ite _ ?_ ?_
-  | refine Fill.loop _ ?_
-  | refine Fill.call _ _ ?_
-  | refine Fill.frame _ _ ?_
-  | refine Fill.icall _ _ ?_ ?_
-  | refine Fill.ifp ?_ ?_
-  | refine Fill.if_pos ?_ (by assumption)
-  | refine Fill.if_neg ?_ (by assumption)))
+definitions, closes each place it calls an implementation by its hypothesis
+(`Fill.hole`), and does not look inside code the two share (`Fill.refl`). -/
+macro "fill_calls" : tactic => `(tactic| fill_code)
 
 end VG.X86_64.Scrub
