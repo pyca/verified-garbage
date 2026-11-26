@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Offset
@@ -1013,6 +1014,38 @@ theorem chunkLeave_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post
     simp only [source, c₂.x0, h.x0] at hc
     rw [hm, hc, h.st]
 
+/-- The call changes only the entry link and call scratch registers before
+running the unchanged arithmetic proof. None is an input to `Post1`. -/
+theorem chunkLeave_call_ok {sve : Bool} {s₀ s : State} (hp : APre e s₀) (h : Post1 s₀ s) :
+    WP isa (.seq (Short.chunkCall sve) (.block leave)) s (Post2 e s₀) := by
+  have g (r : Reg) (hr : r ∉ linkRegs) : s.callEntry.gpr r = s.gpr r :=
+    State.callEntry_gpr s hr
+  have hc : Post1 s₀ s.callEntry := {
+    h with
+    x21 := (g _ (by decide)).trans h.x21
+    x22 := (g _ (by decide)).trans h.x22
+    x23 := (g _ (by decide)).trans h.x23
+    x24 := (g _ (by decide)).trans h.x24
+    x25 := (g _ (by decide)).trans h.x25
+    x27 := (g _ (by decide)).trans h.x27
+    x28 := (g _ (by decide)).trans h.x28
+    x0 := (g _ (by decide)).trans h.x0
+    x1 := (g _ (by decide)).trans h.x1
+    x3 := (g _ (by decide)).trans h.x3
+    x20r := by rw [g _ (by decide), g _ (by decide)]; exact h.x20r }
+  obtain ⟨tr, u, he, hu⟩ := chunkLeave_ok (sve := sve) hp hc
+  cases he with
+  | @seq _ _ _ mid _ _ _ hC hL =>
+    have hn : (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve).allInstrs
+        (fun i => !clobbers i .x30) = true := by
+      cases sve <;> lit_decide
+    rw [Code.allInstrs_eq] at hn
+    have lr : mid.gpr .x30 = s.callEntry.gpr .x30 :=
+      Exec.gpr (fun i hi => by simpa using List.all_eq_true.mp hn i hi) hC (.inl (by cases sve <;> rfl))
+    have ret : isa.ret s.callEntry mid = some mid := by
+      simp only [isa, VG.AArch64.ret, lr, ↓reduceIte]
+    exact ⟨_, u, Exec.seq (Exec.call (call_callEntry s) hC ret) hL, hu⟩
+
 /-- After the prologue. -/
 structure PostP (e : Bool) (s₀ : State) (s : State) : Prop where
   inv : Inv e s₀ s
@@ -1038,7 +1071,7 @@ theorem prologue_ok {sve : Bool} {s₀ : State} (hp : APre e s₀) :
     WP isa (Short.prologue sve) s₀ (PostP e s₀) := by
   unfold Short.prologue
   refine WP.seq (WP.mono (block1_ok hp) fun s₁ h₁ => ?_)
-  refine WP.seq ((chunkLeave_ok hp h₁).mono fun s₂ h₂ => ?_)
+  refine WP.seq ((chunkLeave_call_ok hp h₁).mono fun s₂ h₂ => ?_)
   refine init_call h₂.x0 h₂.x1 (sub_disj s₀ (a := 448) (n := 128) (b := 64) (m := 32) (by lit_omega)
       (by lit_omega) (by lit_omega))
     (covers2 hp h₂.inv.wr (a := 448) (n := 128) (b := 64) (m := 32) (by lit_omega) (by lit_omega))
