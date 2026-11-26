@@ -43,7 +43,7 @@ stack with theirs at most `stack` (`depthH`), vector instructions of at most
 the level `k`, no load of MXCSR, and indirect calls only of its tables'
 functions. -/
 noncomputable def stubSide (a : Prog isa) (k : Nat) (n : String → Nat) (stack : Nat) (ts : List (String × List FnTable)) : Bool :=
-  decide (depthH n a ≤ stack) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+  decide (depthH n a ≤ stack) && lvAll k a &&
     tablesCall a ts
 
 /-- `b` is `a` with the bodies of some of its calls `.call f (.block [])`
@@ -88,7 +88,7 @@ theorem depth_leH (h : Fill k n a b) : b.x86_64Depth ≤ depthH n a := by
   induction h with
   | block is => simp [Code.x86_64Depth, depthH]
   | hole f g hd =>
-    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at hd
     simp only [Code.x86_64Depth, depthH]; omega
   | seq _ _ iha ihb => simp only [Code.x86_64Depth, depthH]; omega
   | ite _ _ _ iht ihe => simp only [Code.x86_64Depth, depthH]; omega
@@ -107,7 +107,7 @@ theorem side (h : Fill k n a b)
   induction h with
   | block => exact ha
   | hole _ _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     simp only [Code.allInstrs]; exact hd.1.2
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
@@ -123,7 +123,7 @@ theorem inames_eq (h : Fill k n a b) : UpperLock.inames b = UpperLock.inames a :
   induction h with
   | block => rfl
   | hole _ _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     simpa [UpperLock.inames] using hd.2
   | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [UpperLock.inames, iha, ihb]
   | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [UpperLock.inames, ih]
@@ -182,9 +182,9 @@ an implementation of a function that others call, from `stubCallee` of its
 code with a stub, which the kernel evaluates once. -/
 theorem calleeSide_of_fill {ks k : Nat} {n : String → Nat} {m : Nat} {a b : Prog isa} (hf : Fill k n a b)
     (hks : ks ≤ k) (ha : stubCallee a ks n m = true) : calleeSide b k m = true := by
-  simp only [stubCallee, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubCallee, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨hd, hs⟩, hi⟩ := ha
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq]
   exact ⟨⟨Nat.le_trans hf.depth_leH hd, hf.side (side_mono hks hs)⟩, by rw [hf.inames_eq]; exact hi⟩
 
 theorem level_join_left (a b : VecLevel) : a.level ≤ (a.join b).level := by
@@ -197,7 +197,7 @@ theorem level_join_right (a b : VecLevel) : b.level ≤ (a.join b).level := by
 `n`, it meets at any level and stack above them. -/
 theorem calleeSide_mono {c : Prog isa} {k k' n n' : Nat} (hk : k ≤ k') (hn : n ≤ n')
     (h : calleeSide c k n = true) : calleeSide c k' n' = true := by
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
   exact ⟨⟨Nat.le_trans h.1.1 hn, side_mono hk h.1.2⟩, h.2⟩
 
 /-- `r`'s code `b`, generic over the implementations it calls (`Fill k n a
@@ -215,7 +215,7 @@ theorem verifiedScrubbedAllFill {api : Api} (r : Unscrubbed api target) (v : Vec
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
   subst hn hb htb
-  simp only [stubSide, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨hd, hs⟩, ht⟩ := ha
   obtain ⟨hlv, hmx⟩ := allInstrs_level hk (hf.side (side_mono hks hs))
   have hic : tablesCall r.code r.tables = true := by rw [tablesCall, hf.inames_eq]; exact ht
@@ -231,7 +231,7 @@ theorem verifiedScrubbedAllSide {api : Api} (r : Unscrubbed api target) (v : Vec
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
   subst hn hb
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hs
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at hs
   obtain ⟨⟨hd, hi⟩, hn⟩ := hs
   obtain ⟨hlv, hmx⟩ := allInstrs_level hk hi
   have hic : tablesCall r.code r.tables = true := by

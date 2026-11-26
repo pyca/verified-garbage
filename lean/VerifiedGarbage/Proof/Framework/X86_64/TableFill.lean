@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUpFn
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Impl.ICall
 
 /-!
@@ -27,23 +28,34 @@ namespace VG.X86_64.Scrub
 
 open VG.X86_64 VG.Impl.Scrub.X86_64
 
-/-- What the cleanup of a function that calls `c` through a table at the
-level `sse` needs of it (`verifiedScrubbedAllUp`): at most `m` bytes of
-stack, instructions below the level `evex`, upper halves that agree after it
-if they did before, and no indirect call. Only the kernel evaluates it. -/
-noncomputable def upCallee (c : Prog isa) (m : Nat) : Bool :=
-  decide (c.x86_64Depth ≤ m) && c.allInstrs (fun i => decide (i.vecLevel ≤ 1)) &&
-    UpperLock.up c true && (UpperLock.inames c).isEmpty
-
 /-- A stub of an implementation that needs `m` bytes of stack. -/
 def tableStub (m : Nat) : Prog isa := .frame (.alloc m) (.block []) (.free m)
+
+/-- `UpperLock.stepI`, the instruction first. -/
+def stepIFn : Instr → Bool → Bool
+  | .vop .vzeroupper => fun _ => true
+  | i => fun a => a && i.vecLevel == 0
+
+/-- `stepIFn`, with its cases closed (`inline_match%`). -/
+def stepIK : Instr → Bool → Bool := inline_match% VG.X86_64.Scrub.stepIFn VG.X86_64.Instr.vecLevel
+
+theorem stepIK_eq (a : Bool) (i : Instr) : stepIK i a = UpperLock.stepI a i := by
+  cases i with
+  | vop op => cases op <;> rfl
+  | _ => rfl
+
+/-- `i.vecLevel ≤ 1`, as the kernel evaluates it (`lvOk`). -/
+theorem lvAll_one (c : Prog isa) :
+    lvAll 1 c = c.allInstrs (fun i => decide (i.vecLevel ≤ 1)) := by
+  refine congrArg (Code.allInstrs · c) (funext fun i => (lvOkK_eq i 1).trans ?_)
+  cases i <;> first | exact Bool.and_true _ | exact Bool.and_false _
 
 /-- `UpperLock.stepI` along `is` from `a`, each step's answer evaluated
 before the next (`UpperLock.up`'s `foldl` leaves the kernel a chain of them,
 as deep as the block is long). -/
 def stepsF : Bool → List Instr → Bool
   | a, [] => a
-  | a, i :: is => match UpperLock.stepI a i with
+  | a, i :: is => match stepIK i a with
     | true => stepsF true is
     | false => stepsF false is
 
@@ -63,7 +75,7 @@ def upF : Prog isa → Bool → Bool
 theorem stepsF_eq : ∀ (a : Bool) (is : List Instr), stepsF a is = is.foldl UpperLock.stepI a
   | a, [] => rfl
   | a, i :: is => by
-    simp only [stepsF, List.foldl]
+    simp only [stepsF, stepIK_eq, List.foldl]
     cases h : UpperLock.stepI a i <;> exact stepsF_eq _ is
 
 theorem upF_eq : ∀ (c : Prog isa) (a : Bool), upF c a = UpperLock.up c a
@@ -75,12 +87,19 @@ theorem upF_eq : ∀ (c : Prog isa) (a : Bool), upF c a = UpperLock.up c a
   | .loop b _, a | .call _ b, a | .frame _ b _, a => by simp only [upF, UpperLock.up, upF_eq b a]
   | .icall _ _ b n, a => by simp only [upF, UpperLock.up, upF_eq b a, upF_eq n a]
 
+/-- What the cleanup of a function that calls `c` through a table at the
+level `sse` needs of it (`verifiedScrubbedAllUp`): at most `m` bytes of
+stack, instructions below the level `evex`, upper halves that agree after it
+if they did before, and no indirect call. Only the kernel evaluates it. -/
+noncomputable def upCallee (c : Prog isa) (m : Nat) : Bool :=
+  decide (c.x86_64Depth ≤ m) && lvAll 1 c && upF c true && (UpperLock.inames c).isEmpty
+
 /-- What `verifiedScrubbedAllUp` needs of a function's code `a` with stubs
 in the place of its tables' implementations, which need at most `m` bytes of
 stack (`tableStub`): its stack at most `stack`, instructions below the level
 `evex` and upper halves that agree after it if they did before (`upF`). -/
 noncomputable def stubUp (a : Prog isa) (stack : Nat) : Bool :=
-  decide (a.x86_64Depth ≤ stack) && a.allInstrs (fun i => decide (i.vecLevel ≤ 1)) && upF a true
+  decide (a.x86_64Depth ≤ stack) && lvAll 1 a && upF a true
 
 /-- `b` is `a` with each indirect call of a stub (`Code.icalls i
 [("t", tableStub m)]`) replaced by indirect calls by the same instruction of
@@ -106,7 +125,7 @@ variable {m : Nat} {N : List String}
 theorem upCallee_parts {c : Prog isa} (h : upCallee c m = true) :
     c.x86_64Depth ≤ m ∧ c.allInstrs (fun i => decide (i.vecLevel ≤ 1)) = true ∧
       UpperLock.up c true = true ∧ UpperLock.inames c = [] := by
-  simp only [upCallee, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at h
+  simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at h
   exact ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩
 
 theorem icalls_depth (i : Instr) : ∀ ts : List (String × Prog isa), (∀ q ∈ ts, upCallee q.2 m = true) →
@@ -229,7 +248,7 @@ theorem verifiedScrubbedAllUpFill {api : Api} (r : Unscrubbed api target) {a : P
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll .sse rb stack r.code) r.contract rb := by
   subst hn hb
-  simp only [stubUp, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubUp, lvAll_one, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨hd, hl1⟩, hup⟩ := ha
   rw [upF_eq] at hup
   have hic : tablesCall r.code r.tables = true := by
