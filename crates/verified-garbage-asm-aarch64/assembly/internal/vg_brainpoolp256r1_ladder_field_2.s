@@ -1,0 +1,216 @@
+// The functions of `src/internal/vg_brainpoolp256r1_ladder_field_2.rs` of `verified-garbage-asm-aarch64`, as text: generated from
+// Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
+// Each instruction the printer encodes is here as its text, and in
+// `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
+// gives.
+
+vg_brainpoolp256r1_ladder_field_2:
+	movz x7, #0, lsl #0
+	ldr x4, [x0, #864]
+	ldr x5, [x0, #872]
+	ldr x16, [x0, #880]
+	ldr x17, [x0, #888]
+	movz x6, #35257, lsl #0
+	movk x6, #52989, lsl #16
+	movk x6, #21904, lsl #32
+	movk x6, #50855, lsl #48
+	movz x12, #0, lsl #0
+	movz x13, #0, lsl #0
+	ldr x1, [x0, #256]
+	mul x8, x1, x4
+	mul x9, x1, x5
+	mul x10, x1, x16
+	mul x11, x1, x17
+	umulh x2, x1, x4
+	adds x9, x9, x2
+	umulh x2, x1, x5
+	adcs x10, x10, x2
+	umulh x2, x1, x16
+	adcs x11, x11, x2
+	umulh x2, x1, x17
+	adcs x12, x12, x2
+	mul x1, x8, x6
+	ldr x3, [x0, #64]
+	mul x2, x1, x3
+	adds x8, x8, x2
+	ldr x3, [x0, #72]
+	mul x2, x1, x3
+	adcs x9, x9, x2
+	ldr x3, [x0, #80]
+	mul x2, x1, x3
+	adcs x10, x10, x2
+	ldr x3, [x0, #88]
+	mul x2, x1, x3
+	adcs x11, x11, x2
+	ldr x3, [x0, #88]
+	umulh x2, x1, x3
+	adcs x12, x12, x2
+	adcs x13, x13, x7
+	ldr x3, [x0, #64]
+	umulh x2, x1, x3
+	adds x9, x9, x2
+	ldr x3, [x0, #72]
+	umulh x2, x1, x3
+	adcs x10, x10, x2
+	ldr x3, [x0, #80]
+	umulh x2, x1, x3
+	adcs x11, x11, x2
+	adcs x12, x12, x7
+	adcs x13, x13, x7
+	ldr x1, [x0, #264]
+	mul x2, x1, x4
+	adds x9, x9, x2
+	mul x2, x1, x5
+	adcs x10, x10, x2
+	mul x2, x1, x16
+	adcs x11, x11, x2
+	mul x2, x1, x17
+	adcs x12, x12, x2
+	umulh x2, x1, x17
+	adcs x13, x13, x2
+	umulh x2, x1, x4
+	adds x10, x10, x2
+	umulh x2, x1, x5
+	adcs x11, x11, x2
+	umulh x2, x1, x16
+	adcs x12, x12, x2
+	adcs x13, x13, x7
+	mul x1, x9, x6
+	ldr x3, [x0, #64]
+	mul x2, x1, x3
+	adds x9, x9, x2
+	ldr x3, [x0, #72]
+	mul x2, x1, x3
+	adcs x10, x10, x2
+	ldr x3, [x0, #80]
+	mul x2, x1, x3
+	adcs x11, x11, x2
+	ldr x3, [x0, #88]
+	mul x2, x1, x3
+	adcs x12, x12, x2
+	ldr x3, [x0, #88]
+	umulh x2, x1, x3
+	adcs x13, x13, x2
+	adcs x8, x8, x7
+	ldr x3, [x0, #64]
+	umulh x2, x1, x3
+	adds x10, x10, x2
+	ldr x3, [x0, #72]
+	umulh x2, x1, x3
+	adcs x11, x11, x2
+	ldr x3, [x0, #80]
+	umulh x2, x1, x3
+	adcs x12, x12, x2
+	adcs x13, x13, x7
+	adcs x8, x8, x7
+	ldr x1, [x0, #272]
+	mul x2, x1, x4
+	adds x10, x10, x2
+	mul x2, x1, x5
+	adcs x11, x11, x2
+	mul x2, x1, x16
+	adcs x12, x12, x2
+	mul x2, x1, x17
+	adcs x13, x13, x2
+	umulh x2, x1, x17
+	adcs x8, x8, x2
+	umulh x2, x1, x4
+	adds x11, x11, x2
+	umulh x2, x1, x5
+	adcs x12, x12, x2
+	umulh x2, x1, x16
+	adcs x13, x13, x2
+	adcs x8, x8, x7
+	mul x1, x10, x6
+	ldr x3, [x0, #64]
+	mul x2, x1, x3
+	adds x10, x10, x2
+	ldr x3, [x0, #72]
+	mul x2, x1, x3
+	adcs x11, x11, x2
+	ldr x3, [x0, #80]
+	mul x2, x1, x3
+	adcs x12, x12, x2
+	ldr x3, [x0, #88]
+	mul x2, x1, x3
+	adcs x13, x13, x2
+	ldr x3, [x0, #88]
+	umulh x2, x1, x3
+	adcs x8, x8, x2
+	adcs x9, x9, x7
+	ldr x3, [x0, #64]
+	umulh x2, x1, x3
+	adds x11, x11, x2
+	ldr x3, [x0, #72]
+	umulh x2, x1, x3
+	adcs x12, x12, x2
+	ldr x3, [x0, #80]
+	umulh x2, x1, x3
+	adcs x13, x13, x2
+	adcs x8, x8, x7
+	adcs x9, x9, x7
+	ldr x1, [x0, #280]
+	mul x2, x1, x4
+	adds x11, x11, x2
+	mul x2, x1, x5
+	adcs x12, x12, x2
+	mul x2, x1, x16
+	adcs x13, x13, x2
+	mul x2, x1, x17
+	adcs x8, x8, x2
+	umulh x2, x1, x17
+	adcs x9, x9, x2
+	umulh x2, x1, x4
+	adds x12, x12, x2
+	umulh x2, x1, x5
+	adcs x13, x13, x2
+	umulh x2, x1, x16
+	adcs x8, x8, x2
+	adcs x9, x9, x7
+	mul x1, x11, x6
+	ldr x3, [x0, #64]
+	mul x2, x1, x3
+	adds x11, x11, x2
+	ldr x3, [x0, #72]
+	mul x2, x1, x3
+	adcs x12, x12, x2
+	ldr x3, [x0, #80]
+	mul x2, x1, x3
+	adcs x13, x13, x2
+	ldr x3, [x0, #88]
+	mul x2, x1, x3
+	adcs x8, x8, x2
+	ldr x3, [x0, #88]
+	umulh x2, x1, x3
+	adcs x9, x9, x2
+	adcs x10, x10, x7
+	ldr x3, [x0, #64]
+	umulh x2, x1, x3
+	adds x12, x12, x2
+	ldr x3, [x0, #72]
+	umulh x2, x1, x3
+	adcs x13, x13, x2
+	ldr x3, [x0, #80]
+	umulh x2, x1, x3
+	adcs x8, x8, x2
+	adcs x9, x9, x7
+	adcs x10, x10, x7
+	ldr x2, [x0, #64]
+	subs x1, x12, x2
+	ldr x2, [x0, #72]
+	sbcs x3, x13, x2
+	ldr x2, [x0, #80]
+	sbcs x4, x8, x2
+	ldr x2, [x0, #88]
+	sbcs x5, x9, x2
+	sbcs x2, x10, x7
+	csel x12, x1, x12, hs
+	csel x13, x3, x13, hs
+	csel x8, x4, x8, hs
+	csel x9, x5, x9, hs
+	str x12, [x0, #864]
+	str x13, [x0, #872]
+	str x8, [x0, #880]
+	str x9, [x0, #888]
+	ret
+	.p2align 6

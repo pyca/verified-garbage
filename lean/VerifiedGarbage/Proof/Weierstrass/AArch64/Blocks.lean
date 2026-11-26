@@ -1,7 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.LadderFieldLit
-
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Block
@@ -32,28 +30,23 @@ theorem blocks_wp : ∀ (ls : List (List Instr)) {s : State} {Q : State → Prop
     exact ⟨fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mp h',
       fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mpr h'⟩
 
-theorem opProg_none {M : Mod} (hc : Mont.callOf M = none) (hm : M.n ≠ 8) (op : FOp) : opProg M op = .block (opCode M op) := by
-  have hl : ladderFieldLayout M = false := by
-    cases h : ladderFieldLayout M with
-    | false => rfl
-    | true => exact (hm (congrArg Mod.n (LadderFieldLit.layout_eq h))).elim
-  have hs : ladderField? M op = none := by simp only [ladderField?, hl, Bool.false_eq_true, ↓reduceIte]
-  cases op <;> simp only [opProg, hs, opProgRaw, hc]
+theorem opProg_none {M : Mod} (hc : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
+  cases op <;> simp [opProg, opProgRaw, hc]
 
-theorem fprogB_none {M : Mod} (hc : Mont.callOf M = none) (hm : M.n ≠ 8) :
+theorem fprogB_none {M : Mod} (hc : Mont.callOf M = none) :
     ∀ ops : List FOp, fprogB M ops = blocks (ops.map (opCode M))
   | [] => rfl
-  | [op] => by simp [fprogB, progs, blocks, opProg_none hc hm]
+  | [op] => by simp [fprogB, progs, blocks, opProg_none hc]
   | op :: op' :: ops => by
-    have := fprogB_none hc hm (op' :: ops)
+    have := fprogB_none hc (op' :: ops)
     simp only [fprogB, List.map_cons] at this ⊢
-    rw [progs, blocks, opProg_none hc hm, this]
+    rw [progs, blocks, opProg_none hc, this]
     · simp
     · simp
 
 /-- For a modulus whose products are inline, `fprogB` runs as `fprog`. -/
-theorem fprogB_wp (M : Mod) (ops : List FOp) (hc : Mont.callOf M = none) (hm : M.n ≠ 8 := by decide) {s : State} {Q : State → Prop} :
+theorem fprogB_wp (M : Mod) (ops : List FOp) (hc : Mont.callOf M = none) {s : State} {Q : State → Prop} :
     WP isa (fprogB M ops) s Q ↔ WP isa (.block (fprog M ops)) s Q := by
-  rw [fprogB_none hc hm, blocks_wp, fprog, List.flatMap_def]
+  rw [fprogB_none hc, blocks_wp, fprog, List.flatMap_def]
 
 end VG.Proof.Weierstrass.AArch64

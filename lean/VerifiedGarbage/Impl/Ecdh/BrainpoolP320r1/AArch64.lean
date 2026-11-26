@@ -37,7 +37,7 @@ without secret residue. -/
 def exchangeBrainpoolP320r1 : Prog VG.AArch64.isa :=
   VG.Impl.Scrub.AArch64.scrubAll 0 32
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x16, .x17],
-     [.v28, .v29],
+     [.v28, .v29, .v31],
      []⟩
     VG.Impl.Ecdh.AArch64.BrainpoolP320r1.exchange
 

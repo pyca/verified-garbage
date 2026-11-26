@@ -126,7 +126,7 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 .inst 0xf9400815,0xf9400c16,0xf9401017,0xf9401418,0xf9401819,0xf9401c1e,0xd2800021,0x8a010060
 .inst 0xd2800001,0xd2800002,0xd2800003,0xd2800004,0xd2800005,0xd2800006,0xd2800007,0xd2800008
 .inst 0xd2800009,0xd280000a,0xd280000b,0xd280000c,0xd280000d,0xd280000e,0xd280000f,0xd2800010
-.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e41d,0xea01003f,0x11000000,0xd65f03c0
+.inst 0xd2800011,0x6f00e410,0x6f00e411,0x6f00e41d,0x6f00e41f,0xea01003f,0x11000000,0xd65f03c0
 .p2align 6",
         vg_brainpoolp384r1_mul = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_mul::vg_brainpoolp384r1_mul,
         vg_brainpoolp384r1_inv_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_inv_mod_p::vg_brainpoolp384r1_inv_mod_p,
@@ -137,6 +137,34 @@ bl {vg_brainpoolp384r1_mul_mod_p}
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp384r1_inv_mod_p.rs"]
 pub(crate) mod vg_brainpoolp384r1_inv_mod_p;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_0.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_0;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_1.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_1;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_2.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_3.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_4.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_4;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_5.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_5;
+
+#[rustfmt::skip]
+#[path = "internal/vg_brainpoolp384r1_ladder_field_6.rs"]
+pub(crate) mod vg_brainpoolp384r1_ladder_field_6;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp384r1_mul.rs"]
