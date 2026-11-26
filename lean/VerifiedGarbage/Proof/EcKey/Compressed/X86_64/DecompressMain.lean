@@ -892,7 +892,7 @@ theorem checkRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
       exact slot_frame (by simp) (by omega_arith) O₂
     exact unch_same (unch_same U₁ U₂) (slot_frame (by simp) (by omega_arith) O₅)
   · rw [flag₅, k₄.2.1, k₃.2.1, flag₂, mask₄]
-    simp only [not_not]
+    simp only [Classical.not_not]
     exact mask_and _ _
 
 end VG.Proof.EcKey.Compressed.X86_64

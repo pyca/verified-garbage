@@ -52,7 +52,7 @@ theorem w32_digit (m : Mem) (b : Addr) (d : Nat) {k n : Nat} (hk : k < n) :
   obtain h1 := val32_append m b d k (n - k)
   obtain h2 : val32 m b (d + 4 * k) (n - k) = w32 m b (d + 4 * k) + 2 ^ 32 * val32 m b (d + 4 * k + 4) (n - k - 1) := by
     obtain e : n - k = n - k - 1 + 1 := by omega_using [hk]
-    conv_lhs => rw [e]
+    conv => lhs; rw [e]
     rw [val32]
   rw [Nat.add_sub_cancel' (Nat.le_of_lt hk)] at h1
   rw [h1, h2, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt (val32_lt _ _ _ _), Nat.zero_add,
@@ -646,6 +646,9 @@ theorem divB_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
       rw [sp_lt (by simp only [ABd]; rd_ev; exact mf.1) (by simp only [ABd]; rd_ev; exact mf.2.1),
         Nat.mul_mod_mul_right]
       simp only [ABd]; rd_ev
+      refine if_congr ?_ rfl rfl
+      rw [Nat.mul_eq_zero]
+      exact or_iff_left (Nat.ne_of_gt (Nat.two_pow_pos _))
     all_goals (simp only [VB, VK]; rd_up)
 
 end

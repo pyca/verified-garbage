@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.PackedDef
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv

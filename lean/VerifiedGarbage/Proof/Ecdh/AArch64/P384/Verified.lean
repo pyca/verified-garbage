@@ -459,8 +459,8 @@ theorem madd_ok {C : Curve} (hC : C.p = p384) {base : Addr} {size : Nat} (hL : W
       exact this r h), k.rd, k.wr, k.sp⟩,
     (ProgKeepX.mono k hw).unch.mono fun w hw => ?_, _, I.sub fun x hx => ?_,
     fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out maddJN_ok op hop),
-    (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 6)
-      (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 7) (ofN_run maddJN_ok hAp E 8))).trans (maddJN_run _)⟩
+    (congr (congrArg Prod.mk (ofN_run maddJN_ok hAp E 6))
+      (congr (congrArg Prod.mk (ofN_run maddJN_ok hAp E 7)) (ofN_run maddJN_ok hAp E 8))).trans (maddJN_run _)⟩
   · simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢
     rcases hw with ⟨y, hy, rfl⟩ | rfl
     · exact Or.inl ⟨y, w1.2.1 y hy, rfl⟩

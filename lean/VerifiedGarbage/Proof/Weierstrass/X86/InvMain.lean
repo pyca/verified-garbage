@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
@@ -985,6 +985,19 @@ section
 namespace VG.Proof.Weierstrass.X86.Inv
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
+
+/-- The mathematical bounds and exact divisions required by one batch. -/
+structure BatchFacts (I : Divstep.W32.IState) (p : Nat) : Prop where
+  delta : |I.d| + 64 < 2 ^ 30
+  odd : I.f % 2 = 1
+  f : |I.f| ≤ p
+  g : |I.g| ≤ p
+  a : |I.a| ≤ p
+  b : |I.b| ≤ p
+  matrix : let T := Divstep.msteps 30 (Divstep.MSt.init I.d I.f I.g)
+    |T.u| + |T.v| ≤ 2 ^ 30 ∧ |T.q| + |T.r| ≤ 2 ^ 30
+  division : let T := Divstep.msteps 30 (Divstep.MSt.init I.d I.f I.g)
+    2 ^ 30 ∣ T.u * I.f + T.v * I.g ∧ 2 ^ 30 ∣ T.q * I.f + T.r * I.g
 
 theorem run_ok {P : InvCfg} {s : State} {base : Addr} {size p x : Nat}
     (hs : Scr s base size) (L : WorkLay P size) (hp : 0 < p) (hp256 : p < 2 ^ 256)

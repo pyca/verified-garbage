@@ -241,7 +241,7 @@ theorem max_word {x y : BitVec 32} (hx : x.toNat < 2 ^ 31) (hy : y.toNat < 2 ^ 3
       rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow]
       show _ = 1
       omega_using [hy, h]
-    rw [e, show (1 : BitVec 32) - 1 = 0#32 from rfl, BitVec.and_zero, BitVec.add_zero, Nat.max_eq_right h.le]
+    rw [e, show (1 : BitVec 32) - 1 = 0#32 from rfl, BitVec.and_zero, BitVec.add_zero, Nat.max_eq_right (Nat.le_of_lt h)]
     apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega_using []
   · have e : (x - y) >>> 31 = 0 := by
       apply BitVec.eq_of_toNat_eq
@@ -336,7 +336,7 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
   obtain lenQ : cvQ s0 < 2 ^ (32 * kq) := by
     have := VG.Proof.Bignum.os2ip_lt (qBytes s0)
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
-    refine lt_of_lt_of_le this ?_
+    refine Nat.lt_of_lt_of_le this ?_
     rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega_using [hkq])
   obtain lenM : cvM s0 < 2 ^ (32 * kq) := by

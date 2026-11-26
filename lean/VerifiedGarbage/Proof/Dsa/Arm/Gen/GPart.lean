@@ -824,7 +824,7 @@ theorem gStep_vp {g : Geo} {n : Nat} (certs : GStepCerts g) (ok : PowOk n g.e g.
   · by_cases hr : 1 < hv ∧ hv < pv - 1
     swap
     · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
-      rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, not_not] at z
+      rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, Classical.not_not] at z
       kv_simp at z hOv hMv; simp only [hOv, hMv] at z
       exact hr ⟨(b2one _).mp z.1, (b2one _).mp z.2⟩
     obtain eq : gOut c G hv pv ev = if 1 < hv ^ ev % pv then

@@ -90,7 +90,7 @@ theorem checkZero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
   rw [e₃, flagW, flagW, u₂.mem, m₁, u₂.gpr, e₁]
   simp only [reduceCtorEq, ite_false]
   rw [mask_not]
-  simp only [ne_eq, not_not]
+  simp only [ne_eq, Classical.not_not]
 
 /-! ## The first byte -/
 

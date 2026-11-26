@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Alg32
-import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.NormNum.OfScientific
 import Mathlib.Tactic.NormNum.DivMod

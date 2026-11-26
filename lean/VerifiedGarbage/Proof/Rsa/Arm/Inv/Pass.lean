@@ -2999,11 +2999,11 @@ theorem dePass_ok {um : Bool} {s : State} {B : BitVec 32} {Z W k N : Nat} (g : G
       xor_masks, xor_masks, cu.1, cv.1, c4.2.2, BitVec.toNat_ofNat]
     simp only [deP, deL, List.cons_append, List.nil_append, Pass.ncorr, hc0, hc1, hc2, hc3, hc4, hc5,
       reduceCtorEq, ↓reduceIte, hX0, hX1, hX2, hp0, true_and, Bool.true_eq_false, false_and, Nat.add_zero,
-      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, not_not]
+      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, Classical.not_not]
     exact (Nat.add_assoc _ _ _).trans (Nat.mod_eq_of_lt (ite3_lt' (by omega_using [huv, b1]))).symm
   · simp only [deP, deL, List.cons_append, List.nil_append, Pass.ncorr, hc0, hc1, hc2, hc3, hc4, hc5,
       reduceCtorEq, ↓reduceIte, hX0, hX1, hX2, hp0, true_and, Bool.true_eq_false, false_and, Nat.add_zero,
-      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, not_not]
+      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, Classical.not_not]
     exact ite3_lt' (by omega_using [huv, b1])
   have rf1 := Pass.row_result (deP B W k σ.mem (σ.gpr .r2).toNat (σ.gpr .r4).toNat b) true c X hd' ?_ ?_ ?_
     (by rw [sv true]; exact dv1) (v15 hcs true)
@@ -3021,11 +3021,11 @@ theorem dePass_ok {um : Bool} {s : State} {B : BitVec 32} {Z W k N : Nat} (g : G
       xor_masks, xor_masks, cq.1, cr.1, c5.2.2, BitVec.toNat_ofNat]
     simp only [deP, deL, List.cons_append, List.nil_append, Pass.ncorr, hc0, hc1, hc2, hc3, hc4, hc5,
       reduceCtorEq, ↓reduceIte, hX0, hX1, hX2, hp0, true_and, Bool.false_eq_true, false_and, Nat.add_zero,
-      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, not_not]
+      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, Classical.not_not]
     exact (Nat.add_assoc _ _ _).trans (Nat.mod_eq_of_lt (ite3_lt' (by omega_using [hqr, b2]))).symm
   · simp only [deP, deL, List.cons_append, List.nil_append, Pass.ncorr, hc0, hc1, hc2, hc3, hc4, hc5,
       reduceCtorEq, ↓reduceIte, hX0, hX1, hX2, hp0, true_and, Bool.false_eq_true, false_and, Nat.add_zero,
-      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, not_not]
+      Nat.zero_add, ne_eq, eq_iff_iff, iff_false, Classical.not_not]
     exact ite3_lt' (by omega_using [hqr, b2])
   rw [sv false] at rf0
   rw [sv true] at rf1

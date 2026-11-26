@@ -1,12 +1,13 @@
 module
 
+public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.Red30Def
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Red30
 import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Linarith.Frontend
-import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The coefficients' update of libsecp256k1's `update_de`, for any batch of `N` divsteps

@@ -1468,7 +1468,7 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
       rw [read_x,xu]
       congr 1
       by_cases h : n=0
-      · rw [decide_eq_false (not_not.mpr h)]
+      · rw [decide_eq_false (Classical.not_not.mpr h)]
         have : k+2=8 := by omega
         rw [this]; rfl
       · rw [decide_eq_true h,bne_iff_ne,ne_eq]
@@ -1488,7 +1488,7 @@ theorem loop_relCT {base : Addr} {F : Nat → Fe C} :
       exact ⟨is,it,sp⟩
     · rw [hz s xs] at ht
       have h0 : n≠0 := by
-        intro h; rw [decide_eq_false (not_not.mpr h)] at ht; cases ht
+        intro h; rw [decide_eq_false (Classical.not_not.mpr h)] at ht; cases ht
       refine ⟨n-1,by omega_using [h0],by omega_using [hn],⟨?_,?_⟩,⟨?_,?_⟩,sp⟩
       · rw [show 6-(n-1)=k+1 by omega_using [hn, h0],e7]; exact is
       · rw [cs,show 7-(n-1)=k+2 by omega_using [hn, h0]]

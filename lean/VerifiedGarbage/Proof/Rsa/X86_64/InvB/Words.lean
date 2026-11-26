@@ -1,6 +1,7 @@
 module
 -- separate module: the inverse's proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvChunk
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
