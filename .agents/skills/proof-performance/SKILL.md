@@ -640,11 +640,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   evaluation are different terms, each met for the first time. For a check
   of the x86-64 residue analysis of such code (`Analysed.ok_of`,
   `SelScrub` over a hash variant's functions), write
-  `taint_decide_lit` (`Proof/Framework/X86_64/ResidueScrub.lean`), which
-  states the check of the code's literal first: the module of SHA-256
+  `taint_decide_lit`, and for any other check (`scrubSideG`, `upCallee`)
+  `lit_decide_lit` (`Proof/Framework/LitHidden.lean`), which
+  state the check of the code's literal first (the module then needs a
+  `meta import` of what defines the code, and to import the literals of the
+  functions it calls): the module of SHA-256
   with AVX2, seven such checks, went from 30 s to 13 s. It pays for long code (a compression
-  function unrolled) and not for short (the SHA-NI variants), and where
-  `rw_lit` finds the literals it is `taint_decide`.
+  function unrolled) that calls functions with literals, and not for short
+  (the SHA-NI variants) nor for code whose literal has to be built in full,
+  and where `rw_lit` finds the literals it is `taint_decide`.
 * **Equations between code:** prove that two programs, or two lists of
   programs, are the same with `kernel_rfl`, not `decide +kernel`. `decide`
   evaluates both sides to their last operand and compares them with

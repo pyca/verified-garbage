@@ -11,6 +11,27 @@ import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.Framework.X86_64.MxCall
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.LitHidden
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Fn
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillVerified
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Scrub
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubFns
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
+meta import VerifiedGarbage.Proof.Framework.X86_64.MxCall
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.LitHidden
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # DSA's parameter search on x86-64, without secret residue
@@ -111,12 +132,12 @@ def ptSigma (v : RoundImpl) (f : String) : Option (String × Prog isa) :=
 theorem stub_sha1 (h : MdHash) (hm : h ∈ VG.Proof.Variants.MdHash.X86_64.sha1Variants) :
     stubOk h (bodyStub h 128) = true := by
   simp only [VG.Proof.Variants.MdHash.X86_64.sha1Variants, List.mem_cons, List.not_mem_nil, or_false] at hm
-  rcases hm with rfl | rfl | rfl <;> lit_decide
+  rcases hm with rfl | rfl | rfl <;> lit_decide_lit
 
 theorem stub_sha256 (h : MdHash) (hm : h ∈ VG.Proof.Variants.MdHash.X86_64.sha256Variants) (p : Nat)
     (hp : p = 256 ∨ p = 384) : stubOk h (bodyStub h p) = true := by
   simp only [VG.Proof.Variants.MdHash.X86_64.sha256Variants, List.mem_cons, List.not_mem_nil, or_false] at hm
-  rcases hp with rfl | rfl <;> rcases hm with rfl | rfl | rfl <;> lit_decide
+  rcases hp with rfl | rfl <;> rcases hm with rfl | rfl | rfl <;> lit_decide_lit
 
 theorem body_eq1 (h : MdHash) (hm : h ∈ VG.Proof.Variants.MdHash.X86_64.sha1Variants) (v : RoundImpl) :
     body h v 128 = fillI (ptSigma v) (bodyStub h 128) := by

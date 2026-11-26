@@ -151,18 +151,34 @@ theorem verify_spSafe (c : Proof.Sha512.X86_64.Compress) (hq : Proof.Ed25519.X86
 
 end
 
+/-- What holds of each scratch space a compression function may have: one
+check, in which the kernel evaluates once the code they share. -/
+theorem stubs3 {P : Nat → Bool} (h : (P 0 && P 192 && P 1328) = true) :
+    ∀ so, so = 0 ∨ so = 192 ∨ so = 1328 → P so = true := by
+  simp only [Bool.and_eq_true] at h
+  rintro so (rfl | rfl | rfl)
+  · exact h.1.1
+  · exact h.1.2
+  · exact h.2
+
+/-- `stubs3`, of two properties at once. -/
+theorem stubs6 {P Q : Nat → Bool} (h : ((P 0 && P 192 && P 1328) && (Q 0 && Q 192 && Q 1328)) = true) :
+    (∀ so, so = 0 ∨ so = 192 ∨ so = 1328 → P so = true) ∧ ∀ so, so = 0 ∨ so = 192 ∨ so = 1328 → Q so = true := by
+  rw [Bool.and_eq_true] at h
+  exact ⟨stubs3 h.1, stubs3 h.2⟩
+
 theorem verify_stub_ifma :
-    VerifyStub .avx Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.windows "_ifma" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+    VerifyStub .avx Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.windows "_ifma" :=
+  stubs3 (by lit_decide)
 
 
 theorem verify_stub_adx :
-    VerifyStub .sse Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx) "_adx" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+    VerifyStub .sse Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx) "_adx" :=
+  stubs3 (by lit_decide)
 
 theorem verify_stub_baseline :
-    VerifyStub .sse Impl.X25519.X86_64.baseline (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline) "" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+    VerifyStub .sse Impl.X25519.X86_64.baseline (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline) "" :=
+  stubs3 (by lit_decide)
 
 section
 variable {bs : Prog isa} {fs : String}
@@ -283,24 +299,28 @@ theorem keyPair_spSafe [Proof.Ed25519.X86_64.EdBase bs] (c : Proof.Sha512.X86_64
 
 end
 
-theorem sign_stub_ifma : SignStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem base_stubs_ifma : SignStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" ∧
+    KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" :=
+  stubs6 (by lit_decide)
 
-theorem sign_stub_adx : SignStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem sign_stub_ifma : SignStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" := base_stubs_ifma.1
 
-theorem sign_stub_baseline :
-    SignStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem keyPair_stub_ifma : KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" := base_stubs_ifma.2
 
-theorem keyPair_stub_ifma : KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_ifma "_ifma" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem base_stubs_adx : SignStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" ∧
+    KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" :=
+  stubs6 (by lit_decide)
 
-theorem keyPair_stub_adx : KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem sign_stub_adx : SignStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" := base_stubs_adx.1
 
-theorem keyPair_stub_baseline :
-    KeyPairStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" := by
-  rintro so (rfl | rfl | rfl) <;> lit_decide
+theorem keyPair_stub_adx : KeyPairStub .avx Impl.Ed25519.X86_64.scalarBase_adx "_adx" := base_stubs_adx.2
+
+theorem base_stubs_baseline : SignStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" ∧
+    KeyPairStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" :=
+  stubs6 (by lit_decide)
+
+theorem sign_stub_baseline : SignStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" := base_stubs_baseline.1
+
+theorem keyPair_stub_baseline : KeyPairStub .sse (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) "" := base_stubs_baseline.2
 
 end VG.Proof.Ed25519.X86_64.Scrub

@@ -52,16 +52,14 @@ theorem lvAll_one (c : Prog isa) :
 
 /-- `UpperLock.stepI` along `is` from `a`, each step's answer evaluated
 before the next (`UpperLock.up`'s `foldl` leaves the kernel a chain of them,
-as deep as the block is long). -/
-def stepsF : Bool → List Instr → Bool
-  | a, [] => a
-  | a, i :: is => match stepIK i a with
-    | true => stepsF true is
-    | false => stepsF false is
+as deep as the block is long). Only the kernel evaluates it. -/
+noncomputable def stepsF (a : Bool) (is : List Instr) : Bool :=
+  List.rec (motive := fun _ => Bool → Bool) (fun a => a)
+    (fun i _ ih a => Bool.casesOn (motive := fun _ => Bool) (stepIK i a) (ih false) (ih true)) is a
 
 /-- `UpperLock.up`, each answer evaluated before the code after it is
 followed (`stepsF`), which the kernel evaluates on long code. -/
-def upF : Prog isa → Bool → Bool
+noncomputable def upF : Prog isa → Bool → Bool
   | .block is, a => stepsF a is
   | .seq x y, a => match upF x a with
     | true => upF y true
@@ -75,8 +73,9 @@ def upF : Prog isa → Bool → Bool
 theorem stepsF_eq : ∀ (a : Bool) (is : List Instr), stepsF a is = is.foldl UpperLock.stepI a
   | a, [] => rfl
   | a, i :: is => by
-    simp only [stepsF, stepIK_eq, List.foldl]
-    cases h : UpperLock.stepI a i <;> exact stepsF_eq _ is
+    show Bool.casesOn (motive := fun _ => Bool) (stepIK i a) (stepsF false is) (stepsF true is) = _
+    rw [stepIK_eq, List.foldl, stepsF_eq false is, stepsF_eq true is]
+    cases UpperLock.stepI a i <;> rfl
 
 theorem upF_eq : ∀ (c : Prog isa) (a : Bool), upF c a = UpperLock.up c a
   | .block is, a => stepsF_eq a is

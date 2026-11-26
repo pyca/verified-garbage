@@ -449,9 +449,10 @@ lemmas and tactics to use; read it before writing a proof:
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
-  that cost the build). A residue check of long code that `rw_lit` cannot
+  that cost the build). A check of long code that `rw_lit` cannot
   see, behind a structure with proofs (a registration's `r.code`, a
-  variant's functions), is `taint_decide_lit`'s. Arithmetic it evaluates is in a closed term: with
+  variant's functions), is `taint_decide_lit`'s or `lit_decide_lit`'s.
+  Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
   environment is a list or a tree, not a function updated at every write. An equation
   between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
