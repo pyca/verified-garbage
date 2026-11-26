@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
@@ -531,8 +534,7 @@ end
 /-!
 # The comb's loop
 
-The mixed additions (`addEvenOps` inline, and `vg_ed25519_r32_add_affine`'s
-calls) add an affine cached point exactly as the specification's `pointAdd`;
+The mixed additions (both inline in the shared comb main loop) add an affine cached point exactly as the specification's `pointAdd`;
 `combNeg` negates the selected entry under its sign's mask; the doublings are
 calls of `vg_ed25519_r32_double`, RFC 8032's (`pointDouble_rep`); after step
 `j`, the accumulator `A` (slots 0–3)
@@ -584,6 +586,81 @@ theorem TblAt.mulkeep {x P : BitVec 32} {s t : State} (h : TblAt x P s) (hc : Ct
   · exact h.far.sub_right (by rw [scR_eq]; exact sub_sub hc.fit (by decide) (by decide) (by decide))
   · exact hstk
 
+/-- The main loop writes only the workspace, preserving its scalar bits. -/
+structure CombKeep (x : BitVec 32) (s t : State) : Prop where
+  edi : t.gpr .edi = s.gpr .edi
+  esp : t.gpr .esp = s.gpr .esp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [sub x 24 7144] s.mem t.mem
+
+theorem CombKeep.ctx {calls : Bool} {x : BitVec 32} {s t : State} (h : CombKeep x s t)
+    (hc : Ctx x s calls) : Ctx x t calls := hc.keep h.edi h.wr h.esp
+
+theorem CombKeep.trans {x : BitVec 32} {s t u : State} (h : CombKeep x s t) (k : CombKeep x t u) :
+    CombKeep x s u := ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd, k.wr.trans h.wr, h.frame.trans k.frame⟩
+
+theorem CombKeep.toMulKeep {x : BitVec 32} {s t : State} (h : CombKeep x s t) : MulKeep x s t :=
+  ⟨h.edi, h.esp, h.rd, h.wr, h.frame.mono (by intro r hr; rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)⟩
+
+theorem CombKeep.of_field {calls : Bool} {x : BitVec 32} {s t : State} (hc : Ctx x s calls)
+    (h : FieldKeep x s t) : CombKeep x s t :=
+  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨sub x 24 7144, List.mem_singleton_self _, sub_sub hc.fit (by decide) (by decide) (by decide)⟩⟩
+
+theorem CombKeep.of_digit {calls : Bool} {x : BitVec 32} {s t : State} (hc : Ctx x s calls)
+    (h : DigitKeep x s t) : CombKeep x s t :=
+  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨sub x 24 7144, List.mem_singleton_self _, sub_sub hc.fit (by decide) (by decide) (by decide)⟩⟩
+
+theorem CombKeep.of_sel {calls : Bool} {x : BitVec 32} {s t : State} (hc : Ctx x s calls)
+    (k : Keep s t) (h : SelFrame x s.mem t.mem) : CombKeep x s t :=
+  ⟨k.edi, k.esp, k.rd, k.wr, h.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    refine ⟨sub x 24 7144, List.mem_singleton_self _, ?_⟩
+    rcases hr with rfl | rfl <;> exact sub_sub hc.fit (by decide) (by decide) (by decide)⟩
+
+theorem CombKeep.bit {calls : Bool} {x : BitVec 32} {s t : State} (h : CombKeep x s t)
+    (hc : Ctx x s calls) (i : Nat) (hi : i < 512) :
+    t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) := by
+  apply h.frame
+  intro r hr
+  rw [List.mem_singleton.mp hr]
+  exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
+    (.inr (by omega_arith)) : (sub x (7168 + i) 1).Disjoint (sub x 24 7144)) _ (Region.contains_self _ _)
+
+theorem TblAt.combkeep {calls : Bool} {x P : BitVec 32} {s t : State} (h : TblAt x P s)
+    (hc : Ctx x s calls) (k : CombKeep x s t) : TblAt x P t := by
+  have hl := combWords_length
+  refine ⟨h.fit, k.rd ▸ h.rd, fun i hi => ?_, h.far⟩
+  rw [← h.words i hi]
+  exact k.frame.readW (r := TBL (P.setWidth 64)) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    (by intro r hr; rw [List.mem_singleton.mp hr]
+        exact h.far.sub_right (by rw [scR_eq]; exact sub_sub hc.fit (by decide) (by decide) (by decide))) (by decide)
+
+/-- The odd cached entry added inline, without an inner stack frame. -/
+theorem affInline_ok {calls : Bool} {s : State} {x : BitVec 32} (hc : Ctx x s calls)
+    (q : Spec.Ed25519.Point) (hz : q.Z = 1) (h4 : env s.mem x 4 = q.Y - q.X)
+    (h5 : env s.mem x 5 = q.Y + q.X) (h6 : env s.mem x 6 = q.T * 2 * Spec.Ed25519.d) :
+    WP isa (.block (fieldCode pointAddAffineOps)) s fun t => FieldKeep x s t ∧
+      point (env t.mem x) 0 1 2 3 = Spec.Ed25519.pointAdd (point (env s.mem x) 0 1 2 3) q ∧
+      ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i := by
+  refine WP.mono (fieldCode_ok pointAddAffineOps hc) fun t ⟨kt, vt⟩ => ⟨kt, ?_, ?_⟩
+  · rw [vt]
+    refine (Point32.addAffine_formula _).trans ?_
+    rw [h4, h5, h6]
+    exact Point32.mixedResult_eq (point (env s.mem x) 0 1 2 3) q hz
+  · intro i hi
+    rw [vt]
+    apply evalOps_unchanged
+    intro op hop he
+    have hd : ∀ op ∈ pointAddAffineOps, (fieldDest op).val < 16 := by decide
+    have hd' := hd op hop
+    rw [← he] at hd'
+    omega_using [hi, hd']
+
 /-! ## The mixed additions -/
 
 theorem addEven_formula (e : Env) :
@@ -598,7 +675,7 @@ theorem mixed_eval {e : Env} {a b c : Slot} {q : Spec.Ed25519.Point}
   obtain h6 : e c = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z hq
   rw [h4, h5, h6, Point32.mixedResult_eq p q hz]
 
-theorem addEven_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
+theorem addEven_ok {calls : Bool} {s : State} {x : BitVec 32} (hc : Ctx x s calls)
     (q : Spec.Ed25519.Point) (hq : cachedAt (env s.mem x) 13 14 15 = cache q) (hz : q.Z = 1) :
     WP isa (.block (fieldCode addEvenOps)) s fun t =>
       FieldKeep x s t ∧ point (env t.mem x) 17 18 19 20 =
@@ -632,7 +709,7 @@ theorem neg_other (e : Env) (a b c : Slot) (sw : Bool) (i : Slot) (ha : i ≠ a)
     swapsEnv [(a, b), (c, 8)] sw (evalOps [.sub 8 21 c] e) i = e i := by
   cases sw <;> simp [swapsEnv, swapEnv, evalOps, evalOp, Function.update_apply, ha, hb, hc, h8]
 
-theorem combNeg_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (a b c : Slot) {sign : Nat}
+theorem combNeg_ok {calls : Bool} {s : State} {x : BitVec 32} (hc : Ctx x s calls) (a b c : Slot) {sign : Nat}
     (hs1 : 928 ≤ sign) (hs2 : sign + 4 ≤ 8192) (sw : Bool) (hm : wd s.mem x sign = mask sw.toNat)
     (hdis : ∀ p ∈ [(a, b), (c, (8 : Slot))], p.1 ≠ p.2) :
     WP isa (.block (combNeg a b c sign)) s fun t => FieldKeep x s t ∧
@@ -743,7 +820,7 @@ theorem combNext_ok {s : State} {j : Nat} (hj : j < 32) (h : s.gpr .esi = BitVec
 structure CombInv (x : BitVec 32) (s₀ : State) (S : Nat) (P : BitVec 32) (j : Nat) (s : State) :
     Prop where
   bound : j ≤ 32
-  keep : MulKeep x s₀ s
+  keep : CombKeep x s₀ s
   counter : s.gpr .esi = BitVec.ofNat 32 j
   ptr : wd s.mem x combTbl = P
   zero : env s.mem x 21 = 0
@@ -759,9 +836,9 @@ private theorem dis_even : ∀ ab ∈ [((13 : Slot), (14 : Slot)), (15, 8)], ab.
   intro ab hab; simp only [List.mem_cons, List.not_mem_nil, or_false] at hab
   rcases hab with rfl | rfl <;> decide
 
-theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j : Nat}
+theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀ false) {S j : Nat}
     (hb : ∀ q < 256, s₀.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (ht₀ : TblAt x P s₀) (hts : (TBL (P.setWidth 64)).Disjoint (callStk s₀))
+    (ht₀ : TblAt x P s₀)
     (h : CombInv x s₀ S P j s) (hj : j < 32) :
     WP isa combStep s fun t => isa.eval .ne t = some (!decide (j + 1 = 32)) ∧
       CombInv x s₀ S P (j + 1) t := by
@@ -778,7 +855,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   obtain ea : env a.mem x = env s.mem x := digit_env ka.frame hfit
   obtain pa : wd a.mem x combTbl = P :=
     (wd_frame1 ka.frame hfit (by decide) (by decide) (Or.inr (by decide))).trans h.ptr
-  obtain ta : TblAt x P a := ht₀.mulkeep hc₀ hts (h.keep.trans (MulKeep.of_digit hc ka))
+  obtain ta : TblAt x P a := ht₀.combkeep hc₀ (h.keep.trans (CombKeep.of_digit hc ka))
   -- Both entries.
   refine WP.seq (WP.mono (combSelect_ok ca (mag_lt no) (mag_lt ne) ⟨ma.oddMask, ma.evenMask⟩ hj
     (ka.keep.esi.trans h.counter) pa ta) fun b ⟨bo, be, kb, fb⟩ => ?_)
@@ -838,14 +915,14 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   obtain c5 := congrArg Spec.Ed25519.Point.Y co
   obtain c6 := congrArg Spec.Ed25519.Point.Z co
   simp only [cachedAt, cache] at c4 c5 c6
-  refine WP.seq (WP.mono (affCall_ok cc qo hqoz c4 c5 c6) fun d ⟨kd, dp, dh⟩ => ?_)
+  refine WP.seq (WP.mono (affInline_ok cc qo hqoz c4 c5 c6) fun d ⟨kd, dp, dh⟩ => ?_)
   obtain d19 : d.gpr .esi = BitVec.ofNat 32 j := by
     rw [kd.keep.esi, kc.keep.esi, kg.keep.esi, kf.keep.esi, kb.esi, ka.keep.esi, h.counter]
   refine WP.mono (combNext_ok hj d19) fun t ⟨t19, t8, tedi, tesp, trd, twr, tmem⟩ => ⟨t8, ?_⟩
-  obtain kdt : MulKeep x d t := ⟨tedi, tesp, trd, twr, by rw [tmem]; exact Frame.refl _ _⟩
-  obtain kst : MulKeep x s t := (((((((MulKeep.of_digit hc ka).trans (MulKeep.of_sel ca kb fb)).trans
-    (MulKeep.of_field cb kf)).trans (MulKeep.of_field cf kg)).trans (MulKeep.of_field cg kc)).trans
-    (MulKeep.of_call cc kd)).trans kdt)
+  obtain kdt : CombKeep x d t := ⟨tedi, tesp, trd, twr, by rw [tmem]; exact Frame.refl _ _⟩
+  obtain kst : CombKeep x s t := (((((((CombKeep.of_digit hc ka).trans (CombKeep.of_sel ca kb fb)).trans
+    (CombKeep.of_field cb kf)).trans (CombKeep.of_field cf kg)).trans (CombKeep.of_field cg kc)).trans
+    (CombKeep.of_field cc kd)).trans kdt)
   obtain pc : point (env c.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
     simp only [point, ec 0 (by decide), ec 1 (by decide), ec 2 (by decide), ec 3 (by decide),
       eg 0 (by decide), eg 1 (by decide), eg 2 (by decide), eg 3 (by decide),
@@ -857,7 +934,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
     simp only [point, dh 17 (by decide), dh 18 (by decide), dh 19 (by decide), dh 20 (by decide),
       ec 17 (by decide), ec 18 (by decide), ec 19 (by decide), ec 20 (by decide)]
   obtain pt : wd t.mem x combTbl = P := by
-    rw [tmem, wd_frame1s cc kd.frame (by decide) (by decide) (Or.inr (by decide)),
+    rw [tmem, wd_frame1 kd.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kc.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kg.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kf.frame hfit (by decide) (by decide) (Or.inr (by decide)),
@@ -875,8 +952,8 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
 
 /-! ## The start and the end -/
 
-theorem combInit_ok {s : State} {x : BitVec 32} (hc : Ctx x s) :
-    WP isa (.block combInit) s fun t => MulKeep x s t ∧
+theorem combInit_ok {s : State} {x : BitVec 32} (hc : Ctx x s false) :
+    WP isa (.block combInit) s fun t => CombKeep x s t ∧
       wd t.mem x combTbl = wd s.mem x combTbl ∧ env t.mem x 21 = 0 ∧
       env t.mem x 16 = env s.mem x 16 ∧
       point (env t.mem x) 0 1 2 3 = combG ∧ point (env t.mem x) 17 18 19 20 = combG ∧
@@ -884,7 +961,7 @@ theorem combInit_ok {s : State} {x : BitVec 32} (hc : Ctx x s) :
   rw [combInit, WP.block_append_iff]
   refine WP.mono (fieldCode_ok _ hc) fun a ⟨ka, va⟩ => ?_
   refine Wp.wp_movi fun t ht => WP.block_nil ?_
-  refine ⟨(MulKeep.of_field hc ka).trans ⟨ht.other .edi (by decide), ht.other .esp (by decide), ht.rd,
+  refine ⟨(CombKeep.of_field hc ka).trans ⟨ht.other .edi (by decide), ht.other .esp (by decide), ht.rd,
       ht.wr, by rw [ht.mem]; exact Frame.refl _ _⟩,
     by rw [ht.mem]; exact wd_frame1 ka.frame hc.fit (by decide) (by decide) (Or.inr (by decide)),
     ?_, ?_, ?_, ?_, ht.gpr⟩ <;> rw [ht.mem, va] <;> rfl
@@ -914,13 +991,11 @@ theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
   rw [tp, p0, p4, ← zsmul_16]
   exact pointAdd_rep bp hb
 
-theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (hS : S < 2 ^ 256)
+theorem combMain_ok {s : State} {x P : BitVec 32} (hc : Ctx x s false) {S : Nat}
     (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s)
-    (hts : (TBL (P.setWidth 64)).Disjoint (callStk s)) :
-    WP isa combMultiply s fun t =>
-      Rep (point (env t.mem x) 0 1 2 3) (S • baseAff) ∧ MulKeep x s t := by
-  rw [combMultiply]
+    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s) :
+    WP isa combMain s fun t => CombInv x s S P 32 t := by
+  rw [combMain]
   refine WP.seq (WP.mono (combInit_ok hc) fun b ⟨kb, bt, bz, bd, bp, bq, b19⟩ => ?_)
   obtain hg : Rep combG (((combGVal : ℤ) + 0) • baseAff) := by
     rw [add_zero, natCast_zsmul]; exact combG_ok
@@ -930,7 +1005,7 @@ theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (
     apply WP.loop (fun n t => CombInv x s S P (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
     · intro n t ⟨hi, hn0, hn⟩
       obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩
-      refine WP.mono (combStep_ok hc hb ht hts hi (by omega_arith)) fun u ⟨u8, hu⟩ => ?_
+      refine WP.mono (combStep_ok hc hb ht hi (by omega_arith)) fun u ⟨u8, hu⟩ => ?_
       by_cases hk : k = 0
       · subst hk
         exact Or.inl ⟨by rw [u8]; rfl, hu⟩
@@ -938,9 +1013,83 @@ theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (
           decide_eq_false (show 32 - k ≠ 32 by omega_arith)]; rfl, k, by omega_arith, ?_, by omega_arith, by omega_arith⟩
         rw [show 32 - k = 32 - (k + 1) + 1 by omega_arith]; exact hu
     · exact ⟨init, by decide, by decide⟩
-  refine WP.seq (WP.mono hl fun t hi => ?_)
-  refine WP.mono (combFinish_ok (hi.keep.ctx hc) hi.d hi.odd hi.even) fun u ⟨hu, ku⟩ =>
-    ⟨?_, hi.keep.trans ku⟩
+  exact hl
+
+/-- The shared loop uses only its four-byte return address on the stack. -/
+theorem combMainCall_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat}
+    (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s)
+    (hts : (TBL (P.setWidth 64)).Disjoint (callStk s)) :
+    WP isa (.call "vg_ed25519_comb_main" combMain) s fun t =>
+      env t.mem x 16 = Spec.Ed25519.d ∧
+      Rep (point (env t.mem x) 0 1 2 3) (((combGVal : ℤ) + oddSumZ S 32) • baseAff) ∧
+      Rep (point (env t.mem x) 17 18 19 20) (((combGVal : ℤ) + evenSumZ S 32) • baseAff) ∧ MulKeep x s t := by
+  obtain ⟨hE, hdis⟩ := hc.stk rfl le_rfl
+  have fs : Frame [below (s.gpr .esp) 4] s.mem s.callEntry.mem := by
+    rw [State.callEntry_mem]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 4)
+  have fs8 : Frame [callStk s] s.mem s.callEntry.mem := fs.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨callStk s, List.mem_singleton_self _, below_sub (by decide) hE⟩
+  have sameWord : ∀ d, d + 4 ≤ 8192 → wd s.callEntry.mem x d = wd s.mem x d := by
+    intro d hd
+    exact wd_frame fs8 fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact stk_apart hc hd (by decide)
+  have sameEnv : env s.callEntry.mem x = env s.mem x := by
+    funext i
+    apply congrArg VG.Proof.X25519.toFe
+    apply fe_frame
+    intro k hk
+    exact sameWord _ (by simp only [offset]; have := i.isLt; omega_using [hk])
+  have he : Ctx x s.callEntry false :=
+    ⟨(State.callEntry_gpr s (by decide)).trans hc.edi, hc.fit, hc.wr, hc.room, nofun⟩
+  have be : ∀ q < 256, s.callEntry.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) := by
+    intro q hq
+    refine Eq.trans (fs8 _ ?_) (hb q hq)
+    intro r hr
+    rw [List.mem_singleton.mp hr]
+    exact stk_apart hc (d := 7168 + q) (n := 1) (by omega_using [hq]) (by decide) _ (Region.contains_self _ _)
+  have te : TblAt x P s.callEntry := by
+    have hl := combWords_length
+    refine ⟨ht.fit, ht.rd, fun i hi => ?_, ht.far⟩
+    rw [← ht.words i hi]
+    exact fs8.readW (r := TBL (P.setWidth 64)) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+      (by intro r hr; rw [List.mem_singleton.mp hr]; exact hts) (by decide)
+  obtain ⟨tr, u, eu, hi⟩ := combMain_ok he be (by rw [sameEnv]; exact hd)
+    ((sameWord combTbl (by decide)).trans hp) te
+  have wsSub : (sub x 24 7144).Sub (scR 8192 x) := by
+    rw [scR_eq]; exact sub_sub hc.fit (by decide) (by decide) (by decide)
+  have retSub : (⟨(s.callEntry.gpr .esp).setWidth 64, 4⟩ : Region).Sub (callStk s) := by
+    rw [State.callEntry_esp]; exact below_sub (by decide) hE
+  have retWord : u.mem.readW ((s.callEntry.gpr .esp).setWidth 64) 32 =
+      s.callEntry.mem.readW ((s.callEntry.gpr .esp).setWidth 64) 32 :=
+    hi.keep.frame.readW (r := ⟨(s.callEntry.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _)
+      (by intro r hr; rw [List.mem_singleton.mp hr]; exact ((hdis.sub_left wsSub).sub_right retSub).symm) (by decide)
+  have er : isa.ret s.callEntry u = some (u.setReg .esp (u.gpr .esp + 4)) := by
+    simp only [isa, VG.X86.ret, hi.keep.esp, retWord, and_self, ite_true]
+  refine ⟨_, _, Exec.call (call_callEntry s) eu er, ?_, ?_, ?_, ?_⟩
+  · rw [RegUpd.mem_setReg]; exact hi.d
+  · rw [RegUpd.mem_setReg]; exact hi.odd
+  · rw [RegUpd.mem_setReg]; exact hi.even
+  · refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    · rw [RegUpd.gpr_setReg_of_ne u _ (by decide), hi.keep.edi, State.callEntry_gpr s (by decide)]
+    · rw [RegUpd.gpr_setReg_self, hi.keep.esp, State.callEntry_esp, BitVec.sub_add_cancel]
+    · rw [RegUpd.rd_setReg, hi.keep.rd, State.callEntry_rd]
+    · rw [RegUpd.wr_setReg, hi.keep.wr, State.callEntry_wr]
+    · rw [RegUpd.mem_setReg]
+      exact (fs8.mono (by intro r hr; rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))).trans
+        (hi.keep.frame.mono (by intro r hr; rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..))
+
+theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (hS : S < 2 ^ 256)
+    (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s)
+    (hts : (TBL (P.setWidth 64)).Disjoint (callStk s)) :
+    WP isa combMultiply s fun t =>
+      Rep (point (env t.mem x) 0 1 2 3) (S • baseAff) ∧ MulKeep x s t := by
+  rw [combMultiply]
+  refine WP.seq (WP.mono (combMainCall_ok hc hb hd hp ht hts) fun t ⟨td, odd, even, tk⟩ => ?_)
+  refine WP.mono (combFinish_ok (tk.ctx hc) td odd even) fun u ⟨hu, ku⟩ => ⟨?_, tk.trans ku⟩
   rw [comb_total hS, natCast_zsmul] at hu
   exact hu
 
@@ -958,8 +1107,8 @@ section
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus
 `768 esi` and a constant. The tables' address is the word at byte `combTbl` of the workspace,
 which the comb never writes, public (`callTaint combTbl`): the digits only reach masks. The
-calls of `vg_ed25519_r32_add_affine` and of `_point_add` are analysed by their summaries, and
-those of `_double`, after the loop, as part of the comb. -/
+call of `_point_add` is analysed by its summary, and the shared main loop
+and the calls of `_double` after it as part of the comb. -/
 
 @[expose] public section
 
@@ -971,7 +1120,7 @@ theorem combMultiply_ct {x : BitVec 32} : RelCT isa
     (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ s.gpr .esp = t.gpr .esp ∧
       wd s.mem x combTbl = wd t.mem x combTbl) combMultiply (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaint combTbl) combMultiply h).isSome = true := by
-    native_taint_decide_sum [affSum, addSum]
+    native_taint_decide_sum [addSum]
   apply VG.RelCT.taint (A := taint) (callTaint combTbl) _ hc
   intro s t ⟨hs, ht, hw, hsp, hv⟩
   exact callTaint_agree hs ht hw hsp (by decide) hv

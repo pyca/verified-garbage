@@ -40,6 +40,8 @@ magnitude `|n - 8|`, `mask 0` otherwise.
 
 namespace VG.Proof.Ed25519.X86
 
+variable {calls : Bool}
+
 open VG VG.X86 VG.Impl.Ed25519.X86 VG.Proof.Ed25519
 open VG.Impl.X25519.X86 (sc at_)
 
@@ -63,7 +65,7 @@ theorem wp_andm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {
 
 /-! ## The address of the bits -/
 
-theorem combBits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {j : Nat}
+theorem combBits_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {j : Nat}
     (hs : s.gpr .esi = BitVec.ofNat 32 j) :
     WP isa (.block combBits) s fun t =>
       Keep s t ∧ t.mem = s.mem ∧ t.gpr .edx = x + BitVec.ofNat 32 (8 * j) := by
@@ -87,7 +89,7 @@ private theorem horner (a b : Nat) :
     BitVec.ofNat 32 a + BitVec.ofNat 32 a + BitVec.ofNat 32 b = BitVec.ofNat 32 (a * 2 + b) := by
   rw [← BitVec.ofNat_add, ← BitVec.ofNat_add]; exact congrArg (BitVec.ofNat 32) (by omega_using [])
 
-theorem combNibble_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j o i : Nat} (hj : j < 32)
+theorem combNibble_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {S j o i : Nat} (hj : j < 32)
     (ho : o = 7168 ∨ o = 7172) (hi : 8 * j + o = 7168 + 4 * i)
     (hd : s.gpr .edx = x + BitVec.ofNat 32 (8 * j))
     (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
@@ -149,7 +151,7 @@ private theorem sign_fact : ∀ n < 16,
       BitVec.allOnes 32 else 0) = BitVec.ofNat 32 (mag n) := by
   decide
 
-theorem combSign_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {sign n : Nat} (hsign : sign + 4 ≤ 8192)
+theorem combSign_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {sign n : Nat} (hsign : sign + 4 ≤ 8192)
     (hn : n < 16) (ha : s.gpr .eax = BitVec.ofNat 32 n) :
     WP isa (.block (combSign sign)) s fun t =>
       Keep s t ∧ Frame [sub x sign 4] s.mem t.mem ∧ wd t.mem x sign = mask (decide (n < 8)).toNat ∧
@@ -178,7 +180,7 @@ private theorem mask_fact : ∀ a < 9, ∀ k < 9,
       BitVec.allOnes 32 else 0) = mask (decide (a = k)).toNat := by
   decide
 
-theorem combMask_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {masks a : Nat} (k : Nat)
+theorem combMask_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {masks a : Nat} (k : Nat)
     (hm : masks + 36 ≤ 8192) (ha : a < 9) (hk : k < 9) (hax : s.gpr .eax = BitVec.ofNat 32 a) :
     WP isa (.block (combMask masks k)) s fun t =>
       Keep s t ∧ t.gpr .eax = s.gpr .eax ∧ t.gpr .edx = s.gpr .edx ∧
@@ -200,7 +202,7 @@ theorem combMask_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {masks a : Nat} (
   · rw [ht.mem, wd_write_self, h₄.gpr, ← mask_fact a ha k hk, e₃]
 
 
-theorem combMaskAll_ok {x : BitVec 32} {s₀ : State} (hc : Ctx x s₀) {masks a : Nat}
+theorem combMaskAll_ok {x : BitVec 32} {s₀ : State} (hc : Ctx x s₀ calls) {masks a : Nat}
     (hm : masks + 36 ≤ 8192) (ha : a < 9) (hax : s₀.gpr .eax = BitVec.ofNat 32 a) : ∀ n ≤ 9,
     WP isa (.block ((List.range n).flatMap (combMask masks))) s₀ fun t =>
       Keep s₀ t ∧ t.gpr .eax = s₀.gpr .eax ∧ t.gpr .edx = s₀.gpr .edx ∧
@@ -237,7 +239,7 @@ structure DigitMasks (x : BitVec 32) (S j : Nat) (m : Mem) : Prop where
   oddSign : wd m x combOddSign = mask (decide (nib S (2 * j + 1) < 8)).toNat
   evenSign : wd m x combEvenSign = mask (decide (nib S (2 * j) < 8)).toNat
 
-theorem combDigits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {S j : Nat} (hj : j < 32)
+theorem combDigits_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {S j : Nat} (hj : j < 32)
     (hs : s.gpr .esi = BitVec.ofNat 32 j)
     (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
     WP isa (.block combDigits) s fun t => DigitKeep x s t ∧ DigitMasks x S j t.mem := by
@@ -306,6 +308,8 @@ half of a 64-bit word of the static (`tbl_word`).
 @[expose] public section
 
 namespace VG.Proof.Ed25519.X86
+
+variable {calls : Bool}
 
 open VG VG.X86 VG.Impl.Ed25519 VG.Impl.Ed25519.X86 VG.Proof.Ed25519
 open VG.Impl.X25519.X86 (sc at_)
@@ -435,7 +439,7 @@ theorem TblAt.cand {x P : BitVec 32} {s : State} (h : TblAt x P s) {j c n w : Na
 
 /-! ## The selection -/
 
-theorem selectCand_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat}
+theorem selectCand_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat}
     (hm : Masks x ao ae s.mem) {d k : Nat} (hk : k < 9) {v : BitVec 32}
     (hin : InRegions (s.rd ++ s.wr) (addr (s.gpr .ecx) d) 4)
     (hv : s.mem.readW (addr (s.gpr .ecx) d) 32 = v) :
@@ -486,7 +490,7 @@ theorem feWord_start (one : Bool) (w : Nat) :
 theorem mask_one (b : Bool) : mask b.toNat &&& (1 : BitVec 32) = if b then 1 else 0 := by
   cases b <;> decide
 
-theorem selectStart_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat}
+theorem selectStart_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat}
     (hm : Masks x ao ae s.mem) (one : Bool) (w : Nat) :
     WP isa (.block (selectStart one w)) s fun t =>
       t.gpr .ebx = (if ao = 0 then feWord (if one then 1 else 0) w else 0) ∧
@@ -539,7 +543,7 @@ theorem selRange_step (f : Nat → BitVec 32) (a n : Nat) :
 /-- Table `j`'s address in `ecx`. -/
 abbrev TblReg (P : BitVec 32) (j : Nat) (s : State) : Prop := s.gpr .ecx = P + BitVec.ofNat 32 (768 * j)
 
-theorem selectCands_ok {x P : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat}
+theorem selectCands_ok {x P : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat}
     (hm : Masks x ao ae s.mem) (ht : TblAt x P s) {j c w : Nat} (hj : j < 32) (hc3 : c < 3)
     (hw : w < 8) (hq : TblReg P j s) :
     ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap fun m => selectCand (256 * c + 32 * m + 4 * w) (m + 1))) s
@@ -575,7 +579,7 @@ theorem start_range (j c w a : Nat) (ha : a < 9) (one : Bool)
   · subst h; simp only [↓reduceIte, Nat.lt_irrefl, false_and, or0, candWord, hone]
   · simp only [h, ↓reduceIte, show 0 < a ∧ a ≤ 8 by omega_arith, and_self, zor]
 
-theorem selectWord_ok {x P : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat} (hao : ao < 9)
+theorem selectWord_ok {x P : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat} (hao : ao < 9)
     (hae : ae < 9) (hm : Masks x ao ae s.mem) (ht : TblAt x P s) {j c : Nat} (hj : j < 32)
     (hc3 : c < 3) (hq : TblReg P j s) (one : Bool)
     (hone : coord c (combCached j 0) = if one then 1 else 0) {o e : Nat} (ho : o + 32 ≤ 1024)
@@ -601,7 +605,7 @@ theorem selectWord_ok {x P : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat}
 /-- Two regions of the workspace (`[o, o + n)` and `[e, e + n)`) may change. -/
 abbrev Frame2 (x : BitVec 32) (o e n : Nat) (m m' : Mem) : Prop := Frame [sub x o n, sub x e n] m m'
 
-theorem selectFieldPrefix_ok {x P : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat}
+theorem selectFieldPrefix_ok {x P : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat}
     (hao : ao < 9) (hae : ae < 9) (hm : Masks x ao ae s.mem) (ht : TblAt x P s) {j c : Nat}
     (hj : j < 32) (hc3 : c < 3) (hq : TblReg P j s) (one : Bool)
     (hone : coord c (combCached j 0) = if one then 1 else 0) {o e : Nat} (ho : o + 32 ≤ 1024)
@@ -656,7 +660,7 @@ theorem field_of_words {m : Mem} {x : BitVec 32} {o : Nat} {v : Spec.X25519.Fe}
     exact num_congr fun w hw => congrArg BitVec.toNat (h w hw)
   rw [VG.Proof.X25519.X86.F, hf, VG.Proof.X25519.toFe_self]
 
-theorem selectField_ok {x P : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat} (hao : ao < 9)
+theorem selectField_ok {x P : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat} (hao : ao < 9)
     (hae : ae < 9) (hm : Masks x ao ae s.mem) (ht : TblAt x P s) {j c : Nat} (hj : j < 32)
     (hc3 : c < 3) (hq : TblReg P j s) (one : Bool)
     (hone : coord c (combCached j 0) = if one then 1 else 0) {o e : Nat} (ho : o + 32 ≤ 1024)
@@ -739,7 +743,7 @@ theorem tblAdds_ok : ∀ (n : Nat) {s : State} {P : BitVec 32} {a b : Nat},
       fun t ⟨kt, mt, et⟩ => ⟨(updKeep h₁).trans kt, mt.trans h₁.mem, by
         rw [et, Nat.succ_mul, Nat.add_assoc, Nat.add_comm a]⟩
 
-theorem tblAddr_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {j : Nat}
+theorem tblAddr_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {j : Nat}
     (hs : s.gpr .esi = BitVec.ofNat 32 j) {P : BitVec 32} (hp : wd s.mem x combTbl = P) :
     WP isa (.block tblAddr) s fun t => Keep s t ∧ t.mem = s.mem ∧ TblReg P j t := by
   rw [show tblAddr = .mov .eax (.reg .esi) :: (List.replicate 8 (.alu .add .eax (.reg .eax)) ++
@@ -760,7 +764,7 @@ theorem tblAddr_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {j : Nat}
 
 /-! ## Both entries -/
 
-theorem combSelect_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {ao ae : Nat} (hao : ao < 9)
+theorem combSelect_ok {x : BitVec 32} {s : State} (hc : Ctx x s calls) {ao ae : Nat} (hao : ao < 9)
     (hae : ae < 9) (hm : Masks x ao ae s.mem) {j : Nat} (hj : j < 32)
     (hs : s.gpr .esi = BitVec.ofNat 32 j) {P : BitVec 32} (hp : wd s.mem x combTbl = P)
     (ht : TblAt x P s) :

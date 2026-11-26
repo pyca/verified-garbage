@@ -19,11 +19,11 @@ adds them, or their negations, to two accumulators, which start at `[G]B`:
 At the end, `[s]B = 16 A + B`: four doublings and one addition. That is 64
 additions of affine cached points (seven multiplications each), four
 doublings and one addition, as ref10's `ge_scalarmult_base` (and so
-OpenSSL's) does with its signed radix-16 table. The additions to `A` are calls
-of `vg_ed25519_r32_add_affine`, the doublings calls of `vg_ed25519_r32_double`
-and the last addition a call of `vg_ed25519_r32_point_add`; the additions to
-`B` are inline (`addEvenOps`), and come first in each step, since the calls'
-working space includes the slots of `B`'s entry.
+OpenSSL's) does with its signed radix-16 table. Both additions are inline
+in the shared main loop, `vg_ed25519_comb_main`. `B` is added first because
+the odd addition's temporary slots include `B`'s selected entry. The final
+four doublings call `vg_ed25519_r32_double`, and the final addition calls
+`vg_ed25519_r32_point_add`.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the nine magnitudes `k = 0 … 8` of each digit (all ones exactly for
@@ -188,7 +188,7 @@ def combStep : Prog isa :=
   .seq (.block combDigits) <|
   .seq (.block combSelect) <|
   .seq (.block (combNeg 13 14 15 combEvenSign ++ fieldCode addEvenOps ++ combNeg 4 5 6 combOddSign)) <|
-  .seq Point32.affCall <|
+  .seq (.block (fieldCode pointAddAffineOps)) <|
   .block [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)]
 
 /-- Both accumulators at `[G]B`, zero in slot 21, and the counter. -/
@@ -201,9 +201,11 @@ def combInit : List Instr :=
 def combFinish : Prog isa :=
   .seq double4 (.seq (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20])) Point32.addCall)
 
-/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 7168 onward, `d` in slot 16
-and the tables' address at byte `combTbl`. -/
-def combMultiply : Prog isa :=
-  .seq (.block combInit) (.seq (.loop combStep .ne) combFinish)
+/-- The two digit sums, for scalar bits expanded from byte 7168, `d` in slot 16,
+and the tables' address at `combTbl`. This loop makes no calls. -/
+def combMain : Prog isa := .seq (.block combInit) (.loop combStep .ne)
+
+/-- `[s]B` into slots 0–3: the shared main loop, followed by its final doublings and addition. -/
+def combMultiply : Prog isa := .seq (.call "vg_ed25519_comb_main" combMain) combFinish
 
 end VG.Impl.Ed25519.X86
