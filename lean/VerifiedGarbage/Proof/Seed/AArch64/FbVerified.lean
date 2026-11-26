@@ -115,7 +115,12 @@ theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
 
 /-- The core keeps `x25`, where the modes keep the IV's address. -/
 theorem keeps_x25 : Modes.AArch64.KeepsReg .x25 fbCore.prepare ∧ Modes.AArch64.KeepsReg .x25 fbCore.crypt :=
-  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), Modes.AArch64.keepsReg_of_regSafe (by lit_decide)⟩
+  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), by
+    intro s tr t h
+    have hc : fbCore.crypt.allInstrs (fun i => !clobbers i .x25) = true := by lit_decide
+    rw [Code.allInstrs_eq] at hc
+    exact Exec.gpr (fun i hi => by simpa using List.all_eq_true.mp hc i hi) h
+      (.inr (by decide))⟩
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/

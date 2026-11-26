@@ -43,6 +43,7 @@ end VG.Proof.Seed.AArch64
 
 namespace VG
 
+materialize_code Impl.Seed.AArch64.serialCryptRaw
 materialize_code Impl.Seed.AArch64.serialCrypt
 materialize_code Impl.Seed.AArch64.serialDecrypt
 materialize_code Impl.Seed.AArch64.ecbEncrypt
