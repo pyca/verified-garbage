@@ -119,6 +119,6 @@ theorem p256Sign_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
   Scrub.sign_scrubbed (R := p256 hL hI hT)
     (p256T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
     rfl p256_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

@@ -111,7 +111,7 @@ theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.
   Scrub.sign_scrubbed (R := brainpoolp320r1 hL hI) (n := 128)
     (brainpoolp320r1T_verified hL hI _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
     rfl brainpoolp320r1_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_brainpoolp320r1_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.Fn.verifyHash`): it meets its contract in

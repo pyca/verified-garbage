@@ -116,7 +116,7 @@ theorem p384Sign_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstra
   Scrub.sign_scrubbed (R := p384 hL hI hT)
     (p384T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
     rfl p384_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_p384_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP384`): it meets its contract in

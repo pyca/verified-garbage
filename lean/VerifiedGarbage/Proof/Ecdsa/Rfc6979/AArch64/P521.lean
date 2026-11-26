@@ -110,7 +110,7 @@ theorem p521Sign_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstra
   Scrub.sign_scrubbed (R := p521 hL hI hT)
     (p521T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
     rfl p521_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_p521_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521`): it meets its contract in

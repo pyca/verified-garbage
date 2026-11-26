@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSpec
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.AArch64.SideFillT
+public import VerifiedGarbage.Proof.HmacTable.AArch64.Up
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64.Fn
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -27,7 +28,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 
 open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
-open VG.Proof.HmacTable.AArch64 (tables)
+open VG.Proof.HmacTable.AArch64 (HmacUp names tables stubFns fnsOf_up mem_tableFns variants_up)
 
 /-- The `n` bytes at `q` read the memory only within a region at `q` of at
 least `n` bytes. -/
@@ -100,34 +101,48 @@ theorem variants_ok : OK variants := ⟨variants_coh, of_decide_eq_true (by kern
 theorem fnsOf_hashes : HmacTable.AArch64.fnsOf variants = Impl.Ecdsa.Rfc6979.AArch64.Fn.fnsOf hashes := by
   kernel_rfl
 
+/-- The code's parameters over stubs of the table's functions. -/
+abbrev cfgS (E : Impl.Ecdsa.AArch64.Cfg) (big : Bool) (sh tries : Nat) (coreN : String) (coreC : Prog isa) :
+    Impl.Ecdsa.Rfc6979.AArch64.Cfg :=
+  { Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg E big sh tries coreN coreC [] with f := stubFns }
+
+theorem sign_tfill (R : RfcCurve) (n : Nat) {vs : List MdHash} (hv : ∀ w ∈ vs, HmacUp w)
+    (hk : inames R.coreC = []) :
+    TFill 1 (names vs) (signCode (cfgS R.E R.big R.sh n R.coreN R.coreC)) (signCodeT R n vs) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
+
 /-- `vg_ecdsa_<curve>_sign` on the curve `R` as emitted, cleanup included
 (`Impl.Ecdsa.Rfc6979.AArch64.Fn.sign`), with the tables of every hash
 function: it meets its contract in constant time and returns without secret
 residue. What the cleanup needs of the code is the curve's to evaluate, once,
-with nothing in the place of `vg_ecdsa_<curve>_sign_k` (`hc`, `he`, `ht`,
-`hd`), and that function's own (`hk`). -/
+with nothing in the place of `vg_ecdsa_<curve>_sign_k` and stubs in that of
+the table's functions (`hc`, `he`, `hd`), and that function's own (`hk`). -/
 theorem sign_scrubbed {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance}
     {cs : List (String × List (BitVec 64))} (hv : Verified target (signCodeT R T.tries variants) (specK T cs variants))
     {n : Nat} (ht8 : T.tries = n)
     (hk : sideAll (fun i => !i.writesDit) R.coreC = true)
-    (hc : signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n R.coreN R.coreC hashes) =
-      Code.fill2 (.call R.coreN R.coreC) (.block [])
-        (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)))
-    (he : (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)).all
-      (fun i => !i.writesDit) = true)
-    (ht : tablesCall (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes))
-      [("hmac", tables variants)] = true)
-    (hd : Code.aarch64Depth2 0 0
-      (signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n "" (.block []) hashes)) ≤ 40) :
+    (hc : signCode (cfgS R.E R.big R.sh n R.coreN R.coreC) =
+      Code.fill2 (.call R.coreN R.coreC) (.block []) (signCode (cfgS R.E R.big R.sh n "" (.block []))))
+    (he : (signCode (cfgS R.E R.big R.sh n "" (.block []))).allInstrs (fun i => !i.writesDit) = true)
+    (hd : Code.aarch64Depth2 0 0 (signCode (cfgS R.E R.big R.sh n "" (.block []))) ≤ 40) :
     VerifiedScrubbed target (Impl.Ecdsa.Rfc6979.AArch64.Fn.sign R.E R.big R.sh n R.coreN R.coreC hashes)
       (specK T cs variants) 32 := by
-  obtain ⟨hdit, htc, hdc⟩ := table_depth_of_fill2 (ts := [("hmac", tables variants)]) hc hk
-    (Nat.le_of_eq (Proof.Pbkdf2.Md.AArch64.fdepth_of_noFrames R.coreNoFrames)) (by rfl) (Nat.le_refl _) he ht hd
-  have e : signCodeT R T.tries variants =
+  have ha : (signCode (cfgS R.E R.big R.sh n R.coreN R.coreC)).allInstrs (fun i => !i.writesDit) = true := by
+    rw [hc]
+    exact allInstrs_fill2 (allInstrs_of_sideAll hk) rfl he
+  have hda : (signCode (cfgS R.E R.big R.sh n R.coreN R.coreC)).aarch64Depth ≤ 40 := by
+    rw [hc]
+    exact Nat.le_trans (Code.aarch64Depth_fill2_le (a := .call R.coreN R.coreC) (b := .block []) (da := 0) (db := 0)
+      (Nat.le_of_eq (Proof.Pbkdf2.Md.AArch64.fdepth_of_noFrames R.coreNoFrames)) (Nat.le_refl _) _) hd
+  obtain ⟨hdit, htc, hdc⟩ := (sign_tfill R n variants_up (inames_of_noIcall (noIcall_of_sideAll hk))).ok
+    (ts := [("hmac", tables variants)]) (fun _ h => mem_tableFns h) ha hda
+  have e : signCodeT R n variants =
       signCode (Impl.Ecdsa.Rfc6979.AArch64.Fn.cfg R.E R.big R.sh n R.coreN R.coreC hashes) := by
-    rw [signCodeT, cfgT, fnsOf_hashes, ht8]
+    rw [signCodeT, cfgT, fnsOf_hashes]
     rfl
-  rw [e] at hv
+  rw [ht8] at hv
+  rw [e] at hv hdit htc hdc
   exact verifiedScrubbedOfTA (W := 640) hv (signOk T cs variants) (by decide)
     (Nat.le_trans (Nat.mul_le_mul_left 16 hdc) (by decide)) hdit (fun _ _ h => contract_pub h) htc
     (.inr (.inl rfl))
