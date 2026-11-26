@@ -1009,19 +1009,59 @@ theorem combInit_ok {u : State} {b T : BitVec 32} (hcu : Ctx b u) (lu : AllLim u
     simpa only [digitSum64, add_zero, natCast_zsmul] using combStart_ok
   exact ⟨(PointKeep.of_keep kv).trans kvw, E, I⟩
 
+/-- Copying the clamped workspace scalar onto itself leaves memory unchanged. -/
+theorem combCopy_self_ok {s : State} {b : BitVec 32} (hc : Ctx b s)
+    (hp : s.gpr .r12 = b + BitVec.ofNat 32 SCAL) :
+    WP isa (.block combCopy) s fun t => Rest [.r1] s t ∧ t.mem = s.mem := by
+  have ha : State.addr (b + BitVec.ofNat 32 SCAL) = State.addr b + BitVec.ofNat 64 SCAL :=
+    addr_add (by simp only [SCAL]; omega_using [hc.fit])
+  refine wp_range_flatMap (M := isa) (fun (_ : Nat) (t : State) => Rest [.r1] s t ∧ t.mem = s.mem)
+    (fun k t hk ⟨rt, mt⟩ => ?_) 32 le_rfl s ⟨Rest.refl _ _, rfl⟩
+  have hf : (b + BitVec.ofNat 32 SCAL).toNat + k < 2 ^ 32 := by
+    rw [BitVec.toNat_add_of_lt (by simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit])]
+    simp only [BitVec.toNat_ofNat, SCAL] at *
+    omega_using [hc.fit, hk]
+  refine wp_ldrb (a := State.addr b + BitVec.ofNat 64 (SCAL + k)) (by omega_using [hk])
+    (by rw [rt.gpr _ (by decide), hp, addr_add hf, ha, Offset.add_add])
+    (by rw [rt.rd, rt.wr]; exact in_base (List.mem_append_right _ hc.wr) (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])) fun u hu => ?_
+  refine wp_strb (a := State.addr b + BitVec.ofNat 64 (SCAL + k))
+    (by simp only [SCAL]; omega_using [hk])
+    (by rw [hu.other _ (by decide), rt.gpr _ (by decide), hc.r0]; exact hc.ptr_addr (by simp only [SCAL]; omega_using [hk]))
+    (by rw [hu.wr, rt.wr]; exact in_base hc.wr (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])) fun v hv => WP.block_nil ?_
+  refine ⟨rt.trans ((hu.rest (by decide)).trans (hv.rest _)), ?_⟩
+  rw [hv.mem, hu.gpr, hu.mem, byte_rt, mt]
+  funext a
+  rw [VG.WriteBytes.writeW8_apply]
+  split <;> rename_i h
+  · rw [h]
+  · rfl
+
+/-- An external scalar, or the already clamped copy at `SCAL`. -/
+def CombInputOk (b P : BitVec 32) : Prop :=
+  (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩ ∨ P = b + BitVec.ofNat 32 SCAL
+
 /-- The scalar copied (`combCopy_ok`), then `combInit_ok`. -/
 theorem combPrepare_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
-    (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
+    (hsep : CombInputOk b P)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
     WP isa combPrepare s fun w => PointKeep b s w ∧ CombEnv w b (b + BitVec.ofNat 32 SCAL) T ∧
       CombInv w b (b + BitVec.ofNat 32 SCAL) T
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32)) 0 w := by
   have hfb := hc.fit
   obtain sub : (scalR b).Sub ⟨State.addr b, 8192⟩ := Offset.sub_base _ (by decide)
+  have copy : WP isa (.block combCopy) s fun t => Rest [.r1] s t ∧ Frame [scalR b] s.mem t.mem ∧
+      ∀ k < 32, t.mem (State.addr b + BitVec.ofNat 64 (SCAL + k)) =
+        s.mem (State.addr P + BitVec.ofNat 64 k) := by
+    rcases hsep with hs | rfl
+    · exact combCopy_ok hc hp hfit hr (hs.sub_right sub)
+    · refine WP.mono (combCopy_self_ok hc hp) fun t ⟨rt, mt⟩ => ⟨rt, ?_, ?_⟩
+      · rw [mt]; exact Frame.refl _ _
+      · intro k hk
+        rw [mt, addr_add (by simp only [SCAL]; omega_using [hc.fit]), Offset.add_add]
   rw [combPrepare]
-  refine WP.seq (WP.mono_syms (combCopy_ok hc hp hfit hr (hsep.sub_right sub)) fun u ⟨ru, fu, cu⟩ syu => ?_)
+  refine WP.seq (WP.mono_syms copy fun u ⟨ru, fu, cu⟩ syu => ?_)
   obtain ku : PointKeep b s u := PointKeep.of_small ru (by decide) fu (by decide) (by decide)
   obtain hcu := ku.ctx hc
   obtain lu : AllLim u.mem b := fun sl =>
@@ -1054,7 +1094,7 @@ theorem combFrom_ok {w : State} {b p T : BitVec 32} {S : Nat} (E : CombEnv w b p
 theorem combMultiplyInline_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
-    (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
+    (hsep : CombInputOk b P)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
     WP isa (combMultiplyInline umaal) s fun t => PointKeep b s t ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3)

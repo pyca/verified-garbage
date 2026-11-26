@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTMul
 import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
@@ -110,11 +111,29 @@ theorem combBytes_frame {b P : BitVec 32} {m m' : Mem} {rs : List Region}
   exact List.map_congr_left fun n hn => hf.bytes (R := ⟨State.addr P, 32⟩)
     (fun r hr => hsep.sub_right (hsub r hr)) (show (32 : Nat) ≤ 2 ^ 64 by decide) (List.mem_range.mp hn)
 
+/-- The call's two temporary words are separate from either permitted scalar input. -/
+theorem combInput_bytes_frame {s : State} {b P : BitVec 32} {m m' : Mem} {d : Nat}
+    (hc : Ctx b s) (hd : d = combInput ∨ d = combReturn)
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 d, 4⟩] m m') (hs : CombInputOk b P) :
+    Spec.Ed25519.bytesAt m' (State.addr P) 32 = Spec.Ed25519.bytesAt m (State.addr P) 32 := by
+  rcases hs with hs | rfl
+  · exact combBytes_frame hf (by
+      intro r hr; rw [List.mem_singleton.mp hr]
+      exact Offset.sub_base _ (by rcases hd with rfl | rfl <;> decide)) hs
+  · unfold Spec.Ed25519.bytesAt
+    refine List.map_congr_left fun n hn => ?_
+    rw [addr_add (by simp only [SCAL]; omega_using [hc.fit])]
+    exact hf.bytes (R := scalR b) (by
+      intro r hr; rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint _ (by rcases hd with rfl | rfl <;> decide) (by decide)
+        (by rcases hd with rfl | rfl <;> decide))
+      (show (32 : Nat) ≤ 2 ^ 64 by decide) (List.mem_range.mp hn)
+
 /-- The function preserves its incoming link even though the comb calls field functions. -/
 theorem combMultiplyFn_ok {umaal : Bool} {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.mem.readW (State.addr b + BitVec.ofNat 64 combInput) 32 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
-    (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
+    (hsep : CombInputOk b P)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
     WP isa (combMultiplyFn umaal) s fun t => CombKeep b s t ∧ t.gpr .lr = s.gpr .lr ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3)
@@ -128,7 +147,7 @@ theorem combMultiplyFn_ok {umaal : Bool} {s : State} {b P T : BitVec 32} (hc : C
   have tu : TblAt u T := hT.of_frame (by rw [ur.rd, ur.wr]) uf fun r hr => apart.sub_right (sub r hr)
   have ru : ∀ k < 32, InRegions (u.rd ++ u.wr) (State.addr P + BitVec.ofNat 64 k) 1 := by
     rw [ur.rd, ur.wr]; exact hr
-  have bytes := combBytes_frame uf sub hsep
+  have bytes := combInput_bytes_frame hc (.inr rfl) uf hsep
   refine WP.seq (WP.mono (combMultiplyInline_ok hcu lu up hfit ru hsep tu (by rw [syu]; exact hsym) apart)
     fun v ⟨vk, vl, vr⟩ => ?_)
   refine WP.mono (combLeave_ok (vk.ctx hcu)) fun t ⟨tr, tm, tl⟩ => ?_
@@ -143,7 +162,7 @@ theorem combMultiplyFn_ok {umaal : Bool} {s : State} {b P T : BitVec 32} (hc : C
 theorem combMultiply_ok {umaal : Bool} {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
-    (hsep : (⟨State.addr P, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
+    (hsep : CombInputOk b P)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
     WP isa (combMultiply umaal) s fun t => CombKeep b s t ∧ AllLim t.mem b ∧
       Rep (point (env t.mem b) 0 1 2 3)
@@ -168,6 +187,6 @@ theorem combMultiply_ok {umaal : Bool} {s : State} {b P T : BitVec 32} (hc : Ctx
   have ck : CombKeep b u u.callEntry := ⟨ce, Frame.refl _ _⟩
   refine ⟨_, t, Exec.call (call_callEntry u) te ?_, uk.trans (ck.trans tk), lt, ?_⟩
   · simp only [isa, ret, tl, ite_true]
-  · rw [State.callEntry_mem, combBytes_frame uf sub hsep] at rt; exact rt
+  · rw [State.callEntry_mem, combInput_bytes_frame hc (.inl rfl) uf hsep] at rt; exact rt
 
 end VG.Proof.Ed25519.Arm

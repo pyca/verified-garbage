@@ -44,7 +44,7 @@ def uEncode (umaal : Bool) : Prog isa :=
 /-- The slots cleared, the scalar copied and clamped, the comb, and the u-coordinate. -/
 def engine (umaal : Bool) : Prog isa :=
   .seq (.block (initFields ++ combCopy ++ clampBytes))
-    (.seq combInit (.seq (.loop (combStep umaal) .ne) (uEncode umaal)))
+    (.seq (.block (scratchAddr SCAL)) (.seq (combMultiply umaal) (uEncode umaal)))
 
 def x25519Base (umaal : Bool) : Prog isa :=
   .seq (.block scalarBaseSetup) (.seq (engine umaal) (.block scalarBaseFinish))

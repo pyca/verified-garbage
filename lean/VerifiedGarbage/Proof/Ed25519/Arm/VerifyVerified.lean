@@ -369,7 +369,7 @@ theorem verifyLoadScalar_ct (T b pk sig challenge : BitVec 32) :
       (VerifyKeep.of_rest tr (by decide) tm)
     have hi := (hc.keep kt).sigInput.suffix32
     have tt := ht.keep kt (syt.trans syu)
-    exact ⟨⟨kt.ctx hc.ctx, by rw [tp, up, hc.sigHeader], hi.fit, hi.readable, hi.separate, tt.tbl, tt.sym,
+    exact ⟨⟨kt.ctx hc.ctx, by rw [tp, up, hc.sigHeader], hi.fit, hi.readable, .inl hi.separate, tt.tbl, tt.sym,
       tt.apart⟩, by rw [tm, um]; exact hl⟩
 
 theorem verifyLhs_ct (T b pk sig challenge : BitVec 32) :
