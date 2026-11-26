@@ -41,7 +41,7 @@ theorem ladAM : LadA p192.mulLadder where
   bits := by decide
   call := by intro f m h; cases h
 
-theorem mulFn_v : p192.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true := by lit_decide
+theorem mulFn_v : p192.mulFn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true := by lit_decide
 
 theorem mulFn_nf : p192.mulFn.noFrames = true := by lit_decide
 

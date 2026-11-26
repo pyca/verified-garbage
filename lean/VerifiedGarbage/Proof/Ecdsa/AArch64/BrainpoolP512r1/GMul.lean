@@ -41,7 +41,7 @@ theorem ladAM : LadA brainpoolp512r1.mulLadder where
   bits := by decide
   call := by intro f m h; cases h
 
-theorem mulFn_v : brainpoolp512r1.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true := by lit_decide
+theorem mulFn_v : brainpoolp512r1.mulFn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true := by lit_decide
 
 theorem mulFn_nf : brainpoolp512r1.mulFn.noFrames = true := by lit_decide
 
