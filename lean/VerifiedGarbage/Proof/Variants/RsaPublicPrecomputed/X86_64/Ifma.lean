@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
@@ -65,16 +66,23 @@ namespace VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
+/-- The tests of the code's instructions, in one walk. -/
+theorem checked_bits : (Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm).allInstrs (hasBits (bMx + bSp + bNs)) = true ∧
+    (Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm).depth = 0 ∧
+    (Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm).x86_64Depth ≤ 0 ∧
+    (UpperLock.inames (Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm)).isEmpty = true := by
+  lit_decide
+
 def variant : PublicImpl where
   name := "vg_rsa_public_precomputed_checked" ++ "_ifma"
   code := Impl.Rsa.X86_64.PubIfma.checked Mont.adxSquare.mm
   ok := Ifma.Pub.checked_correct _ (by decide +kernel)
   ct := Ifma.Pub.checked_ct _ FoldedPublic.adx_final_ct
-  nosp := noSp_of (by lit_decide)
-  depth := by lit_decide
-  spSafe := Code.all_of_spTest (by lit_decide)
+  nosp := noSp_of (Code.noRsp_of_bits rfl checked_bits.1)
+  depth := checked_bits.2.1
+  spSafe := Code.spSafe_of_bits rfl checked_bits.1
   level := .evex
-  side := by lit_decide
+  side := X86_64.Scrub.calleeSide_evex checked_bits.2.2.1 (Code.noMx_of_bits rfl checked_bits.1) checked_bits.2.2.2
   up := fun h => by cases h
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]

@@ -915,7 +915,7 @@ theorem all_finalizeMainWith (p : Instr → Bool) (o : List Instr) :
   cases o.all p <;> simp only [Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and]
 
 theorem untouched_fixed : ((instrs (finalizeMainWith [])).all fun i => keepsU (dstOf i)) = true := by
-  rw [← Code.allInstrs_eq]; decide +kernel
+  rw [← Code.allInstrs_eq]; lit_decide
 
 /-- The initial taint: only the arguments are public. -/
 theorem agree₀ {s₁ s₂ : State} (hpub : (Proof.Sha512.finalizeDRISCV64 D).pub s₁ s₂) :

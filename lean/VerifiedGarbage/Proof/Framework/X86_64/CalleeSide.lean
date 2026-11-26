@@ -60,6 +60,22 @@ noncomputable def calleeSide (c : Prog isa) (k n : Nat) : Bool :=
   decide (c.x86_64Depth ≤ n) && lvAll k c &&
     (UpperLock.inames c).isEmpty
 
+/-- `calleeSide` at the level of EVEX, which every instruction is within: of code whose depth is
+known and which is known to load no MXCSR, without asking its instructions. -/
+theorem calleeSide_evex {c : Prog isa} {n : Nat} (hd : c.x86_64Depth ≤ n)
+    (hm : c.allInstrs (fun i => !loadsMxcsr i) = true) (hn : (UpperLock.inames c).isEmpty = true) :
+    calleeSide c 2 n = true := by
+  have hl : lvAll 2 c = true := by
+    rw [lvAll_eq]
+    rw [Code.allInstrs_eq] at hm ⊢
+    refine List.all_eq_true.mpr fun i hi => ?_
+    rw [List.all_eq_true.mp hm i hi, Bool.and_true, decide_eq_true_eq]
+    unfold Instr.vecLevelR Instr.vecLevel
+    split
+    · decide
+    · split <;> decide
+  rw [calleeSide, hl, hn, decide_eq_true hd]; rfl
+
 /-- `Code.x86_64Depth` of code with a stub for the implementations it calls,
 each call `.call f (.block [])` of one (`Fill.hole`) taking `n f` bytes: the
 stack of the code with implementations that need at most that much

@@ -29,7 +29,8 @@ def variant : RoundImpl :=
     correct := Proof.MillerRabin.X86_64.Ifma.code_correct Adx.arith
     ct := Proof.MillerRabin.X86_64.Ifma.code_ct Adx.arith
     level := .evex
-    side := by lit_decide
+    side := X86_64.Scrub.calleeSide_evex (Proof.MillerRabin.X86_64.Ifma.code_depth Adx.arith (by decide +kernel))
+      (noLoad_of_noTouch (Proof.MillerRabin.X86_64.Ifma.code_noMx Adx.arith)) (by lit_decide)
     mmSide := by intro o a b; rfl
     montSide := by intro o a b; rfl
     inlineSide := Adx.inlineSide _
