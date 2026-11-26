@@ -591,6 +591,28 @@ theorem mixT_lt {f : Nat → Nat} (hf : ∀ n < 16, f n < 16) (cs : List Nat) :
   show 8 * f (down (p / 8) i) + p % 8 < 128
   omega_using [this]
 
+/-- `StraightQ.linPost` of the registers `P`, with the lanes of their words given as numbers. -/
+def linPostS (P : Nat → VReg) (S : Nat → Nat) (e : StraightQ.Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => outOkS 128 10 (e.reg (P j)) (S j)
+
+theorem check_of {x : Nat → Option (Nat × Nat)} {is : List Instr} {e : StraightQ.Env (Nat × Nat)} {P : Nat → VReg}
+    {T : Nat → Nat → List (Nat × Nat)} {S : Nat → Nat}
+    (hS : ∀ j, mk 128 (fun p => (T j p).map fun t => 128 * t.1 + t.2) 128 = S j)
+    (h : StraightQ.check (lanes 128 10) qCfg x is e (linPostS P S) = true) :
+    StraightQ.check (lanes 128 10) qCfg x is e (StraightQ.linPost 10 (outsOf P T)) = true := by
+  obtain ⟨e', he, hp⟩ := StraightQ.of_check _ _ h
+  rw [StraightQ.check, he]
+  refine List.all_eq_true.mpr fun o ho => ?_
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ho
+  exact outOkW_of (hS j) (List.all_eq_true.mp hp j hj)
+
+/-- The lanes of word `j` of `mixT`. -/
+def mixTS (f : Nat → Nat) (cs : List Nat) (j : Nat) : Nat :=
+  mixS 128 (fun i p => 8 * f (down (p / 8) i) + p % 8) fun i => mulTerms (cs.getD i 0) j
+
+theorem mixTS_eq (f : Nat → Nat) (cs : List Nat) (j : Nat) :
+    mk 128 (fun p => (mixT f cs j p).map fun t => 128 * t.1 + t.2) 128 = mixTS f cs j := mk_mix ..
+
 theorem srA_check : StraightQ.check (lanes 128 10) qCfg (StraightQ.linExt 8) ((permute srOff B).tail)
     (StraightQ.linEnv (insOf B) [(.v24, srIdx)])
     (StraightQ.linPost 10 (outsOf B (permT srSrc))) = true := by decide +kernel
@@ -599,10 +621,12 @@ theorem isrA_check : StraightQ.check (lanes 128 10) qCfg (StraightQ.linExt 8) ((
     (StraightQ.linPost 10 (outsOf A (permT isrSrc))) = true := by decide +kernel
 theorem mc_check : StraightQ.check (lanes 128 10) qCfg (StraightQ.linExt 8) mcCore
     (StraightQ.linEnv (insOf B) [(.v24, srRotIdx), (.v25, srIdx)])
-    (StraightQ.linPost 10 (outsOf A (mixT srSrc mcCoeffs))) = true := by decide +kernel
+    (StraightQ.linPost 10 (outsOf A (mixT srSrc mcCoeffs))) = true :=
+  check_of (mixTS_eq srSrc mcCoeffs) (by decide +kernel)
 theorem imc_check : StraightQ.check (lanes 128 10) qCfg (StraightQ.linExt 8) imcCore
     (StraightQ.linEnv (insOf B) [(.v24, rotIdx)])
-    (StraightQ.linPost 10 (outsOf A (mixT id invMcCoeffs))) = true := by decide +kernel
+    (StraightQ.linPost 10 (outsOf A (mixT id invMcCoeffs))) = true :=
+  check_of (mixTS_eq id invMcCoeffs) (by decide +kernel)
 
 theorem NRel.perm {Q Q' : Nat → BitVec 128} {S T : Nat → Spec.Aes.State} (h : NRel Q S)
     {f : Nat → Nat} (hf : ∀ n < 16, f n < 16)
@@ -627,8 +651,7 @@ theorem nrow {Q : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : NRel Q S
 
 theorem nmix_bit {Q : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : NRel Q S) {f : Nat → Nat}
     (hf : ∀ n < 16, f n < 16) (cs : List Nat)
-    (hc : ∀ i < 4, cs.getD i 0 ∈ [0x02, 0x03, 0x01, 0x0e, 0x0b, 0x0d, 0x09])
-    {j n k : Nat} (hj : j < 8) (hn : n < 16) (hk : k < 8) :
+    (j : Nat) {n k : Nat} (hn : n < 16) (hk : k < 8) :
     termsXor Q (mixT f cs j (8 * n + k)) =
       (Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 0 0)) ((S k).getD (f (down n 0)) 0) ^^^
        Spec.Aes.mul (BitVec.ofNat 8 (cs.getD 1 0)) ((S k).getD (f (down n 1)) 0) ^^^
@@ -640,8 +663,7 @@ theorem nmix_bit {Q : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : NRel
     List.append_nil, termsXor_append, e, e', BitVec.getLsbD_xor]
   rw [nrow h (hf _ (down_lt hn)) hk _ (mulTerms_lt _ _), nrow h (hf _ (down_lt hn)) hk _ (mulTerms_lt _ _),
     nrow h (hf _ (down_lt hn)) hk _ (mulTerms_lt _ _), nrow h (hf _ (down_lt hn)) hk _ (mulTerms_lt _ _),
-    mulTerms_ok _ (hc 0 (by decide)) _ j hj, mulTerms_ok _ (hc 1 (by decide)) _ j hj,
-    mulTerms_ok _ (hc 2 (by decide)) _ j hj, mulTerms_ok _ (hc 3 (by decide)) _ j hj]
+    mulTerms_ok, mulTerms_ok, mulTerms_ok, mulTerms_ok]
   simp only [Bool.xor_assoc]
 
 theorem nrel_mc {Q Q' : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : NRel Q S)
@@ -650,7 +672,7 @@ theorem nrel_mc {Q Q' : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : NR
   have sr : ∀ m < 16, (S k).getD (srSrc m) 0 = (Spec.Aes.shiftRows (S k)).getD m 0 := fun m hm => by
     rw [Spec.Aes.shiftRows, getD_ofFn _ hm]; rfl
   show _ = ((Spec.Aes.mixColumns (Spec.Aes.shiftRows (S k))).getD n 0).getLsbD j
-  rw [hQ j hj _ (by omega_using [hn, hk]), nmix_bit h srSrc_lt mcCoeffs (by decide) hj hn hk,
+  rw [hQ j hj _ (by omega_using [hn, hk]), nmix_bit h srSrc_lt mcCoeffs j hn hk,
     sr _ (down_lt hn), sr _ (down_lt hn), sr _ (down_lt hn), sr _ (down_lt hn),
     Spec.Aes.mixColumns, getD_ofFn _ hn]
   simp only [mcCoeffs, List.getD_cons_zero, List.getD_cons_succ, down, mul_one_byte,
@@ -661,7 +683,7 @@ theorem nrel_imc {Q Q' : Nat → BitVec 128} {S : Nat → Spec.Aes.State} (h : N
     (hQ : ∀ j < 8, ∀ p < 128, (Q' j).getLsbD p = termsXor Q (mixT id invMcCoeffs j p)) :
     NRel Q' fun k => Spec.Aes.invMixColumns (S k) := fun j hj n hn k hk => by
   show _ = ((Spec.Aes.invMixColumns (S k)).getD n 0).getLsbD j
-  rw [hQ j hj _ (by omega_using [hn, hk]), nmix_bit (f := id) h (fun _ h => h) invMcCoeffs (by decide) hj hn hk,
+  rw [hQ j hj _ (by omega_using [hn, hk]), nmix_bit (f := id) h (fun _ h => h) invMcCoeffs j hn hk,
     Spec.Aes.invMixColumns, getD_ofFn _ hn]
   rfl
 

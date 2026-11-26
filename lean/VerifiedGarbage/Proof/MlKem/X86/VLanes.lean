@@ -441,8 +441,18 @@ def sh4 : Shape where
 
 theorem sh4_ok : ShapeOk sh4 where
   gath X Y e he := by
-    refine ⟨(word_punpcklqdq X Y he).trans ?_, (word_punpckhqdq X Y he).trans ?_⟩ <;>
-      rcases cases8 he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    refine ⟨(word_punpcklqdq X Y he).trans ?_, (word_punpckhqdq X Y he).trans ?_⟩
+    · rw [show sh4.pa e = if e < 4 then e else e + 4 from rfl, pos]
+      by_cases h : e < 4
+      · rw [ite_eq_left h, ite_eq_left h, ite_eq_left (by omega)]
+      · rw [ite_eq_right h, ite_eq_right h, ite_eq_right (by omega)]
+        exact congrArg (word Y) (by omega)
+    · rw [show sh4.pb e = if e < 4 then e + 4 else e + 8 from rfl, pos]
+      by_cases h : e < 4
+      · rw [ite_eq_left h, ite_eq_left h, ite_eq_left (by omega)]
+        exact congrArg (word X) (by omega)
+      · rw [ite_eq_right h, ite_eq_right h, ite_eq_right (by omega)]
+        exact congrArg (word Y) (by omega)
   scat S D e he := by
     rcases cases8 he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact ⟨word_punpcklqdq S D (i := 0) (by decide), word_punpcklqdq S D (i := 4) (by decide)⟩

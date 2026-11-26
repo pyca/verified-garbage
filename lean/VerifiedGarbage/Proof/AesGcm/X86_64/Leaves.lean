@@ -354,21 +354,21 @@ theorem encrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSi
     Fill k n (Impl.AesGcm.X86_64.Blocks.encrypt ctrStub ghStub P al F S S4 PS)
       (Impl.AesGcm.X86_64.Blocks.encrypt ctr gh P al F S S4 PS) := by
   unfold Impl.AesGcm.X86_64.Blocks.encrypt Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
-  cases P <;> cases F <;> fill_calls_refl
+  cases P <;> cases F <;> fill_calls
 
 theorem encryptSeparate_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
     (hg : calleeSide gh.code k (n "g") = true) :
     Fill k n (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctrStub ghStub)
       (Impl.AesGcm.X86_64.Blocks.encryptSeparate ctr gh) := by
   unfold Impl.AesGcm.X86_64.Blocks.encryptSeparate Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
-  fill_calls_refl
+  fill_calls
 
 theorem decrypt_fill {k : Nat} {n : String → Nat} (ctr gh : Fn) (hc : calleeSide ctr.code k (n "c") = true)
     (hg : calleeSide gh.code k (n "g") = true) (P PS : Option (Prog isa)) (al F S S4 : Bool) :
     Fill k n (Impl.AesGcm.X86_64.Blocks.decrypt ctrStub ghStub P al F S S4 PS)
       (Impl.AesGcm.X86_64.Blocks.decrypt ctr gh P al F S S4 PS) := by
   unfold Impl.AesGcm.X86_64.Blocks.decrypt Impl.AesGcm.X86_64.Blocks.blocks Impl.AesGcm.X86_64.Blocks.body
-  cases P <;> cases F <;> fill_calls_refl
+  cases P <;> cases F <;> fill_calls
 
 /-- `v`'s `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`, for the key
 context of `vg_aes_gcm_init`, meet what the cleanup of their callers needs
@@ -485,7 +485,7 @@ private theorem seal_fill {k : Nat} (c g : Fn) (p : Prog isa) {minimum : Nat}
     (hc : calleeSide c.code k 0 = true) (hg : calleeSide g.code k 0 = true) :
     Fill k (fun _ => 0) (Impl.AesGcm.X86_64.BlocksToDec.sealPrepared ctrStub ghStub p true minimum)
       (Impl.AesGcm.X86_64.BlocksToDec.sealPrepared c g p true minimum) := by
-  fill_calls_wide
+  fill_calls
 
 private theorem level_of_backend {v : GcmVariant} {nm : StitchToName} (h : v.shortBackend = some nm) :
     nm.lv.level ≤ v.lvG.level := by
@@ -610,35 +610,35 @@ theorem sealCode_fill {k : Nat} (c : Callees) (h : CalleesSide k c) (s : Bool) (
     Fill k blkN (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
   unfold Impl.AesGcm.X86_64.Fn.sealCode
-  cases s <;> cases f <;> fill_calls_wide
+  cases s <;> cases f <;> fill_calls
 
 theorem openCode_fill {k : Nat} (c : Callees) (h : CalleesSide k c) (s : Bool) :
     Fill k blkN (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode s stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCode s c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
   unfold Impl.AesGcm.X86_64.Fn.openCode
-  cases s <;> fill_calls_wide
+  cases s <;> fill_calls
 
 theorem sealCodeP_fill {k : Nat} (c : Callees) (h : CalleesSide k c) (s : Bool) (f : Bool) :
     Fill k blkN (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f stub5)) (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCodeP s f c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
   unfold Impl.AesGcm.X86_64.Fn.sealCodeP
-  cases s <;> cases f <;> fill_calls_wide
+  cases s <;> cases f <;> fill_calls
 
 theorem openCodeP_fill {k : Nat} (c : Callees) (h : CalleesSide k c) (s : Bool) :
     Fill k blkN (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP s stub5)) (withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.Fn.openCodeP s c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
   unfold Impl.AesGcm.X86_64.Fn.openCodeP
-  cases s <;> fill_calls_wide
+  cases s <;> fill_calls
 
 theorem streamEncrypt_fill {k : Nat} (c : Callees) (h : CalleesSide k c) :
     Fill k blkN (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt stub5)) (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem streamDecrypt_fill {k : Nat} (c : Callees) (h : CalleesSide k c) :
     Fill k blkN (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt stub5)) (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem sealW_of (v : GcmVariant) (s : Bool) (f : Bool) (ks : Nat) (hs : v.impl.short = s) (hf : v.impl.fin = f) (hks : ks ≤ v.lv.level)
     (ha : stubSide (withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.Fn.sealCode s f stub5)) ks blkN 2624 [] = true) :
@@ -1016,14 +1016,14 @@ theorem decryptTo_fill {k : Nat} {n : String → Nat} (g c : Fn) (hg : calleeSid
     (hc : calleeSide c.code k (n "t") = true) :
     Fill k n (Impl.AesGcm.X86_64.BlocksToDec.decryptTo ghStub ctrToStub)
       (Impl.AesGcm.X86_64.BlocksToDec.decryptTo g c) := by
-  fill_calls_wide
+  fill_calls
 
 theorem openSplit_fill {k : Nat} {n : String → Nat} (c : Callees) (T : Fn)
     (h1 : calleeSide c.ctr.code k (n "c") = true) (h3 : calleeSide c.gh.code k (n "g") = true)
     (hT : calleeSide T.code k (n "T") = true) :
     Fill k n (Impl.AesGcm.X86_64.OpenSplit.openSplit stub5 toDecStub)
       (Impl.AesGcm.X86_64.OpenSplit.openSplit c T) := by
-  fill_calls_wide
+  fill_calls
 
 /-- `openSplit`'s code over stubs, evaluated once. -/
 theorem openSplit_stub : stubCallee (Impl.AesGcm.X86_64.OpenSplit.openSplit stub5 toDecStub) 0 (fun _ => 24) 56 = true := by
@@ -1032,7 +1032,7 @@ theorem openSplit_stub : stubCallee (Impl.AesGcm.X86_64.OpenSplit.openSplit stub
 theorem openToSplit_fill {k : Nat} {n : String → Nat} (S : Fn) (hS : calleeSide S.code k (n "S") = true) :
     Fill k n (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit splitStub))
       (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S)) := by
-  fill_calls_wide
+  fill_calls
 
 /-- `v`'s callees meet `CalleesSide` at the level `lvTW`. -/
 theorem callees_sideTW (v : GcmVariant) : CalleesSide v.lvTW.level v.impl.callees :=
@@ -1167,7 +1167,7 @@ theorem toDec_fill {k : Nat} {n : String → Nat} (dec : Fn) (hd : calleeSide de
     (P : Option (Prog isa)) (al : Bool) :
     Fill k n (Impl.AesGcm.X86_64.BlocksToDec.decrypt ⟨"d", .block []⟩ P al)
       (Impl.AesGcm.X86_64.BlocksToDec.decrypt dec P al) := by
-  cases P <;> fill_calls_wide
+  cases P <;> fill_calls
 
 /-- `BlocksToDec.decrypt` over stubs, with the out-of-place loops named `n`
 if any, evaluated once for each. -/
@@ -1258,7 +1258,7 @@ theorem openToP_fill {k : Nat} {n : String → Nat} (t : Nat) (sel : Bool)
       (Impl.Gcm.X86_64.Flag.onFlag t (Impl.AesGcm.X86_64.Fn.openToCodeP sel w fO fS)
         (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S))) := by
   unfold Impl.AesGcm.X86_64.Fn.openToCodeP
-  fill_calls_wide
+  fill_calls
 
 /-- The level of `copyBytes w`: SSE's, VEX's or EVEX's. -/
 def widthLv : Impl.ChaCha20Poly1305.X86_64.SealGather.Width → Nat
@@ -1387,19 +1387,19 @@ theorem streamInitS_fill {k : Nat} {n : String → Nat} (c : Callees) (h : Calle
     Fill k n (withStackScratch 2568 .r8 (Impl.AesGcm.X86_64.streamInit stub5))
       (withStackScratch 2568 .r8 (Impl.AesGcm.X86_64.streamInit c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem streamAadS_fill {k : Nat} {n : String → Nat} (c : Callees) (h : CalleesSideN k n c) :
     Fill k n (withStackScratch 2568 .r9 (Impl.AesGcm.X86_64.streamAad stub5))
       (withStackScratch 2568 .r9 (Impl.AesGcm.X86_64.streamAad c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem streamFinishS_fill {k : Nat} {n : String → Nat} (c : Callees) (h : CalleesSideN k n c) :
     Fill k n (withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish stub5))
       (withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish c)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem initFn_side (v : GcmVariant) : calleeSide (initFn v.impl).fn.code v.lv.level 2576 = true :=
   calleeSide_of_fill (ks := 0) (streamInitS_fill _ (callees_side0 v)) (Nat.zero_le _) (by lit_decide)
@@ -1436,7 +1436,7 @@ theorem blocksTo_fill {k : Nat} {n : String → Nat} (enc : Fn) (he : calleeSide
     (P : Option (Prog isa)) (al F : Bool) :
     Fill k n (Impl.AesGcm.X86_64.BlocksTo.encrypt ⟨"e", .block []⟩ P al F)
       (Impl.AesGcm.X86_64.BlocksTo.encrypt enc P al F) := by
-  cases P <;> fill_calls_wide
+  cases P <;> fill_calls
 
 /-- `BlocksTo.encrypt` over a stub, with the out-of-place loop `P` (of the
 level `l`), evaluated once for each. -/
@@ -1474,7 +1474,7 @@ theorem streamTo_fill {k : Nat} {n : String → Nat} (blk enc : Fn) (hb : callee
     (he : calleeSide enc.code k (n "E") = true) :
     Fill k n (withStackArgScratch 2232 3 (Impl.AesGcm.X86_64.StreamTo.encrypt (fnStub "B") (fnStub "E")))
       (withStackArgScratch 2232 3 (Impl.AesGcm.X86_64.StreamTo.encrypt blk enc)) := by
-  fill_calls_wide
+  fill_calls
 
 /-- The stack the stubs of `vg_aes_gcm_stream_encrypt_to` stand for. -/
 def streamToN : String → Nat := fun s => if s = "B" then 24 else 2608
@@ -1515,7 +1515,7 @@ theorem splitMid_fill {k : Nat} {n : String → Nat} (i : GcmImpl) (c : Callees)
   obtain ⟨h1, h2, h3, he, hd⟩ := h
   obtain ⟨g1, g2, g3, ge, gd⟩ := h₀
   unfold GcmImpl.splitMid GcmImpl.splitFin stubSplitMid stubSplitFin
-  fill_calls_wide
+  fill_calls
 
 /-- `v`'s callees meet `CalleesSideN` with the stacks `splitN`. -/
 theorem callees_sideS (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (k : Nat)
@@ -1568,7 +1568,7 @@ theorem gather_fill {k : Nat} {n : String → Nat} (t ts : Nat) (Se Sp I A To Fi
     Fill k n (Impl.AesGcm.X86_64.Fn.sealGatherCode t ts (fnStub "Se") (fnStub "Sp") (fnStub "I") (fnStub "A")
         (fnStub "To") (fnStub "Fi"))
       (Impl.AesGcm.X86_64.Fn.sealGatherCode t ts Se Sp I A To Fi) := by
-  fill_calls_wide
+  fill_calls
 
 /-- `seal_gather` over stubs, copying below `t` bytes and sealing a first
 slice of `ts` bytes in place: those of each kind of out-of-place loops. -/
@@ -1694,7 +1694,7 @@ theorem streamEncryptClr_fill {k : Nat} (c : Callees) (h : CalleesSide k c) :
     Fill k blkN (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr stub5 .avx))
       (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr c .avx)) := by
   obtain ⟨h1, h2, h3, he, hd⟩ := h
-  fill_calls_wide
+  fill_calls
 
 theorem streamEncClr_stub :
     stubCallee (Impl.Gcm.X86_64.Flag.onFlag 16
@@ -1740,7 +1740,7 @@ theorem encryptPrepared_fill {k : Nat} {n : String → Nat} (c g : Fn) (p : Prog
     (hc : calleeSide c.code k (n "t") = true) (hg : calleeSide g.code k (n "g") = true) :
     Fill k n (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub p true minimum)
       (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared c g p true minimum) := by
-  fill_calls_wide
+  fill_calls
 
 theorem encryptPrepared_stub (n : StitchToName) :
     stubCallee (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ctrToStub ghStub n.encR true)
@@ -1886,7 +1886,7 @@ theorem splitMidR_fill {k : Nat} {n : String → Nat} (i : GcmImpl) (c : Callees
   unfold GcmImpl.splitMidR GcmImpl.splitPre GcmImpl.splitMid GcmImpl.splitFin stubSplitMidR stubSplitPre stubSplitMid
     stubSplitFin
   generalize i.onePass = op
-  rcases op with _ | _ | _ <;> fill_calls_wide
+  rcases op with _ | _ | _ <;> fill_calls
 
 theorem splitFnP_side_of (v : GcmVariant) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (T : Fn)
     (hB : calleeSide B.enc.code v.lv.level 8 = true ∧ calleeSide B.dec.code v.lv.level 8 = true)
@@ -1966,7 +1966,7 @@ theorem gatherP_fill {k : Nat} {n : String → Nat} (c : Nat) (lg : Bool) (t ts 
           (fnStub "To") (fnStub "Fi")))
       (Impl.Gcm.X86_64.Flag.onFlag c (Impl.AesGcm.X86_64.Fn.sealGatherCodeP lg t ts SeF SpF I A ToF Fi false)
         (Impl.AesGcm.X86_64.Fn.sealGatherCode t ts Se Sp I A To Fi)) := by
-  fill_calls_wide
+  fill_calls
 
 /-- `streamInit`, `streamAad` and `streamFinish` over stubs, as stubs of
 their instances, which `seal_gather` on 16 prepared powers inlines. -/
@@ -1989,7 +1989,7 @@ theorem gatherP16_fill {k : Nat} {n : String → Nat} (c : Nat) (lg : Bool) (t t
           (fnStub "To") (fnStub "Fi")))
       (Impl.Gcm.X86_64.Flag.onFlag c (Impl.AesGcm.X86_64.Fn.sealGatherCodeP lg t ts SeF SpF I A ToF Fi true)
         (Impl.AesGcm.X86_64.Fn.sealGatherCode t ts Se Sp I A To Fi)) := by
-  fill_calls_wide
+  fill_calls
   all_goals first | exact fI | exact fA | exact fFi
 
 /-- The shapes of `seal_gather` by the kind of out-of-place loops. -/
@@ -2253,7 +2253,7 @@ private theorem fillBase {k : Nat} {c : Callees} {ctr : Fn} (hs : CalleesSide k 
   obtain ⟨a,b,g,e,d⟩ := hs
   have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
   have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
-  fill_calls_wide
+  fill_calls
 
 private theorem fillReady {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSide k c)
     (ht : calleeSide ctr.code k 24=true) (hf : calleeSide f.code k 24=true) :
@@ -2261,7 +2261,7 @@ private theorem fillReady {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSide
   obtain ⟨a,b,g,e,d⟩ := hs
   have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
   have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
-  fill_calls_wide
+  fill_calls
 
 private theorem sp_general (v : GcmImpl) (ctr : Fn) (f : Option Fn)
     (ht : ctr.code.all (fun i => !isa.writesSp i)=true)
@@ -2594,14 +2594,14 @@ private theorem fillDeferred {k : Nat} {c : Callees} {ctr : Fn} (hs : CalleesSid
     (ht : calleeSide ctr.code k 8=true) :
     Fill k allowance (core (deferredBody stub5 ctrToStub)) (core (deferredBody c ctr)) := by
   obtain ⟨hc,_,hg,_,_⟩ := hs
-  fill_calls_wide
+  fill_calls
 
 private theorem fillSeparate {k : Nat} {ctr gh : Fn} (ct : calleeSide ctr.code k 8=true)
     (hg : calleeSide gh.code k 8=true) :
-    Fill k allowance (separate ctrToStub stub5.gh) (separate ctr gh) := by fill_calls_wide
+    Fill k allowance (separate ctrToStub stub5.gh) (separate ctr gh) := by fill_calls
 
 private theorem fillFused {k : Nat} {f : Fn} (hf : calleeSide f.code k 8 = true) :
-    Fill k allowance (fused (fnStub "B")) (fused f) := by fill_calls_wide
+    Fill k allowance (fused (fnStub "B")) (fused f) := by fill_calls
 
 private theorem frameFill {k : Nat} {r s : Prog isa} (f : Fill k allowance (core r) (core s)) :
     Fill k allowance (framed r) (framed s) := .frame _ _ (.seq (.block _) f)

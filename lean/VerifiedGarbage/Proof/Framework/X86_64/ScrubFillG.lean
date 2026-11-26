@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Impl.Bignum.X86_64
@@ -321,10 +322,7 @@ fills each hole (or `∀ o a b, …` of a family of such code): it walks the
 function's code, unfolding its definitions, and closes each hole by a
 hypothesis. -/
 macro "fill_gen" : tactic => `(tactic| repeat' (first
-  | with_reducible assumption
-  | with_reducible exact FillG.refl _
-  | exact FillG.block _
-  | exact FillG.hole _ (by with_reducible assumption)
+  | fill_code
   | exact FillG.hole _ (by solve_by_elim (maxDepth := 3))
   | exact FillG.hole _ (FillG.calleeSide_call _ (by with_reducible assumption))
   | refine FillG.seq ?_ ?_
@@ -332,8 +330,6 @@ macro "fill_gen" : tactic => `(tactic| repeat' (first
   | refine FillG.loop _ ?_
   | refine FillG.call _ _ ?_
   | refine FillG.frame _ _ ?_
-  | refine FillG.icall _ _ ?_ ?_
-  | refine FillG.ifp ?_ ?_
   | exact List.Forall₂.nil
   | refine List.Forall₂.cons ?_ ?_
   | simp only [List.nil_append, List.append_eq]

@@ -155,7 +155,7 @@ theorem seal_fillScalar {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.sealCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar)
       (Shared.sealCode ⟨name, code, 0, 0, 4, vl⟩ .scalar) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem seal_stubScalar (vl : Bool) :
     stubSideM (Shared.sealCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar) (polyLevel .scalar).level (fun _ => 16) 1768 [] = true := by
@@ -165,7 +165,7 @@ theorem seal_fillAvx2 {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.sealCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2)
       (Shared.sealCode ⟨name, code, 448, 0, 5, vl⟩ .avx2) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem seal_stubAvx2 (vl : Bool) :
     stubSideM (Shared.sealCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2) (polyLevel .avx2).level (fun _ => 16) 1768 [] = true := by
@@ -175,7 +175,7 @@ theorem seal_fillAvx512 {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.sealCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512)
       (Shared.sealCode ⟨name, code, 960, 1024, 6, vl⟩ .avx512) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem seal_stubAvx512 (vl : Bool) :
     stubSideM (Shared.sealCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512) (polyLevel .avx512).level (fun _ => 16) 1768 [] = true := by
@@ -185,7 +185,7 @@ theorem seal_fillIfma {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.sealCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma)
       (Shared.sealCode ⟨name, code, 960, 1024, 6, vl⟩ .ifma) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem seal_stubIfma (vl : Bool) :
     stubSideM (Shared.sealCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma) (polyLevel .ifma).level (fun _ => 16) 1768 [] = true := by
@@ -230,7 +230,7 @@ theorem open_fillScalar {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.openCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar)
       (Shared.openCode ⟨name, code, 0, 0, 4, vl⟩ .scalar) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem open_stubScalar (vl : Bool) :
     stubSideM (Shared.openCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar) (polyLevel .scalar).level (fun _ => 16) 1784 [] = true := by
@@ -240,7 +240,7 @@ theorem open_fillAvx2 {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.openCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2)
       (Shared.openCode ⟨name, code, 448, 0, 5, vl⟩ .avx2) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem open_stubAvx2 (vl : Bool) :
     stubSideM (Shared.openCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2) (polyLevel .avx2).level (fun _ => 16) 1784 [] = true := by
@@ -250,7 +250,7 @@ theorem open_fillAvx512 {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.openCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512)
       (Shared.openCode ⟨name, code, 960, 1024, 6, vl⟩ .avx512) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem open_stubAvx512 (vl : Bool) :
     stubSideM (Shared.openCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512) (polyLevel .avx512).level (fun _ => 16) 1784 [] = true := by
@@ -260,7 +260,7 @@ theorem open_fillIfma {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Shared.openCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma)
       (Shared.openCode ⟨name, code, 960, 1024, 6, vl⟩ .ifma) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem open_stubIfma (vl : Bool) :
     stubSideM (Shared.openCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma) (polyLevel .ifma).level (fun _ => 16) 1784 [] = true := by
@@ -305,7 +305,7 @@ theorem openTo_fillScalar {k : Nat} (name : String) (code : Prog isa) (vl : Bool
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (OpenTo.openToCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar)
       (OpenTo.openToCode ⟨name, code, 0, 0, 4, vl⟩ .scalar) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem openTo_stubScalar (vl : Bool) :
     stubSideM (OpenTo.openToCode ⟨"", .block [], 0, 0, 4, vl⟩ .scalar) (polyLevel .scalar).level (fun _ => 16) 1800 [] = true := by
@@ -315,7 +315,7 @@ theorem openTo_fillAvx2 {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (OpenTo.openToCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2)
       (OpenTo.openToCode ⟨name, code, 448, 0, 5, vl⟩ .avx2) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem openTo_stubAvx2 (vl : Bool) :
     stubSideM (OpenTo.openToCode ⟨"", .block [], 448, 0, 5, vl⟩ .avx2) (polyLevel .avx2).level (fun _ => 16) 1800 [] = true := by
@@ -325,7 +325,7 @@ theorem openTo_fillAvx512 {k : Nat} (name : String) (code : Prog isa) (vl : Bool
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (OpenTo.openToCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512)
       (OpenTo.openToCode ⟨name, code, 960, 1024, 6, vl⟩ .avx512) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem openTo_stubAvx512 (vl : Bool) :
     stubSideM (OpenTo.openToCode ⟨"", .block [], 960, 1024, 6, vl⟩ .avx512) (polyLevel .avx512).level (fun _ => 16) 1800 [] = true := by
@@ -335,7 +335,7 @@ theorem openTo_fillIfma {k : Nat} (name : String) (code : Prog isa) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (OpenTo.openToCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma)
       (OpenTo.openToCode ⟨name, code, 960, 1024, 6, vl⟩ .ifma) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem openTo_stubIfma (vl : Bool) :
     stubSideM (OpenTo.openToCode ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma) (polyLevel .ifma).level (fun _ => 16) 1800 [] = true := by
@@ -394,7 +394,7 @@ theorem gather_fillScalar {k : Nat} (name : String) (code : Prog isa) (n₁ n₂
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Fn.gatherCode "" "" ⟨"", .block [], 0, 0, 4, vl⟩ .scalar)
       (Fn.gatherCode n₁ n₂ ⟨name, code, 0, 0, 4, vl⟩ .scalar) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem gather_stubScalar (vl : Bool) :
     stubSideM (Fn.gatherCode "" "" ⟨"", .block [], 0, 0, 4, vl⟩ .scalar) (polyLevel .scalar).level (fun _ => 16) 1880 [] = true := by
@@ -404,7 +404,7 @@ theorem gather_fillAvx2 {k : Nat} (name : String) (code : Prog isa) (n₁ n₂ :
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Fn.gatherCode "" "" ⟨"", .block [], 448, 0, 5, vl⟩ .avx2)
       (Fn.gatherCode n₁ n₂ ⟨name, code, 448, 0, 5, vl⟩ .avx2) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem gather_stubAvx2 (vl : Bool) :
     stubSideM (Fn.gatherCode "" "" ⟨"", .block [], 448, 0, 5, vl⟩ .avx2) (polyLevel .avx2).level (fun _ => 16) 1880 [] = true := by
@@ -414,13 +414,13 @@ theorem gather_fillAvx512F {k : Nat} (name : String) (code : Prog isa) (n₁ n�
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Fn.gatherCode "" "" ⟨"", .block [], 960, 1024, 6, false⟩ .avx512)
       (Fn.gatherCode n₁ n₂ ⟨name, code, 960, 1024, 6, false⟩ .avx512) := by
-  fill_calls_wide
+  fill_calls
 
 theorem gather_fillAvx512T {k : Nat} (name : String) (code : Prog isa) (n₁ n₂ : String)
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Fn.gatherCode "" "" ⟨"", .block [], 960, 1024, 6, true⟩ .avx512)
       (Fn.gatherCode n₁ n₂ ⟨name, code, 960, 1024, 6, true⟩ .avx512) := by
-  fill_calls_wide
+  fill_calls
 
 theorem gather_fillAvx512 {k : Nat} (name : String) (code : Prog isa) (n₁ n₂ : String) (vl : Bool)
     (hc : calleeSide code k 16 = true) :
@@ -438,7 +438,7 @@ theorem gather_fillIfma {k : Nat} (name : String) (code : Prog isa) (n₁ n₂ :
     (hc : calleeSide code k 16 = true) :
     Fill k (fun _ => 16) (Fn.gatherCode "" "" ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma)
       (Fn.gatherCode n₁ n₂ ⟨name, code, 960, 1024, 6, vl⟩ .ifma) := by
-  cases vl <;> fill_calls_wide
+  cases vl <;> fill_calls
 
 theorem gather_stubIfma (vl : Bool) :
     stubSideM (Fn.gatherCode "" "" ⟨"", .block [], 960, 1024, 6, vl⟩ .ifma) (polyLevel .ifma).level (fun _ => 16) 1880 [] = true := by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 
@@ -105,6 +106,16 @@ namespace Fill
 
 variable {n : Nat} {a b : Prog isa}
 
+/-- Any code is `Fill` of itself. -/
+theorem refl : ∀ a : Prog isa, Fill n a a
+  | .block is => .block is
+  | .seq a b => .seq (refl a) (refl b)
+  | .ite c t e => .ite c (refl t) (refl e)
+  | .loop b c => .loop c (refl b)
+  | .call f b => .call f f (refl b)
+  | .frame i b j => .frame i j (refl b)
+  | .icall i f b x => .icall i f (refl b) (refl x)
+
 theorem stackUse_le (h : Fill n a b) : stackUse b ≤ stackUse a + n := by
   induction h with
   | block => exact Nat.le_add_right _ _
@@ -196,17 +207,7 @@ hypothesis (`Fill.hole`). Where the function's code depends on the
 implementation otherwise, by an `if p` (`Fill.if_pos`, `Fill.if_neg`), a
 hypothesis `p` or `¬p` chooses the branch, and the stub is one that the
 same branch is chosen for. -/
-macro "fill_calls" : tactic => `(tactic| repeat' (first
-  | exact Fill.block _
-  | exact Fill.hole (by assumption)
-  | refine Fill.seq ?_ ?_
-  | refine Fill.ite _ ?_ ?_
-  | refine Fill.loop _ ?_
-  | refine Fill.call _ _ ?_
-  | refine Fill.frame _ _ ?_
-  | refine Fill.icall _ _ ?_ ?_
-  | refine Fill.if_pos ?_ (by assumption)
-  | refine Fill.if_neg ?_ (by assumption)))
+macro "fill_calls" : tactic => `(tactic| fill_code)
 
 /-! ## Holes with a budget
 
@@ -310,16 +311,6 @@ the two share (the code of the functions it calls whatever the
 implementation) is matched as one term (`FillB.refl`, at reducible
 transparency, so it is not unfolded), and a branch on the implementation is
 chosen by a hypothesis `p` or `¬p`. -/
-macro "fillB_calls" : tactic => `(tactic| repeat' (first
-  | with_reducible exact FillB.refl _
-  | exact FillB.hole (by assumption)
-  | refine FillB.seq ?_ ?_
-  | refine FillB.ite _ ?_ ?_
-  | refine FillB.loop _ ?_
-  | refine FillB.call _ _ ?_
-  | refine FillB.frame _ _ ?_
-  | refine FillB.icall _ _ ?_ ?_
-  | refine FillB.if_pos ?_ (by assumption)
-  | refine FillB.if_neg ?_ (by assumption)))
+macro "fillB_calls" : tactic => `(tactic| fill_code)
 
 end VG.X86.Scrub

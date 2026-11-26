@@ -296,9 +296,11 @@ the address it calls. -/
 theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t : List Leak}
     (e : Exec isa (.icall i n b nx) s t s') :
     ∃ a rest, isa.icall i s = some a ∧ t = (isa.addrs i s).map .addr ++ .addr a :: rest := by
-  cases e with
-  | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
-  | icallNext _ _ e' => exact icall_trace e'
+  generalize hc : (Code.icall i n b nx : Prog isa) = c at e
+  induction e generalizing n b nx with
+  | icall h₁ _ _ _ => cases hc; exact ⟨_, _, h₁, rfl⟩
+  | icallNext _ _ _ ih => cases hc; exact ih rfl
+  | _ => cases hc
 
 /-- Two runs of code whose functions called indirectly have the same
 addresses in both (`inames`), from states with the same stack

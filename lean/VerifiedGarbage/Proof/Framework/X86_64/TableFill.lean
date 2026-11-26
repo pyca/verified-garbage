@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.FillCode
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUpFn
 public import VerifiedGarbage.Impl.ICall
 
@@ -242,15 +243,6 @@ implementations (`b`), from hypotheses of each list of implementations
 (`∀ q ∈ ts, upCallee q.2 m = true ∧ q.1 ∈ N`) and of the code that calls
 nothing indirectly (`UpperLock.inames c = []`): it walks the function's
 code, unfolding its definitions. -/
-macro "tfill_calls" : tactic => `(tactic| repeat' (first
-  | exact TFill.block _
-  | exact TFill.tab _ _ (by assumption)
-  | exact TFill.same _ (by assumption)
-  | refine TFill.seq ?_ ?_
-  | refine TFill.ite _ ?_ ?_
-  | refine TFill.loop _ ?_
-  | refine TFill.call _ _ ?_
-  | refine TFill.frame _ _ ?_
-  | refine TFill.ifp ?_ ?_))
+macro "tfill_calls" : tactic => `(tactic| fill_code)
 
 end VG.X86_64.Scrub

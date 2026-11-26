@@ -347,9 +347,11 @@ the address it calls. -/
 theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t : List Leak}
     (e : Exec isa (.icall i n b nx) s t s') :
     ∃ a rest, isa.icall i s = some a ∧ t = (isa.addrs i s).map .addr ++ .addr a :: rest := by
-  cases e with
-  | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
-  | icallNext _ _ e' => exact icall_trace e'
+  generalize hc : (Code.icall i n b nx : Prog isa) = c at e
+  induction e generalizing n b nx with
+  | icall h₁ _ _ _ => cases hc; exact ⟨_, _, h₁, rfl⟩
+  | icallNext _ _ _ ih => cases hc; exact ih rfl
+  | _ => cases hc
 
 /-- Two runs of code from states with the same unknowns, whose functions
 called indirectly (`inames`) have the same addresses, and whose traces agree
@@ -521,7 +523,7 @@ theorem noSp_of_all {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true)
       · exact ihn h.2 i hi
   intro i hi
   have := hall i hi
-  cases i <;> simp_all [isa, Instr.dst, Taint.clobbers, Taint.dst]
+  cases i <;> first | exact this | rfl
 
 end VG.X86
 
@@ -579,44 +581,54 @@ structure TailOk (rb : Nat) (u u' : State) : Prop where
 theorem TailOk.flags {rb : Nat} {u u' : State} (h : TailOk rb u u') : FlagsDefined u' := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> simp [h.cf, h.zf, h.sf, h.of]
 
+/-- What the tail does after `retFix`: `TailOk`, but for the result's registers. -/
+theorem clear_run (u : State) :
+    ∃ u', execBlock isa (.alu .xor .ecx (.reg .ecx) :: clearXmm) u = some (u', []) ∧
+      (u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.unknowns = u.unknowns ∧ u'.mm = u.mm ∧ u'.mmx = u.mmx ∧
+        u'.mxcsr = u.mxcsr ∧ u'.mcdt = u.mcdt) ∧
+      (∀ r, r ≠ .ecx → u'.gpr r = u.gpr r) ∧ u'.gpr .ecx = 0 ∧
+      (u'.cf = some false ∧ u'.zf = some true ∧ u'.sf = some false ∧ u'.of = some false) ∧ ∀ x, u'.xmm x = 0 := by
+  refine ⟨_, by simp [clearXmm, execBlock, isa, reduceExec, readSrc, Taint.execAlu_eq,
+    Taint.aluOut, Taint.writes, XOp.exec, XBinOp.eval, addrs, srcAddrs]; rfl, ?_⟩
+  refine ⟨⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩, fun r h1 => ?_, ?_, ⟨rfl, ?_, ?_, rfl⟩, fun x => ?_⟩
+  · simp [State.setXmm, State.setReg, arithFlags, State.setFlags, h1]
+  · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
+  · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
+  · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
+  · cases x <;> simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
+
+theorem execBlock_movImm (d : Reg) (n : BitVec 32) (is : List Instr) (u : State) :
+    execBlock isa (.mov d (.imm n) :: is) u = execBlock isa is (u.setReg d n) := by
+  simp only [execBlock, isa, reduceExec, readSrc, addrs, srcAddrs, Option.map_some, List.map_nil,
+    List.nil_append]
+  cases execBlock isa is (u.setReg d n) <;> rfl
+
 /-- `tail rb` leaks nothing, and leaves what `TailOk` says. -/
 theorem tail_run {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (u : State) :
     ∃ u', execBlock isa (tail rb) u = some (u', []) ∧ TailOk rb u u' := by
   rcases hrb with rfl | rfl | rfl
-  · refine ⟨_, by simp [tail, retFix, clearXmm, execBlock, isa, reduceExec, readSrc, Taint.execAlu_eq,
-      Taint.aluOut, Taint.writes, XOp.exec, XBinOp.eval, addrs, srcAddrs]; rfl, ?_⟩
-    refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r h0 h1 h2 => ?_, ?_, rfl, ?_, ?_, rfl,
-      fun x => ?_, ?_, ?_⟩
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags, h0, h1, h2]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · cases x <;> simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · exact (BitVec.eq_nil _).trans (BitVec.eq_nil _).symm
-  · refine ⟨_, by simp [tail, retFix, clearXmm, execBlock, isa, reduceExec, readSrc, Taint.execAlu_eq,
-      Taint.aluOut, Taint.writes, XOp.exec, XBinOp.eval, addrs, srcAddrs]; rfl, ?_⟩
-    refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r h0 h1 h2 => ?_, ?_, rfl, ?_, ?_, rfl,
-      fun x => ?_, ?_, ?_⟩
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags, h1, h2]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · cases x <;> simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp only [State.setXmm, State.setReg, arithFlags, State.setFlags]
-      simpa using append_shr32 _
-    · simp only [State.setXmm, State.setReg, arithFlags, State.setFlags]
-      simpa using append_low32 _ _
-  · refine ⟨_, by simp [tail, retFix, clearXmm, execBlock, isa, reduceExec, readSrc, Taint.execAlu_eq,
-      Taint.aluOut, Taint.writes, XOp.exec, XBinOp.eval, addrs, srcAddrs]; rfl, ?_⟩
-    refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r h0 h1 h2 => ?_, ?_, rfl, ?_, ?_, rfl,
-      fun x => ?_, shr64 _, ?_⟩
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags, h1]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · cases x <;> simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
-    · simp [State.setXmm, State.setReg, arithFlags, State.setFlags]
+  · obtain ⟨u', e, ⟨m, rd, wr, uk, mm, mx, cs, mc⟩, g, c, ⟨cf, zf, sf, of⟩, x⟩ :=
+      clear_run ((u.setReg .eax 0).setReg .edx 0)
+    refine ⟨u', ?_, m, rd, wr, uk, mm, mx, cs, mc, fun r h0 h1 h2 => ?_, c, cf, zf, sf, of, x, ?_,
+      (BitVec.eq_nil _).trans (BitVec.eq_nil _).symm⟩
+    · show execBlock isa (.mov .eax (.imm 0) :: .mov .edx (.imm 0) :: _) u = _
+      rw [execBlock_movImm, execBlock_movImm]; exact e
+    · rw [g r h1, RegUpd.gpr_setReg_of_ne _ _ h2, RegUpd.gpr_setReg_of_ne _ _ h0]
+    · rw [g .eax (by decide), g .edx (by decide), RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne _ _ (by decide),
+        RegUpd.gpr_setReg_self]
+      rfl
+  · obtain ⟨u', e, ⟨m, rd, wr, uk, mm, mx, cs, mc⟩, g, c, ⟨cf, zf, sf, of⟩, x⟩ := clear_run (u.setReg .edx 0)
+    have ea : u'.gpr .eax = u.gpr .eax := by rw [g .eax (by decide), RegUpd.gpr_setReg_of_ne _ _ (by decide)]
+    have ed : u'.gpr .edx = 0 := by rw [g .edx (by decide), RegUpd.gpr_setReg_self]
+    refine ⟨u', ?_, m, rd, wr, uk, mm, mx, cs, mc, fun r h0 h1 h2 => ?_, c, cf, zf, sf, of, x, ?_, ?_⟩
+    · show execBlock isa (.mov .edx (.imm 0) :: _) u = _
+      rw [execBlock_movImm]; exact e
+    · rw [g r h1, RegUpd.gpr_setReg_of_ne _ _ h2]
+    · rw [ea, ed]; simpa using append_shr32 _
+    · rw [ea, ed]; simpa using append_low32 _ _
+  · obtain ⟨u', e, ⟨m, rd, wr, uk, mm, mx, cs, mc⟩, g, c, ⟨cf, zf, sf, of⟩, x⟩ := clear_run u
+    refine ⟨u', e, m, rd, wr, uk, mm, mx, cs, mc, fun r _ h1 _ => g r h1, c, cf, zf, sf, of, x, shr64 _, ?_⟩
+    rw [g .eax (by decide), g .edx (by decide)]
 
 /-- The callee-saved registers are none of those the tail sets. -/
 theorem saved_ne {r : Reg} (h : r ∈ calleeSaved) : r ≠ .eax ∧ r ≠ .ecx ∧ r ≠ .edx := by
