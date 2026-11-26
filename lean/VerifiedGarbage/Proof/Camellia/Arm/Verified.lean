@@ -22,11 +22,11 @@ meta import VerifiedGarbage.Proof.Camellia.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8Call
 public import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+meta import VerifiedGarbage.Proof.Camellia.Arm.Crypt8Call
 meta import VerifiedGarbage.Proof.Camellia.Common
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -726,6 +726,13 @@ theorem keepOut_ctx {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : Ke
     exact keepOut_off b (by rw [tailSlot_eq, slots_eq] <;> omega_arith) (.inr (by rw [tailSlot_eq, grpSlot_eq] <;> omega_arith))
       (.inr (by rw [tailSlot_eq, dSlot_eq] <;> omega_arith))
 
+theorem keepOut_call {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
+    KeepOut b (callRegions b) := by
+  refine KeepOut.cons ?_ (keepOut_ctx hfit)
+  rw [wordAddr, VG.Arm.addr_add (by rw [slots_eq] at hfit; omega_arith)]
+  exact keepOut_off b (by rw [slots_eq]; omega_arith)
+    (.inr (by rw [grpSlot_eq]; omega_arith)) (.inr (by rw [dSlot_eq]; omega_arith))
+
 theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
     (hg : g = 3 ∨ g = 4) {k : Nat} {s : State} (hi : GInv s₀ b D n g E k s) :
     WP isa Impl.Camellia.Arm.group s fun s' => (s'.z = true ∧ GDone s₀ b D n g E s') ∨
@@ -861,17 +868,18 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
       keys := fun e he => by rw [base₄]; exact sc₄.keys e he
       hg := hg
       bound := by rw [slotW, base₄]; exact ep₄ }
-  refine WP.seq (WP.mono (WP.sp (crypt8_ok hcore)) fun s₅ ⟨⟨c₅, b₅⟩, sp₅'⟩ => ?_)
+  refine WP.seq (WP.mono (WP.sp (crypt8Call_ok hcore)) fun s₅ ⟨⟨c₅, b₅⟩, sp₅'⟩ => ?_)
   obtain base₅ : s₅.gpr sb = b := by rw [c₅.base, base₄]
-  obtain f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by have := c₅.frame; rw [base₄] at this; exact this
+  obtain f₅ : Frame (callRegions b) s₄.mem s₅.mem := by have := c₅.frame; rw [base₄] at this; exact this
   obtain keep₅ : ∀ j, j = dSlot ∨ j = nSlot ∨ j = endSlot →
       s₅.mem.readW (wordAddr b j) 32 = s₄.mem.readW (wordAddr b j) 32 :=
     fun j hj => by
       have := c₅.slot (k := j) (by rw [base₄]; exact hfit') (by rcases hj with rfl | rfl | rfl <;> decide)
         (by rcases hj with rfl | rfl | rfl <;> decide) (by rcases hj with rfl | rfl | rfl <;> decide)
         (.inl (by rcases hj with rfl | rfl | rfl <;> decide))
+        (by rcases hj with rfl | rfl | rfl <;> decide)
       simp only [slotW, base₅, base₄] at this; exact this
-  obtain sc₅ : ScrOk s₀ b g E s₅.mem := sc₄.frame hg hfit' f₅ (keepOut_ctx hfit')
+  obtain sc₅ : ScrOk s₀ b g E s₅.mem := sc₄.frame hg hfit' f₅ (keepOut_call hfit')
   obtain wr₅ : s₅.wr = s.wr := by rw [c₅.wr, wr₄']
   obtain rd₅ : s₅.rd = s.rd := by rw [c₅.rd, rd₄, rd₄b, rd₄a, rd₃]
   obtain sp₅ : s₅.sp = s.sp := by rw [sp₅', sp₄, sp₄b, sp₄a, sp₃]
@@ -965,7 +973,7 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
           simp only [List.mem_singleton] at hr; subst hr; rw [hA]
           exact not_contains_off _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       rw [f₉ _ hout,
-        f₅.bytes (R := ⟨State.addr D, 16 * n⟩) (dD (ctx_sub_scr hfit')) (by simp only; omega_arith) hin,
+        f₅.bytes (R := ⟨State.addr D, 16 * n⟩) (dD (call_sub_scr hfit')) (by simp only; omega_arith) hin,
         fs.bytes (R := ⟨State.addr D, 16 * n⟩) (dD hsub) (by simp only; omega_arith) hin,
         f₃.bytes (R := ⟨State.addr D, 16 * n⟩) (dD fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact subT) (by simp only; omega_arith) hin,
@@ -976,7 +984,7 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
   obtain fr₉ : Frame [⟨State.addr b, 4 * slots⟩, ⟨State.addr D, 16 * n⟩] s.mem s₉.mem := by
     refine ((f₃.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
       ((fs.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩).trans
-      ((f₅.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, ctx_sub_scr hfit' r hr⟩).trans
+      ((f₅.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_cons_self, call_sub_scr hfit' r hr⟩).trans
       (f₉.sub fun r hr => ⟨⟨State.addr D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩))))
     · simp only [List.mem_singleton] at hr; subst hr; exact subT
     · simp only [List.mem_singleton] at hr; subst hr; exact subA

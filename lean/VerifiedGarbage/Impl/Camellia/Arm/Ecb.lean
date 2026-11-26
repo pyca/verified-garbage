@@ -142,6 +142,13 @@ def tail : List Instr := whiten true ++ (List.range 4).flatMap fromBsWord
 /-- The eight blocks of the tail buffer, in place. -/
 def crypt8 : Prog isa := .seq (.block head) (.seq (.loop groupBody .ne) (.block tail))
 
+/-- The shared eight-block kernel. Slot 629 is unused between the saved
+counts and the tail buffer; it holds this call's return address. -/
+def crypt8Fn : Prog isa :=
+  .seq (.block [stS 629 .lr]) (.seq crypt8 (.block [ldS .lr 629]))
+
+def crypt8Call : Prog isa := .call "vg_camellia_crypt8" crypt8Fn
+
 /-! ## The groups -/
 
 /-- Copy `r3` blocks from `r0` to `r12` (through `t0`). -/
@@ -169,7 +176,7 @@ pointer would forget them, so the copies keep these values in `r1`, `r2`
 and `lr`). -/
 def cryptSaved : Prog isa :=
   .seq (.block [stS dSlot .r1, stS nSlot .r2, stS endSlot .lr])
-    (.seq crypt8 (.block [ldS .r1 dSlot, ldS .r2 nSlot, ldS .lr endSlot]))
+    (.seq crypt8Call (.block [ldS .r1 dSlot, ldS .r2 nSlot, ldS .lr endSlot]))
 
 /-- On to the next group, or none left (Z set). -/
 def advance : Prog isa := .seq groupCount (.block [.dp .add .r1 .r1 (.imm 128), .subs .r2 .r2 (.reg .r3)])
