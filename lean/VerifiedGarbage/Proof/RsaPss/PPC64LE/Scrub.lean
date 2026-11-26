@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.SignP
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.ForallLength
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # RSASSA-PSS on PPC64LE, without secret residue
@@ -75,10 +76,19 @@ theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
 
 /-! ## The functions as emitted -/
 
+/-- The hash functions' functions of the same name have the same code. -/
+theorem mvars_coh : MdHashTable.PPC64LE.Coh mvars := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first mvars (·.H.initN) (·.H.initC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.H.finN) (·.H.finC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.F.cn) (·.F.cc) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars MdHashTable.PPC64LE.digName
+      (Impl.MdHashTable.PPC64LE.digest ·.F.P) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions whose tables the functions take are coherent: their
 functions of the same name have the same code, there are some, and not too
 many names. -/
-theorem mvars_ok : OK mvars mvars := of_decide_eq_true (by kernel_rfl)
+theorem mvars_ok : OK mvars mvars := ⟨mvars_coh, mvars_coh, of_decide_eq_true (by kernel_rfl)⟩
 
 /-- `vg_rsa_pss_verify_precomputed` as emitted
 (`Impl.RsaPss.PPC64LE.Fn.verifyPrecomputed`), with the tables of every hash

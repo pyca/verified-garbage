@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.MdHashTable.AArch64.Tables
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.ForallLength
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # RSAES-OAEP on AArch64, without secret residue
@@ -101,9 +102,15 @@ the RSA operation, and the implementation's is its record's. -/
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 open VG.Proof.RsaPkcs1Sig.AArch64 (privP_side privP_depth)
 
+/-- The registrations' hash functions of the same name have the same code. -/
+theorem variants_coh : HashTable.AArch64.Coh variants := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first variants (·.H.initN) (·.H.initC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.finN) (·.H.finC) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions the registrations give meet what the functions need
 of them. -/
-theorem variants_ok : OK variants := of_decide_eq_true (by kernel_rfl)
+theorem variants_ok : OK variants := ⟨variants_coh, of_decide_eq_true (by kernel_rfl)⟩
 
 theorem fnsOf_hashes : Proof.HashTable.AArch64.fnsOf variants = Impl.RsaOaep.AArch64.Fn.fnsOf hashes := by
   kernel_rfl

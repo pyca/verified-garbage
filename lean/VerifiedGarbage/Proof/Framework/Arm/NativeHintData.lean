@@ -9,7 +9,8 @@ meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Executable ARMv7 taint operations for the compiled hint search
 (`native_taint_decide`), separated from their soundness proofs: a copy of
-`Arm.taint` (`Proof/Framework/Arm/Taint.lean`), field for field, whose hints
+`Arm.taint` (`Proof/Framework/Arm/Taint.lean`) and the domains that extend
+its step, field for field, whose hints
 are renamed to the checked domain's constructors and checked by the kernel
 like any other (`Taint.check`). A difference from `Arm.taint` can only make
 the check fail. -/
@@ -196,7 +197,30 @@ def hintOps : VG.NativeHintOps isa where
   push _ _ := none
   pop _ _ := none
 
+/-- The step of `Arm.taintSym L` (`Arm/TaintSym.lean`: the address of a static
+of `L` is public) and, if `um`, of `Arm.taintU` and `Arm.taintSymU L`
+(`Arm/TaintUmaal.lean`: `umaal` makes the registers it writes secret). -/
+def stepX (um : Bool) (L : List String) (τ : T) : Instr → Option T
+  | .adrSym d n => some { τ with regs := set τ d (L.contains n), bases := kill τ d }
+  | .umaal lo hi _ _ =>
+    if um then
+      some { τ with
+        regs := (τ.regs.erase lo).erase hi
+        bases := τ.bases.filter fun p => p.1 != lo && p.1 != hi }
+    else none
+  | i => step τ i
+
+/-- The operations of `Arm.taintU` (with no statics), `Arm.taintSym` and
+`Arm.taintSymU`, which share `Arm.taint`'s domain and its other rules. -/
+def hintOpsX (um : Bool) (L : List String) : VG.NativeHintOps isa := { hintOps with step := stepX um L }
+
 end VG.NativeHints.Arm
+
+namespace VG.NativeHints.Arm.providerX
+/-- `provider`'s searches, for `hintOpsX`. -/
+def hintOfSize (um : Bool) (L : List String) := VG.NativeHintOps.hintOfSize (VG.NativeHints.Arm.hintOpsX um L)
+def hintWeakOfSize (um : Bool) (L : List String) := VG.NativeHintOps.hintWeakOfSize (VG.NativeHints.Arm.hintOpsX um L)
+end VG.NativeHints.Arm.providerX
 
 namespace VG.NativeHints.Arm.provider
 /-- An untrusted native hint; `Taint.check` still checks every interval. -/

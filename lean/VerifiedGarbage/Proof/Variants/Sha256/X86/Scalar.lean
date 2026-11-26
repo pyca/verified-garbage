@@ -57,6 +57,9 @@ public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 /-!
 # SHA-256 on x86: the scalar compression function: the variant's code and proofs
 
@@ -105,7 +108,7 @@ theorem finalize224_ct : ConstantTime isa
     (Proof.MdStream.X86.finKD (P := Impl.Sha256.X86.Stream.params224) Proof.Sha256.md 160 28).pub sha224Finalize :=
   VG.Taint.constantTime (A := taint) (Proof.MdStream.X86.Finalize.τ₀D Impl.Sha256.X86.Stream.params224 160 28)
     (fun _ _ h₁ h₂ hp => Proof.MdStream.X86.Finalize.agree₀D Proof.Sha256.X86.Stream.dims224 (by decide) h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 materialize_code digestCode := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream)
 

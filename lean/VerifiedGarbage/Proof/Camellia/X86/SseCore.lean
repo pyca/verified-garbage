@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Framework.X86.StraightSse
 public import VerifiedGarbage.Impl.Camellia.X86.Sse
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiWideCore
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+meta import VerifiedGarbage.Proof.Camellia.SboxTable
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
@@ -64,11 +68,18 @@ noncomputable def roundInOk (q src : Nat) : Bool :=
 theorem roundIn_chk1 : roundInOk 2 d1 = true := by kernel_rfl
 
 def sboxEnv : Env Nat := { reg := fun _ => none, slot := fun k => if k < 8 then some (tableOf (fun c => c.testBit k) 256) else none }
+/-- Bit `j` of the S-box as the code computes it (of `c ⊕ 0xc5`, `⊕ 0x6e`),
+from `SBOX1`'s truth tables. -/
+def sboxBit (j c : Nat) : Bool := (Camellia.sbox1T j).testBit (0xc5 ^^^ c) ^^ (0x6e#8).getLsbD j
+
+theorem sboxBit_eq (j : Nat) (b : Byte) : sboxBit j b.toNat = (sbox1 (b ^^^ 0xc5#8) ^^^ 0x6e#8).getLsbD j := by
+  have e : 0xc5 ^^^ b.toNat = (b ^^^ 0xc5#8).toNat := by rw [BitVec.toNat_xor, Nat.xor_comm]; rfl
+  rw [sboxBit, e, Camellia.testBit_sbox1T (BitVec.isLt _), BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.getLsbD_xor]
+
 noncomputable def sboxOk : Bool :=
   check (ofDom (table 128 256)) cfg (fun _ => none) sboxCode sboxEnv fun e =>
-    (List.range 8).all fun j => e.slot j ==
-      some (tableOf (fun c => (sbox1 (BitVec.ofNat 8 c ^^^ 0xc5#8) ^^^ 0x6e#8).getLsbD j) 256)
-theorem sbox_chk : sboxOk = true := by kernel_rfl
+    (List.range 8).all fun j => e.slot j == some (tableOf (sboxBit j) 256)
+theorem sbox_chk : sboxOk = true := by lit_decide
 
 def c6e (j : Nat) : BitVec 128 := if wBit j then BitVec.allOnes 128 else 0
 def roundOutG (j p : Nat) : List Nat :=
@@ -343,8 +354,7 @@ theorem sbox_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hq : 60 + q + 4 ≤
     refine ⟨s', hs', p'.runs, fun j hj => ?_⟩
     have hj' := List.all_eq_true.mp hpost j (List.mem_range.mpr hj)
     have := p'.rel.slot j _ (show j < 60 by omega_arith) (eq_of_beq hj')
-    rw [p'.gpr, h.slot', TableRel, testBit_tableOf, decide_eq_true c.isLt, Bool.true_and, BitVec.ofNat_toNat,
-      BitVec.setWidth_eq] at this
+    rw [p'.gpr, h.slot', TableRel, testBit_tableOf, decide_eq_true c.isLt, Bool.true_and, sboxBit_eq] at this
     rw [← this, hc]
   obtain ⟨s', hs', p', _⟩ := hpt 0 (by decide)
   refine ⟨s', hs', p', fun j hj p hp => ?_⟩

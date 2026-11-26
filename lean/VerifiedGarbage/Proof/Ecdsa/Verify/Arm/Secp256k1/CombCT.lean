@@ -109,7 +109,7 @@ theorem pubLeaves : PubLeaves (secp256k1With false) := by
 theorem pubLeavesU : PubLeaves (secp256k1With true) := by
   apply PubLeaves.of_checks (A := VG.Arm.taintU) (τ := VG.Arm.Taint.ofRegs)
     (fun _ _ _ h => VG.Arm.Taint.agree_ofRegs h) (L := ctPiecesU) (extra := [_, _]) rfl <;>
-    taint_decide
+    native_taint_decide
 
 /-- Verification is constant time but in the key and the signature, given the
 taint analysis's checks of its parts. -/
@@ -151,7 +151,7 @@ theorem combVerifyU_ct (hC : Law Spec.Secp256k1.curve) :
         exacts [h0, h1, h2, h3]), fun n hn => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
         rcases hn with rfl | rfl
-        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by taint_decide))
-    (LeafCT.checkU (p := piece ctPiecesU 27) (by taint_decide))
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by native_taint_decide))
+    (LeafCT.checkU (p := piece ctPiecesU 27) (by native_taint_decide))
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

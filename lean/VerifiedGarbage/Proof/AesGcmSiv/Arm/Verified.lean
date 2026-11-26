@@ -1104,6 +1104,6 @@ theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesG
     { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
       verified := Proof.AesGcmSiv.open_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.open_framed
         Scrub.openSat : Verified Arm.target _ (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808)) }
-    (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_3808 _)
+    (@Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_3808 _)
 
 end VG.Proof.AesGcmSiv.Arm.Fn

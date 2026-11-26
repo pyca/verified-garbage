@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
-import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.InlineMatch
 import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!

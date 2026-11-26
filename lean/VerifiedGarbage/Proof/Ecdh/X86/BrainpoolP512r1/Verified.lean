@@ -40,6 +40,7 @@ meta import VerifiedGarbage.Spec.EcKey.Generic
 meta import VerifiedGarbage.Spec.Ecdh
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `Ecdh.X86.BrainpoolP512r1.Contract`, which only this module used -/
 
@@ -213,7 +214,7 @@ taint_summary subSum : sseTaint { callτ 64 with room := 24 }
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP512r1 := by
   obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeBrainpoolP512r1 h).isSome = true := by
-    taint_decide_sum [mulSum, addSum, subSum]
+    native_taint_decide_sum [mulSum, addSum, subSum]
   exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

@@ -33,19 +33,28 @@ open Lean Meta Elab Command
 namespace LitShare
 
 /-- `e` (a code literal) with the list of each block replaced by a constant
-`N.block<k>`, one for each distinct list. -/
-meta partial def shareBlocks (N : Name) (e : Expr) : StateT (Std.HashMap Expr Name) MetaM Expr := do
+`N.block<k>`, one for each distinct list. The state is the constants, and
+what each subterm visited became. -/
+meta partial def shareBlocks (N : Name) (e : Expr) :
+    StateT (Std.HashMap Expr Name × Std.HashMap Expr Expr) MetaM Expr := do
   if e.isAppOfArity ``Code.block 3 then
     let l := e.appArg!
-    if let some n := (← get)[l]? then return mkApp e.appFn! (mkConst n)
-    let n := N ++ Name.mkSimple s!"block{(← get).size}"
+    let names := (← get).1
+    if let some n := names[l]? then return mkApp e.appFn! (mkConst n)
+    let n := N ++ Name.mkSimple s!"block{names.size}"
     addDecl (forceExpose := true) <| .defnDecl {
       name := n, levelParams := [], type := ← inferType l, value := l
       hints := .abbrev, safety := .safe }
-    modify (·.insert l n)
+    modify fun (names, m) => (names.insert l n, m)
     return mkApp e.appFn! (mkConst n)
   match e with
-  | .app f a => return .app (← shareBlocks N f) (← shareBlocks N a)
+  | .app f a =>
+    if let some e' := (← get).2[e]? then return e'
+    let f' ← shareBlocks N f
+    let a' ← shareBlocks N a
+    let e' := .app f' a'
+    modify fun (names, m) => (names, m.insert e e')
+    return e'
   | .mdata _ b => shareBlocks N b
   | _ => return e
 
@@ -56,9 +65,8 @@ meta def materializeShared (N : Name) (code : Expr) : MetaM Unit := do
   unless codeTy.isAppOfArity ``Code 2 do
     throwError "materialize_shared: {code} is not code: {ty}"
   let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
-  let v ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst code)
-  let (litV, _) ← (shareBlocks N (ShareCommon.shareCommon' v)).run {}
+  let v ← Lit.evalCode codeTy.appFn!.appArg! codeTy.appArg! code
+  let (litV, _) ← (shareBlocks N (ShareCommon.shareCommon' v)).run ({}, {})
   addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }

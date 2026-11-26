@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
-import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.InlineMatch
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -66,7 +66,7 @@ theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) s
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signP384CombU :=
   VG.Taint.constantTime (A := taintSymU [p384Comb.tsym,(p384With true).constSym]) τ₁
-    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
 
 theorem combSign_ok (hC : Law Spec.P384.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signP384CombWith u) s₀ fun t => SignKeep (p384With u) s₀ t ∧ SignPost (p384With u) s₀ t := by

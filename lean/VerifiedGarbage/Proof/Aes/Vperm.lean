@@ -353,32 +353,84 @@ theorem isb_eq : ∀ z : BitVec 8,
       nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by decide +kernel
   exact fun z => (aesInvSbox_row z).trans (h z)
 
-theorem x0_tab : ∀ z : BitVec 8, nib x0u (ioB (D z)) ^^^ nib x0t (joB (D z)) =
-    Dl (aesMul 0x0e (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
-theorem x1_tab : ∀ z : BitVec 8, nib x1u (ioB (D z)) ^^^ nib x1t (joB (D z)) =
-    Dl (aesMul 0x0b (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
-theorem x2_tab : ∀ z : BitVec 8, nib x2u (ioB (D z)) ^^^ nib x2t (joB (D z)) =
-    Dl (aesMul 0x0d (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
-theorem x3_tab : ∀ z : BitVec 8, nib x3u (ioB (D z)) ^^^ nib x3t (joB (D z)) =
-    Dl (aesMul 0x09 (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
-
 /-- A round key's byte, through a pair of the tables. -/
 def Yb (l h : BitVec 128) (x : BitVec 8) : BitVec 8 := nib l (x &&& 0x0f) ^^^ nib h (x >>> 4)
 
-theorem y0_tab : ∀ x : BitVec 8, Yb y0l y0h x = D (aesMul 0x0e x) := by decide +kernel
-theorem y1_tab : ∀ x : BitVec 8, Yb y1l y1h x = Dl (aesMul 0x0b x) := by decide +kernel
-theorem y2_tab : ∀ x : BitVec 8, Yb y2l y2h x = Dl (aesMul 0x0d x) := by decide +kernel
-theorem y3_tab : ∀ x : BitVec 8, Yb y3l y3h x = Dl (aesMul 0x09 x) := by decide +kernel
-
 theorem Dl_bits : ∀ x : BitVec 8, Dl x = bits Dl x := by decide +kernel
-theorem g0_bits : ∀ x : BitVec 8,
-    Dl (aesMul 0x0e x) = bits (fun x => Dl (aesMul 0x0e x)) x := by decide +kernel
-theorem g1_bits : ∀ x : BitVec 8,
-    Dl (aesMul 0x0b x) = bits (fun x => Dl (aesMul 0x0b x)) x := by decide +kernel
-theorem g2_bits : ∀ x : BitVec 8,
-    Dl (aesMul 0x0d x) = bits (fun x => Dl (aesMul 0x0d x)) x := by decide +kernel
-theorem g3_bits : ∀ x : BitVec 8,
-    Dl (aesMul 0x09 x) = bits (fun x => Dl (aesMul 0x09 x)) x := by decide +kernel
+
+theorem Dl_xor (a b : BitVec 8) : Dl (a ^^^ b) = Dl a ^^^ Dl b := xor_of_bits Dl_bits a b
+
+/-! The products by the coefficients of InvMixColumns, under `Dl`, are linear. -/
+
+theorem g0_xor (a b : BitVec 8) : Dl (aesMul 0x0e (a ^^^ b)) = Dl (aesMul 0x0e a) ^^^ Dl (aesMul 0x0e b) :=
+  (congrArg Dl (mul_xor (.inl rfl) a b)).trans (Dl_xor _ _)
+theorem g1_xor (a b : BitVec 8) : Dl (aesMul 0x0b (a ^^^ b)) = Dl (aesMul 0x0b a) ^^^ Dl (aesMul 0x0b b) :=
+  (congrArg Dl (mul_xor (.inr (.inl rfl)) a b)).trans (Dl_xor _ _)
+theorem g2_xor (a b : BitVec 8) : Dl (aesMul 0x0d (a ^^^ b)) = Dl (aesMul 0x0d a) ^^^ Dl (aesMul 0x0d b) :=
+  (congrArg Dl (mul_xor (.inr (.inr (.inl rfl))) a b)).trans (Dl_xor _ _)
+theorem g3_xor (a b : BitVec 8) : Dl (aesMul 0x09 (a ^^^ b)) = Dl (aesMul 0x09 a) ^^^ Dl (aesMul 0x09 b) :=
+  (congrArg Dl (mul_xor (.inr (.inr (.inr rfl))) a b)).trans (Dl_xor _ _)
+
+/-! A pair of tables of the rounds is the inverse S-box's pair under a linear function, table by
+table. -/
+
+theorem nib_map {t u : BitVec 128} {g : BitVec 8 → BitVec 8} (h0 : g 0 = 0)
+    (h : ∀ v < 16, nib t (BitVec.ofNat 8 v) = g (nib u (BitVec.ofNat 8 v))) (i : BitVec 8) : nib t i = g (nib u i) := by
+  by_cases hi : i.toNat < 16
+  · have := h _ hi
+    rwa [BitVec.ofNat_toNat, BitVec.setWidth_eq] at this
+  · rw [nib, nib, ite_eq_right hi, ite_eq_right hi, h0]
+
+theorem pair_map {t t' u u' : BitVec 128} {g : BitVec 8 → BitVec 8} (hg : ∀ a b, g (a ^^^ b) = g a ^^^ g b)
+    (h : ∀ v < 16, nib t (BitVec.ofNat 8 v) = g (nib u (BitVec.ofNat 8 v)) ∧
+      nib t' (BitVec.ofNat 8 v) = g (nib u' (BitVec.ofNat 8 v))) (i j : BitVec 8) :
+    nib t i ^^^ nib t' j = g (nib u i ^^^ nib u' j) := by
+  have h0 : g 0 = 0 := by
+    have := hg 0 0
+    rwa [BitVec.xor_self, BitVec.xor_self] at this
+  rw [hg, nib_map h0 (fun v hv => (h v hv).1), nib_map h0 (fun v hv => (h v hv).2)]
+
+theorem x0_tab (z : BitVec 8) : nib x0u (ioB (D z)) ^^^ nib x0t (joB (D z)) =
+    Dl (aesMul 0x0e (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) :=
+  pair_map (t := x0u) (t' := x0t) (u := dbou) (u' := dbot) (g := fun x => Dl (aesMul 0x0e x)) g0_xor (by decide +kernel) _ _
+theorem x1_tab (z : BitVec 8) : nib x1u (ioB (D z)) ^^^ nib x1t (joB (D z)) =
+    Dl (aesMul 0x0b (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) :=
+  pair_map (t := x1u) (t' := x1t) (u := dbou) (u' := dbot) (g := fun x => Dl (aesMul 0x0b x)) g1_xor (by decide +kernel) _ _
+theorem x2_tab (z : BitVec 8) : nib x2u (ioB (D z)) ^^^ nib x2t (joB (D z)) =
+    Dl (aesMul 0x0d (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) :=
+  pair_map (t := x2u) (t' := x2t) (u := dbou) (u' := dbot) (g := fun x => Dl (aesMul 0x0d x)) g2_xor (by decide +kernel) _ _
+theorem x3_tab (z : BitVec 8) : nib x3u (ioB (D z)) ^^^ nib x3t (joB (D z)) =
+    Dl (aesMul 0x09 (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) :=
+  pair_map (t := x3u) (t' := x3t) (u := dbou) (u' := dbot) (g := fun x => Dl (aesMul 0x09 x)) g3_xor (by decide +kernel) _ _
+
+/-- A byte, from its nibbles. -/
+theorem nibs_eq : ∀ x : BitVec 8, (x &&& (0x0f : BitVec 8)).toNat < 16 ∧ (x >>> 4).toNat < 16 ∧
+    (x &&& (0x0f : BitVec 8)) ^^^ ((x >>> 4) <<< 4) = x := by decide +kernel
+
+/-- A pair of tables is an affine function if each is on the 16 nibbles. -/
+theorem Yb_of {l h : BitVec 128} {g : BitVec 8 → BitVec 8} {c : BitVec 8}
+    (hg : ∀ a b, g (a ^^^ b) = g a ^^^ g b)
+    (ht : ∀ v < 16, nib l (BitVec.ofNat 8 v) = g (BitVec.ofNat 8 v) ^^^ nib l 0 ∧
+      nib h (BitVec.ofNat 8 v) = g (BitVec.ofNat 8 v <<< 4) ^^^ nib h 0)
+    (hc : nib l 0 ^^^ nib h 0 = c) (x : BitVec 8) : Yb l h x = g x ^^^ c := by
+  obtain ⟨h1, h2, h3⟩ := nibs_eq x
+  have e1 := (ht _ h1).1
+  have e2 := (ht _ h2).2
+  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq] at e1 e2
+  have e3 : g x = g (x &&& 0x0f) ^^^ g ((x >>> 4) <<< 4) := by rw [← hg, h3]
+  rw [Yb, e1, e2, e3, ← hc]
+  ac_rfl
+
+theorem y0_tab (x : BitVec 8) : Yb y0l y0h x = D (aesMul 0x0e x) := by
+  refine (Yb_of (g := fun x => Dl (aesMul 0x0e x)) (c := 0xd1) g0_xor (by decide +kernel) (by decide +kernel) x).trans ?_
+  show (D _ ^^^ 0xd1) ^^^ 0xd1 = _
+  rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+theorem y1_tab (x : BitVec 8) : Yb y1l y1h x = Dl (aesMul 0x0b x) :=
+  (Yb_of (g := fun x => Dl (aesMul 0x0b x)) (c := 0) g1_xor (by decide +kernel) (by decide +kernel) x).trans (BitVec.xor_zero ..)
+theorem y2_tab (x : BitVec 8) : Yb y2l y2h x = Dl (aesMul 0x0d x) :=
+  (Yb_of (g := fun x => Dl (aesMul 0x0d x)) (c := 0) g2_xor (by decide +kernel) (by decide +kernel) x).trans (BitVec.xor_zero ..)
+theorem y3_tab (x : BitVec 8) : Yb y3l y3h x = Dl (aesMul 0x09 x) :=
+  (Yb_of (g := fun x => Dl (aesMul 0x09 x)) (c := 0) g3_xor (by decide +kernel) (by decide +kernel) x).trans (BitVec.xor_zero ..)
 
 /-- A byte of a round: InvMixColumns of the inverse S-box's bytes `u₀`, …,
 `u₃` of a column, each XORed with the round key's byte, under `D`. -/
@@ -390,9 +442,7 @@ theorem imix_byte (u₀ u₁ u₂ u₃ k₀ k₁ k₂ k₃ : BitVec 8) :
         aesMul 0x09 (u₃ ^^^ k₃)) := by
   obtain hD : ∀ x, D x = Dl x ^^^ 0xd1 := fun x => by
     rw [Dl, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-  rw [hD, hD, xor_of_bits Dl_bits, xor_of_bits Dl_bits, xor_of_bits Dl_bits,
-    xor_of_bits (f := fun x => Dl (aesMul 0x0e x)) g0_bits, xor_of_bits (f := fun x => Dl (aesMul 0x0b x)) g1_bits,
-    xor_of_bits (f := fun x => Dl (aesMul 0x0d x)) g2_bits, xor_of_bits (f := fun x => Dl (aesMul 0x09 x)) g3_bits]
+  rw [hD, hD, Dl_xor, Dl_xor, Dl_xor, g0_xor, g1_xor, g2_xor, g3_xor]
   ac_rfl
 
 /-! ## Decryption: the vectors -/

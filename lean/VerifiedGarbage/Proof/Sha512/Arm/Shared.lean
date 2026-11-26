@@ -40,6 +40,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! ### `Sha512.Arm.Stream.Digest`, which only this module used -/
 
@@ -160,7 +163,7 @@ theorem finalize384_verified :
   MdStream.Arm.Finalize.verifiedD (P := params384) (name := "vg_sha512_compress")
     ⟨dims.1, dims.2, dims.3, dims.4, dims.5, dims.6⟩ shape384 (callee.withOut ((List.range 6).flatMap outW))
     (VG.Taint.constantTime (A := taint) (MdStream.Arm.Finalize.τ₀D params384 48)
-      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by taint_decide))
+      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by native_taint_decide))
 
 theorem finalize512_256_verified :
     Verified Arm.target (finalizeDigest params512_256)
@@ -168,7 +171,7 @@ theorem finalize512_256_verified :
   MdStream.Arm.Finalize.verifiedD (P := params512_256) (name := "vg_sha512_compress")
     ⟨dims.1, dims.2, dims.3, dims.4, dims.5, dims.6⟩ shape512_256 (callee.withOut ((List.range 4).flatMap outW))
     (VG.Taint.constantTime (A := taint) (MdStream.Arm.Finalize.τ₀D params512_256 32)
-      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by taint_decide))
+      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by native_taint_decide))
 
 theorem finalize512_224_verified :
     Verified Arm.target (finalizeDigest params512_224)
@@ -177,7 +180,7 @@ theorem finalize512_224_verified :
     ⟨dims.1, dims.2, dims.3, dims.4, dims.5, dims.6⟩ shape512_224
     (callee.withOut ((List.range 3).flatMap outW ++ outHi 3))
     (VG.Taint.constantTime (A := taint) (MdStream.Arm.Finalize.τ₀D params512_224 28)
-      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by taint_decide))
+      (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀D h₁ h₂ hp) (by native_taint_decide))
 
 /-- A state satisfying the precondition of `finalizeDigest` with a `D`-byte
 digest. -/

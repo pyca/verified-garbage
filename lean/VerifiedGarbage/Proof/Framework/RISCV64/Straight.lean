@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
-import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.InlineMatch
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.RISCV64.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith

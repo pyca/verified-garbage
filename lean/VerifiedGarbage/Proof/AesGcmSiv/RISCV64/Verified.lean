@@ -2471,6 +2471,6 @@ theorem open_scrubbed [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
   verifiedScrubbedAll (api := Spec.GcmSiv.openApi) (W := 5904)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
       verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
-    (openOut _) open_scrubSide
+    (@openOut _) open_scrubSide
 
 end VG.Proof.AesGcmSiv.RISCV64.Scrub

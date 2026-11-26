@@ -119,7 +119,7 @@ theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
   cases fv
   · exact Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ha
       (c' := scalarBaseErased) rfl (by native_taint_decide)
-  · exact VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2]) ha (by taint_decide)
+  · exact VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2]) ha (by native_taint_decide)
 
 end VG.Proof.Ed448.Arm
 

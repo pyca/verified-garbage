@@ -44,6 +44,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import Mathlib.Tactic.Ring.RingNF
 meta import Mathlib.Tactic.FieldSimp
 meta import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `X25519.X86.Base.Main`, which only this module used -/
 
@@ -313,13 +316,13 @@ open VG.Proof.Ed25519.X86
 
 theorem uEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) uEncode (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ uEncode h).isSome = true := by
-    taint_decide_sum [VG.Proof.X25519.X86.gfMulSum, VG.Proof.X25519.X86.gfSqnSum]
+    native_taint_decide_sum [VG.Proof.X25519.X86.gfMulSum, VG.Proof.X25519.X86.gfSqnSum]
   exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 theorem start_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ x25519BaseLocal.pub s t)
     x25519BaseStart (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by native_taint_decide)
   intro s t ⟨hs, ht, hp⟩
   obtain ⟨sp, a0, a1, a2, _⟩ := hp
   obtain ⟨ps, _, os⟩ := scalarBase_pre hs.1
@@ -338,7 +341,7 @@ theorem finish_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : BaseRegions 
   obtain ⟨pt, _, _⟩ := scalarBase_pre ht
   have loadct : RelCT isa (BaseSaved s₀ t₀)
       (.block [.mov .esi (.mem (Impl.X25519.X86.at_ .esp 4))]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.esp]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.esp]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸
       (h.1.esp.trans (hp.1.trans h.2.esp.symm)))
@@ -346,7 +349,7 @@ theorem finish_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : BaseRegions 
     loadArg_ok (i := 0) pt h.2 (by decide)⟩)
   have tailct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi ∧ s.gpr .esi = t.gpr .esi)
       (.block (outputWords 64 8 ++ Impl.X25519.X86.restore)) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by native_taint_decide)
     intro s t h
     apply regsTaint_agree
     intro r hr
