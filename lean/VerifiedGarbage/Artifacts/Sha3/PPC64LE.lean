@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha3.Instances
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-3 and SHAKE (FIPS 202) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha3.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha3.updateSha3_224Api.artifact PPC64LE.target {
     code := Impl.Sha3.PPC64LE.Fn.update Spec.Sha3.hashSha3_224.rate
     verified := Proof.Sha3.PPC64LE.Scrub.update_sha3_224_scrubbed },
@@ -50,5 +51,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha3.squeezeShake256Api.artifact PPC64LE.target {
     code := Impl.Sha3.PPC64LE.Fn.xofSqueeze Spec.Sha3.xofShake256.rate
     verified := Proof.Sha3.PPC64LE.Scrub.squeeze_shake256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha3.PPC64LE

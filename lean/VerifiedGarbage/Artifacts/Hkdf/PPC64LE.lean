@@ -1,21 +1,22 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Hkdf.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
-public import VerifiedGarbage.Impl.Hkdf.PPC64LE.Fn
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Hkdf.Table
+import VerifiedGarbage.Proof.Hkdf.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
+import VerifiedGarbage.Impl.Hkdf.PPC64LE.Fn
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # HKDF (RFC 5869) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Hkdf.PPC64LE
 
 open VG.Proof.Hkdf.PPC64LE (OK)
 open VG.Proof.HmacTable.PPC64LE (vars tables fnsOf)
 
-def artifacts : List (Artifact PPC64LE.target) :=
+public def artifacts : List (Artifact PPC64LE.target) :=
   if hv : OK vars then [
     Spec.Hkdf.extractApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
@@ -30,5 +31,7 @@ def artifacts : List (Artifact PPC64LE.target) :=
       code := Impl.Hkdf.PPC64LE.Fn.expand (fnsOf vars)
       verified := Proof.Hkdf.PPC64LE.Scrub.expand_scrubbed hv }]
   else []
+
+spec_apis artifacts
 
 end VG.Artifacts.Hkdf.PPC64LE

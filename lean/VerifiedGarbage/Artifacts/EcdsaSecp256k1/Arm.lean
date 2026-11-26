@@ -1,26 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombMain
-public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Scrub
-public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmFn
-public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.CombVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Scrub
+import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmFn
+import VerifiedGarbage.Proof.Secp256k1.Arm.Law
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over secp256k1 (FIPS 186-5) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcdsaSecp256k1.Arm
 
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifySecp256k1
     verified := Proof.Ecdsa.Arm.Fn.verifySecp256k1 hasLaw.law },
@@ -37,5 +38,7 @@ def artifacts : List (Artifact Arm.target) := [
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signSecp256k1U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
     verified := Proof.Ecdsa.Arm.Fn.signSecp256k1U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.Arm

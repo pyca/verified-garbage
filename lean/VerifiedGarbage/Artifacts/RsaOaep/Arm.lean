@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
-public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
-public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
+import VerifiedGarbage.Proof.RsaOaep.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
+import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSAES-OAEP (RFC 8017) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaOaep.Arm
 
@@ -18,7 +18,7 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 open VG.Proof.RsaOaep.Arm (OK)
 open VG.Proof.HashTable.Arm (vars tables)
 
-def artifacts : List (Artifact Arm.target) :=
+public def artifacts : List (Artifact Arm.target) :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK vars then [
       Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact Arm.target {
@@ -34,5 +34,7 @@ def artifacts : List (Artifact Arm.target) :=
           (Proof.Rsa.Arm.pdOfCrt v).code
         verified := Proof.RsaOaep.Arm.Fn.encryptPrecomputed vars h v }]
     else []
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaOaep.Arm

@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.X86.Scrub
-public import VerifiedGarbage.Impl.Poly1305.X86
-import VerifiedGarbage.Proof.Poly1305.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Proof.Poly1305.X86.Scrub
+import VerifiedGarbage.Impl.Poly1305.X86
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Poly1305.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Poly1305.initApi.artifact X86.target {
     code := Impl.Poly1305.X86.Fn.init
     verified := Proof.Poly1305.X86.Scrub.init_scrubbed },
@@ -22,5 +23,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Poly1305.finalizeApi.artifact X86.target {
     code := Impl.Poly1305.X86.Fn.finalize
     verified := Proof.Poly1305.X86.Scrub.finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Poly1305.X86

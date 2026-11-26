@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha1.Contract
+import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-1 (FIPS 180-4) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha1.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sha1.initApi.artifact Arm.target {
     code := Impl.Sha1.Arm.Fn.init
     verified := Proof.Sha1.Arm.Fn.init },
@@ -23,5 +24,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Sha1.digestApi.artifact Arm.target {
     code := Impl.Sha1.Arm.Fn.digest
     verified := Proof.Sha1.Arm.Fn.digest }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha1.Arm

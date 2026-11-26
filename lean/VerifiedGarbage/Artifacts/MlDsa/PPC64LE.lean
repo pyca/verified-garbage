@@ -1,22 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PkTr
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Inst
-public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Scrub
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Inst
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.PkTr
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Inst
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Message.Inst
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlDsa.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.MlDsa.keyGen44Api.artifact PPC64LE.target {
     code := Impl.MlDsa.PPC64LE.Fn.keyGen44
     verified := Proof.MlDsa.PPC64LE.Scrub.keyGen44_scrubbed },
@@ -125,5 +129,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.MlDsa.preparedVerifyMessage87Api.artifact PPC64LE.target {
     code := Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87
     verified := Proof.MlDsa.PPC64LE.Scrub.preparedVerifyMessage87_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.PPC64LE

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Hkdf.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Impl.Hkdf.X86.Fn
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Hkdf.Table
+import VerifiedGarbage.Proof.Hkdf.X86.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Impl.Hkdf.X86.Fn
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # HKDF (RFC 5869) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Hkdf.X86
 
@@ -15,7 +16,7 @@ open VG.Proof.HmacTable.X86 (tables fnsOf)
 open VG.Proof.Hkdf.X86 (OK)
 open VG.Proof.Hkdf.X86.Scrub (vs)
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   if hO : OK vs then [
     Spec.Hkdf.keyApi.artifact X86.target {
       tables := [("hmac", tables vs)]
@@ -33,5 +34,7 @@ def artifacts : List (Artifact X86.target) :=
       verified := Proof.Hkdf.X86.Scrub.expand_scrubbedV hO
       spSafe := Proof.Hkdf.X86.Scrub.expand_spSafe vs }]
   else []
+
+spec_apis artifacts
 
 end VG.Artifacts.Hkdf.X86

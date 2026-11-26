@@ -1,17 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86.Scrub
-public import VerifiedGarbage.Impl.Sha256.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
-public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.X86.Scrub
+import VerifiedGarbage.Impl.Sha256.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+import VerifiedGarbage.Proof.Variants.Sha1.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-256 (FIPS 180-4) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Sha256.X86.Digest
 
@@ -44,7 +45,7 @@ end VG.Artifacts.Sha256.X86.Sha224Digest
 
 namespace VG.Artifacts.Sha256.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   Digest.artifacts ++
   Sha224Digest.artifacts ++
   [
@@ -70,5 +71,7 @@ def artifacts : List (Artifact X86.target) :=
       code := Impl.Sha256.X86.Fn.finalize224 v.cmpN v.cmpC
       verified := Proof.Sha256.X86.Variants.Backend.finalize224_scrubbed v
       spSafe := Proof.Sha256.X86.Variants.Backend.finalize224_spSafe v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha256.X86

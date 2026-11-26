@@ -1,29 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Scrub
-public import VerifiedGarbage.Impl.MlKem.X86.Wipe
-import VerifiedGarbage.Proof.Sha3.X86.Lit
-public import VerifiedGarbage.Proof.MlKem.X86.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.X86.Decode12
-public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.X86.Encode12
-public import VerifiedGarbage.Proof.MlKem.X86.Mul
-public import VerifiedGarbage.Proof.MlKem.X86.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.X86.Scrub
+import VerifiedGarbage.Impl.MlKem.X86.Wipe
+import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.X86.Cbd
+import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86.Decode12
+import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86.Encode12
+import VerifiedGarbage.Proof.MlKem.X86.Mul
+import VerifiedGarbage.Proof.MlKem.X86.NttInv
+import VerifiedGarbage.Proof.MlKem.X86.Sample
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlKem.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.MlKem.checkEkApi.artifact X86.target {
     code := Impl.MlKem.X86.Fn.checkEk
     verified := Proof.MlKem.X86.Scrub.checkEk_scrubbed },
@@ -62,5 +65,7 @@ def artifacts : List (Artifact X86.target) := [
     code := Impl.MlKem.X86.Fn.decaps1024
     verified := Proof.MlKem.X86.Scrub.decaps1024_scrubbed
     publicOutOk := Proof.MlKem.X86.Scrub.decaps1024_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.X86

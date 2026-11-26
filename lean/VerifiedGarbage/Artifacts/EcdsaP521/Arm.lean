@@ -1,25 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Scrub
-public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Ecdsa.P521.ArmFn
-public import VerifiedGarbage.Proof.P521.Arm.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Comb
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P521.Comb
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Scrub
+import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Impl.Ecdsa.P521.ArmFn
+import VerifiedGarbage.Proof.P521.Arm.Law
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521Comb
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over P-521 (FIPS 186-5) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcdsaP521.Arm
 
 open VG.Proof.P521.Arm (hasLaw)
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.P521.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyP521
     verified := Proof.Ecdsa.Arm.Fn.verifyP521 hasLaw.law },
@@ -36,5 +37,7 @@ def artifacts : List (Artifact Arm.target) := [
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signP521U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
     verified := Proof.Ecdsa.Arm.Fn.signP521U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaP521.Arm

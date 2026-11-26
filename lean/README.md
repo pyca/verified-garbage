@@ -248,7 +248,7 @@ CI does.
 On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
 a process may map at most `vm.max_map_count` regions of memory (65,530 by
 default on many distributions). The largest driver needs well under that
-(about 38,000), but CI raises the limit to 262,144 so that it never depends on
+(about 21,000), but CI raises the limit to 262,144 so that it never depends on
 the margin. If a driver ever passes the limit, Lean fails with
 `failed to read file '….olean'`: raise it with
 `sudo sysctl -w vm.max_map_count=262144`.

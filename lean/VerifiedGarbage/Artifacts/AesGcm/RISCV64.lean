@@ -1,27 +1,30 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Bitslice
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamBs
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenBs
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenToBs
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.DirectGather.Body
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
-
-public import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Bitsliced
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+import VerifiedGarbage.Proof.Gcm.RISCV64.Law
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Bitslice
+import VerifiedGarbage.Proof.AesGcm.RISCV64.StreamBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OneBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.OpenToBs
+import VerifiedGarbage.Proof.AesGcm.RISCV64.DirectGather.Body
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesGcm.RISCV64.Contiguous.PreparedLaw
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # AES-GCM (NIST SP 800-38D) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesGcm.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Gcm.initApi.artifact RISCV64.target {
     code := Impl.AesGcm.RISCV64.Fn.init
     verified := Proof.AesGcm.RISCV64.init_scrubbed },
@@ -62,5 +65,7 @@ def artifacts : List (Artifact RISCV64.target) := [
     code := Impl.AesGcm.RISCV64.Contiguous.code
     verified := Proof.AesGcm.RISCV64.Contiguous.scrubbed
       Proof.AesGcm.RISCV64.preparedInvocation_wp }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.RISCV64

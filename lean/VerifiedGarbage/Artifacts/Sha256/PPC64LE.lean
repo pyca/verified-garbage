@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
-public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
+import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
+import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha224
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-256 (FIPS 180-4) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha256.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
     verified := Proof.Sha256.PPC64LE.init224_scrubbed },
@@ -36,5 +37,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sha256.digest256Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.digest256
     verified := Proof.Sha256.PPC64LE.digest256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha256.PPC64LE

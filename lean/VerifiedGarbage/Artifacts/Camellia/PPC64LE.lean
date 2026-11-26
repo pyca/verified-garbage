@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Verified
+import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Camellia.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.expandKey
     verified := Proof.Camellia.PPC64LE.Scrub.expandKey_scrubbed },
@@ -22,5 +23,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.ecbDec
     verified := Proof.Camellia.PPC64LE.Scrub.ecbDec_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Camellia.PPC64LE

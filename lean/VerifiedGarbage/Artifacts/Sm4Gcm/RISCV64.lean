@@ -1,21 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.RISCV64.Law
-public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
-
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+import VerifiedGarbage.Proof.Gcm.RISCV64.Law
+import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Gcm.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.init
     verified := Proof.Sm4Gcm.RISCV64.Scrub.init_scrubbed },
@@ -43,5 +44,7 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamVerify
     verified := Proof.Sm4Gcm.RISCV64.Scrub.streamVerify_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Gcm.RISCV64

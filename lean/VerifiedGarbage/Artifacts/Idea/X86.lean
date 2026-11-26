@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.Scrub
-public import VerifiedGarbage.Impl.Idea.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Contract
+import VerifiedGarbage.Proof.Idea.X86.Scrub
+import VerifiedGarbage.Impl.Idea.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Idea.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Idea.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Idea.expandKeyApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.expandKey
     verified := Proof.Idea.X86.Scrub.expandKey_scrubbed },
@@ -22,5 +23,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Idea.ecbApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.ecb
     verified := Proof.Idea.X86.Scrub.ecb_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Idea.X86

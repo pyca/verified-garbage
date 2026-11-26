@@ -1,16 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.RISCV64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlDsa.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlDsa.keyGen44Api.artifact RISCV64.target {
     code := Impl.MlDsa.RISCV64.Fn.keyGen44
     verified := Proof.MlDsa.RISCV64.Scrub.keyGen44_scrubbed },
@@ -119,5 +123,7 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlDsa.preparedVerifyMessage87Api.artifact RISCV64.target {
     code := Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage87
     verified := Proof.MlDsa.RISCV64.Scrub.preparedVerifyMessage87_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.RISCV64

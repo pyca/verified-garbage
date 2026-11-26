@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.AesSiv.X86
-public import VerifiedGarbage.Proof.AesSiv.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Variants.AesCtr32.X86
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Impl.AesSiv.X86
+import VerifiedGarbage.Proof.AesSiv.X86.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesCtr32.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesSiv.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
     Spec.Siv.initApi.artifact X86.target {
       suffix := v.suffix
@@ -29,5 +30,7 @@ def artifacts : List (Artifact X86.target) :=
       code := Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix
       verified := Proof.AesSiv.X86.Scrub.decrypt_scrubbed v
       spSafe := Proof.AesSiv.X86.Scrub.decrypt_fnSpSafe v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.X86

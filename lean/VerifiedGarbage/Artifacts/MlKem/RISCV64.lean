@@ -1,31 +1,34 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Scrub
-public import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Add
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
-public import VerifiedGarbage.Proof.MlKem.RISCV64.NttInv
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Mul
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Cbd2
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Encode12
-public import VerifiedGarbage.Proof.MlKem.RISCV64.Decode12
-public import VerifiedGarbage.Proof.MlKem.RISCV64.CheckEk
-public import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.RISCV64.CallWipe
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CheckEk
-public import VerifiedGarbage.Proof.MlKem1024.RISCV64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.RISCV64.Scrub
+import VerifiedGarbage.Proof.MlKem.RISCV64.SampleCT
+import VerifiedGarbage.Proof.MlKem.RISCV64.Add
+import VerifiedGarbage.Proof.MlKem.RISCV64.Ntt
+import VerifiedGarbage.Proof.MlKem.RISCV64.NttInv
+import VerifiedGarbage.Proof.MlKem.RISCV64.Mul
+import VerifiedGarbage.Proof.MlKem.RISCV64.Cbd2
+import VerifiedGarbage.Proof.MlKem.RISCV64.Encode12
+import VerifiedGarbage.Proof.MlKem.RISCV64.Decode12
+import VerifiedGarbage.Proof.MlKem.RISCV64.CheckEk
+import VerifiedGarbage.Proof.MlKem.RISCV64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.RISCV64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.RISCV64.CallWipe
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlKem1024.RISCV64.CheckEk
+import VerifiedGarbage.Proof.MlKem1024.RISCV64.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.RISCV64.Decompress
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlKem.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.MlKem.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Fn.keyGen
     verified := Proof.MlKem.RISCV64.Scrub.keyGen_scrubbed
@@ -64,5 +67,7 @@ def artifacts : List (Artifact RISCV64.target) := [
     code := Impl.MlKem.RISCV64.Fn.decaps1024
     verified := Proof.MlKem.RISCV64.Scrub.decaps1024_scrubbed
     publicOutOk := Proof.MlKem.RISCV64.Scrub.decaps1024_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.RISCV64

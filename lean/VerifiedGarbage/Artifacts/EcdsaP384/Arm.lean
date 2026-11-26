@@ -1,25 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Comb -- shake: keep (proof binding in exposed artifacts)
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Scrub
-public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Ecdsa.P384.ArmFn
-public import VerifiedGarbage.Proof.P384.Arm.Law
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Comb
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Comb
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Comb
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Scrub
+import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
+import VerifiedGarbage.Impl.Ecdsa.P384.ArmFn
+import VerifiedGarbage.Proof.P384.Arm.Law
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Comb
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over P-384 (FIPS 186-5) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcdsaP384.Arm
 
 open VG.Proof.P384.Arm (hasLaw)
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Ecdsa.P384.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyP384
     verified := Proof.Ecdsa.Arm.Fn.verifyP384 hasLaw.law },
@@ -36,5 +37,7 @@ def artifacts : List (Artifact Arm.target) := [
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signP384U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
     verified := Proof.Ecdsa.Arm.Fn.signP384U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaP384.Arm

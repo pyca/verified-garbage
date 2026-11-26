@@ -1,37 +1,40 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
-public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Verified
-public import VerifiedGarbage.Spec.Ffdh.SievedContract
-public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-public import VerifiedGarbage.Proof.Variants.RsaMont.Arm
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
-public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
-public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
-public import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
-public import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
-public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
-public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Verified
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckDomainInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
+public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Proof.Ffdh.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
+import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Verified
+import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
+import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+import VerifiedGarbage.Proof.Variants.RsaMont.Arm
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
+import VerifiedGarbage.Impl.Ffdh.Arm.VettedGroups
+import VerifiedGarbage.Impl.Bignum.Arm.MontCall
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyInstances
+import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Verified
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckDomainInstances
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on ARMv7 -/
-
-@[expose] public section
 
 -- Cached key generation and its native controller share one RSA arithmetic helper
 namespace VG.Artifacts.Ffdh.Arm.Cached
@@ -129,7 +132,7 @@ namespace VG.Artifacts.Ffdh.Arm
 
 open VG
 
-def artifacts : List (Artifact Arm.target) :=
+public def artifacts : List (Artifact Arm.target) :=
   Cached.artifacts ++
   DerivePublic.artifacts ++
   Domain.artifacts ++
@@ -145,5 +148,7 @@ def artifacts : List (Artifact Arm.target) :=
         (Impl.Ffdh.Arm.ParameterSearch.code (.call c.candidateName c.candidate))
       verified := Proof.Ffdh.Arm.Fn.sievedParameterSearch v b
       publicOutOk := Proof.Ffdh.Arm.Fn.sievedParameterSearch_public v b }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Ffdh.Arm

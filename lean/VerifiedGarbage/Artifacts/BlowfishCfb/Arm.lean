@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Cfb
+public import VerifiedGarbage.Spec.Blowfish.CfbFinal
+import VerifiedGarbage.Proof.Blowfish.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.BlowfishCfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.cfbEncryptApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.cfbEncrypt
     verified := Proof.Blowfish.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Blowfish.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.cfbDecryptFinal
     verified := Proof.Blowfish.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.BlowfishCfb.Arm

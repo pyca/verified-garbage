@@ -1,18 +1,23 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
-public import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
-public import VerifiedGarbage.Proof.Dsa.X86_64.Slots
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
-public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
-public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+import VerifiedGarbage.Impl.Dsa.X86_64.Fn
+import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInitScrub
+import VerifiedGarbage.Proof.Dsa.X86_64.BackendScrub
+import VerifiedGarbage.Proof.Dsa.X86_64.Slots
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchScrub
+import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64
+import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Dsa.X86_64
 
@@ -25,7 +30,7 @@ namespace VG.Artifacts.Dsa.X86_64
 
 open VG.Proof.Dsa.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.DsaArithmetic.X86_64.variants.flatMap fun (a : Proof.Dsa.X86_64.Slots.SlotBackend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
@@ -72,5 +77,7 @@ def artifacts : List (Artifact X86_64.target) :=
       verified := Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v
       publicOutOk := Proof.Dsa.X86_64.Generation.SearchScrub.search_public p v
       spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.X86_64

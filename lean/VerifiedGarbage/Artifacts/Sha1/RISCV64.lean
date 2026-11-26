@@ -1,17 +1,18 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sha1.RISCV64.Scrub
-public import VerifiedGarbage.Impl.Sha1.RISCV64.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha1.Contract
+import VerifiedGarbage.Proof.Sha1.RISCV64.Scrub
+import VerifiedGarbage.Impl.Sha1.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-1 (FIPS 180-4) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha1.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha1.initApi.artifact RISCV64.target {
     code := Impl.Sha1.RISCV64.Fn.init
     verified := Proof.Sha1.RISCV64.init_scrubbed },
@@ -24,5 +25,7 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha1.digestApi.artifact RISCV64.target {
     code := Impl.Sha1.RISCV64.Fn.digest
     verified := Proof.Sha1.RISCV64.digest_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha1.RISCV64

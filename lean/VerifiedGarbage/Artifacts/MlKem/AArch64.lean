@@ -1,15 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Scrub
-public import VerifiedGarbage.Proof.MlKem.AArch64.Residue
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.AArch64.Scrub
+import VerifiedGarbage.Proof.MlKem.AArch64.Residue
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.MlKem.AArch64
 
@@ -19,7 +22,7 @@ open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
 (`FixedHash.Inst.variants`): paired sampling and fused arithmetic, calling
 the two- and three-state functions of `x2` and the single-state permutation
 of `v`. -/
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   [Spec.MlKem.checkEkApi.artifact AArch64.target {
     code := Impl.MlKem.AArch64.Fn.checkEk
     verified := Proof.MlKem.AArch64.Residue.checkEk_scrubbed }] ++
@@ -83,5 +86,7 @@ def artifacts : List (Artifact AArch64.target) :=
   [Spec.MlKem1024.checkEkApi.artifact AArch64.target {
     code := Impl.MlKem.AArch64.Fn.checkEk1024
     verified := Proof.MlKem.AArch64.Residue.checkEk1024_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.AArch64

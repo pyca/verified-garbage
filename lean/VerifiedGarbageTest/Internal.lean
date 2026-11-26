@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbage.Impl.Rc2.AArch64.Block
+meta import VerifiedGarbage.Impl.Rc2.AArch64.Block
 import VerifiedGarbage.Artifacts.Rc2.AArch64
 meta import VerifiedGarbage.Artifacts.Rc2.AArch64
 import VerifiedGarbage.Artifacts.Aes.AArch64

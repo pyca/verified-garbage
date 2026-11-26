@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4Gcm.AArch64.Fn
-public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.Sm4Gcm.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+import VerifiedGarbage.Impl.Sm4Gcm.AArch64.Fn
+import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Sm4Gcm.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on AArch64 -/
-
-@[expose] public section
 
 -- SM4-GCM (NIST SP 800-38D with SM4, RFC 8998) on AArch64
 namespace VG.Artifacts.Sm4Gcm.AArch64.Sm4Gcm
@@ -74,7 +75,9 @@ end VG.Artifacts.Sm4Gcm.AArch64.Sm4Gcm
 
 namespace VG.Artifacts.Sm4Gcm.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.Sm4Gcm.AArch64.variants.flatMap Sm4Gcm.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Gcm.AArch64

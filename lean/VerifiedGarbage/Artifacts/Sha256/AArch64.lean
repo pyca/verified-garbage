@@ -1,21 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Compress
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
-public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
-public import VerifiedGarbage.Proof.Sha256.AArch64.Residue
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+import VerifiedGarbage.Proof.Sha256.AArch64.Sha2.Compress
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
+import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
+import VerifiedGarbage.Proof.Sha256.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-256 (FIPS 180-4) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha256.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sha256.init224Api.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init224
     verified := Proof.Sha256.AArch64.Residue.init224_scrubbed },
@@ -44,5 +45,7 @@ def artifacts : List (Artifact AArch64.target) := [
       suffix := v.suffix
       code := Impl.Sha256.AArch64.Stream.Fn.digest256 v.name v.code
       verified := Proof.Pbkdf2.Md.AArch64.Sha256.digest256_scrubbed v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha256.AArch64

@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
-public import VerifiedGarbage.Impl.Blowfish.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
-public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
-public import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
-public import VerifiedGarbage.Impl.Blowfish.X86.Ssse3Wide
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Blowfish.Contract
+import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+import VerifiedGarbage.Impl.Blowfish.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Verified
+import VerifiedGarbage.Impl.Blowfish.X86.Ssse3
+import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideVerified
+import VerifiedGarbage.Impl.Blowfish.X86.Ssse3Wide
 import VerifiedGarbage.Proof.Blowfish.X86.Lit
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3Lit
 import VerifiedGarbage.Proof.Blowfish.X86.Ssse3WideLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Blowfish on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Blowfish.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Blowfish.expandKeyApi.artifact X86.target {
     suffix := "_ssse3"
     code := Impl.Blowfish.X86.Ssse3.Fn.expandKey
@@ -40,5 +41,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Blowfish.ecbDecryptApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.ecbDecrypt
     verified := Proof.Blowfish.X86.Scrub.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Blowfish.X86

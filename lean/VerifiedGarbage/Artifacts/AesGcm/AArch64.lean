@@ -1,17 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Public
-
-public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
-public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+public import VerifiedGarbage.Spec.Gcm.Powers8
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contiguous.Public
+import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
+import VerifiedGarbage.Impl.Gcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # AES-GCM (NIST SP 800-38D) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesGcm.AArch64
 
@@ -137,7 +141,7 @@ def artifactsFor (g : GcmVariant) : List (Artifact AArch64.target) :=
     [gatherArtifact g, contiguousArtifact g] ++
     g.withPowers.flatMap (withPowersArtifacts g) ++ g.basePowers.flatMap basePwArtifacts
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor ++ [
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       code := Impl.AesGcm.AArch64.Fn.storePowers
@@ -146,5 +150,7 @@ def artifacts : List (Artifact AArch64.target) :=
       suffix := "_aes"
       code := Impl.Gcm.AArch64.Fn.keyPowers
       verified := Proof.AesGcm.AArch64.storePowersAes_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.AArch64

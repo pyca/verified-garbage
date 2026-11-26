@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cast5.Cfb
+public import VerifiedGarbage.Spec.Cast5.CfbFinal
+import VerifiedGarbage.Proof.Cast5.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # CAST5-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Cast5Cfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.cfbEncryptApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.cfbEncrypt
     verified := Proof.Cast5.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Cast5.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.cfbDecryptFinal
     verified := Proof.Cast5.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Cast5Cfb.Arm

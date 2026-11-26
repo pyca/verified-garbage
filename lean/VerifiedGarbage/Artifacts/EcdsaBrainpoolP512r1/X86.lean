@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.BrainpoolP512r1.X86.Law
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Scrub
-public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.BrainpoolP512r1.X86.Law
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Scrub
+import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Fn
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86 -/
-
-@[expose] public section
 
 -- Deterministic ECDSA (RFC 6979) over brainpoolP512r1 on x86 (32-bit), with HMAC as a table
 namespace VG.Artifacts.EcdsaBrainpoolP512r1.X86.Rfc6979
@@ -37,10 +37,12 @@ namespace VG.Artifacts.EcdsaBrainpoolP512r1.X86
 
 open VG.Proof.BrainpoolP512r1.X86 (hasLaw)
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1
     verified := Proof.Ecdsa.X86.BrainpoolP512r1.Scrub.verify_scrubbed hasLaw.law }] ++
   Rfc6979.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.X86

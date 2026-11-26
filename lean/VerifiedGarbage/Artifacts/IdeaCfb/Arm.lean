@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Scrub
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Spec.Idea.CfbFinal
+import VerifiedGarbage.Proof.Idea.Arm.Scrub
 import Mathlib.Data.Finset.Attr
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.IdeaCfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Idea.cfbEncryptApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.cfbEncrypt
     verified := Proof.Idea.Arm.Fn.cfbEncrypt },
@@ -26,5 +28,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Idea.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.cfbDecryptFinal
     verified := Proof.Idea.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.IdeaCfb.Arm

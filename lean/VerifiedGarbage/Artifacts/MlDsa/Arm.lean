@@ -1,51 +1,54 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Scrub
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.MlDsa.Arm.PkTr
-public import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-public import VerifiedGarbage.Impl.MlDsa.Arm.Message
-public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
-public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
-public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.Arm.Scrub
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inst
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlDsa.Arm.PkTr
+import VerifiedGarbage.Proof.MlDsa.Arm.PreparedKey.Verified
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+import VerifiedGarbage.Impl.MlDsa.Arm.Message
+import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
+import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.MlDsa.Arm
 
 open VG
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.MlDsa.keyGen44Api.artifact Arm.target {
     code := Impl.MlDsa.Arm.Fn.keyGen Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.Arm.Fn.keyGen "mldsa44" "ML-DSA-44" (.inl rfl) },
@@ -159,5 +162,7 @@ def artifacts : List (Artifact Arm.target) := [
     Spec.MlDsa.preparedVerifyMessage87Api.artifact Arm.target {
       code := Impl.MlDsa.Arm.Fn.preparedVerifyMessage Spec.MlDsa.mlDsa87 "mldsa87"
       verified := Proof.MlDsa.Arm.Fn.preparedVerifyMessage "mldsa87" "ML-DSA-87" (.inr (.inr rfl)) }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.Arm

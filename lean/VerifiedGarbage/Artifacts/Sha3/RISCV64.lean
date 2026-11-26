@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Sha3.RISCV64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha3.Instances
+import VerifiedGarbage.Proof.Sha3.RISCV64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-3 and SHAKE (FIPS 202) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha3.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha3.updateSha3_224Api.artifact RISCV64.target {
     code := Impl.Sha3.RISCV64.Fn.update Spec.Sha3.hashSha3_224.rate
     verified := Proof.Sha3.RISCV64.update_sha3_224_scrubbed },
@@ -50,5 +51,7 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.Sha3.squeezeShake256Api.artifact RISCV64.target {
     code := Impl.Sha3.RISCV64.Fn.xofSqueeze Spec.Sha3.xofShake256.rate
     verified := Proof.Sha3.RISCV64.squeeze_shake256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha3.RISCV64

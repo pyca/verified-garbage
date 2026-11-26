@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Scrub
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaPss.MdTable
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.RsaPss.X86_64.Scrub
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
+import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSASSA-PSS (RFC 8017) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 
@@ -50,8 +51,10 @@ end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 
 namespace VG.Artifacts.RsaPss.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaPss.X86_64

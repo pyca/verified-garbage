@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Expanded
-public import VerifiedGarbage.Proof.Ed25519.X86_64.KeyPair
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.EqCodes
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+public import VerifiedGarbage.Spec.Ed25519.KeyPair
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
+import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
+import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Expanded
+import VerifiedGarbage.Proof.Ed25519.X86_64.KeyPair
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.EqCodes
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -14,16 +19,14 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Scrub
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+import VerifiedGarbage.Proof.Ed25519.X86_64.Scrub
+import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Ed25519 (RFC 8032) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Ed25519.X86_64
 
@@ -103,7 +106,9 @@ def artifactsFor (c : Proof.Sha512.X86_64.Compress) : List (Artifact X86_64.targ
         Proof.Ed25519.X86_64.VerifyCode.baseline_eq .sse .sse Proof.Ed25519.X86_64.Scrub.verify_stub_baseline
         Proof.Ed25519.X86_64.Scrub.sign_stub_baseline Proof.Ed25519.X86_64.Scrub.keyPair_stub_baseline
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.Sha512Compress.X86_64.variants.flatMap fun v => artifactsFor v
+
+spec_apis artifacts
 
 end VG.Artifacts.Ed25519.X86_64

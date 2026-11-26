@@ -1,18 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Scrub
-public import VerifiedGarbage.Impl.Dsa.X86.Fn
-public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
-public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
-public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Proof.Dsa.X86.Scrub
+import VerifiedGarbage.Impl.Dsa.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Sha1.X86
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Variants.MillerRabin.X86
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Dsa.X86
 
@@ -55,7 +59,7 @@ namespace VG.Artifacts.Dsa.X86
 
 open VG.Proof.Dsa.X86.Generation (geo1 geo256)
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   direct ++
   (Proof.Dsa.X86.Generation.hashPairs.flatMap fun ((v1, v256) : Proof.Sha1.X86.Variants.Backend × Proof.Sha256.X86.Variants.Backend) =>
     VG.Proof.Variants.MillerRabin.X86.variants.map fun (v : Proof.MillerRabin.X86.RoundImpl) =>
@@ -65,5 +69,7 @@ def artifacts : List (Artifact X86.target) :=
       verified := Proof.Dsa.X86.Scrub.parameterSearch_scrubbed v1 v256 v
       publicOutOk := Proof.Dsa.X86.Scrub.parameterSearch_public v1 v256 v
       spSafe := Proof.Dsa.X86.Scrub.parameterSearch_spSafe v1 v256 v })
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.X86

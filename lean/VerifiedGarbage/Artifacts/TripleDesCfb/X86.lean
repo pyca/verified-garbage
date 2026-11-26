@@ -1,22 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Scrub
-public import VerifiedGarbage.Impl.TripleDes.X86.Fn
-public import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Verified
-public import VerifiedGarbage.Impl.TripleDes.X86.Ssse3
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.CfbFinal
+import VerifiedGarbage.Proof.TripleDes.X86.Scrub
+import VerifiedGarbage.Impl.TripleDes.X86.Fn
+import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Verified
+import VerifiedGarbage.Impl.TripleDes.X86.Ssse3
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.TripleDes.X86.Ssse3Lit
 import VerifiedGarbage.Proof.TripleDes.X86.FbFinalLit
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-CFB64 on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesCfb.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact X86.target {
     suffix := "_ssse3"
     code := Impl.TripleDes.X86.Ssse3.Fn.cfbEncrypt
@@ -41,5 +43,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.TripleDes.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.TripleDes.X86.Fn.cfbDecryptFinal
     verified := Proof.TripleDes.X86.Scrub.cfbDecryptFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesCfb.X86

@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
-public import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Variants.Sm3Compress.AArch64
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm3.Contract
+import VerifiedGarbage.Proof.Sm3.AArch64.Shared
+import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Variants.Sm3Compress.AArch64
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM3 (GB/T 32905-2016) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm3.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm3.initApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.Stream.init
     verified := Proof.Sm3.AArch64.Stream.init_scrubbed }] ++
@@ -25,5 +26,7 @@ def artifacts : List (Artifact AArch64.target) := [
       suffix := v.suffix
       code := Impl.Sm3.AArch64.Stream.Fn.finalize v.impl
       verified := Proof.Sm3.AArch64.Shared.finalize_scrubbed v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm3.AArch64

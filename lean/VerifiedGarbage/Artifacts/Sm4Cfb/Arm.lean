@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Spec.Sm4.CfbFinal
+import VerifiedGarbage.Proof.Sm4.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-CFB128 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Cfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.cfbEncryptApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.cfbEncrypt
     verified := Proof.Sm4.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.cfbDecryptFinal
     verified := Proof.Sm4.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Cfb.Arm

@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dit.AArch64
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dit
+import VerifiedGarbage.Proof.Dit.AArch64
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Data independent timing (FEAT_DIT) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Dit.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Dit.enterApi.artifact AArch64.target {
     code := Impl.Dit.AArch64.enter
     verified := Proof.Dit.AArch64.enter_scrubbed
@@ -29,5 +30,7 @@ def artifacts : List (Artifact AArch64.target) := [
     code := Impl.Dit.AArch64.clear
     verified := Proof.Dit.AArch64.clear_scrubbed
     modeOk := Proof.Dit.AArch64.clear_mode }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Dit.AArch64

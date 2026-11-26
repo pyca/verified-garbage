@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
-public import VerifiedGarbage.Proof.Variants.RsaMont.Arm
-public import VerifiedGarbage.Proof.Variants.RsaInverse.Arm
-public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+import VerifiedGarbage.Proof.Rsa.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
+import VerifiedGarbage.Proof.Variants.RsaMont.Arm
+import VerifiedGarbage.Proof.Variants.RsaInverse.Arm
+import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA (RFC 8017) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Rsa.Arm
 
@@ -29,7 +32,7 @@ namespace VG.Artifacts.Rsa.Arm
 
 open VG.Proof.Rsa.Arm
 
-def artifacts : List (Artifact Arm.target) :=
+public def artifacts : List (Artifact Arm.target) :=
   (VG.Proof.Variants.RsaInverse.Arm.variants.flatMap fun (v : Proof.Variants.RsaInverse.Arm.Variant) => [
     Spec.Rsa.crtValuesApi.artifact Arm.target {
       suffix := v.suffix
@@ -50,5 +53,7 @@ def artifacts : List (Artifact Arm.target) :=
       suffix := v.suffix
       code := Impl.Rsa.Arm.Fn.publicPrecompute v.pc
       verified := Proof.Rsa.Arm.Fn.publicPrecompute v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Rsa.Arm

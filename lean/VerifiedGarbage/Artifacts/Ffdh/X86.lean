@@ -1,18 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Impl.Ffdh.X86.Fn
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Proof.Ffdh.X86.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Impl.Ffdh.X86.Fn
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Ffdh.X86
 open VG
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.checkDomain
     verified := Proof.Ffdh.X86.Scrub.checkDomain_scrubbed },
@@ -45,5 +51,7 @@ def artifacts : List (Artifact X86.target) := [
     code := Impl.Ffdh.X86.Fn.sievedParameterSearch
     verified := Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed
     publicOutOk := Proof.Ffdh.X86.Scrub.sievedParameterSearch_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Ffdh.X86

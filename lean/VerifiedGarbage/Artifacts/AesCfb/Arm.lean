@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb.Final
+import VerifiedGarbage.Proof.Aes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CFB128 (NIST SP 800-38A §6.3) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesCfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Cfb.aesEncryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbEncrypt
     verified := Proof.Aes.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Cfb.aesDecryptFinalApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbDecryptFinal
     verified := Proof.Aes.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCfb.Arm

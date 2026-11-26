@@ -31,6 +31,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-!
 # Tests for the emitter's driver
@@ -385,6 +386,34 @@ run_cmd do
   fails (← errorsOf "namespace VG.Test.Emit\npublic axiom bad : False\n\
     public theorem declaredAx_specApis : ∀ a ∈ declaredAx, a ∈ [VG.Spec.Selftest.addApi] := bad.elim\n\
     end VG.Test.Emit\n#assert_spec_apis VG.Test.Emit.declaredAx") "depends on non-standard axioms"
+
+/-! ## The theorem a registration file declares (`spec_apis`) -/
+
+-- Constants of `Spec/`, and functions of `Spec/` of one, however they are reached.
+def list₁ : List VG.Api := [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api] ++
+  variants.map fun v => v.I.pbkdf2Api
+spec_apis list₁
+#guard_msgs (drop info) in
+#assert_spec_apis list₁
+
+-- Both branches of a decision that need not be made.
+def list₂ : List VG.Api := if 2 ^ 400 % 7 = 2 then [VG.Spec.Selftest.addApi] else
+  variants.flatMap fun v => [v.I.pbkdf2Api] ++ if v.I.scratch = 0 then [] else [v.I.finalizeApi]
+spec_apis list₂
+#guard_msgs (drop info) in
+#assert_spec_apis list₁ list₂
+
+-- It declares none for an `Api` that is not `Spec/`'s, of which it says so.
+def list₃ : List VG.Api := if 0 = 1 then [fakeInstance.pbkdf2Api] else []
+def list₄ : List VG.Api := [VG.Spec.MlDsa.keyGenApi VG.Spec.MlDsa.mlDsa44 "mldsa87" "ML-DSA-87"]
+run_cmd do
+  fails (← errorsOf "spec_apis VG.Test.Emit.list₃") "not ones `Spec/` declares"
+run_cmd do
+  fails (← errorsOf "spec_apis VG.Test.Emit.list₄") "not ones `Spec/` declares"
+def list₅ : List VG.Api := [VG.Spec.MlDsa.keyGen44Api]
+spec_apis list₅
+#guard_msgs (drop info) in
+#assert_spec_apis list₅
 
 end VG.Test.Emit
 

@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Impl.Sha3.X86_64.Fn
-import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
-
-public import VerifiedGarbage.Proof.Sha3.X86_64.Instances
-public import VerifiedGarbage.Proof.Sha3.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha3.Instances
+import VerifiedGarbage.Impl.Sha3.X86_64.Fn
+import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
+import VerifiedGarbage.Proof.Sha3.X86_64.Instances
+import VerifiedGarbage.Proof.Sha3.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha3.X86_64
 
-def artifacts : List (Artifact X86_64.target) := [
+public def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha3.updateSha3_224Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.absorbSha3_224, verified := Proof.Sha3.X86_64.Scrub.absorbSha3_224_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.absorbSha3_224_spSafe },
   Spec.Sha3.finalizeSha3_224Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.finalizeSha3_224, verified := Proof.Sha3.X86_64.Scrub.finalizeSha3_224_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.finalizeSha3_224_spSafe },
   Spec.Sha3.updateSha3_256Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.absorbSha3_256, verified := Proof.Sha3.X86_64.Scrub.absorbSha3_256_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.absorbSha3_256_spSafe },
@@ -28,5 +29,7 @@ def artifacts : List (Artifact X86_64.target) := [
   Spec.Sha3.squeezeShake128Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.squeezeShake128, verified := Proof.Sha3.X86_64.Scrub.squeezeShake128_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.squeezeShake128_spSafe },
   Spec.Sha3.finalizeShake256Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.finalizeShake256, verified := Proof.Sha3.X86_64.Scrub.finalizeShake256_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.finalizeShake256_spSafe },
   Spec.Sha3.squeezeShake256Api.artifact X86_64.target { code := Impl.Sha3.X86_64.Fn.squeezeShake256, verified := Proof.Sha3.X86_64.Scrub.squeezeShake256_scrubbed, spSafe := Proof.Sha3.X86_64.Scrub.squeezeShake256_spSafe }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha3.X86_64

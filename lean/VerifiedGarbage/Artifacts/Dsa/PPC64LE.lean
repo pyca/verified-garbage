@@ -1,19 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
-public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Proof.Dsa.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Dsa.PPC64LE
 
 open VG Proof.Dsa.PPC64LE.Scrub
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.deriveKey
     verified := Proof.Dsa.PPC64LE.Scrub.deriveKey_scrubbed },
@@ -43,5 +48,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
       code := Impl.Dsa.PPC64LE.Fn.parameterSearch vh.1.suffix vh.1.code
       verified := Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed vh.1 vh.2
       publicOutOk := Proof.Dsa.PPC64LE.Scrub.parameterSearch_public vh.1 vh.2 })
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.PPC64LE

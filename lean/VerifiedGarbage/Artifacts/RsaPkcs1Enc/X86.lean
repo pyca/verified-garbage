@@ -1,20 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.Scrub
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
-public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Front
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.FrontScrub
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.Scrub
+import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Front
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.FrontScrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Enc.X86
 
@@ -47,8 +49,10 @@ end VG.Artifacts.RsaPkcs1Enc.X86.Sha256RsaPrivateCrt
 
 namespace VG.Artifacts.RsaPkcs1Enc.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   direct ++
   (VG.Proof.Variants.Sha256.X86.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2)
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaPkcs1Enc.X86

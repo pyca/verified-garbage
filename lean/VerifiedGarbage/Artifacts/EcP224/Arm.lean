@@ -1,20 +1,22 @@
 module
 
-public import VerifiedGarbage.Impl.EcKey.P224.ArmFn
-public import VerifiedGarbage.Proof.EcKey.Arm.P224.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.P224.Arm.Law
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+public import VerifiedGarbage.Spec.EcKey.P224
+import VerifiedGarbage.Impl.EcKey.P224.ArmFn
+import VerifiedGarbage.Proof.EcKey.Arm.P224.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.P224.Arm.Law
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # P-224 public keys (FIPS 186-5 §A.2) on ARMv7 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcP224.Arm
 
 open VG.Proof.P224.Arm (hasLaw)
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressP224
     verified := Proof.EcKey.Arm.Fn.compressP224 },
@@ -36,5 +38,7 @@ def artifacts : List (Artifact Arm.target) := [
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.publicKeyP224U
     verified := Proof.EcKey.Arm.Fn.publicKeyP224U hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcP224.Arm

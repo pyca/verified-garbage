@@ -1,15 +1,18 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Fn
-public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkScrub
-public import VerifiedGarbage.Proof.MlKem.X86_64.KemScrub
-public import VerifiedGarbage.Proof.Variants.MlKemSample4.X86_64
-public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Impl.MlKem.X86_64.Fn
+import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkScrub
+import VerifiedGarbage.Proof.MlKem.X86_64.KemScrub
+import VerifiedGarbage.Proof.Variants.MlKemSample4.X86_64
+import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.MlKem.X86_64
 
@@ -84,11 +87,13 @@ end VG.Artifacts.MlKem.X86_64.MlKemSample4Zeroize
 
 namespace VG.Artifacts.MlKem.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   direct ++
   (VG.Proof.Variants.MlKemSample4.X86_64.variants.flatMap fun v => VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun v2 => MlKemSample4Zeroize.artifacts v v2) ++
   [
     Spec.MlKem1024.checkEkApi.artifact X86_64.target { code := Impl.MlKem.X86_64.Fn.checkEk1024, verified := Proof.MlKem.X86_64.Scrub.checkEk1024_scrubbed, spSafe := Proof.MlKem.X86_64.Scrub.checkEk1024_spSafe },
     Spec.MlKem1024.checkEkApi.artifact X86_64.target { suffix := "_avx2", code := Impl.MlKem.X86_64.Fn.checkEk1024Avx2, verified := Proof.MlKem.X86_64.Scrub.checkEk1024Avx2_scrubbed, spSafe := Proof.MlKem.X86_64.Scrub.checkEk1024Avx2_spSafe }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.X86_64

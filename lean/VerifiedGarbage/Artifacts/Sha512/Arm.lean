@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha512.Contract
+import VerifiedGarbage.Proof.MdStream.Arm.ShaScrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha512.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sha512.init384Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Fn.init384
     verified := Proof.Sha512.Arm.Fn.init384 },
@@ -50,5 +51,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Sha512.digest512_256Api.artifact Arm.target {
     code := Impl.Sha512.Arm.Fn.digest512_256
     verified := Proof.Sha512.Arm.Fn.digest512_256 }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha512.Arm

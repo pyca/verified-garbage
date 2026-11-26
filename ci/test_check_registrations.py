@@ -286,5 +286,44 @@ class Targets(unittest.TestCase):
             self.assertIn(":4: a streaming function's code", p)
 
 
+
+class Private(unittest.TestCase):
+    GOOD = ("module\n\npublic import VerifiedGarbage.TCB.X86_64.Target\n"
+            "public import VerifiedGarbage.Spec.A.Contract\n"
+            "import VerifiedGarbage.Proof.A.X86_64\n\n/-! # A on x86-64 -/\n\n"
+            "namespace VG.Artifacts.A.X86_64\n\n"
+            "public def artifacts : List (Artifact X86_64.target) := [\n  x]\n\n"
+            "spec_apis artifacts\n\nend VG.Artifacts.A.X86_64\n")
+
+    def problems(self, text):
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean": text}) as d:
+            return check_registrations.private_problems(pathlib.Path(d))
+
+    def test_private(self):
+        self.assertEqual(self.problems(self.GOOD), [])
+
+    def test_public_section(self):
+        for section in ("@[expose] public section", "public section"):
+            [p] = self.problems(self.GOOD.replace("namespace", section + "\n\nnamespace", 1))
+            self.assertIn(":9: `public` in a registration file", p)
+
+    def test_private_list(self):
+        [p] = self.problems(self.GOOD.replace("public def", "def"))
+        self.assertIn("no `public def artifacts", p)
+
+    def test_another_public_definition(self):
+        [p] = self.problems(self.GOOD.replace("public def artifacts", "public def more : Nat := 1\n\n"
+                                              "public def artifacts"))
+        self.assertIn(":11: `public`", p)
+
+    def test_no_spec_apis(self):
+        [p] = self.problems(self.GOOD.replace("spec_apis artifacts\n", "-- spec_apis artifacts\n"))
+        self.assertIn("does not end with `spec_apis artifacts`", p)
+
+    def test_public_proof(self):
+        [p] = self.problems(self.GOOD.replace("import VerifiedGarbage.Proof", "public import VerifiedGarbage.Proof"))
+        self.assertIn(":5: a public import of a proof", p)
+
+
 if __name__ == "__main__":
     unittest.main()

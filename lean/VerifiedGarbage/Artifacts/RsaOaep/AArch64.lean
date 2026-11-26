@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
+import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSAES-OAEP (RFC 8017) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
 
@@ -43,8 +44,10 @@ end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
 
 namespace VG.Artifacts.RsaOaep.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaOaep.AArch64

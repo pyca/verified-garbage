@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Spec.Seed.CfbFinal
+import VerifiedGarbage.Proof.Seed.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SEED-CFB128 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.SeedCfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Seed.cfbEncryptApi.artifact Arm.target {
     code := Impl.Seed.Arm.Fn.cfbEncrypt
     verified := Proof.Seed.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Seed.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Seed.Arm.Fn.cfbDecryptFinal
     verified := Proof.Seed.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.SeedCfb.Arm
