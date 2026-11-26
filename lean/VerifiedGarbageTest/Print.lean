@@ -145,41 +145,70 @@ def sample : Prog isa :=
 
 /-! `Rust.badCall`: the first call that is not of the code it runs. -/
 
-/-- The printed code of the functions `f`, `g` and `k`, which calls `g`. -/
-def printedFG : String → Option (List Line)
-  | "f" => some (printer.function (.block [.mov .rax (.imm 1)]))
-  | "g" => some (printer.function (.block [.mov .rax (.imm 2)]))
-  | "k" => some (printer.function (.call "g" (.block [.mov .rax (.imm 2)])))
+/-- The code of the functions `f`, `g` and `k`, which calls `g`. -/
+def codeFG : String → Option (Prog isa)
+  | "f" => some (.block [.mov .rax (.imm 1)])
+  | "g" => some (.block [.mov .rax (.imm 2)])
+  | "k" => some (.call "g" (.block [.mov .rax (.imm 2)]))
   | _ => none
 
-/-- `Rust.badCall` on `calls`, whose first call of each function is compared
-with `printedFG` by printing it (as `Rust.printsAs` does unless it is the same
-value as the function's code). -/
-def badCallFG (calls : List (String × Prog isa)) : Option (String × Bool) :=
-  Rust.badCall printer (fun n => (printedFG n).map fun ls =>
-    match calls.find? (·.1 == n) with
-    | some (_, b) => printer.function b == ls
-    | none => true) calls
+/-- The first call of `c` that `Rust.badCall` refuses, of the functions `codeFG`. -/
+def badCallFG (c : Prog isa) : Option (String × Bool) :=
+  match Rust.badCall printer (fun n => (codeFG n).map fun c => ⟨(c, printer.function c), rfl⟩) c {} with
+  | .ok _ => none
+  | .error e => some e
+
+/-- Calls of `calls`, one after the other. -/
+def callsFG (calls : List (String × Prog isa)) : Prog isa :=
+  calls.foldr (fun (n, b) c => .seq (.call n b) c) (.block [])
 
 -- The same code written twice is two values in memory: the later call of
 -- `f` is compared by its printed code.
-#guard badCallFG
+#guard badCallFG (callsFG
   [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 2)]),
-   ("f", .block [.mov .rax (.imm 1)])] == none
-#guard badCallFG [("h", .block [])] == some ("h", false)
-#guard badCallFG
-  [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 1)])] == some ("g", true)
+   ("f", .block [.mov .rax (.imm 1)])]) == none
+#guard badCallFG (callsFG [("h", .block [])]) == some ("h", false)
+#guard badCallFG (callsFG
+  [("f", .block [.mov .rax (.imm 1)]), ("g", .block [.mov .rax (.imm 1)])]) == some ("g", true)
 -- A later call of a function whose first call is of its code.
-#guard badCallFG
-  [("f", .block [.mov .rax (.imm 1)]), ("f", .block [.mov .rax (.imm 2)])] == some ("f", true)
--- Calls nested in a call's code are in `Code.calls`: `k` prints as it should,
--- but the code its call of `g` runs does not.
-#guard badCallFG
-  (Code.calls (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
-    (.call "f" (.block [.mov .rax (.imm 1)])) : Prog isa)) == none
-#guard badCallFG
-  (Code.calls (.call "k" (.call "g" (.block [.mov .rax (.imm 3)])) : Prog isa)) ==
+#guard badCallFG (callsFG
+  [("f", .block [.mov .rax (.imm 1)]), ("f", .block [.mov .rax (.imm 2)])]) == some ("f", true)
+-- Calls nested in a call's code: `k` prints as it should,
+-- but the code its call of `g` runs does not, at its first call or a later one.
+#guard badCallFG (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
+  (.call "f" (.block [.mov .rax (.imm 1)]))) == none
+#guard badCallFG (.call "k" (.call "g" (.block [.mov .rax (.imm 3)]))) == some ("g", true)
+#guard badCallFG (.seq (.call "k" (.call "g" (.block [.mov .rax (.imm 2)])))
+  (.call "k" (.call "g" (.block [.mov .rax (.imm 3)])))) == some ("g", true)
+-- Every function that an indirect call may reach, which prints as its instruction alone,
+-- whichever of them it has.
+#guard badCallFG (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)])
+  (.icall (.callr .r11) "g" (.block [.mov .rax (.imm 1)]) (.block []))) == some ("g", true)
+#guard badCallFG (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)])
+  (.icall (.callr .r11) "h" (.block []) (.block []))) == some ("h", false)
+
+/-- `p`, a function whose code is an indirect call, of `f` or of `c`. -/
+def viaP (n : String) (c : Prog isa) : Prog isa :=
+  .call "p" (.icall (.callr .r11) "f" (.block [.mov .rax (.imm 1)]) (.icall (.callr .r11) n c (.block [])))
+
+/-- `badCallFG`, with `p` a function too. -/
+def badCallP (c : Prog isa) : Option (String × Bool) :=
+  match Rust.badCall printer (fun n =>
+      (if n == "p" then some (.block [.callr .r11]) else codeFG n).map fun c =>
+        ⟨(c, printer.function c), rfl⟩) c {} with
+  | .ok _ => none
+  | .error e => some e
+
+-- A later call of `p` prints as the first, but may reach another function: it is checked too.
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "f" (.block [.mov .rax (.imm 1)]))) == none
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "h" (.block []))) == some ("h", false)
+#guard badCallP (.seq (viaP "g" (.block [.mov .rax (.imm 2)])) (viaP "g" (.block [.mov .rax (.imm 3)]))) ==
   some ("g", true)
+
+/-! `Rust.newCalls`: the functions called, through every code of each. -/
+
+#guard Rust.callNames (callsFG [("k", .call "g" (.block [])), ("f", .block []), ("g", .block [])]) == ["k", "g", "f"]
+#guard Rust.callNames (.seq (viaP "g" (.block [])) (viaP "h" (.block []))) == ["p", "f", "g", "h"]
 
 /-- Every 32-bit instruction form. -/
 def sample32 : Prog isa := .block [

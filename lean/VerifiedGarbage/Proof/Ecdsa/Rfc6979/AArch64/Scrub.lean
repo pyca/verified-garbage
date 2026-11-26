@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64.Fn
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # Deterministic ECDSA on AArch64, without secret residue
@@ -86,9 +87,15 @@ theorem signOk (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × List
 open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 open VG.Impl.Ecdsa.Rfc6979.AArch64 (signCode)
 
+/-- The registrations' hash functions of the same name have the same code. -/
+theorem variants_coh : HmacTable.AArch64.Coh variants := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first variants (·.H.hmacInitAnyN) (·.H.hmacInitAny) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first variants (·.H.hmacFinN) (·.H.hmacFin) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions the registrations give meet what the function needs
 of them. -/
-theorem variants_ok : OK variants := of_decide_eq_true (by kernel_rfl)
+theorem variants_ok : OK variants := ⟨variants_coh, of_decide_eq_true (by kernel_rfl)⟩
 
 theorem fnsOf_hashes : HmacTable.AArch64.fnsOf variants = Impl.Ecdsa.Rfc6979.AArch64.Fn.fnsOf hashes := by
   kernel_rfl

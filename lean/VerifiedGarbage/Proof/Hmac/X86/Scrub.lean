@@ -379,7 +379,7 @@ theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
   verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi)
     { suffix := v.suffix
       code := withStackScratch 284 5 v.M224.hmacFin
-      verified := finFramedW 32 v.hmacFin224Fit Proof.Hmac.sha224_local Proof.Pbkdf2.Md.X86.sha224_finFitSat
+      verified := finFramedW (I := Spec.Hmac.sha224I) 32 v.hmacFin224Fit Proof.Hmac.sha224_local Proof.Pbkdf2.Md.X86.sha224_finFitSat
         (Proof.Pbkdf2.Md.X86.noEsp_of v.finalize224NoSp) v.finalize224Stack
       spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp }
     (finOut Spec.Hmac.sha224I _) (W := 48 + 284)
@@ -413,7 +413,7 @@ theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
   verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi)
     { suffix := v.suffix
       code := withStackScratch 284 5 v.M.hmacFin
-      verified := finFramedW 32 v.hmacFinFit Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFitSat
+      verified := finFramedW (I := Spec.Hmac.sha256I) 32 v.hmacFinFit Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFitSat
         (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
       spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp }
     (finOut Spec.Hmac.sha256I _) (W := 48 + 284)

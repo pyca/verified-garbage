@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.Seed.Rounds
 import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Proof.Seed.X86.AesNiWideCore
 import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Seed.G
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
@@ -78,8 +81,10 @@ def sboxEnv : Env Nat :=
 def sRow (c : Nat) : Nat :=
   if c.testBit 8 then sNat false (c % 256) ^^^ 0xa9 else sNat true (c % 256) ^^^ 0x38
 
+materialize_table sRow 512
+
 theorem sbox_chk : check (ofDom (tableM mS)) cfgG (fun _ => none) sboxCode sboxEnv (fun e =>
-    (List.range 8).all fun j => e.slot j == some (tableOf (fun c => (sRow c).testBit j) 512)) = true := by kernel_rfl
+    (List.range 8).all fun j => e.slot j == some (tableOf (fun c => (sRow c).testBit j) 512)) = true := by lit_decide
 
 /-- The constants of plane `j` of the S-boxes' outputs. -/
 def cS8 (j : Nat) : BitVec 128 := ofBits 128 fun p => if p / 8 % 2 = 0 then (0xa9).testBit j else (0x38).testBit j

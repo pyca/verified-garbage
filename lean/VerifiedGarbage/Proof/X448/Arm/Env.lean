@@ -298,8 +298,9 @@ theorem fn_ok {hasB : Bool} {op : Prog isa} {r : Nat → Nat → Nat → Prop} {
       E.saved p hp]
   obtain kept : ∀ q, q ∉ [.r4, .r5, .r6, .r7, .r9, .lr, .r12, .r1, .r2, .r3] → s₃.gpr q = s.gpr q :=
     fun q hq => by
-      rw [K₃.gpr _ (by simp only [saves, List.map]; simp_all), K₂.1 _ (by simp only [fclob]; simp_all),
-        E.rest.gpr _ (by simp_all)]
+      have sub : ∀ {l : List Reg}, (∀ x ∈ l, x ∈ [Reg.r4, .r5, .r6, .r7, .r9, .lr, .r12, .r1, .r2, .r3]) → q ∉ l :=
+        fun h hl => hq (h _ hl)
+      rw [K₃.gpr _ (sub (by decide)), K₂.1 _ (sub (by decide)), E.rest.gpr _ (sub (by decide))]
   refine ⟨fun q hq => ?_, kept _ (by decide), by rw [K₃.rd, K₂.2.1, E.rest.rd],
     by rw [K₃.wr, K₂.2.2, E.rest.wr], ?_, fun i hi => by rw [M₃]; exact B₂ i hi, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -943,8 +944,8 @@ theorem call_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {s : S
   by_cases h0 : q = .r0
   · subst h0; rw [R0, k₃.gpr _ (by decide)]
   · have hp : q ∈ preserved := by
-      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
-      cases q <;> simp_all
+      revert h0 n1 n2 n3 n4 n5 n7 n12 nlr
+      cases q <;> decide
     rw [P q hp nlr, k₃.gpr _ (by simp [n1, n2, n3])]
 
 theorem callFn_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {s : State} {base : Addr}

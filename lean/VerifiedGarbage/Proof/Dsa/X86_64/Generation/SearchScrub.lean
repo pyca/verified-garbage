@@ -140,7 +140,7 @@ theorem body_side (h : MdHash) (v : RoundImpl) (p : Nat) (he : body h v p = fill
         n ∈ [h.H.stream.updN, h.H.stream.finN, (ProbablePrime.primeTest v).name] := by
   simp only [stubOk, Bool.and_eq_true] at hs
   have hp := prime_side v
-  simp only [calleeSide, Bool.and_eq_true, List.isEmpty_iff] at hp
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, List.isEmpty_iff] at hp
   rw [he]
   refine ⟨fillI_allInstrs (fun f g d hf => ?_) _ (side_mono (level_join_left _ _) hs.1),
     fillI_inames (fun f g d hf => ?_) _ fun n hn => ?_⟩

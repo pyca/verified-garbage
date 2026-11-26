@@ -43,6 +43,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Camellia-ECB on x86 (32-bit) in XMM registers meets its contract
@@ -223,7 +226,7 @@ theorem ecbTaint_agree {d : Dir} {s₁ s₂ : State} (h₁ : (ecbX86 d).pre s₁
 
 theorem ecb_ct (d : Dir) : ConstantTime isa (ecbX86 d).pre (ecbX86 d).pub (ecb d) := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.sseTaint.check ecbTaint (ecb d) h).isSome = true := by
-    cases d <;> exact ⟨_, by taint_decide⟩
+    cases d <;> exact ⟨_, by native_taint_decide⟩
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/

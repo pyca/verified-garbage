@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Inst
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
 
 /-!
 # ML-DSA on PPC64LE, without secret residue

@@ -163,7 +163,7 @@ theorem fillCallsG_up (hσ : ∀ f g d, σ f = some (g, d) → UpperLock.up d tr
 what it needs of the stub `a` (evaluated once) and of the code `σ` gives. -/
 theorem upCallee_fillCallsG {n : String → Nat} {m : Nat}
     (hσ : ∀ f g d, σ f = some (g, d) → upCallee (.call g d) (n f) = true) (a : Prog isa)
-    (ha : decide (depthG n a ≤ m) && a.allInstrs (fun i => decide (i.vecLevel ≤ 1)) && UpperLock.up a true &&
+    (ha : decide (depthG n a ≤ m) && lvAll 1 a && upF a true &&
       (UpperLock.inames a).isEmpty = true) :
     upCallee (fillCallsG σ a) m = true := by
   have hσ' : ∀ f g d, σ f = some (g, d) → (Code.call g d : Prog isa).x86_64Depth ≤ n f ∧
@@ -171,10 +171,10 @@ theorem upCallee_fillCallsG {n : String → Nat} {m : Nat}
       UpperLock.inames d = [] := by
     intro f g d h
     have := hσ f g d h
-    simp only [upCallee, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
+    simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
     exact ⟨this.1.1.1, this.1.1.2, this.1.2, by simpa [UpperLock.inames] using this.2⟩
-  simp only [Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at ha
-  simp only [upCallee, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff]
+  simp only [lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at ha
+  simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff]
   exact ⟨⟨⟨Nat.le_trans (fillCallsG_depth (fun f g d h => (hσ' f g d h).1) a) ha.1.1.1,
       fillCallsG_allInstrs _ (fun f g d h => (hσ' f g d h).2.1) a ha.1.1.2⟩,
     fillCallsG_up (fun f g d h => (hσ' f g d h).2.2.1) a true ha.1.2⟩,
@@ -183,7 +183,7 @@ theorem upCallee_fillCallsG {n : String → Nat} {m : Nat}
 /-- `upCallee` of a call, from that of its code with 8 bytes more. -/
 theorem upCallee_call {d : Prog isa} {m : Nat} (g : String) (h : upCallee d m = true) :
     upCallee (.call g d) (m + 8) = true := by
-  simp only [upCallee, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
   exact ⟨⟨⟨by simp only [Code.x86_64Depth]; omega, by simpa only [Code.allInstrs] using h.1.1.2⟩,
     by simpa only [UpperLock.up] using h.1.2⟩, by simpa only [UpperLock.inames] using h.2⟩
 
@@ -194,7 +194,7 @@ at the level `sse`: its stack, instructions below the level `evex`, upper
 halves that agree at its end if they did at its start, and indirect calls
 only of its tables' functions. -/
 noncomputable def upStub (a : Prog isa) (n : String → Nat) (stack : Nat) (ts : List (String × List FnTable)) : Bool :=
-  decide (depthG n a ≤ stack) && a.allInstrs (fun i => decide (i.vecLevel ≤ 1)) && upF a true && tablesCall a ts
+  decide (depthG n a ≤ stack) && lvAll 1 a && upF a true && tablesCall a ts
 
 /-- `r`'s code, `fillCallsG σ a` (its code over a stub `a` with the
 implementations' code), followed by `scrubAll v rb stack`, meets `r`'s
@@ -221,9 +221,9 @@ theorem verifiedScrubbedOrUp {api : Api} (r : Unscrubbed api target) (v : VecLev
         UpperLock.inames d = [] := by
       intro f g d h
       have := hσ f g d h
-      simp only [upCallee, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
+      simp only [upCallee, lvAll_one, upF_eq, Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at this
       exact ⟨this.1.1.1, this.1.1.2, this.1.2, by simpa [UpperLock.inames] using this.2⟩
-    simp only [upStub, Bool.and_eq_true, decide_eq_true_eq, upF_eq] at hau
+    simp only [upStub, lvAll_one, Bool.and_eq_true, decide_eq_true_eq, upF_eq] at hau
     obtain ⟨⟨⟨hd, hl1⟩, hup⟩, hic⟩ := hau
     subst hn hb htb
     exact verifiedScrubbedAllUp r hpost

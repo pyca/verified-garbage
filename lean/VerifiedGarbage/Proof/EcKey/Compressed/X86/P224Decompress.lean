@@ -1492,13 +1492,13 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve (fun a : Spec.
     (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)) sp
   · apply VG.Taint.constantTime (A := taint) (codecT (2 * Spec.P224.curve.len + 1))
     · exact fun _ _ hs ht hp => codec_agree hs ht hp
-    · taint_decide
+    · native_taint_decide
   · obtain ⟨_, hc⟩ : ∃ h, (taint.check (rootT p224) (prepareRoot p224) h).isSome = true := by
       native_taint_decide_sum [mulSum]
     exact VG.Taint.constantTime (A := taint) (rootT p224) (fun _ _ _ _ hp => root_agree hp) hc
   · apply VG.Taint.constantTime (A := taint) (rootT p224)
     · exact fun _ _ _ _ hp => root_agree hp
-    · taint_decide
+    · native_taint_decide
   · obtain ⟨_, hc⟩ : ∃ h, (taint.check (powerT p224) (Impl.EcKey.Compressed.X86.squarePower p224) h).isSome = true := by
       native_taint_decide_sum [mulSum]
     exact VG.Taint.constantTime (A := taint) (powerT p224) (fun _ _ _ _ hp => power_agree hp) hc
@@ -1510,7 +1510,7 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve (fun a : Spec.
     exact VG.Taint.constantTime (A := taint) (rootT p224) (fun _ _ _ _ hp => root_agree hp) hc
   · apply VG.Taint.constantTime (A := taint) (finishT p224)
     · exact fun _ _ hs ht hp => finish_agree hs ht hp.1 hp.2
-    · taint_decide
+    · native_taint_decide
 
 theorem sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 28).pre s := by
   have a0 : arg (satState 29 57) 0 = 0x1000 := by decide

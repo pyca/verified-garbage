@@ -221,7 +221,7 @@ taint_summary subSum : sseTaint (callτ 40)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP320r1 := by
   obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeBrainpoolP320r1 h).isSome = true := by
-    taint_decide_sum [mulSum, addSum, subSum]
+    native_taint_decide_sum [mulSum, addSum, subSum]
   exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

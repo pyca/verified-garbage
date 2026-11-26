@@ -51,7 +51,7 @@ theorem front_stub : stubSide frontStub VecLevel.sse.level frontStack 3784 [] = 
 
 theorem stubCallee_of_side {a : Prog isa} {k : Nat} {n : String → Nat} {m : Nat}
     (h : stubSide a k n m [] = true) : stubCallee a k n m = true := by
-  simp only [stubSide, stubCallee, tablesCall, Bool.and_eq_true] at h ⊢
+  simp only [stubSide, stubCallee, tablesCall, lvAll_eq, Bool.and_eq_true] at h ⊢
   refine ⟨h.1, ?_⟩
   obtain ⟨-, hi⟩ := h
   rw [List.isEmpty_iff]
@@ -78,7 +78,7 @@ theorem dec_side (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) :
 
 theorem dec_depth (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) : (decCode h c).x86_64Depth ≤ 3480 := by
   have := dec_side h c
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at this
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at this
   exact this.1.1
 
 /-- It writes `rsp` only in its frames, and its callee's. -/

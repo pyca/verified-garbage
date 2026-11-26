@@ -23,11 +23,11 @@ checks the root module (`VG.Emit.finish`). It prints when the setup
 was written and when each part ended, from the start. (They are run by the
 interpreter rather than as a `lean_exe` so that CI does not have to compile
 Mathlib to native code.) Each program is a module, run with a setup file
-(`lean --setup`, `setupJson`) that names, for every built module, its `.olean`,
+(`lean --setup`, `setupJson`) that names, for every module, its built `.olean`,
 `.olean.server` and IR, so Lean reads only those of what a program imports, not
 their private data (`.olean.private`), which CI does not restore: the audits read
 the audit records instead (`TCB/AuditRecords.lean`). The setup is written here,
-from the files `lake build` left, not asked of Lake (`lake setup-file`, which
+by the project's sources and the dependencies' built files, not asked of Lake (`lake setup-file`, which
 checks again, for each program, that everything it imports is built, as long as
 the programs then run): so this reads the build as it is, and is run after
 `lake build`, as CI runs it; nothing here checks that the build is current.
@@ -62,48 +62,55 @@ def nativeLibs : IO (List System.FilePath) := do
       "VerifiedGarbage_NativeForward", "VerifiedGarbage_NativeCodeOnce",
       "VerifiedGarbage_NativeScrubX86__64", "VerifiedGarbage_NativeScrubAArch64"]).map sharedLib
 
-/-- The files of each built module under `dir`, the directory of the modules
-`module.*` of a directory of built modules (one of `LEAN_PATH`: the project's,
-or a dependency's; `module` is empty for the directory itself), after `acc`:
-as a setup file names them (`importArts`), the module's name, then its
-`.olean` and `.olean.server`, and its IR's signatures and its IR. Not its
-`.olean.private`. A directory of modules has no `.` in its name, and every
-file has one; `depth` bounds how deep the directories are followed. -/
-def moduleFiles (dir : System.FilePath) (module : String) (acc : Array String) :
+/-- Fails on a name that a JSON string would have to escape. -/
+def plain (n : String) : IO String := do
+  if n.any fun c => c == '"' || c == '\\' || c < ' ' then
+    throw <| IO.userError s!"{n}: a path the setup file would have to escape"
+  return n
+
+/-- The files of the module `module`, `base` without its extensions, as a setup file names
+them (`importArts`): the module's name, then its `.olean` and `.olean.server`, and its IR's
+signatures and its IR. Not its `.olean.private`. -/
+def moduleFiles (module base : String) : String :=
+  "\"" ++ module ++ "\":[[\"" ++ base ++ ".olean\",\"" ++ base ++ ".olean.server\"],[\"" ++
+    base ++ ".ir.sig\",\"" ++ base ++ ".ir\"]]"
+
+/-- The files (`moduleFiles`) of each module that a file of extension `ext` (`.olean` or
+`.lean`) under `dir` is of, after `acc`: `dir` is the directory of the modules `module.*`
+(`module` is empty for the directory itself), and `out` that of their built files. A
+directory of modules has no `.` in its name, and every file has one; `depth` bounds how
+deep the directories are followed. -/
+def modulesUnder (ext : String) (dir : System.FilePath) (out module : String) (acc : Array String) :
     (depth : Nat) → IO (Array String)
   | 0 => return acc
   | depth + 1 => do
     let mut acc := acc
+    let pre := if module.isEmpty then "" else module ++ "."
+    let outPre := (← plain out) ++ "/"
     for e in ← dir.readDir do
       let n := e.fileName
-      if n.contains '"' || n.contains '\\' then
-        throw <| IO.userError s!"{e.path}: a name the setup file would have to escape"
-      if !n.contains '.' then
-        acc ← moduleFiles e.path (if module.isEmpty then n else module ++ "." ++ n) acc depth
-      else if n.endsWith ".olean" then
-        let m := (n.dropEnd ".olean".length).toString
-        let base := (dir / m).toString
-        acc := acc.push <| "\"" ++ (if module.isEmpty then m else module ++ "." ++ m) ++ "\":[[\"" ++
-          base ++ ".olean\",\"" ++ base ++ ".olean.server\"],[\"" ++ base ++ ".ir.sig\",\"" ++ base ++
-          ".ir\"]]"
+      if n.endsWith ext then
+        let m ← plain (n.dropEnd ext.length).toString
+        acc := acc.push (moduleFiles (pre ++ m) (outPre ++ m))
+      else if !n.contains '.' then
+        acc ← modulesUnder ext e.path (outPre ++ n) (pre ++ n) acc depth
     return acc
 
 /-- The setup file of every program (`lean --setup`): a module, which may
-import any built module of `LEAN_PATH` (as `lake env` sets it), by the files
-`moduleFiles` names, and which loads the shared libraries `libs`. The paths
-are written as they are: this and `moduleFiles` fail on one that a JSON
-string would have to escape. -/
+import any module of this project's library, and any built module of the other
+directories of `LEAN_PATH` (as `lake env` sets it: the dependencies' and Lean's), by
+the files `moduleFiles` names, and which loads the shared libraries `libs`. This
+project's are listed by its sources: its build directory holds a dozen files of each
+module, which take ten times longer to list. -/
 def setupJson (libs : List System.FilePath) : IO String := do
-  let plain (p : System.FilePath) : IO String := do
-    let p := (← IO.FS.realPath p).toString
-    if p.contains '"' || p.contains '\\' then
-      throw <| IO.userError s!"{p}: a path the setup file would have to escape"
-    return p
-  let roots := System.SearchPath.parse ((← IO.getEnv "LEAN_PATH").getD "")
-  let mut files := #[]
-  for root in roots do
-    if ← root.isDir then files ← moduleFiles (← plain root) "" files 64
-  let libs ← libs.mapM fun l => return "\"" ++ (← plain l) ++ "\""
+  let real (p : System.FilePath) : IO String := return (← IO.FS.realPath p).toString
+  let own ← real (".lake" / "build" / "lib" / "lean")
+  let mut files ← modulesUnder ".lean" "VerifiedGarbage" (own ++ "/VerifiedGarbage") "VerifiedGarbage" #[] 64
+  for root in System.SearchPath.parse ((← IO.getEnv "LEAN_PATH").getD "") do
+    unless ← root.isDir do continue
+    let root ← real root
+    unless root == own do files ← modulesUnder ".olean" root root "" files 64
+  let libs ← libs.mapM fun l => return "\"" ++ (← plain (← real l)) ++ "\""
   return "{\"name\":\"_unknown\",\"isModule\":true,\"importArts\":{" ++
     ",".intercalate files.toList ++ "},\"dynlibs\":[" ++ ",".intercalate libs ++
     "],\"plugins\":[],\"options\":{}}\n"

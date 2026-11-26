@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.ForallLength
+import VerifiedGarbage.Proof.HashTable.First
 
 /-!
 # RSAES-OAEP on PPC64LE, without secret residue
@@ -93,10 +94,19 @@ theorem decryptOut (ts : List FnTable) (stack : Nat) :
 
 /-! ## The functions as emitted -/
 
+/-- The hash functions' functions of the same name have the same code. -/
+theorem mvars_coh : MdHashTable.PPC64LE.Coh mvars := fun w hw w' hw' =>
+  ⟨Proof.HashTable.coh_of_first mvars (·.H.initN) (·.H.initC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.H.updN) (·.H.updC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.H.finN) (·.H.finC) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars (·.F.cn) (·.F.cc) (by kernel_rfl) w hw w' hw',
+    Proof.HashTable.coh_of_first mvars MdHashTable.PPC64LE.digName
+      (Impl.MdHashTable.PPC64LE.digest ·.F.P) (by kernel_rfl) w hw w' hw'⟩
+
 /-- The hash functions whose tables the functions take are coherent: their
 functions of the same name have the same code, there is one, and not too many
 names. -/
-theorem mvars_ok : OK mvars := of_decide_eq_true (by kernel_rfl)
+theorem mvars_ok : OK mvars := ⟨mvars_coh, of_decide_eq_true (by kernel_rfl)⟩
 
 /-- `vg_rsa_oaep_decrypt_precomputed` as emitted (`Impl.RsaOaep.PPC64LE.Fn.decryptP`),
 with the tables of every hash function, meets its contract in constant time

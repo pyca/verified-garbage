@@ -16,22 +16,34 @@ inductive PowerOp where
   | mulSaved
   deriving Repr
 
-/-- Repeat squaring with a public counter, retaining the saved power. -/
-def squareRun (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : Nat → Prog isa
+/-- Repeat squaring with a public counter, retaining the saved power, by calls of the
+multiplication, whose code is `mul`. -/
+def squareRunOf (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (mul : Prog isa) : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (n + 1)))])
       (.loop (.seq (.block [decCounter])
-        (.seq (Mont.mulCall F P.acc P.acc P.acc) (.block [testCounter]))) .ne)
+        (.seq (Mont.callOp (F.fn "mul") mul P.acc P.acc P.acc) (.block [testCounter]))) .ne)
 
-def powerOp (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : PowerOp → Prog isa
+def squareRun (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (n : Nat) : Prog isa :=
+  squareRunOf P F (Mont.mulFn F.k F.m) n
+
+def powerOpOf (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (mul : Prog isa) : PowerOp → Prog isa
   | .save => .block (copy (2 * P.M.n) P.tmp P.acc)
-  | .squares n => squareRun P F n
-  | .mulBase => Mont.mulCall F P.acc P.acc P.base
-  | .mulSaved => Mont.mulCall F P.acc P.acc P.tmp
+  | .squares n => squareRunOf P F mul n
+  | .mulBase => Mont.callOp (F.fn "mul") mul P.acc P.acc P.base
+  | .mulSaved => Mont.callOp (F.fn "mul") mul P.acc P.acc P.tmp
 
-def powerChain (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) : List PowerOp → Prog isa
+def powerOp (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (op : PowerOp) : Prog isa :=
+  powerOpOf P F (Mont.mulFn F.k F.m) op
+
+def powerChainOf (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (mul : Prog isa) : List PowerOp → Prog isa
   | [] => .block []
-  | op :: ops => .seq (powerOp P F op) (powerChain P F ops)
+  | op :: ops => .seq (powerOpOf P F mul op) (powerChainOf P F mul ops)
+
+/-- The operations, one after the other: the code of the multiplication they call is
+computed once. -/
+def powerChain (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (ops : List PowerOp) : Prog isa :=
+  powerChainOf P F (Mont.mulFn F.k F.m) ops
 
 /-- Build `x^(2^30-1)` in the saved slot, then append the runs of bits in
 `p-2`. This uses 255 squares and 18 other multiplications. -/

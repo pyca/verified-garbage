@@ -28,6 +28,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 
 /-!
 # X448 on AArch64 returns without secret residue

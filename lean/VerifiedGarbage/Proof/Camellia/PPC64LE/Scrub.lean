@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.CtrFinal
 public import VerifiedGarbage.Spec.Camellia.CtrFinal
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 
 /-!
 # Camellia on PPC64LE, without secret residue
