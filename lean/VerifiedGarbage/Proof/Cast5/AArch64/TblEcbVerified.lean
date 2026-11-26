@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.TblBatch
+public import VerifiedGarbage.Proof.Cast5.AArch64.BatchCall
 public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -65,8 +65,8 @@ theorem blockAt_eq_of_readW {m m' : Mem} {p p' : Addr} (h : m'.readW p' 64 = m.r
 
 /-- What the batches may assume of the state they start in: the subkeys `k`
 readable at `x0`, their number `N` in `x16`, the `n` blocks of data and the
-working space writable, apart from each other, the table's address in `x9`
-and the constants in `c64` and `c128`. -/
+working space writable, apart from each other, the constants in `c64` and `c128`. The shared helper loads its table
+address. -/
 structure Env (s : State) (k : Schedule) (N : Nat) : Prop where
   rd : s.rd = [⟨s.gpr .x0, 128⟩]
   wr : s.wr = [⟨s.gpr .x1, 8 * (s.gpr .x2).toNat⟩, ⟨s.gpr .x3, 256⟩]
@@ -75,7 +75,6 @@ structure Env (s : State) (k : Schedule) (N : Nat) : Prop where
   dataBuf : (⟨s.gpr .x1, 8 * (s.gpr .x2).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
   fit : (s.gpr .x1).toNat + 8 * (s.gpr .x2).toNat ≤ 2 ^ 64
   consts : Consts s
-  x9 : s.gpr .x9 = s.syms planesSym
   key : ∀ j < 32, s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (4 * j)) 32 = k.getD j 0
   rounds : N = 12 ∨ N = 16
   x16 : s.gpr .x16 = BitVec.ofNat 64 N
@@ -85,13 +84,13 @@ theorem Env.len {s : State} {k : Schedule} {N : Nat} (E : Env s k N) : 8 * (s.gp
 
 /-- What the rounds read, in a state whose memory differs from `s`'s only
 in regions apart from the subkeys. -/
-theorem cpre_of {s u : State} {k : Schedule} (x9 : s.gpr .x9 = s.syms planesSym)
+theorem cpre_of {s u : State} {k : Schedule}
     (sched : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128)
     (key : ∀ j < 32, s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (4 * j)) 32 = k.getD j 0)
-    (hc : Consts u) (g0 : u.gpr .x0 = s.gpr .x0) (g9 : u.gpr .x9 = s.gpr .x9) (sy : u.syms = s.syms)
+    (hc : Consts u) (g0 : u.gpr .x0 = s.gpr .x0)
     (hrd : u.rd = s.rd) (hwr : u.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem u.mem)
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨s.gpr .x0, 128⟩ r) : CPre u k :=
-  ⟨by rw [g9, sy]; exact x9, hc, by rw [hrd, hwr, g0]; exact sched, fun j hj => by
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨s.gpr .x0, 128⟩ r) : CallPre u k :=
+  ⟨hc, by rw [hrd, hwr, g0]; exact sched, fun j hj => by
     rw [g0, hf.readW (r := ⟨s.gpr .x0, 128⟩)
       (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])) hd (by decide)]
     exact key j hj⟩
@@ -108,11 +107,10 @@ theorem consts_of {s u : State} (hc : Consts s) (hv : ∀ r, r ∉ roundV → u.
 /-! ## The batches of sixteen blocks -/
 
 /-- The registers the batches keep. -/
-def WideRegs (r : Reg) : Prop := r ≠ .x1 ∧ r ≠ .x2 ∧ r ∉ batchG
+def WideRegs (r : Reg) : Prop := r ≠ .x1 ∧ r ≠ .x2 ∧ r ∉ callG
 
 theorem wideRegs_x0 : WideRegs .x0 := ⟨by decide, by decide, by decide⟩
 theorem wideRegs_x3 : WideRegs .x3 := ⟨by decide, by decide, by decide⟩
-theorem wideRegs_x9 : WideRegs .x9 := ⟨by decide, by decide, by decide⟩
 theorem wideRegs_x16 : WideRegs .x16 := ⟨by decide, by decide, by decide⟩
 
 /-- `m` blocks left, a multiple of sixteen fewer than `n`, and at least sixteen. -/
@@ -147,7 +145,7 @@ structure WidePost (up : Bool) (k : Schedule) (N : Nat) (s₀ : State) (n : Nat)
 
 theorem loop_ok (up : Bool) {k : Schedule} {N : Nat} {s₀ : State} (E : Env s₀ k N) {n : Nat}
     (hn : (s₀.gpr .x2).toNat = n) (m : Nat) (s : State) (hs : WideInv up k N s₀ n m s) :
-    WP isa (.loop (.seq (.block [.addImm .x .x4 .x1 0]) (.seq (batch up)
+    WP isa (.loop (.seq (.block [.addImm .x .x4 .x1 0]) (.seq (batchCall up)
         (.block [.addImm .x .x1 .x1 128, .subImm .x .x2 .x2 16, wholeLeft])))
       (.nonzero .x .x8)) s (WidePost up k N s₀ n) := by
   refine WP.loop (M := isa) (WideInv up k N s₀ n) ?_ m s hs
@@ -171,16 +169,16 @@ theorem loop_ok (up : Bool) {k : Schedule} {N : Nat} {s₀ : State} (E : Env s�
     show _ ∈ s.wr; rw [h.wr, E.wr, hn]; exact List.mem_cons_self
   obtain hW₁ : ∀ j < 8, InRegions s₁.wr (s₁.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16 := fun j hj =>
     ⟨_, dataR, by rw [x4₁, wAt, Offset.add_add]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  obtain P₁ : CPre s₁ k := cpre_of E.x9 E.sched E.key (consts_of E.consts h.v)
-    ((g₁ _ (by decide)).trans hx0) ((g₁ _ (by decide)).trans (g _ wideRegs_x9)) h.syms h.rd h.wr h.frame
+  obtain P₁ : CallPre s₁ k := cpre_of E.sched E.key (consts_of E.consts h.v)
+    ((g₁ _ (by decide)).trans hx0) h.rd h.wr h.frame
     fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hn ▸ E.keyData).sub_right (Region.sub_prefix (by omega_arith))
   obtain h16₁ : s₁.gpr .x16 = BitVec.ofNat 64 N := by rw [g₁ _ (by decide), g _ wideRegs_x16]; exact E.x16
   apply WP.seq
-  apply WP.mono (batch_ok up P₁ E.rounds h16₁ hW₁)
+  apply WP.mono (batchCall_ok up P₁ E.rounds h16₁ hW₁)
   intro s₂ q
-  obtain g₂ : ∀ r, r ∉ batchG → s₂.gpr r = s.gpr r :=
+  obtain g₂ : ∀ r, r ∉ callG → s₂.gpr r = s.gpr r :=
     fun r hr => (q.gpr r hr).trans (g₁ r fun e => hr (by rw [e]; decide))
   let s₃ := s₂.write .x .x1 (s₂.read .x .x1 + BitVec.ofNat _ 128)
   let s₄ := s₃.write .x .x2 (s₃.read .x .x2 - BitVec.ofNat _ 16)
@@ -291,7 +289,7 @@ theorem wide_ok (up : Bool) {k : Schedule} {N : Nat} {s : State} (E : Env s k N)
       exact ⟨by rw [h0]; exact E.rd, by rw [h1, h2, h3]; exact E.wr,
         by rw [h0, h1, h2]; exact E.keyData, by rw [h0, h3]; exact E.keyBuf,
         by rw [h1, h2, h3]; exact E.dataBuf, by rw [h1, h2]; exact E.fit, E.consts,
-        by rw [g₁ .x9 (by decide)]; exact E.x9, by rw [h0]; exact E.key, E.rounds,
+        by rw [h0]; exact E.key, E.rounds,
         by rw [g₁ .x16 (by decide)]; exact E.x16⟩
     obtain hn₁ : (s₁.gpr .x2).toNat = n := by rw [g₁ _ (by decide)]
     obtain I : WideInv up k N s₁ n n s₁ := ⟨hge, Nat.le_refl _, rfl, by rw [g₁ _ (by decide)]; simp [n],
@@ -314,14 +312,14 @@ structure TailEnv (s : State) (k : Schedule) (N : Nat) (c : Nat) : Prop where
   x2 : s.gpr .x2 = BitVec.ofNat 64 c
   dataW : ∀ i < c, InRegions s.wr (wAt (s.gpr .x1) i) 8
   scratch : (⟨s.gpr .x3, 256⟩ : Region) ∈ s.wr
-  cpre : CPre s k
+  cpre : CallPre s k
   keyBuf : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
   dataBuf : (⟨s.gpr .x1, 8 * c⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
   rounds : N = 12 ∨ N = 16
   x16 : s.gpr .x16 = BitVec.ofNat 64 N
 
 /-- The registers the blocks left keep. -/
-def TailRegs (r : Reg) : Prop := r ∉ batchG ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13
+def TailRegs (r : Reg) : Prop := r ∉ callG ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13
 
 theorem tailRegs_x0 : TailRegs .x0 := ⟨by decide, by decide, by decide, by decide, by decide⟩
 theorem tailRegs_x1 : TailRegs .x1 := ⟨by decide, by decide, by decide, by decide, by decide⟩
@@ -395,16 +393,16 @@ theorem tail_ok (up : Bool) {k : Schedule} {N c : Nat} {s : State} (E : TailEnv 
     obtain hc₃ : Consts s₃ := by
       have : s₃.v = s.v := by rw [show s₃.v = s₂.v from rfl, c₂.v]; rfl
       rw [Consts, this]; exact E.cpre.consts
-    obtain P₃ : CPre s₃ k := cpre_of E.cpre.x9 E.cpre.sched E.cpre.key hc₃
+    obtain P₃ : CallPre s₃ k := cpre_of E.cpre.sched E.cpre.key hc₃
       (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide))
-      (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)) sy₂ c₂.rd c₂.wr
+      c₂.rd c₂.wr
       (show Frame [⟨B, 8 * c⟩] s.mem s₃.mem from c₂.frame) fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact E.keyBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
     obtain h16₃ : s₃.gpr .x16 = BitVec.ofNat 64 N := by
       rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact E.x16
     apply WP.seq
-    apply WP.mono (batch_ok up P₃ E.rounds h16₃ hW₃)
+    apply WP.mono (batchCall_ok up P₃ E.rounds h16₃ hW₃)
     intro s₄ q₄
     obtain g₄ : ∀ r, TailRegs r → s₄.gpr r = s.gpr r := by
       intro r ⟨a, f', i, j, l⟩
@@ -488,7 +486,7 @@ structure MPre (s : State) : Prop where
 def main (up : Bool) : Prog isa :=
   .seq (.block (saveRegs ++ setup)) (.seq (wide up) (.seq (tail up) (.block restoreRegs)))
 
-theorem setup_eq : saveRegs ++ setup = saveRegs ++ (constants ++ ([.adrSym .x9 planesSym] : List Instr)) := rfl
+theorem setup_eq : saveRegs ++ setup = saveRegs ++ (constants ++ ([] : List Instr)) := by rw [setup, List.append_nil]
 
 /-- Every block becomes its encryption or decryption, and `q8`–`q15` are
 restored. -/
@@ -506,14 +504,12 @@ theorem main_ok (up : Bool) {s : State} (P : MPre s) :
   -- the prologue
   obtain ⟨s₁, r₁, v₁, f₁, e₁⟩ := strqs_run saveOff (by decide) 8 (by decide) s fun j hj => ⟨_, bufW, save_off s hj⟩
   obtain ⟨s₂, r₂, c₂, g₂, m₂, rd₂, wr₂, sp₂, o₂⟩ := constants_run s₁
-  let s₂' := s₂.write .x .x9 (s₂.syms planesSym)
-  obtain r₂' : runBlock isa ([.adrSym .x9 planesSym] : List Instr) s₂ = some s₂' := by
-    rw [runBlock_cons, exec_adrSym, runStep_some, runBlock_nil]
+  let s₂' := s₂
+  obtain r₂' : runBlock isa ([] : List Instr) s₂ = some s₂' := rfl
   obtain g₁ : s₁.gpr = s.gpr := by rw [e₁]
   obtain sy₂ : s₂.syms = s.syms := by rw [o₂.1, e₁]
   obtain hg₂ : ∀ r, r ≠ .x6 → r ≠ .x9 → s₂'.gpr r = s.gpr r := fun r hr h9 => by
-    show (s₂.write .x .x9 _).gpr r = _
-    rw [gpr_write_of_ne _ _ _ h9, g₂ r hr, g₁]
+    rw [g₂ r hr, g₁]
   obtain hrd₂ : s₂'.rd = s.rd := by show s₂.rd = _; rw [rd₂, e₁]
   obtain hwr₂ : s₂'.wr = s.wr := by show s₂.wr = _; rw [wr₂, e₁]
   have m₂' : s₂'.mem = s₁.mem := m₂
@@ -523,9 +519,7 @@ theorem main_ok (up : Bool) {s : State} (P : MPre s) :
     obtain h2 := hg₂ .x2 (by decide) (by decide); have h3 := hg₂ .x3 (by decide) (by decide)
     refine ⟨by rw [hrd₂, h0]; exact P.rd, by rw [hwr₂, h1, h2, h3]; exact P.wr,
       by rw [h0, h1, h2]; exact P.keyData, by rw [h0, h3]; exact P.keyBuf,
-      by rw [h1, h2, h3]; exact P.dataBuf, by rw [h1, h2]; exact P.fit, c₂, ?_, fun j hj => ?_, P.rounds, ?_⟩
-    · show (s₂.write .x .x9 _).gpr .x9 = s₂.syms planesSym
-      rw [gpr_write_self]; exact BitVec.setWidth_eq _
+      by rw [h1, h2, h3]; exact P.dataBuf, by rw [h1, h2]; exact P.fit, c₂, fun j hj => ?_, P.rounds, ?_⟩
     · rw [h0, pro.readW (r := ⟨S, 128⟩) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
         (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
@@ -558,7 +552,7 @@ theorem main_ok (up : Bool) {s : State} (P : MPre s) :
     · rw [w.wr, hwr₂, P.wr, h1, wAt_wAt]
       exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])⟩
     · rw [w.wr, hwr₂, P.wr, h3]; exact List.mem_cons_of_mem _ List.mem_cons_self
-    · refine cpre_of E.x9 E.sched E.key (consts_of E.consts w.v) (g _ wideRegs_x0) (g _ wideRegs_x9) w.syms
+    · refine cpre_of E.sched E.key (consts_of E.consts w.v) (g _ wideRegs_x0)
         w.rd w.wr w.frame fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr
       rw [h1', hg₂ .x0 (by decide) (by decide)]
@@ -745,11 +739,30 @@ theorem publicRegs_five (s₁ s₂ : State) :
         s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 := by
   simp [PublicRegs]
 
+theorem ecb_keeps_link (up : Bool) : Modes.AArch64.KeepsReg .x30 (ecb up) := by
+  cases up <;> (unfold ecb wide tail; repeat (first
+    | with_reducible exact batchCall_keeps_link _
+    | apply Modes.AArch64.KeepsReg.seq
+    | apply Modes.AArch64.KeepsReg.ite
+    | apply Modes.AArch64.KeepsReg.loop
+    | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
+
 theorem ecb_ok (up : Bool) (s : State) (hs : (ecbC up).pre s) :
     ∃ t s', Exec isa (ecb up) s t s' ∧ abiPreserved s s' ∧ (ecbC up).post s s' := by
   obtain ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit, rounds⟩ := hs
-  obtain ⟨t, s', he, ⟨hb, hv⟩, hg⟩ := WP.gprs (c := ecb up) (ecb_correct up ⟨hrd, hwr, keyData, keyBuf,
-    dataBuf, fit, rounds⟩) (rs := preserved) (by cases up <;> lit_decide) (by cases up <;> rfl)
+  obtain ⟨t, s', he, hb, hv⟩ := ecb_correct up ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit, rounds⟩
+  have saved : ∀ r ∈ preserved, r ≠ .x30 →
+      (ecb up).allInstrs (fun i => !clobbers i r) = true := by cases up <;> lit_decide
+  have hg : ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
+    intro r hr
+    by_cases h30 : r = .x30
+    · subst r; exact ecb_keeps_link up _ _ _ he
+    · have hc := saved r hr h30
+      rw [Code.allInstrs_eq] at hc
+      exact Exec.gpr (fun i hi => by simpa using List.all_eq_true.mp hc i hi) he
+        (.inr (by
+          have hp : ∀ r ∈ preserved, r ≠ .x30 → r ∉ linkRegs := by decide
+          exact hp r hr h30))
   refine ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, fun r hr => by rw [hv r hr]⟩,
     ecb_blocks _ _ _ _ _ _ _ hb⟩
 

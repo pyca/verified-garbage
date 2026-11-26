@@ -183,6 +183,22 @@ def batch (up : Bool) : Prog isa :=
   .seq (.block (loadBatch .x4 ++ ([.addImm .x .x17 .x4 0] : List Instr)))
     (.seq (cipher up) (.block (([.addImm .x .x4 .x17 0] : List Instr) ++ storeBatch .x4)))
 
+/-- The round count crosses calls in `x14`, since the ABI may overwrite
+`x16` and `x17` on entry. Each helper initializes its own table pointer. -/
+def batchFnEnc : Prog isa := .seq (.block [.addImm .x .x16 .x14 0, .adrSym .x9 planesSym]) (batch true)
+def batchFnDec : Prog isa := .seq (.block [.addImm .x .x16 .x14 0, .adrSym .x9 planesSym]) (batch false)
+
+def batchFn : Bool → Prog isa
+  | true => batchFnEnc
+  | false => batchFnDec
+
+/-- Both ECB paths and the batched modes share these ciphers. `x10` is
+free across the arithmetic and keeps the caller's link. -/
+def batchCall (up : Bool) : Prog isa :=
+  .seq (.block [.addImm .x .x10 .x30 0, .addImm .x .x14 .x16 0])
+    (.seq (.call (if up then "vg_cast5_batch_encrypt" else "vg_cast5_batch_decrypt") (batchFn up))
+      (.block [.addImm .x .x30 .x10 0]))
+
 /-! ## ECB
 
 `vg_cast5_ecb_{en,de}crypt(schedule = x0, rounds = x1, data = x2, n = x3,
@@ -195,15 +211,15 @@ bytes), and the number of rounds to `x16`. -/
 def entry : List Instr :=
   [.addImm .x .x16 .x1 0, .addImm .x .x1 .x2 0, .addImm .x .x2 .x3 0, .addImm .x .x3 .x4 0]
 
-/-- 64 and 128 in every byte of `c64` and `c128`, and the table's address in `x9`. -/
-def setup : List Instr := constants ++ ([.adrSym .x9 planesSym] : List Instr)
+/-- 64 and 128 in every byte of `c64` and `c128`. -/
+def setup : List Instr := constants
 
 /-- Batches of sixteen blocks, in place, while there are that many. -/
 def wide (up : Bool) : Prog isa :=
   .seq (.block [wholeLeft])
     (.ite (.zero .x .x8) (.block [])
       (.loop (.seq (.block [.addImm .x .x4 .x1 0])
-          (.seq (batch up) (.block [.addImm .x .x1 .x1 128, .subImm .x .x2 .x2 16, wholeLeft])))
+          (.seq (batchCall up) (.block [.addImm .x .x1 .x1 128, .subImm .x .x2 .x2 16, wholeLeft])))
         (.nonzero .x .x8)))
 
 /-- The last `n < 16` blocks, through the working space. -/
@@ -211,7 +227,7 @@ def tail (up : Bool) : Prog isa :=
   .ite (.zero .x .x2) (.block [])
     (.seq (.block [.addImm .x .x11 .x1 0, .addImm .x .x12 .x3 tailOff, .addImm .x .x13 .x2 0])
       (.seq copy
-        (.seq (.block [.addImm .x .x4 .x3 tailOff]) (.seq (batch up)
+        (.seq (.block [.addImm .x .x4 .x3 tailOff]) (.seq (batchCall up)
           (.seq (.block [.addImm .x .x11 .x3 tailOff, .addImm .x .x12 .x1 0,
               .addImm .x .x13 .x2 0])
             copy)))))
