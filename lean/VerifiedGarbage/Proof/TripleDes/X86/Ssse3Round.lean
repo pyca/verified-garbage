@@ -233,11 +233,22 @@ def bx (i : Nat) : Nat := if i < 4 then 6 - 2 * i else 7 - 2 * (i - 4)
 /-- S-box `b`'s part of the round function, of its six input bits. -/
 def spS (b : Nat) (c : BitVec 6) : BitVec 32 := permute p ((sBox b c).zeroExtend 32 <<< (4 * (7 - b)))
 
+/-- S-box `b`'s part of the round function rotated right by one, of the
+S-box's output `v`, as a number: the kernel evaluates P once for each output,
+not for each input. -/
+def spN (b v : Nat) : Nat := ((permute p ((BitVec.ofNat 4 v).zeroExtend 32 <<< (4 * (7 - b)))).rotateRight 1).toNat
+
+materialize_table spN 8 16
+
+theorem spS_eq (b : Nat) (c : BitVec 6) : (spS b c).rotateRight 1 = BitVec.ofNat 32 (spN b (sBox b c).toNat) := by
+  rw [spN, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.ofNat_toNat, BitVec.setWidth_eq]; rfl
+
 /-- The look-ups, the masks and P give each S-box's part of the round
 function, rotated right by one, from its six input bits with `0x40`. -/
 theorem sp_all : ((List.range 8).all fun i => (List.range 64).all fun c =>
     pOut ((luB i (0x40#8 ||| BitVec.ofNat 8 c)).zeroExtend 32 <<< (8 * (i % 4))) ==
       (spS (bx i) (BitVec.ofNat 6 c)).rotateRight 1) = true := by
+  simp only [spS_eq]
   lit_decide
 
 /-- The masks of the pairs are zero in the high eight bytes. -/
