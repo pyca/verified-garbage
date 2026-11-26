@@ -87,6 +87,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Linear
 meta import VerifiedGarbage.Proof.Idea.KeyLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
 
 /-! ### `Idea.X86_64.Key`, which only this module used -/
 
@@ -922,6 +924,22 @@ abbrev ofbFinalCode : Prog isa :=
 theorem expandKey_codeSp : (Impl.Idea.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_sels`), which analyses the code they share once. -/
+theorem residue :
+    SelResidue Spec.Idea.expandKeyApi.sig 0 [] [] expandKeyCode ∧
+    SelResidue Spec.Idea.invertKeyApi.sig 0 [] [] invertKeyCode ∧
+    SelResidue Spec.Idea.ecbApi.sig 24 [] [(0, 2)] ecbCode ∧
+    SelResidue Spec.Idea.cbcEncryptChainedApi.sig 184 [] [(0, 1)] cbcEncryptCode ∧
+    SelResidue Spec.Idea.cbcDecryptChainedApi.sig 184 [] [(0, 1)] cbcDecryptCode ∧
+    SelResidue Spec.Idea.cfbEncryptApi.sig 184 [] [(0, 1)] cfbEncryptCode ∧
+    SelResidue Spec.Idea.cfbDecryptApi.sig 184 [] [(0, 1)] cfbDecryptCode ∧
+    SelResidue Spec.Idea.cfbEncryptFinalApi.sig 184 [] [(0, 1)] cfbEncryptFinalCode ∧
+    SelResidue Spec.Idea.cfbDecryptFinalApi.sig 184 [] [(0, 1)] cfbDecryptFinalCode ∧
+    SelResidue Spec.Idea.ofbApi.sig 184 [] [(0, 1)] ofbCode ∧
+    SelResidue Spec.Idea.ofbFinalApi.sig 184 [] [(0, 1)] ofbFinalCode := by
+  taint_decide_sels
+
 /-- `Spec.Idea.expandKeyApi`'s function as emitted (`Impl.Idea.X86_64.Fn.expandKey`) meets its contract in
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
@@ -931,7 +949,7 @@ theorem expandKey_scrubbed :
       stack := 0
       verified := Proof.Idea.X86_64.expandKey_verified
       spSafe := expandKey_codeSp }
-    .sse [] (expandKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [] (expandKeyOut _) (RScrub.pubOk_nil _) residue.1.choose_spec
 
 theorem expandKey_spSafe : Impl.Idea.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe expandKey_codeSp
@@ -948,7 +966,7 @@ theorem invertKey_scrubbed :
       stack := 0
       verified := Proof.Idea.X86_64.invertKey_verified
       spSafe := invertKey_codeSp }
-    .sse [] (invertKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [] (invertKeyOut _) (RScrub.pubOk_nil _) residue.2.1.choose_spec
 
 theorem invertKey_spSafe : Impl.Idea.X86_64.Fn.invertKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe invertKey_codeSp
@@ -965,7 +983,7 @@ theorem ecb_scrubbed :
       stack := 24
       verified := Proof.Idea.X86_64.ecb_framed
       spSafe := ecb_codeSp }
-    .sse [(0, 2)] (ecbOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 2)] (ecbOut _) (RScrub.pubOk_nil _) residue.2.2.1.choose_spec
 
 theorem ecb_spSafe : Impl.Idea.X86_64.Fn.ecb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecb_codeSp
@@ -982,7 +1000,7 @@ theorem cbcEncrypt_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cbcEncryptChained_framed
       spSafe := cbcEncrypt_codeSp }
-    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.1.choose_spec
 
 theorem cbcEncrypt_spSafe : Impl.Idea.X86_64.Fn.cbcEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcEncrypt_codeSp
@@ -999,7 +1017,7 @@ theorem cbcDecrypt_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cbcDecryptChained_framed
       spSafe := cbcDecrypt_codeSp }
-    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.1.choose_spec
 
 theorem cbcDecrypt_spSafe : Impl.Idea.X86_64.Fn.cbcDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcDecrypt_codeSp
@@ -1016,7 +1034,7 @@ theorem cfbEncrypt_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cfbEncrypt_framed
       spSafe := cfbEncrypt_codeSp }
-    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncrypt_spSafe : Impl.Idea.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncrypt_codeSp
@@ -1033,7 +1051,7 @@ theorem cfbDecrypt_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cfbDecrypt_framed
       spSafe := cfbDecrypt_codeSp }
-    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecrypt_spSafe : Impl.Idea.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecrypt_codeSp
@@ -1050,7 +1068,7 @@ theorem cfbEncryptFinal_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cfbEncryptFinal_framed
       spSafe := cfbEncryptFinal_codeSp }
-    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncryptFinal_spSafe : Impl.Idea.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncryptFinal_codeSp
@@ -1067,7 +1085,7 @@ theorem cfbDecryptFinal_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.cfbDecryptFinal_framed
       spSafe := cfbDecryptFinal_codeSp }
-    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecryptFinal_spSafe : Impl.Idea.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecryptFinal_codeSp
@@ -1084,7 +1102,7 @@ theorem ofb_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.ofb_framed
       spSafe := ofb_codeSp }
-    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem ofb_spSafe : Impl.Idea.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofb_codeSp
@@ -1101,7 +1119,7 @@ theorem ofbFinal_scrubbed :
       stack := 184
       verified := Proof.Idea.X86_64.ofbFinal_framed
       spSafe := ofbFinal_codeSp }
-    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.2.choose_spec
 
 theorem ofbFinal_spSafe : Impl.Idea.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofbFinal_codeSp

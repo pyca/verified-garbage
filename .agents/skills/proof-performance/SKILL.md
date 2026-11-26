@@ -235,7 +235,8 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   or a hash's functions, reach the code they share in the same taint, its
   literal or not, so their analyses in one declaration are little more than
   one of them: prove them together, as a conjunction of `TaintCT.Ends`, by
-  `taint_decide_ct_all` (`Proof/Framework/TaintCTAll.lean`), and take each
+  `taint_decide_ct_all` (`Proof/Framework/TaintCTAll.lean`; on x86-64
+  `SelResidue`s, by `taint_decide_sels`, `X86_64/ScrubSelAll.lean`), and take each
   function's from it (`residue`, `Proof/Camellia/X86/SseScrub.lean`: nine
   modes, 4.2 s to 0.8 s in the kernel).
 * **Constant time of many callers of the same function:** prove the
