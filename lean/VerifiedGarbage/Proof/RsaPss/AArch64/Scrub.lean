@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSASSA-PSS on AArch64, without secret residue
@@ -40,8 +41,9 @@ theorem signOk (tsH tsG : List FnTable) (stack : Nat) :
     ScrubAllOk (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       stack (Spec.RsaPss.signPrecomputedMdTableSig.retBits abi.ptrBits) :=
-  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaPss.signPrecomputedMdTableSig) fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaPss.signPrecomputedMdTableSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 26) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPss.signPrecomputedMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp,
         Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -63,8 +65,9 @@ theorem verifyOk (tsH tsG : List FnTable) (stack : Nat) :
     ScrubAllOk (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       stack (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits abi.ptrBits) :=
-  scrubAllOk_tables (scrubAllOk_args_any (sig := Spec.RsaPss.verifyPrecomputedMdTableSig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h)
+  scrubAllOk_tables (scrubAllOk_args_any (sig := Spec.RsaPss.verifyPrecomputedMdTableSig) fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h)
 
 /-! ## The functions, as emitted
 

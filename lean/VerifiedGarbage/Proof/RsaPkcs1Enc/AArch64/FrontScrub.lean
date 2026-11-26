@@ -10,6 +10,7 @@ public import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # `vg_rsa_pkcs1_decrypt_precomputed` on AArch64, without secret residue
@@ -59,8 +60,9 @@ theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {
 theorem frontOk (stack : Nat) :
     ScrubAllOk (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack) stack
       (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.decryptPrecomputedSig) fun
-    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_args_pre_any (sig := Spec.RsaPkcs1Enc.decryptPrecomputedSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 25) ?_
+      intro out outLen ml _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits abi.ptrBits) → Prop)

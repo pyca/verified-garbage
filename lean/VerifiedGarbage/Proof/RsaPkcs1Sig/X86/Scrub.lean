@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSASSA-PKCS1-v1_5 on x86 (32-bit), without secret residue
@@ -74,8 +75,9 @@ theorem recoverPrecomputedOut (stack : Nat) :
 theorem signPrecomputedOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Sig.signPrecomputedContract abi stack)
       (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 23) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp

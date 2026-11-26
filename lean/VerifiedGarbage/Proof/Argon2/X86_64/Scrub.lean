@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # Argon2 on x86-64, without secret residue
@@ -20,8 +21,9 @@ open VG.X86_64 VG.X86_64.Scrub
 
 theorem deriveOut (stack : Nat) :
     PostOut (Spec.Argon2.deriveContract X86_64.abi stack) (Spec.Argon2.deriveSig.retBits 64) :=
-  postOut_of_local (leak := some _) ScrubAbi.plain fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ out outLen hb h
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb
       have ho := hb.2.2.2.2.2.2

@@ -10,6 +10,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # Argon2 on ARMv7, without secret residue
@@ -33,8 +34,9 @@ open VG VG.Arm VG.Arm.Scrub
 
 theorem deriveOut :
     PostOut (Spec.Argon2.deriveContract abi 240) (Spec.Argon2.deriveSig.retBits abi.ptrBits) :=
-  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
+  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ out outLen hb h
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb
       have ho := hb.2.2.2.2.2.2

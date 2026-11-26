@@ -27,6 +27,7 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # `vg_rsa_pkcs1_decrypt_precomputed` on x86-64
@@ -158,11 +159,10 @@ theorem vs25 {vs : List (BitVec 64)} (h : vs.length = (sig.words abi.ptrBits).le
       vs = [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21,
         a22, a23, a24] := by
   rw [len25] at h
-  match vs, h with
-  | [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22,
-      a23, a24], _ =>
-    exact ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21,
-      a22, a23, a24, rfl⟩
+  revert vs; refine @(forall_length (n := 25) ?_)
+  intro a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21 a22 a23 a24
+  exact ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23,
+    a24, rfl⟩
 
 /-- `preP` reads memory only in `n`, `p`, `q` and `pre`. -/
 theorem preP_local : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →

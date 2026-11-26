@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Argon2.PPC64LE.Derive.Verified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # Argon2 on PPC64LE, without secret residue
@@ -31,8 +32,9 @@ open VG.PPC64LE VG.PPC64LE.Scrub
 
 theorem deriveOut (stack : Nat) :
     PostOut (Spec.Argon2.deriveContract abi stack) (Spec.Argon2.deriveSig.retBits abi.ptrBits) :=
-  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
+  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ out outLen hb h
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb
       have ho := hb.2.2.2.2.2.2

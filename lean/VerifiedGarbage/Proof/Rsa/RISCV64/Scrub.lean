@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSA on RISC-V, without secret residue
@@ -96,8 +97,9 @@ theorem privatePrecomputeOut (stack : Nat) :
 
 theorem crtValuesOut (stack : Nat) :
     PostOut (Spec.Rsa.crtValuesContract abi stack) (Spec.Rsa.crtValuesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro dp dpLen dq dqLen qinv qinvLen _ _ _ pLen _ qLen _ _ _ _ hp hb h
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -122,8 +124,9 @@ theorem crtValuesOut (stack : Nat) :
 
 theorem checkKeyOut (stack : Nat) :
     PostOut (Spec.Rsa.checkKeyContract abi stack) (Spec.Rsa.checkKeySig.retBits 64) :=
-  postOut_of_local (leak := some _) ScrubAbi.plain fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 theorem recoverPrimesDetOut (stack : Nat) :
     PostOut (Spec.Rsa.recoverPrimesDetContract abi stack) (Spec.Rsa.recoverPrimesDetSig.retBits 64) :=
@@ -209,8 +212,9 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
 
 theorem pkcs1EncryptRandomOut (stack : Nat) :
     PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 15) ?_
+      intro out outLen tape _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -235,8 +239,9 @@ theorem pkcs1EncryptRandomOut (stack : Nat) :
 theorem pkcs1SignOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Sig.signPrecomputedContract abi stack)
       (Spec.RsaPkcs1Sig.signPrecomputedSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 23) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Sig.signPrecomputedSig, Spec.RsaPkcs1Sig.signSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -281,8 +286,9 @@ theorem oaepEncryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.encryptMdTablesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
@@ -302,8 +308,9 @@ theorem oaepDecryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.decryptPrecomputedMdTablesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 27) ?_
+      intro out outLen ml _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.decryptPrecomputedMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -329,8 +336,9 @@ theorem pssSignOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.signPrecomputedMdTableSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 26) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPss.signPrecomputedMdTableSig, Sig.bufs, List.mem_cons, forall_eq_or_imp,
         Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -352,7 +360,8 @@ theorem pssVerifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits 64) :=
-  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 end VG.Proof.Rsa.RISCV64.Scrub

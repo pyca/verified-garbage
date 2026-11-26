@@ -345,7 +345,8 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     fifty side goals over literal lists by default `simp`: `decide`. Thirty
     nested `max` by `omega_arith` (3.7 s): `Nat.max_le` in a `simp only`. A
     `fun | [x₁, …, x₁₈], h => …` on a computed list refutes every other
-    length once per pattern: take the length as a numeral in a lemma.
+    length once per pattern: `revert l; refine forall_length (n := 18) ?_; intro
+    x₁ … x₁₈` (`Proof/Framework/ForallLength.lean`; 3.4 s to 0.2 s for 27).
   * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
     `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
     of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`

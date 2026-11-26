@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # `vg_rsa_pkcs1_decrypt_precomputed` on x86, without secret residue
@@ -101,8 +102,9 @@ theorem front_scrub (v : Backend) (c : CrtImpl) :
 theorem front_postOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
       (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 25) ?_
+      intro out outLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)
