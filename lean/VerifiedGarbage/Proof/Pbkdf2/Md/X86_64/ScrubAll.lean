@@ -61,6 +61,13 @@ theorem pbkdf2Out (I : Spec.Hmac.Instance) (stack : Nat) :
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mod_le outLen.toNat (2 ^ 64); omega_using [hi])]
     exact h
 
+/-- What PBKDF2's cleanup needs of `v`'s code (`Pbkdf2Impl.side`). -/
+noncomputable def MdHash.pbkdf2Side (v : MdHash) (lv : VecLevel) : Bool :=
+  scrubSideG (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame v.H) 1 v.H.pbkdf2)
+    (24 + pbkdf2Frame v.H) (Spec.Pbkdf2.pbkdf2Sig.retBits 64) lv true
+    (wipeKs (chunksA (24 + pbkdf2Frame v.H))) (chunksA (24 + pbkdf2Frame v.H))
+    (gsAll (wipeKs (chunksA (24 + pbkdf2Frame v.H)))) []
+
 /-- PBKDF2's `pbkdf2` over the variant `v`: `pbkdf2` with its working space
 in a frame of its own (`MdHash.pbkdf2F`), with what its cleanup, which wipes
 every granule of its stack (`Impl.Scrub.X86_64.scrubAll`), needs of its code:
@@ -69,10 +76,7 @@ the level of its vector registers and the cleanup's other conditions
 structure Pbkdf2Impl where
   v : MdHash
   level : VecLevel
-  side : scrubSideG (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame v.H) 1 v.H.pbkdf2)
-    (24 + pbkdf2Frame v.H) (Spec.Pbkdf2.pbkdf2Sig.retBits 64) level true
-    (wipeKs (chunksA (24 + pbkdf2Frame v.H))) (chunksA (24 + pbkdf2Frame v.H))
-    (gsAll (wipeKs (chunksA (24 + pbkdf2Frame v.H)))) [] = true
+  side : v.pbkdf2Side level = true
 
 /-- `p`'s function before its cleanup. -/
 def Pbkdf2Impl.plain (p : Pbkdf2Impl) : Unscrubbed p.v.I.pbkdf2Api target where

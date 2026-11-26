@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -47,6 +48,11 @@ theorem coreK_p192 : coreK Impl.Ecdsa.X86_64.p192 = Proof.Ecdsa.X86_64.P192.sign
 theorem p192_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p192 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP192`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p192_bits : Impl.Ecdsa.X86_64.signP192.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- p192, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def p192 (hL : Weierstrass.Law Spec.P192.curve)
@@ -63,9 +69,9 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   coreC := Impl.Ecdsa.X86_64.signP192
   coreX := by rw [coreK_p192]; exact fun s h hc => Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p192_bits
+  coreSp := Code.sp_of_bits rfl p192_bits
+  coreMx := Code.noMx_of_bits rfl p192_bits
   coreD := by lit_decide
   blk := p192_blk
 
