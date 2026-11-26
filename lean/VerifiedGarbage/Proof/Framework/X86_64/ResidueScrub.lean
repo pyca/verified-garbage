@@ -862,18 +862,8 @@ meta def codeLit (c : Expr) : MetaM (Expr × Expr) := do
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do throwError "taint_decide: {c} is not code: {ty}"
   let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
-  let v ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst c)
-  -- The code materialized so far, written out in full.
-  let mut lits : Array (Name × Expr) := #[]
-  let mut expanded : Std.HashMap Name Expr := {}
-  for g in Lit.litNames (← getEnv) do
-    let lhs ← Lit.lhsOf g
-    if (← isDefEq (← inferType lhs) ty) then
-      let (e, m) ← (Lit.expandLit g).run expanded
-      expanded := m
-      lits := lits.push (g, e)
-  let (abs, gs) ← (Lit.abstractCalls lits v).run #[]
+  let v ← Lit.evalCode codeTy.appFn!.appArg! codeTy.appArg! c
+  let (abs, gs) ← Lit.abstractToLits ty v
   let lhss ← gs.mapM Lit.lhsOf
   -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
   let fill (f : Nat → Expr) : Expr :=
