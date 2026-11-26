@@ -135,12 +135,12 @@ call {vg_ed25519_verify_equation}
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_ed25519_public_key_expanded.rs"]
-pub(crate) mod vg_ed25519_public_key_expanded;
+#[path = "internal/vg_ed25519_comb_main.rs"]
+pub(crate) mod vg_ed25519_comb_main;
 
 #[rustfmt::skip]
-#[path = "internal/vg_ed25519_r32_add_affine.rs"]
-pub(crate) mod vg_ed25519_r32_add_affine;
+#[path = "internal/vg_ed25519_public_key_expanded.rs"]
+pub(crate) mod vg_ed25519_public_key_expanded;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ed25519_r32_double.rs"]

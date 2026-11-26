@@ -34,7 +34,7 @@ def swapEnv (a b : Slot) (sw : Bool) (e : Env) : Env :=
 def swapsEnv (pairs : List (Slot × Slot)) (sw : Bool) (e : Env) : Env :=
   pairs.foldl (fun e (a, b) => swapEnv a b sw e) e
 
-theorem swapField_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (a b : Slot) (hab : a ≠ b)
+theorem swapField_ok {calls : Bool} {x : BitVec 32} {s : State} (hc : Ctx x s calls) (a b : Slot) (hab : a ≠ b)
     (sw : Bool) (hm : s.gpr .ecx = mask sw.toNat) :
     WP isa (.block (VG.Impl.X25519.X86.cswap (offset a) (offset b))) s fun t =>
       FieldKeep x s t ∧ t.gpr .ecx = s.gpr .ecx ∧ env t.mem x = swapEnv a b sw (env s.mem x) := by
@@ -84,7 +84,7 @@ theorem swapsEnv_step (pairs : List (Slot × Slot)) (a b : Slot) (sw : Bool)
     g = swapsEnv ((a, b) :: pairs) sw e := by
   rw [k, h]; rfl
 
-theorem swapFields_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
+theorem swapFields_ok {calls : Bool} {x : BitVec 32} {s : State} (hc : Ctx x s calls)
     (pairs : List (Slot × Slot)) (hpairs : ∀ p ∈ pairs, p.1 ≠ p.2)
     (sw : Bool) (hm : s.gpr .ecx = mask sw.toNat) :
     WP isa (.block (swapFields pairs)) s fun t =>
