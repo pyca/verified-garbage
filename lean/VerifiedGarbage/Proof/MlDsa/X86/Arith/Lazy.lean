@@ -282,8 +282,17 @@ def sh2 : Shape where
 
 theorem sh2_ok : ShapeOk sh2 where
   gath X Y e he := by
-    refine ⟨(dword_punpcklqdq X Y he).trans ?_, (dword_punpckhqdq X Y he).trans ?_⟩ <;>
-      rcases cases4 he with rfl | rfl | rfl | rfl <;> rfl
+    refine ⟨(dword_punpcklqdq X Y he).trans ?_, (dword_punpckhqdq X Y he).trans ?_⟩
+    · rw [show sh2.pa e = if e < 2 then e else e + 2 from rfl, pos]
+      by_cases h : e < 2
+      · rw [ite_eq_left h, ite_eq_left h, ite_eq_left (by omega)]
+      · rw [ite_eq_right h, ite_eq_right h, ite_eq_right (by omega)]
+        exact congrArg (dword Y) (by omega)
+    · rw [show sh2.pb e = if e < 2 then e + 2 else e + 4 from rfl, pos]
+      by_cases h : e < 2
+      · rw [ite_eq_left h, ite_eq_left h, ite_eq_left (by omega)]
+      · rw [ite_eq_right h, ite_eq_right h, ite_eq_right (by omega)]
+        exact congrArg (dword Y) (by omega)
   scat S D e he := by
     rcases cases4 he with rfl | rfl | rfl | rfl
     · exact ⟨dword_punpcklqdq S D (i := 0) (by decide), dword_punpcklqdq S D (i := 2) (by decide)⟩

@@ -601,7 +601,7 @@ theorem montGammas_getD {k : Nat} (hk : k < 128) : montGammas.getD k 0 = (gamma 
   rw [← h1, montGammas, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_eq_getElem (show k < gammaTable.length by
       rw [show gammaTable.length = 128 from gammas_length]; exact hk)]
-  rfl
+  rw [Option.map_some, Option.getD_some, Option.getD_some]
 
 theorem montGammas_lt {k : Nat} (hk : k < 128) : montGammas.getD k 0 < 65536 := by
   rw [montGammas_getD hk]; exact Nat.lt_trans (Nat.mod_lt _ (by decide)) (by decide)

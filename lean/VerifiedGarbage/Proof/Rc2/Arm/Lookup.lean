@@ -82,22 +82,35 @@ def kw (m : Mem) (K : BitVec 32) (q : Nat) : BitVec 32 :=
 
 /-! ## A row's bit, and a choice by a bit -/
 
-/-- The bit of row `r`, for an index `32 a + b`: 1 exactly when the index is
-one of the row's eight entries. -/
-theorem rowBit_split : ∀ r < 32, ∀ a < 8, ∀ b < 32,
-    ((BitVec.ofNat 32 (32 * a + b) ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 =
-      (if (32 * a + b) / 8 = r then 1 else 0 : BitVec 32) := by decide
-
+/-- The bit of row `r`: 1 exactly when the index `n` is one of the row's
+eight entries. -/
 theorem rowBit {n r : Nat} (hn : n < 256) (hr : r < 32) :
     ((BitVec.ofNat 32 n ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 = (if n / 8 = r then 1 else 0 : BitVec 32) := by
-  have := rowBit_split r hr (n / 32) (by omega_arith) (n % 32) (Nat.mod_lt _ (by decide))
-  rwa [Nat.div_add_mod] at this
+  have hx : n ^^^ 8 * r < 2 ^ 8 := Nat.xor_lt_two_pow hn (by omega_arith)
+  have hd : (n ^^^ 8 * r) / 8 = n / 8 ^^^ r := by
+    rw [show (8 : Nat) = 2 ^ 3 from rfl, Nat.xor_div_two_pow, Nat.mul_div_cancel_left _ (by decide)]
+  have he : n ^^^ 8 * r < 8 ↔ n / 8 = r := by
+    have hz : n / 8 ^^^ r = 0 ↔ n / 8 = r := by
+      refine ⟨fun h => ?_, fun h => by rw [h, Nat.xor_self]⟩
+      have := congrArg (· ^^^ r) h
+      simpa only [Nat.xor_assoc, Nat.xor_self, Nat.xor_zero, Nat.zero_xor] using this
+    rw [← hz, ← hd]; omega_arith
+  rw [← BitVec.ofNat_xor]
+  generalize n ^^^ 8 * r = x at hx he
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    show (8 : BitVec 32).toNat = 8 from rfl]
+  by_cases h : n / 8 = r
+  · rw [ite_eq_left h]; have := he.mpr h
+    show _ = 1; omega_arith
+  · rw [ite_eq_right h]; have := mt he.mp h
+    show _ = 0; omega_arith
 
 /-- The low three bits of an index `32 a + b`, as the code takes them. -/
 theorem idxBits_split : ∀ a < 8, ∀ b < 32,
     (BitVec.ofNat 32 (32 * a + b) <<< 29) >>> 31 = (if (32 * a + b) / 4 % 2 = 1 then 1 else 0 : BitVec 32) ∧
     (BitVec.ofNat 32 (32 * a + b) <<< 30) >>> 31 = (if (32 * a + b) / 2 % 2 = 1 then 1 else 0 : BitVec 32) ∧
-    (BitVec.ofNat 32 (32 * a + b) &&& 1) = (if (32 * a + b) % 2 = 1 then 1 else 0 : BitVec 32) := by decide
+    (BitVec.ofNat 32 (32 * a + b) &&& 1) = (if (32 * a + b) % 2 = 1 then 1 else 0 : BitVec 32) := by decide +kernel
 
 theorem idxBits {n : Nat} (hn : n < 256) :
     (BitVec.ofNat 32 n <<< 29) >>> 31 = (if n / 4 % 2 = 1 then 1 else 0 : BitVec 32) ∧
