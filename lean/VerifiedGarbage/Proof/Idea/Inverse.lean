@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Idea
-public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.IsPrime
 import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -21,7 +21,7 @@ namespace VG.Proof.Idea
 
 open VG Spec.Idea
 
-theorem prime : Nat.Prime 65537 :=
+theorem prime : IsPrime 65537 :=
   Pratt.prime_of_cert 65537 3 17 (List.replicate 16 2) (by decide) (by decide)
     (fun f hf => by rw [List.eq_of_mem_replicate hf]; exact Pratt.prime_small 2 (by decide +kernel))
     (by decide +kernel) (by decide +kernel)
@@ -58,7 +58,7 @@ theorem ofNat_residue (a : Word) : BitVec.ofNat 16 (residue a) = a := by
 theorem mod_pos {x y : Nat} (hx : 0 < x) (hx' : x ≤ 65536) (hy : 0 < y) (hy' : y ≤ 65536) :
     0 < x * y % 65537 := by
   refine Nat.pos_of_ne_zero fun h => ?_
-  rcases (Nat.Prime.dvd_mul prime).mp (Nat.dvd_of_mod_eq_zero h) with h | h
+  rcases prime.dvd_or_dvd (Nat.dvd_of_mod_eq_zero h) with h | h
   · have := Nat.le_of_dvd hx h; omega_using [hx, hx', h]
   · have := Nat.le_of_dvd hy h; omega_using [hy, hy', h]
 
@@ -101,6 +101,7 @@ theorem powMod_eq (a e m : Nat) : powMod a e m = a ^ e % m := by
         rw [Nat.mod_mul_mod, ← Nat.pow_succ, Nat.succ_eq_add_one, show e / 2 + e / 2 + 1 = e by omega_using [h2]]
 
 theorem chain_inv (a : Word) : chain a 15 = inv a := by
-  rw [inv, powMod_eq, ← residue_chain, ofNat_residue]
+  rw [inv, powMod_eq, ← ofNat_residue (chain a 15), residue_chain,
+    show 15 + 1 = 16 from rfl, show 2 ^ 16 + 1 = 65537 from rfl]
 
 end VG.Proof.Idea

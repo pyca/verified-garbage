@@ -45,7 +45,7 @@ theorem lowHigh_mod {L B T m : Nat} (hL : L < B) :
     have : B*(T%2^m)+B ≤ B*2^m := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
     omega_using [hL, this]
   rw [show L+B*T = L+B*(T%2^m)+B*2^m*(T/2^m) by
-    conv_lhs => rw [← hT]
+    conv => lhs; rw [← hT]
     rw [Nat.mul_add,Nat.mul_assoc]; omega_using []]
   rw [Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hlt]
 

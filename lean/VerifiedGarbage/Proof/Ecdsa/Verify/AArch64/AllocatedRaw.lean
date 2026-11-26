@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Data.Nat.Prime.Defs
 
 @[expose] public section
 

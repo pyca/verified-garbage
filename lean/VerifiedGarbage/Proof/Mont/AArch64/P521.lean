@@ -167,7 +167,7 @@ private theorem tail_kernel {w : List Reg} (h : chkL (pw 10) (tailOps w) (tailB 
   rw [eo]
   omega_using [hl, h8]
 
-private theorem prime_prime : Nat.Prime prime := by
+private theorem prime_prime : IsPrime prime := by
   rw [show prime = 6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151 by decide +kernel]
   exact VG.Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151
 
@@ -190,7 +190,7 @@ private theorem red_ok {A B S V : Nat} (hA : A < prime) (hB : B < prime) (hS : S
       refine Nat.dvd_of_mod_eq_zero ?_
       rw [← he, hSp, Nat.mul_mod_left]
     have hAB : A = 0 ∨ B = 0 := by
-      rcases (Nat.Prime.dvd_mul prime_prime).mp hd with h | h
+      rcases prime_prime.dvd_or_dvd hd with h | h
       · exact .inl (Nat.eq_zero_of_dvd_of_lt h hA)
       · exact .inr (Nat.eq_zero_of_dvd_of_lt h hB)
     have := hz hAB
@@ -389,7 +389,6 @@ private theorem prime_run {inp : Nat → Nat → Nat} {s : St} (h7 : s.g .x7 = 0
   · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false]
     exact h7
   · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false, ite_true, h7]
-    decide
   · simp only [primeOps, run, step, St.set, St.setc, reduceCtorEq, ite_false, ite_true]
 
 private theorem mask_run {inp : Nat → Nat → Nat} {s : St} (hs : Ok s) (h7 : s.g .x7 = 0) (h2 : s.g .x2 = 511) :
@@ -583,7 +582,7 @@ private theorem shl_run {k : Nat} (hk : k ≤ 8)
     intro hp
     have hz0 : num (inp 0) 9 = 0 := by
       have hd : prime ∣ 2 ^ k * num (inp 0) 9 := Nat.dvd_of_mod_eq_zero (by rw [← e, hp, Nat.mod_self])
-      rcases (Nat.Prime.dvd_mul prime_prime).mp hd with h | h
+      rcases prime_prime.dvd_or_dvd hd with h | h
       · have hlt : 2 ^ k < prime := Nat.lt_of_le_of_lt (Nat.pow_le_pow_right (by decide) hk) (by decide +kernel)
         exact absurd (Nat.eq_zero_of_dvd_of_lt h hlt) (Nat.ne_of_gt (Nat.two_pow_pos k))
       · exact Nat.eq_zero_of_dvd_of_lt h hA

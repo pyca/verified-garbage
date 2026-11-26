@@ -31,7 +31,7 @@ theorem curve_p : Spec.P192.curve.p = 627710173538668076383578942320766641608390
 
 theorem curve_p_prime : Nat.Prime Spec.P192.curve.p := by
   rw [curve_p]
-  exact prime_6277101735386680763835789423207666416083908700390324961279
+  exact Nat.prime_def.mpr prime_6277101735386680763835789423207666416083908700390324961279
 
 /-- `-b` modulo `p`. -/
 private def negB : Nat :=

@@ -230,7 +230,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   sh := by rw [p521_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P521.curve.p
+    show IsPrime Spec.P521.curve.p
     rw [show Spec.P521.curve.p =
       6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151
       by decide +kernel]

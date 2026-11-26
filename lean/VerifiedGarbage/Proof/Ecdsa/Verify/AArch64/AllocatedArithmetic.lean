@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
-import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField

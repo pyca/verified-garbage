@@ -582,7 +582,7 @@ theorem descentBody_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} {j
       rw [fieldAt, V.t, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
     obtain c₄ : fieldAt c base s₃ T1 = fieldAt c base s T1 * fieldAt c base s T1 := by
       rw [fieldAt, V.c, e₂ (by decide) (by decide), e₁ (by decide) (by decide)]
-    conv_rhs => rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
+    conv => rhs; rw [show j = j - 1 + 1 by omega_using [hj], rootDescent]
     simp only [pow_eq_npow]
     rw [r₄, t₄, c₄, b₂]
 

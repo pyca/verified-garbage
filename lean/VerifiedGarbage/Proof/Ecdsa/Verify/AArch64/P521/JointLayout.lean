@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
-import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State

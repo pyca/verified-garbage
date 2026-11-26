@@ -150,7 +150,7 @@ theorem brainpoolp512r1_ok (hI : InvSounds) : BaseCfgOk brainpoolp512r1 where
   sh := by rw [brainpoolp512r1_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP512r1.curve.p
+    show IsPrime Spec.BrainpoolP512r1.curve.p
     exact Proof.BrainpoolP512r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp512r1.C.n_ne_zero Proof.BrainpoolP512r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
@@ -198,7 +198,7 @@ theorem brainpoolp512r1S_ok (hI : InvSounds) : BaseCfgOk brainpoolp512r1S where
   sh := by rw [brainpoolp512r1S_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP512r1.curve.p
+    show IsPrime Spec.BrainpoolP512r1.curve.p
     exact Proof.BrainpoolP512r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp512r1S.C.n_ne_zero Proof.BrainpoolP512r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩

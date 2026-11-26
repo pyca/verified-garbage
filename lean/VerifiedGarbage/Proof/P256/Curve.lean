@@ -23,9 +23,9 @@ namespace VG.Proof.P256
 
 open Spec.Weierstrass Weierstrass
 
-instance fact_curve_p_prime : Fact (Nat.Prime Spec.P256.curve.p) := ⟨p_prime⟩
+instance fact_curve_p_prime : Fact (Nat.Prime Spec.P256.curve.p) := ⟨Nat.prime_def.mpr p_prime⟩
 
-instance fact_curve_n_prime : Fact (Nat.Prime Spec.P256.curve.n) := ⟨n_prime⟩
+instance fact_curve_n_prime : Fact (Nat.Prime Spec.P256.curve.n) := ⟨Nat.prime_def.mpr n_prime⟩
 
 /-- `-b` modulo `p`. -/
 private def negB : Nat :=
@@ -57,7 +57,7 @@ theorem noTwoTorsion : ∀ x : ZMod Spec.P256.curve.p,
     (by decide +kernel) xPow xPowInv xPow_eq xPowInv_mul
 
 theorem good : Good Spec.P256.curve where
-  prime := p_prime
+  prime := Nat.prime_def.mpr p_prime
   gt3 := by decide +kernel
   noTwoTorsion := noTwoTorsion
 

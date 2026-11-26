@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Framework.IsPrime
 import VerifiedGarbage.Proof.Weierstrass.Field
-public import Mathlib.Algebra.Order.Ring.Nat
-public import Mathlib.Data.ZMod.Defs
-public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Inversion by divsteps: the result in Montgomery form
@@ -19,7 +17,7 @@ leaves `toM acc = toM x ^ (p - 2)` for a prime `p > 2` (`inv_toM`, and as
 
 namespace VG.Proof.Weierstrass
 
-theorem inv_toM {p R X a Cs acc K : Nat} [Fact p.Prime] (hp2 : 2 < p) (hR : UnitMod p R) (hXp : X < p)
+private theorem inv_toM {p R X a Cs acc K : Nat} [Fact p.Prime] (hp2 : 2 < p) (hR : UnitMod p R) (hXp : X < p)
     {f : Int} (h0 : X = 0 → a = 0)
     (hspec : X ≠ 0 → ((X : Int) * (f * a) * K) % p = 1 % p)
     (hCs : X ≠ 0 → (Cs : Int) % p = (f * (K * R ^ 3)) % p) (hmul : acc * R % p = a * Cs % p) :
@@ -50,9 +48,9 @@ theorem inv_toM {p R X a Cs acc K : Nat} [Fact p.Prime] (hp2 : 2 < p) (hR : Unit
     linear_combination (-ρ ^ 2 * X * acc + X * f * a * K * (R ^ 2 * ρ ^ 2 + R * ρ + 1)) * hρ +
       ρ ^ 3 * X * e1 + ρ ^ 3 * X * a * e2 + e3
 
-theorem invToM_of_prime {p : Nat} [NeZero p] (hp : p.Prime) : InvToM p := by
+theorem invToM_of_prime {p : Nat} [NeZero p] (hp : IsPrime p) : InvToM p := by
   intro R X a Cs acc K f hp2 hR hXp h0 hspec hCs hmul
-  haveI : Fact p.Prime := ⟨hp⟩
+  haveI : Fact p.Prime := ⟨Nat.prime_def.mpr hp⟩
   exact inv_toM hp2 hR hXp h0 hspec hCs hmul
 
 end VG.Proof.Weierstrass

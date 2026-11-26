@@ -46,7 +46,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 /-- Finishing at any batch count whose remainder is already zero. The scale depends
 on the actual batch count, including when the input itself is zero. -/
 theorem finish_early_ok {P : InvCfg} {base : Addr} {size m X : Nat} [NeZero m]
-    (hpr : m.Prime) (hT : InvToM m) (hL : InvLay P size)
+    (hpr : IsPrime m) (hT : InvToM m) (hL : InvLay P size)
     (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State}
     (hs : Scr s base size) (hM : ModOkA P.M size m s.mem base)
     (hX : X < m)

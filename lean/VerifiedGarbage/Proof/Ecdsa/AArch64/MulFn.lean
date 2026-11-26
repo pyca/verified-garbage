@@ -470,7 +470,7 @@ theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.
     (sz (by decide)) (sz hpy45) (m8 _) (m8 _) (ap (by simp at hpyl; omega_arith) (by decide) (by simp at hpyl; omega_arith))) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
   obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   refine WP.mono (setConst_ok hs₂ (n := c.n) (o := c.sl BM) (x := c.mont (3 * c.C.b))
-    (sz (by decide)) (m8 _) (lt_trans (hmont _) hc.p_lt)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
+    (sz (by decide)) (m8 _) (Nat.lt_trans (hmont _) hc.p_lt)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
   obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
   obtain U₃ : Unch base (slW c [RX, RY, BM]) s.mem s₃.mem :=
     ((O₁.unch.trans O₂.unch).trans O₃.unch).mono fun w hw => by simpa [or_assoc] using hw
@@ -519,7 +519,7 @@ theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.
   obtain hs₄ := hs₃.of_keepRegs K₄ (x0_not_powClob h7)
   obtain ⟨M₄, L₄, R₄⟩ := R₄
   refine WP.mono (setConst_ok hs₄ (n := c.n) (o := c.sl BM) (x := c.mont c.C.b)
-    (sz (by decide)) (m8 _) (lt_trans (hmont _) hc.p_lt)) fun s₅ ⟨b₅, k₅, O₅⟩ => ?_
+    (sz (by decide)) (m8 _) (Nat.lt_trans (hmont _) hc.p_lt)) fun s₅ ⟨b₅, k₅, O₅⟩ => ?_
   have O₅' : Unch base (slW c [BM]) s₄.mem s₅.mem := O₅.unch
   obtain U₅ : Unch base (slW c [BM] ++ mulWF c) s.mem s₅.mem :=
     ((U₃.trans U₄).trans O₅').mono fun w hw => by

@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Nat.Prime.Defs
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder

@@ -256,7 +256,7 @@ theorem mod {base : Addr} {size m : Nat} {s t : State}
 
 /-! ### The whole inversion -/
 
-theorem body_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+theorem body_ok {base : Addr} {m : Nat} [NeZero m] (hpr : IsPrime m) (hT : InvToM m)
     (hL : InvLay cfg 8192) (hm2 : 2 < m) (hR : UnitMod m (2^256)) {s : State} (hs : Scr s base 8192)
     (hM : ModOkA cfg.M 8192 m s.mem base) (hX : wordsVal s.mem base cfg.base 4<m) (hC : InvOk cfg m) :
     WP isa body s fun t =>
@@ -339,7 +339,7 @@ theorem restore_ok {s : State} {base : Addr} {g : Reg → BitVec 64}
 def inverseWrites : List (Nat × Nat) := bodyWrites ++ [(7800,72)]
 
 /-- The inversion, keeping every register but the field operations'. -/
-theorem inverse_ok {base : Addr} {m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+theorem inverse_ok {base : Addr} {m : Nat} [NeZero m] (hpr : IsPrime m) (hT : InvToM m)
     (hL : InvLay cfg 8192) (hm2 : 2 < m) (hR : UnitMod m (2^256)) {s : State} (hs : Scr s base 8192)
     (hM : ModOkA cfg.M 8192 m s.mem base) (hX : wordsVal s.mem base cfg.base 4<m) (hC : InvOk cfg m) :
     WP isa inverse s fun t =>
