@@ -46,6 +46,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # CAST5's functions over its sixteen-block function by `pshufb` on x86 (32-bit) meet their contracts
@@ -131,11 +134,11 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : (modeW ModeFns.cfbDecPost).pre s₀) 
 theorem cbcDecryptChained_ct :
     ConstantTime isa (modeW ModeFns.cbcDecPost).pre (modeW ModeFns.cbcDecPost).pub cbcDecryptChained :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 888 8)
-    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem cfbDecrypt_ct : ConstantTime isa (modeW ModeFns.cfbDecPost).pre (modeW ModeFns.cfbDecPost).pub cfbDecrypt :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 888 8)
-    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 /-! ## The contracts -/
 
@@ -636,7 +639,7 @@ branches, is computed from the round's number in the working space, which
 the analysis finds public, as it does the count of rounds left. -/
 theorem ecb_ct (up : Bool) : ConstantTime isa (ecbX up).pre (ecbX up).pub (ecb up) := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.sseTaint.check ecbTaint (ecb up) h).isSome = true := by
-    cases up <;> exact ⟨_, by taint_decide⟩
+    cases up <;> exact ⟨_, by native_taint_decide⟩
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree h₁ h₂ hp) h
 
 /-! ### The contracts -/

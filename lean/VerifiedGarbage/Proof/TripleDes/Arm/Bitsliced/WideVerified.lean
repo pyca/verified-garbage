@@ -56,6 +56,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # Triple DES-CBC and -CFB64 decryption on ARMv7, a batch at a time, meet their contracts
@@ -231,10 +234,10 @@ theorem τW_agree {post : State → State → Prop} (s₁ s₂ : State) (h₁ : 
                       exact pa) k hk
 
 theorem cbc_ct : ConstantTime isa (wideC cbcPost).pre (wideC cbcPost).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VG.Arm.taint) τW τW_agree (by taint_decide)
+  VG.Taint.constantTime (A := VG.Arm.taint) τW τW_agree (by native_taint_decide)
 
 theorem cfb_ct : ConstantTime isa (wideC cfbPost).pre (wideC cfbPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.Arm.taint) τW τW_agree (by taint_decide)
+  VG.Taint.constantTime (A := VG.Arm.taint) τW τW_agree (by native_taint_decide)
 
 /-! ## The contracts -/
 

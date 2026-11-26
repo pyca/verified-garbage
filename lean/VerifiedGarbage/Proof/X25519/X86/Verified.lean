@@ -36,6 +36,9 @@ meta import VerifiedGarbage.Proof.X25519.Contract
 meta import VerifiedGarbage.Proof.X25519.X86.Basic
 meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `X25519.X86.Main`, which only this module used -/
 
@@ -1490,7 +1493,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.X25519.x25519X86.pre s₁) (h
 
 theorem x25519_ct : ConstantTime isa Proof.X25519.x25519X86.pre Proof.X25519.x25519X86.pub
     Impl.X25519.X86.x25519 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0x4000` at `0x8004`. -/
 def satMem : Mem := fun a =>

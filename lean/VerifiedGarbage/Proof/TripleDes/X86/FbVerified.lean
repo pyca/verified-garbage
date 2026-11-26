@@ -44,6 +44,9 @@ meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `TripleDes.X86.ModeCore`, which only this module used -/
 
@@ -1015,26 +1018,26 @@ theorem fbTaint_agree {w st : Nat} {post : State → State → Prop} {s₁ s₂ 
 
 theorem ofb_ct : ConstantTime isa (fbX86 118 8 ofbPost).pre (fbX86 118 8 ofbPost).pub ofb := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) ofb h).isSome = true :=
-    by taint_decide_sum [encSum]
+    by native_taint_decide_sum [encSum]
   exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 118 8 cfbEncPost).pre (fbX86 118 8 cfbEncPost).pub cfbEncrypt := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cfbEncrypt h).isSome = true :=
-    by taint_decide_sum [encSum]
+    by native_taint_decide_sum [encSum]
   exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 151 8 cfbDecPost).pre (fbX86 151 8 cfbDecPost).pub cfbDecrypt :=
   VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 151) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem cfb8Encrypt_ct : ConstantTime isa (fbX86 118 1 cfb8EncPost).pre (fbX86 118 1 cfb8EncPost).pub cfb8Encrypt := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cfb8Encrypt h).isSome = true :=
-    by taint_decide_sum [encSum]
+    by native_taint_decide_sum [encSum]
   exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfb8Decrypt_ct : ConstantTime isa (fbX86 118 1 cfb8DecPost).pre (fbX86 118 1 cfb8DecPost).pub cfb8Decrypt := by
   obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check (fbTaint 118) cfb8Decrypt h).isSome = true :=
-    by taint_decide_sum [encSum]
+    by native_taint_decide_sum [encSum]
   exact VG.Taint.constantTime (A := VG.X86.taint) (fbTaint 118) (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/

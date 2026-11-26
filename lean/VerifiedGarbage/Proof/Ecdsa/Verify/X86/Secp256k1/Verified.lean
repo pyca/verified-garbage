@@ -117,7 +117,7 @@ theorem ladderCT : VerifyLadderCT secp256k1Comb where
   ladder := by
     change RelCT isa _ vLadderCode _
     obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false secp256k1Comb.stk) vLadderCode h).isSome = true := by
-      taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
+      native_taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
     exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
 /-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
@@ -370,6 +370,6 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : We
       (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (X86.abi.withConsts secp256k1Comb.combConsts)
         (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.secp256k1_len (by decide) (verify_verified hL hI)
-    verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
+    verify_sp.1 verify_sp.2 (by native_taint_decide) ⟨_, vHashSat_pre⟩
 
 end VG.Proof.Ecdsa.Verify.X86.Secp256k1

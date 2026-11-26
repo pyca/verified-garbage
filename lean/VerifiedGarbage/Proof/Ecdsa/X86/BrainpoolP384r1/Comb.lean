@@ -70,11 +70,11 @@ materialize_code combStep
 
 /-- The taint checks of the comb's code. -/
 theorem combCT : CombRcbCT brainpoolp384r1Comb brainpoolp384r1d where
-  prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-  init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  prep := RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+  init := RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   step := fun b => by
     change RelCT isa _ combStep _
-    cases b <;> exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
+    cases b <;> exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by native_taint_decide)
   sp := by
     change SpOk combStep 20
     exact ⟨NoSp.of_all (by lit_decide), by lit_decide⟩

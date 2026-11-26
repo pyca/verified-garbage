@@ -36,6 +36,9 @@ meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 meta import VerifiedGarbage.Impl.TripleDes.X86.Ecb
 meta import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `TripleDes.X86.ConstantTime`, which this module and modules that import it used -/
 
@@ -59,17 +62,17 @@ once each, whose code the analysis runs as it is. -/
 theorem expandKey_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree keyTaint s₁ s₂) :
     ConstantTime isa pre pub Key.expandKey :=
-  VG.Taint.constantTime (A := taint) keyTaint h (by taint_decide)
+  VG.Taint.constantTime (A := taint) keyTaint h (by native_taint_decide)
 
 theorem ecbEncrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree ecbTaint s₁ s₂) :
     ConstantTime isa pre pub Ecb.encrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint h (by taint_decide)
+  VG.Taint.constantTime (A := taint) ecbTaint h (by native_taint_decide)
 
 theorem ecbDecrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (h : ∀ s₁ s₂, pre s₁ → pre s₂ → pub s₁ s₂ → VG.X86.Taint.Agree ecbTaint s₁ s₂) :
     ConstantTime isa pre pub Ecb.decrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint h (by taint_decide)
+  VG.Taint.constantTime (A := taint) ecbTaint h (by native_taint_decide)
 
 end VG.Proof.TripleDes.X86
 

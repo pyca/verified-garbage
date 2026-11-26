@@ -67,7 +67,7 @@ theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) s
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signP521CombU :=
   VG.Taint.constantTime (A := taintSymU [p521Comb.tsym,(p521With true).constSym]) τ₁
-    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
 
 theorem combSign_ok (hC : Law Spec.P521.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signP521CombWith u) s₀ fun t => SignKeep (p521With u) s₀ t ∧ SignPost (p521With u) s₀ t := by
