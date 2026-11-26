@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
@@ -24,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import Mathlib.Tactic.Push
 
 /-! ### `Dsa.X86_64.ReduceSetup`, which this module and modules that import it used -/
 

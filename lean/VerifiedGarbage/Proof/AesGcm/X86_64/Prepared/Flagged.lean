@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Data.List.Basic
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Impl.StackScratch.X86_64

@@ -60,19 +60,9 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Data.Nat.Basic
-meta import Mathlib.Tactic.ToDual
 
 /-! ### `Dsa.X86_64.CallHeadCT`, which this module and modules that import it used -/
 
@@ -155,7 +145,7 @@ theorem addCarry_ok {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
   obtain ⟨hdi, hbx, h9, h10, h8, h12, hsi, hbp, ⟨minv, hg, hZ⟩, hw, hw'⟩ := h
   have hs₁ := hg.scr
   have hn := hs₁.nowrap
-  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sA := sl Public.aAcc (by decide)
   have sX := sl a ha
   have sT := sl b hb

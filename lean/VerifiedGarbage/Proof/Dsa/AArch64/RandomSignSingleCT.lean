@@ -19,16 +19,10 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall

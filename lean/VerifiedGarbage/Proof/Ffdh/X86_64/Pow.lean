@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!

@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublish
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

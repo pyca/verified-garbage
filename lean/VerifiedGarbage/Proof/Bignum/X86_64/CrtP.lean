@@ -11,11 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import Mathlib.Algebra.GroupWithZero.Basic
 
 /-!
@@ -435,8 +431,8 @@ theorem pPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   obtain hws₃ : WsAt s₃.mem B o wx mx := hws₁.of_words fun i hi => by
     rw [hpw f₃ sg' i (by omega_arith), hpw f₂ (fun r h => h) i (by omega_arith)]
   obtain hX₃ : XVals s₃ B o wx mx X :=
-    (hX₁.of_below f₂ (fun r hr => (pRanges_le w r hr).trans hlo) (by omega_arith)).of_below f₃
-      (fun r hr => (pRanges_le w r (sg' r hr)).trans hlo) (by omega_arith)
+    (hX₁.of_below f₂ (fun r hr => Nat.le_trans (pRanges_le w r hr) hlo) (by omega_arith)).of_below f₃
+      (fun r hr => Nat.le_trans (pRanges_le w r (sg' r hr)) hlo) (by omega_arith)
   obtain i03 : InScr B Z s.mem s₃.mem := InScr.of_frm f₀₃ fun r hr => by have := pxR_bound hlo r hr; omega_arith
   -- `c^dP R_p mod p`.
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_

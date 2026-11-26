@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Divstep.Inv30Def
 import VerifiedGarbage.Proof.Divstep.Red30
 import VerifiedGarbage.Proof.Rsa.Divstep.InvResult
-import Mathlib.Algebra.Order.Ring.Int
 import VerifiedGarbage.Proof.Framework.Omega
 
 -- separate module: target-independent, for any target's batched inverse
@@ -43,7 +42,7 @@ theorem inv30_spec {n a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) (ha : a < 2 ^ (32
   by_cases hneg : f < 0
   · simp only [hneg, ↓reduceIte, abs_of_neg hneg]
     have := cf.neg
-    rwa [neg_mul, Int.mul_comm]
+    rwa [Int.neg_mul, Int.mul_comm]
   · simp only [hneg, ↓reduceIte, abs_of_nonneg (not_lt.mp hneg)]
     rw [Int.mul_comm]; exact cf
 

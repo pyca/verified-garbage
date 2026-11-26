@@ -117,18 +117,12 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import Mathlib.Order.Defs.PartialOrder
-meta import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Tactic.Set
 meta import Mathlib.Data.Int.ModEq
-meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-meta import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.TermCongr
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.Amm52

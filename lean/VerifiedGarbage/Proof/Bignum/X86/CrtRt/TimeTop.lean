@@ -19,8 +19,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Bignum.X86.CrtArgumentsEq`, which this module and modules that import it used -/
 

@@ -16,9 +16,6 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Cached
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Data
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ### `Ffdh.X86_64.Cached.SearchProof.CallPre`, which this module and modules that import it used -/

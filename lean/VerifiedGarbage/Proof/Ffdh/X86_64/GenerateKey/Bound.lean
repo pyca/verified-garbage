@@ -6,11 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # FFDH on x86-64: scanning the public scalar bound -/
 

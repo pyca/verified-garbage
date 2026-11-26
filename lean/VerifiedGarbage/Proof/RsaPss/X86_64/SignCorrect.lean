@@ -12,18 +12,11 @@ import VerifiedGarbage.Proof.RsaPss.Params
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 import Batteries.Logic
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
-import Mathlib.Algebra.NeZero
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-import Mathlib.Order.Defs.PartialOrder
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import Mathlib.Tactic.Set
-import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-! ### `RsaPss.X86_64.SignCall`, which this module and modules that import it used -/
@@ -263,7 +256,7 @@ theorem privWith_call {privN : String} {privC : Prog isa} {k : Contract isa}
     · exact dFb x hx hc
     · exact (hp.dOs.symm.sub_left (Region.sub_prefix (by omega_using [hsl, c2]))) x hx (sOut x hc)
     · exact (Offset.base_disjoint (stackArg s 14) (e := oRsa) (n := (stackArg s 15 - 1024#64).toNat * 8)
-        (k := oRsa) (le_refl _) (by rw [hsc]; omega_using [wS, c2])) x hx hc
+        (k := oRsa) (Nat.le_refl _) (by rw [hsc]; omega_using [wS, c2])) x hx hc
     · exact ((hp.dKs.sub_left sBel).symm.sub_left (Region.sub_prefix (by omega_using [hsl, c2]))) x hx hc
   · have hE : ∀ i < 14, stackArg (t.callEntry.withRegions rds (pWr s)) i = pArg s i :=
       fun i hi => (stackArg_call hp hst _ _ (by omega_using [hi])).trans (hargs i hi)
@@ -383,7 +376,7 @@ theorem privArgs_ok {s : State} (hp : SPre tsH tsG s) {u : State} (L : Lay u (fb
       u'.gpr .rdi = s.gpr .rdi ∧ u'.gpr .rsi = s.gpr .rcx ∧ u'.gpr .rdx = s.gpr .rdx ∧ u'.gpr .rcx = s.gpr .rcx ∧
       u'.gpr .r8 = s.gpr .r8 ∧ u'.gpr .r9 = s.gpr .r9 := by
   rw [privArgs_eq, WP.block_append_iff]
-  refine WP.mono (cpys_ok hp 10 (le_refl _) u L hrd hA R) fun u1 ⟨k1, L1, _, R1⟩ => ?_
+  refine WP.mono (cpys_ok hp 10 (Nat.le_refl _) u L hrd hA R) fun u1 ⟨k1, L1, _, R1⟩ => ?_
   have G' := L1.geo
   set W1 := cpW s W 10 with hW1
   obtain c : ∀ i, 14 ≤ i → W1 i = W i := fun i hi => by simp only [hW1, cpW]; rw [ifn (by omega_using [hi])]

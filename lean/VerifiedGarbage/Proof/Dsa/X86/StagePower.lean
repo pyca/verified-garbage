@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Dsa.X86.PowJoint
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Dsa.X86.CorePower`, which only this module used -/
 

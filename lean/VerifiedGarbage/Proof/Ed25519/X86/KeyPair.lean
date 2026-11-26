@@ -341,7 +341,7 @@ theorem dg_pre {s t : State} (h : Pre s) (hc : Ctx s t) (ha : t.gpr .eax = arg s
 
 /-- `STK s`, as the stack below `esp`. -/
 theorem stk_below {s : State} (h : Pre s) : STK s = below (s.gpr .esp) 628 := by
-  rw [show s.gpr .esp = esp s from rfl, below_eq h (le_refl _)]
+  rw [show s.gpr .esp = esp s from rfl, below_eq h (Nat.le_refl _)]
   simp
 
 /-- What a call from the entry `esp` may change below it, `n ≤ 628` bytes, is in the stack used. -/
@@ -396,7 +396,7 @@ theorem digest_ok {s t : State} (h : Pre s) (hc : Ctx s t) {dn : String} (ha : t
     generalize stackUse dgCode = u at hu ⊢
     omega_using [hu]
   refine WP.of_syms (WP.callWith dg_verified.1 dg_nosp (by decide) (by decide)
-    (hn.trans (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_⟩)
+    (Nat.le_trans hn (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_⟩)
   · exact Ctx.call h hc hn (by simp) hrd hwr hcs hf hsy
   · sig_post [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes] at hpost
@@ -574,7 +574,7 @@ theorem pk_ok {s t : State} (h : Pre s) (hc : Ctx s t) {pn : String} (ha : t.gpr
     omega_using [hu]
   have hfit' := hfit
   refine WP.of_syms (WP.callWith PublicKey.publicKeyExpanded_verified.1 pk_nosp (by decide) (by decide)
-    (hn.trans (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_, ?_⟩)
+    (Nat.le_trans hn (by rw [e]; exact hsp)) cp fun t' hrd hwr hcs hf ⟨s₂, hm₂, hpost⟩ hsy => ⟨?_, ?_, ?_⟩)
   · refine Ctx.call h hc hn (fun r hr => ?_) hrd hwr hcs hf hsy
     simp only [pkWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

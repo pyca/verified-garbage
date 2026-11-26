@@ -40,8 +40,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -74,8 +72,6 @@ meta import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import Aesop.BuiltinRules
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SignBody

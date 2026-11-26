@@ -78,9 +78,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
@@ -100,9 +97,6 @@ meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
 meta import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 meta import VerifiedGarbage.Proof.Ffdh.VettedPolicy

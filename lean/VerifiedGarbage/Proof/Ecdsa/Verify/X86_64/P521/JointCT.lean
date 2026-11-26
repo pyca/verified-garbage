@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified

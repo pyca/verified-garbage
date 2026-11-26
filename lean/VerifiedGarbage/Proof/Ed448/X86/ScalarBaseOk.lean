@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed448.SignedComb
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
@@ -10,13 +9,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.SignedCombFacts
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 import Mathlib.FieldTheory.Finite.Basic

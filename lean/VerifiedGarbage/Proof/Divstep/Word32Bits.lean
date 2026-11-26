@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Divstep.Word32Def`, which the modules that import this one used -/

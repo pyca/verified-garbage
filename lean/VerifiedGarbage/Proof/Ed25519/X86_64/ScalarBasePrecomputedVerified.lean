@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ed25519.Contract

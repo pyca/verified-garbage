@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.X86.Words

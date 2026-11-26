@@ -33,11 +33,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Abel
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Ed25519.X86_64.BaseOdd`, which this module and modules that import it used -/

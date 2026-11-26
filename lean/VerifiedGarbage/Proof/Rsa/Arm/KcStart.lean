@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

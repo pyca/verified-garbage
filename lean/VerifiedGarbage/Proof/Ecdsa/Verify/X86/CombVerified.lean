@@ -7,8 +7,6 @@ public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 import VerifiedGarbage.Proof.Ecdsa.Verify.Curves
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
 meta import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash

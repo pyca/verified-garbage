@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
@@ -50,7 +49,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Spec.Dsa.Prevalidated
 meta import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Result
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 meta import VerifiedGarbage.Spec.Dsa

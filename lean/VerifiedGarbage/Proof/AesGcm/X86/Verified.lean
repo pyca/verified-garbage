@@ -1,14 +1,12 @@
 module
 
+public import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Init
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import Mathlib.Data.List.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub

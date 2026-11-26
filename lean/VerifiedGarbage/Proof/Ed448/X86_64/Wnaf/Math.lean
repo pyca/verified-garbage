@@ -17,12 +17,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.X448.X86_64.Chain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
@@ -31,9 +25,7 @@ public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.X86_64.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Tactic.NormNum.Prime
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! ### `Ed448.X86_64.Wnaf.Add`, which this module and modules that import it used -/
 

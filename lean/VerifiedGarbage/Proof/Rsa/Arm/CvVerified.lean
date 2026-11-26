@@ -1,5 +1,6 @@
 module
 
+import Batteries.Tactic.Alias
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
@@ -25,10 +26,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.CrtValuesMath
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksB

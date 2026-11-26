@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Returning the DSA acceptance bit and restoring System V registers -/
 

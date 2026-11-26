@@ -9,15 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Idea.ModeBytes
 import VerifiedGarbage.Proof.Idea.X86.Ecb
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint

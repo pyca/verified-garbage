@@ -20,8 +20,6 @@ import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 import VerifiedGarbage.Proof.Dsa.X86.GenerateParameters
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Dsa.X86.CheckingSized`, which this module and modules that import it used -/
 

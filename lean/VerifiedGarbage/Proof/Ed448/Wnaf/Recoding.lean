@@ -1,19 +1,9 @@
 module
 
+public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Exact recoding, including the carry beyond bit 455. -/
@@ -41,7 +31,7 @@ theorem step (k : Nat) : (k : Int) = 2 * (next k : Int) + digit k := by
 theorem digit_bounds (k : Nat) : -15 ≤ digit k ∧ digit k ≤ 15 := by
   have h : k % 32 % 2 = k % 2 := by omega_using []
   unfold digit
-  split_ifs <;> omega_arith
+  (repeat' split) <;> omega_arith
 
 theorem next_bound (k : Nat) : next k ≤ k / 2 + 8 := by
   unfold next
@@ -59,7 +49,7 @@ theorem residual_add (k a b : Nat) : residual k (a + b) = residual (residual k a
 /-- The rounding error stays bounded, independent of the input size. -/
 theorem residual_bound (k n : Nat) : residual k n ≤ k / 2 ^ n + 16 := by
   induction n with
-  | zero => simp only [residual, pow_zero, Nat.div_one]; omega_using []
+  | zero => simp only [residual, Nat.pow_zero, Nat.div_one]; omega_using []
   | succ n ih =>
     have hn := next_bound (residual k n)
     rw [residual, Nat.pow_succ, ← Nat.div_div_eq_div_mul]

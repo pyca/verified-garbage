@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
 public import VerifiedGarbage.Proof.Weierstrass.PointContract

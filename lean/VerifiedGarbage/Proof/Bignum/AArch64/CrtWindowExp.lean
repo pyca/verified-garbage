@@ -6,12 +6,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails

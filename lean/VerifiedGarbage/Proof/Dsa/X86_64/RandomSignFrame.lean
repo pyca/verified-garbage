@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Spec.Dsa.RandomSign

@@ -18,8 +18,6 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract

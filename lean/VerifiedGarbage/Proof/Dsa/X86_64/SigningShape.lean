@@ -13,10 +13,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT

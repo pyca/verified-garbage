@@ -21,11 +21,7 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.Mem

@@ -37,8 +37,6 @@ import VerifiedGarbage.Proof.Bignum.CrtKey
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRows
 meta import VerifiedGarbage.Proof.Bignum.CrtKey
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
@@ -46,8 +44,6 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs

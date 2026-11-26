@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
@@ -23,7 +22,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame

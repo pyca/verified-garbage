@@ -24,7 +24,6 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.FInit
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.InitWords
 public import VerifiedGarbage.Proof.Rsa.X86.Rd.Frame
-import Mathlib.Algebra.Order.Ring.Abs
 
 /-! # Prime recovery's GCD on i686: #4989's fused `f, g` rows alone
 

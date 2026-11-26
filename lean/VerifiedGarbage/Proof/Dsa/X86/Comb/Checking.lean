@@ -29,8 +29,6 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 import VerifiedGarbage.Proof.Framework.X86.CallWith

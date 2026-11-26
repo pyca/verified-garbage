@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 /-! # Status inspection preserves the seed phase inputs -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/SeedSubgroupResultCT.lean`, which only this module imported.

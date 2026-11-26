@@ -1,5 +1,6 @@
 module
 
+public import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
@@ -17,7 +18,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-public import Mathlib.Data.Nat.Find
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.Sieve`, which this module and modules that import it used -/
 
@@ -83,7 +83,7 @@ theorem firstHit_exit {c N j : Nat} (hj : j < firstHit c N) :
     · rw [h, Bool.or_true]
   · have hlt : j + 1 < firstHit c N := by omega_using [hj, he]
     obtain hn := firstHit_min hlt
-    simp only [not_or, not_le, not_and, Bool.not_eq_true] at hn
+    simp only [not_or, Nat.not_le, not_and, Bool.not_eq_true] at hn
     obtain h1 : ¬ j + 1 = N := by omega_using [hj, hle, he]
     simp [he, h1, hn.2 (by omega_using [])]
 

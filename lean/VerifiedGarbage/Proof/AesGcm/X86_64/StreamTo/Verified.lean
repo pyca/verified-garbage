@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall

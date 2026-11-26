@@ -5,12 +5,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Bignum.Layout

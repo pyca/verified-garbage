@@ -22,14 +22,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedExp
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 
 /-! ### `Bignum.AArch64.FoldedFixedCT`, which only this module used -/
 

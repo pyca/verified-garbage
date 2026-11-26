@@ -13,9 +13,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
@@ -266,7 +263,7 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   have hb' := borrow_iff (P := 2 ^ (32 * g.w)) v1 (val32_lt _ _ _ _) b1
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
-  · have : (t1.gpr .ebx).toNat = 1 := by have := hb'.not.mpr (by omega_using [hlt]); omega_using [b1, this]
+  · have : (t1.gpr .ebx).toNat = 1 := by have := (not_congr hb').mpr (by omega_using [hlt]); omega_using [b1, this]
     simp [hlt, this]
   · have : (t1.gpr .ebx).toNat = 0 := hb'.mpr (by omega_using [hlt])
     simp [hlt, this]

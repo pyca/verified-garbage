@@ -75,24 +75,18 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeGeneratorCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
-public import Mathlib.Tactic.Push
-public import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeGeneratorCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Data.Nat.Basic
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
 meta import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
@@ -117,15 +111,9 @@ meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Spec.Dsa
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 meta import VerifiedGarbage.Spec.Dsa
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
 meta import VerifiedGarbage.Proof.Dsa.Encoding

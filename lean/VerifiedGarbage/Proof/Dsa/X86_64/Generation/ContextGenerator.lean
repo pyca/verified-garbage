@@ -3,17 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-public import Mathlib.Tactic.Push
-public import Mathlib.Data.Nat.Basic
-public import Mathlib.Algebra.Group.Monoid
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -22,7 +15,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 
 /-! ### `Dsa.X86_64.Generation.GeometryGeneratorWork`, which this module and modules that import it used -/

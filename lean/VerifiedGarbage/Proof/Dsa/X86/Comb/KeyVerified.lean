@@ -11,8 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Impl.Dsa.X86.Comb
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
@@ -53,7 +51,6 @@ import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Dsa.X86.PowCallFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
 import VerifiedGarbage.Proof.Dsa.X86.Comb.SelectTable

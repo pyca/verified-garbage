@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Basic.IsEmpty.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.Math

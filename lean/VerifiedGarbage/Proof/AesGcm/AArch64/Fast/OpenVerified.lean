@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.AesGcm.Scratch

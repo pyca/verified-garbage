@@ -31,8 +31,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.RelClasses
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared

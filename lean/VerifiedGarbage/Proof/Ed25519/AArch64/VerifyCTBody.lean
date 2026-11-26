@@ -42,13 +42,6 @@ import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
@@ -68,13 +61,6 @@ meta import VerifiedGarbage.Proof.Ed25519.Canonical64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 meta import VerifiedGarbage.Proof.Ed25519.WindowConstants
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity

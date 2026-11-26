@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.GenerateKey
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCheck

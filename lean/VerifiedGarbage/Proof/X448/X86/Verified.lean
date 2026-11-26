@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.X448.X86.Frame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X448.X86.Main
 public import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Main

@@ -13,20 +13,12 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP
 import Mathlib.Tactic.Set
-import Mathlib.Order.RelClasses
 
 /-! ### `RsaKeyGen.Arm.Cand.Trial`, which the modules that import this one used -/
 

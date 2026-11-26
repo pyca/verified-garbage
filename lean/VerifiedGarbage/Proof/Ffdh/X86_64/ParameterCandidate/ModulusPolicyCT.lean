@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.RoundsCT`, which only this module used -/

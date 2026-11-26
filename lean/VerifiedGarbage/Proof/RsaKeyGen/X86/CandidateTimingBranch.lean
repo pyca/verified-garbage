@@ -57,7 +57,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa.Contract

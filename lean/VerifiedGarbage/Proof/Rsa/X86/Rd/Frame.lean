@@ -9,19 +9,12 @@ public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Half
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Compare
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Rsa.Sub32
 public import VerifiedGarbage.Proof.Rsa.BoolNat

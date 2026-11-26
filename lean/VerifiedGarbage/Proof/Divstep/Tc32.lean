@@ -9,7 +9,6 @@ import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Linarith.Frontend
-import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

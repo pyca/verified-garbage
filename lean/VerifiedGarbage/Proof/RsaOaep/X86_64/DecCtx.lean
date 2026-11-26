@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 

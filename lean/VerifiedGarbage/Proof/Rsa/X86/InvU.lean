@@ -10,12 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! ### `Rsa.X86.KeyHalf`, which only this module used -/

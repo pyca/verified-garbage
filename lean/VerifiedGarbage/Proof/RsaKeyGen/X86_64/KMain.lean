@@ -13,12 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Algebra.NeZero
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Table

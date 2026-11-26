@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed448.RISCV64.Whole
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call

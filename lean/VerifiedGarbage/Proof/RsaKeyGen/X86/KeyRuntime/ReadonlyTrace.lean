@@ -37,7 +37,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Primes
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Impl.Rsa.X86.Inverse
@@ -54,8 +53,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 public import VerifiedGarbage.Spec.Rsa.Contract

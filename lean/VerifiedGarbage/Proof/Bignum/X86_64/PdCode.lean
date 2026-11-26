@@ -7,10 +7,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -233,7 +229,7 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
   have hz : slot (((s.gpr .rsi).toNat + 7) / 8) 8 ≤ (stackArg s 3).toNat * 8 := by unfold slot hdrBytes; omega_arith
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₂.mem :=
-    (InScr.of_outside ho₁ (by omega_arith)).trans (InScr.of_frm f₂ fun r hr => (pdLoadRanges_le _ r hr).trans hz)
+    (InScr.of_outside ho₁ (by omega_arith)).trans (InScr.of_frm f₂ fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hz)
   have kk := k₁.trans k₂
   exact
     { scr := c.hs.congr kk.2.2, rdi := (k₂.gpr (by decide)).trans hdi, z := hz, k1 := hk1, k2 := hk2,

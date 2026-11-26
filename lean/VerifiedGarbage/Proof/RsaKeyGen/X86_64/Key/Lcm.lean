@@ -7,19 +7,14 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
-import Mathlib.Tactic.Attr.Core
 
 /-! ### `RsaKeyGen.X86_64.Key.Halve`, which this module and modules that import it used -/
 
@@ -800,8 +795,10 @@ theorem order_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
       · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
   rw [m₂, m₁] at hX hY
   refine ⟨h.step f (all_mut_arrs (js := [aPa, aQa]) (by decide)) ((k₁.trans k₂).trans k₃) (by decide), f, ?_, ?_⟩
-  · dsimp only [av]; rw [hX]; split <;> simp_all
-  · dsimp only [av]; rw [hY]; split <;> simp_all
+  · dsimp only [av]; rw [hX]; split <;> simp_all <;>
+      exact fun h => absurd h (Nat.not_lt.mpr ‹av I s.mem aQa ≤ av I s.mem aPa›)
+  · dsimp only [av]; rw [hY]; split <;> simp_all <;>
+      exact fun h => absurd h (Nat.not_lt.mpr ‹av I s.mem aQa ≤ av I s.mem aPa›)
 
 /-! ## Minus one -/
 

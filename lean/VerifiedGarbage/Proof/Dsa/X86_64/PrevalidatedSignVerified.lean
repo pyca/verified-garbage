@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Dsa.PrivateKeyWitness
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
@@ -49,12 +48,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PrevalidatedSign
@@ -74,12 +68,7 @@ meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.Octets
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape

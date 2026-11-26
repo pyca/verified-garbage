@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import Mathlib.Data.Int.ModEq
-import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The fused batches on i686: the window

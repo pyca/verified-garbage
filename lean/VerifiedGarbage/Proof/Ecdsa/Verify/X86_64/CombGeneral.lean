@@ -1,6 +1,7 @@
 module
 
 -- separate module: generic over the curve, for every curve whose `a` is not `-3` (brainpoolP320r1's, brainpoolP384r1's and brainpoolP512r1's verification next), and not imported by the other curves' verification proofs
+import Batteries.Logic
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.CombGeneral
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final

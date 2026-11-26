@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Bignum.CrtFrame
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 import VerifiedGarbage.Proof.Dsa.Generation.PReduction

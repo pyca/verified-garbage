@@ -7,13 +7,6 @@ public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.Scrub
 import VerifiedGarbage.Impl.Ed25519.X86.Fn
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.SpecApis
 

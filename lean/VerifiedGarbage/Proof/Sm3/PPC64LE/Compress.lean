@@ -25,16 +25,12 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Sm3.Spec
 public import VerifiedGarbage.Impl.Sm3.PPC64LE
-import Mathlib.Data.List.Nodup
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Sm3.Spec
 meta import VerifiedGarbage.Impl.Sm3.PPC64LE
-meta import Mathlib.Data.List.Nodup
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Spec.Sm3
@@ -246,7 +242,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
       Vars (t + 1) s' (roundW v t w w₄) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
   have hs := (List.nodup_append.mp (round_nodup t)).1
-  have hs' := List.nodup_reverse.mpr hs
+  have hs' := (List.reverse_perm _).nodup_iff.mpr hs
   have hdj := (List.nodup_append.mp (round_nodup t)).2.2
   -- The registers the iteration writes are not in `pubRegs`.
   have hpw : ∀ r ∈ pubRegs, r ≠ var t 1 ∧ r ≠ var t 3 ∧ r ≠ var t 5 ∧ r ≠ var t 7 ∧

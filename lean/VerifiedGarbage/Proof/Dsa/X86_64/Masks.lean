@@ -5,11 +5,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # DSA rejection-mask arithmetic and accumulation -/
 

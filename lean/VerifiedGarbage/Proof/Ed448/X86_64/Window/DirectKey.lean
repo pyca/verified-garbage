@@ -5,15 +5,7 @@ public import VerifiedGarbage.Proof.X448.X86_64.Env
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.X448.X86_64.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Nat.Totient
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 
 /-! Direct lookup of a public verification digit in the projective table. -/
 

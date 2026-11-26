@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomClear
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
@@ -17,9 +15,6 @@ public import VerifiedGarbage.Spec.Dsa.Random
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! ### `Dsa.X86_64.RandomPrepareState`, which this module and modules that import it used -/

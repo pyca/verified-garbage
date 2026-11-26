@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
@@ -97,7 +96,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
   -- The registers the round reads and writes.
   have hs := (List.nodup_append.mp (round_nodup t)).1
-  have hs' := List.nodup_reverse.mpr hs
+  have hs' := (List.reverse_perm _).nodup_iff.mpr hs
   have hdj := (List.nodup_append.mp (round_nodup t)).2.2
   -- The registers the round writes are not in `pubRegs`.
   have hpw : ∀ r ∈ pubRegs, r ≠ var t 3 ∧ r ≠ var t 7 ∧ r ≠ T1 ∧ r ≠ T2 :=

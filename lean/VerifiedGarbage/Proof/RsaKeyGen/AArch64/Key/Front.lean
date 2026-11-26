@@ -24,8 +24,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.RelClasses
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

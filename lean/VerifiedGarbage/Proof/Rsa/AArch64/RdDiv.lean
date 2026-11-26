@@ -248,10 +248,10 @@ theorem clearTop_ok {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h 
 
 /-! ## `a` -/
 
-/-- `aProd`: `a = (prodStep^[64 v] (g, X, 0)).2.2 = g X mod 2^(64 W)` into wide array 7. -/
+/-- `aProd`: `a = (iterN prodStep (64 v) (g, X, 0)).2.2 = g X mod 2^(64 W)` into wide array 7. -/
 theorem aProd_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I) :
     WP isa aProd s fun t => G I m₀ (vk I.k) c t ∧
-      wv t.mem I.B (slot (Wk I.k) wA) (Wk I.k) = ((prodStep (64 * Wk I.k))^[64 * vk I.k]
+      wv t.mem I.B (slot (Wk I.k) wA) (Wk I.k) = (iterN (prodStep (64 * Wk I.k)) (64 * vk I.k)
         (wv s.mem I.B (slot (vk I.k) gT) (vk I.k), wv s.mem I.B (slot (Wk I.k) wX) (Wk I.k), 0)).2.2 ∧
       (∀ j k, j < 12 → k ≤ vk I.k + 2 → wv t.mem I.B (slot (vk I.k) j) k = wv s.mem I.B (slot (vk I.k) j) k) := by
   have hk1 := L.k1

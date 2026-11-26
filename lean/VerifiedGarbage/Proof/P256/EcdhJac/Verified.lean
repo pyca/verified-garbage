@@ -12,12 +12,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.P256.EcdhJac.Exchange
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-import Mathlib.Data.BitVec
 import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.P256.EcdhInverse
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.P256.EcdhJac.DbluCertificate
@@ -41,7 +36,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
-import Mathlib.Tactic.FieldSimp
 import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays

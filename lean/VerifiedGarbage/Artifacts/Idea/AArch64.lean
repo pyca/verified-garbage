@@ -7,9 +7,6 @@ import VerifiedGarbage.Impl.Idea.AArch64.Fn
 import VerifiedGarbage.Proof.Idea.AArch64.Invert
 import VerifiedGarbage.Proof.Idea.AArch64.Ecb
 import VerifiedGarbage.Proof.Idea.AArch64.Key
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Idea.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.SpecApis

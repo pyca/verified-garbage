@@ -9,7 +9,6 @@ import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.X86
 import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Framework.Registration
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column

@@ -46,8 +46,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSat
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.Basic
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
@@ -2288,7 +2286,7 @@ theorem candidate_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
 theorem called_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
     FrameStack.armStack (b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
       (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) ≤ 232 :=
-  (b.caller.stack_le _).trans (candidate_stack b v)
+  Nat.le_trans (b.caller.stack_le _) (candidate_stack b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end

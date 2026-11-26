@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Framework.Registration
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT

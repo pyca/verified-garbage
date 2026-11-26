@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Algebra.Group.Int.Defs
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep

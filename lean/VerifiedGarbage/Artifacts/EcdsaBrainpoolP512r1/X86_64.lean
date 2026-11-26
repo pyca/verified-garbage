@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.BrainpoolP512r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

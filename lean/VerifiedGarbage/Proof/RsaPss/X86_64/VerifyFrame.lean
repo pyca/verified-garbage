@@ -12,11 +12,7 @@ public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! ### `RsaPss.X86_64.VerifyCtx`, which this module and modules that import it used -/
 

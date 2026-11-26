@@ -15,11 +15,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp

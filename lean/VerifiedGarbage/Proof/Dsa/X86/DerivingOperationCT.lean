@@ -29,7 +29,6 @@ public meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Dsa.X86.KeyCopyFrame
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
-import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -51,7 +50,6 @@ public import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! ### `Dsa.X86.DerivingOperation`, which the modules that import this one used -/

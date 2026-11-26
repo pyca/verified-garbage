@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
@@ -33,7 +32,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 public import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
-import Mathlib.Algebra.Group.Int.Defs
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Mont.X86.Loop

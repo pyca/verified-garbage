@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.P256.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

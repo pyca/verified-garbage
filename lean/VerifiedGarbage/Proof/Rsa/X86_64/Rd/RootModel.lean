@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.RecoverDetModel
 import VerifiedGarbage.Proof.Rsa.RecoverDetWords
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Nat.GCD.Basic
 
 -- separate module: the model's root by words, apart from the code's proofs
 
@@ -71,9 +70,9 @@ theorem aOf_closed {nb wb n de : Nat} (three : 3 ≤ n) (hn : 8 * (n + 2) ≤ 2 
   have un : wsub nb n 1 = n - 1 := wsub_of_le (by omega_using [hn]) (by omega_using [three])
   obtain ⟨uodd, ule, g, hx2, hx3, hgcd⟩ :=
     twos_iter (b := wb) (N := n - 1) (x := de - 1) (k := nb) (by omega_using [three]) (by omega_using [hn]) (by omega_using [hde, pnb])
-  have tw : twosOut nb wb n de = (twoStep wb)^[nb] (n - 1, de - 1, de - 1) := by
+  have tw : twosOut nb wb n de = iterN (twoStep wb) nb (n - 1, de - 1, de - 1) := by
     unfold twosOut; rw [un, dx, Nat.mod_eq_of_lt xlt]
-  generalize (twoStep wb)^[nb] (n - 1, de - 1, de - 1) = s at tw uodd ule hx2 hx3 hgcd
+  generalize iterN (twoStep wb) nb (n - 1, de - 1, de - 1) = s at tw uodd ule hx2 hx3 hgcd
   obtain ⟨u, x2, x3⟩ := s
   simp only at uodd ule hx2 hx3 hgcd
   have g_le : g ≤ Nat.gcd (n - 1) (de - 1) := by

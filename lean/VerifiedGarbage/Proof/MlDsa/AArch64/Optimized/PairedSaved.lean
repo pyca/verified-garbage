@@ -1,5 +1,6 @@
 module
 
+public import Mathlib.Tactic.SetNotationForOrder
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
@@ -17,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlKem.Arith
 import Mathlib.Tactic.FinCases
-public import Mathlib.Tactic.SetNotationForOrder
 import Mathlib.Data.Fintype.Fin
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory

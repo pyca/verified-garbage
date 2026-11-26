@@ -9,7 +9,6 @@ import Mathlib.Tactic.NormNum.OfScientific
 import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Ring.Divisibility.Basic
 import Mathlib.Tactic.Linarith.Frontend

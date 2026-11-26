@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Spec.P256
 import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.P256.PrimeOrder
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith

@@ -15,13 +15,6 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.X448.X86_64.Bits
 import VerifiedGarbage.Proof.Ed448.Scalar
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal

@@ -34,7 +34,6 @@ meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 

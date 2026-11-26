@@ -22,9 +22,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizedPublic
 import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeContext
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -128,7 +125,7 @@ private theorem core_pins (M : Mont) (p : BodyPub) (s : State) (h : CoreStage p 
     change mrE c < (2 ^ 4) ^ (16 * p.w)
     rw [← Nat.pow_mul, show 4 * (16 * p.w) = 64 * p.w by omega_arith]
     have hn : c < 2 ^ (64 * p.w) := hc.n ▸ wv_lt s.mem p.B (slot p.w aN) p.w
-    exact lt_of_le_of_lt (Nat.div_le_self _ _) (lt_of_le_of_lt (Nat.sub_le _ _) hn)
+    exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hn)
   exact WP.mono (core_ok M hd hc he ho (by omega_arith) hfit hx)
     fun t ⟨ht, _, _, _, hkeep⟩ => ⟨ht.good.rdi, (hkeep.gpr (by decide)).trans hsp⟩
 

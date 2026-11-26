@@ -9,9 +9,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode

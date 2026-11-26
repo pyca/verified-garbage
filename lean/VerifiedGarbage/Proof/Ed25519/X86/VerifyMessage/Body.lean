@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.Tactic.NormNum.Prime
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract

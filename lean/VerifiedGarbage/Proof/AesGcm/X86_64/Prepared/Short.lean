@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedSeal
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen

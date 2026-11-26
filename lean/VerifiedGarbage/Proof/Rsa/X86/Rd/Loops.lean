@@ -608,9 +608,9 @@ theorem countLoop_ok {op : Instr} {s : State} {b : Nat} (f : Nat → Nat) (hb : 
     (hop : ∀ v, WP isa (.block [op]) v fun v' => Keeps [.eax] v v' ∧ v'.mem = v.mem ∧
       (v'.gpr .eax).toNat = f (v.gpr .eax).toNat) :
     WP isa (.loop (.block [op, .alu .sub .edx (.imm 1)]) .ne) s fun t =>
-      Keeps [.eax, .edx] s t ∧ t.mem = s.mem ∧ (t.gpr .eax).toNat = f^[b] (s.gpr .eax).toNat := by
+      Keeps [.eax, .edx] s t ∧ t.mem = s.mem ∧ (t.gpr .eax).toNat = iterN f b (s.gpr .eax).toNat := by
   refine WP.loop (M := isa) (fun n v => ∃ i, n = b - i ∧ i < b ∧ Keeps [.eax, .edx] s v ∧ v.mem = s.mem ∧
-    v.gpr .edx = BitVec.ofNat 32 (b - i) ∧ (v.gpr .eax).toNat = f^[i] (s.gpr .eax).toNat) ?_ (b - 0) s
+    v.gpr .edx = BitVec.ofNat 32 (b - i) ∧ (v.gpr .eax).toNat = iterN f i (s.gpr .eax).toNat) ?_ (b - 0) s
     ⟨0, rfl, hb, Keeps.refl _ _, rfl, by rw [hd, Nat.sub_zero], rfl⟩
   rintro n v ⟨i, rfl, hi, K, m, dx, ax⟩
   refine WP.block_append (M := isa) (l₁ := [op]) (WP.mono (hop v) fun v₁ hv => ?_)
@@ -633,22 +633,22 @@ theorem countLoop_ok {op : Instr} {s : State} {b : Nat} (f : Nat → Nat) (hb : 
   rw [zz] at z₂
   obtain K₂ : Keeps [.eax, .edx] s v₂ := K.trans ((K₁.mono (by simp)).trans (U₂.keeps.mono (by simp)))
   obtain m₂ : v₂.mem = s.mem := by rw [U₂.mem, m₁, m]
-  obtain a₂ : (v₂.gpr .eax).toNat = f^[i + 1] (s.gpr .eax).toNat := by
-    rw [U₂.other _ (by decide), a₁, ax, Function.iterate_succ_apply']
+  obtain a₂ : (v₂.gpr .eax).toNat = iterN f (i + 1) (s.gpr .eax).toNat := by
+    rw [U₂.other _ (by decide), a₁, ax, iterN_succ']
   by_cases h : i + 1 = b
   · exact .inl ⟨by simp only [eval, z₂, h, decide_true, Option.map_some, Bool.not_true],
       K₂, m₂, by rw [a₂, h]⟩
   · exact .inr ⟨by simp only [eval, z₂, h, decide_false, Option.map_some, Bool.not_false],
       b - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, h], K₂, m₂, e₂, a₂⟩
 
-theorem iter_half (x : Nat) : ∀ b, (· / 2)^[b] x = x / 2 ^ b
-  | 0 => by simp
-  | b + 1 => by rw [Function.iterate_succ_apply', iter_half x b, Nat.div_div_eq_div_mul, Nat.pow_succ]
+theorem iter_half (x : Nat) : ∀ b, iterN (· / 2) b x = x / 2 ^ b
+  | 0 => by simp [iterN_zero]
+  | b + 1 => by rw [iterN_succ', iter_half x b, Nat.div_div_eq_div_mul, Nat.pow_succ]
 
-theorem iter_double (x : Nat) : ∀ b, (fun y => y * 2 % 2 ^ 32)^[b] (x % 2 ^ 32) = x * 2 ^ b % 2 ^ 32
-  | 0 => by simp
+theorem iter_double (x : Nat) : ∀ b, iterN (fun y => y * 2 % 2 ^ 32) b (x % 2 ^ 32) = x * 2 ^ b % 2 ^ 32
+  | 0 => by simp [iterN_zero]
   | b + 1 => by
-    rw [Function.iterate_succ_apply', iter_double x b, Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.pow_succ]
+    rw [iterN_succ', iter_double x b, Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.pow_succ]
 
 theorem halfLoop_ok {s : State} {b : Nat} (hb : 0 < b) (hb32 : b < 2 ^ 32) (hd : s.gpr .edx = BitVec.ofNat 32 b) :
     WP isa (.loop (.block [.shift .shr .eax 1, .alu .sub .edx (.imm 1)]) .ne) s fun t =>

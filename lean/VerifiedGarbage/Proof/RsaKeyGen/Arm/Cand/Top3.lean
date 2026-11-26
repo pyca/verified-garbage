@@ -12,15 +12,10 @@ public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Base
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Sig
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 

@@ -76,7 +76,7 @@ theorem DS.mulW (h : DS s0 true A live V ls s) {o x y : Nat} (ho : o < vN true) 
 theorem aProduct_ok (h : DS s0 false A [(true, 8), (true, 12), (true, 15), (true, 9), (false, 32)] V [sB1, sB0] s)
     (z : A true 15 = 0) :
     WP isa aProduct s fun t => ∃ A' V', DS s0 true A' (pL 12) V' [sB1, sB0] t ∧
-      A' true 17 = ((prodStep (32 * vw s0 true))^[32 * ww (kK s0)] (A true 8, A true 12, 0)).2.2 ∧
+      A' true 17 = (iterN (prodStep (32 * vw s0 true)) (32 * ww (kK s0)) (A true 8, A true 12, 0)).2.2 ∧
       A' true 15 = 0 ∧ A' true 9 = A true 9 ∧ A' false 32 = A false 32 ∧ V' sB0 = V sB0 ∧ V' sB1 = V sB1 := by
   unfold aProduct
   simp only [seqs]
@@ -124,7 +124,7 @@ theorem square_ok (h : DS s0 false A dbL V [sExact, sLt, sB1, sB0] s) (z : A tru
     (n1 : A false 23 = wsub (32 * ww (kK s0)) 0 1) :
     WP isa square s fun t => ∃ A' V', DS s0 true A' (pL 14) V' [sExact, sLt, sB1, sB0] t ∧
       A' false 25 = (A false 25 + 1) % 2 ^ (32 * ww (kK s0)) ∧
-      A' true 17 = ((prodStep (32 * vw s0 true))^[32 * ww (kK s0)] ((A false 25 + 1) % 2 ^ (32 * ww (kK s0)),
+      A' true 17 = (iterN (prodStep (32 * vw s0 true)) (32 * ww (kK s0)) ((A false 25 + 1) % 2 ^ (32 * ww (kK s0)),
         (A false 25 + 1) % 2 ^ (32 * ww (kK s0)), 0)).2.2 ∧
       A' true 15 = 0 ∧ A' true 9 = A true 9 ∧ A' true 19 = A true 19 ∧
       (∀ d ∈ [sExact, sLt, sB1, sB0], V' d = V d) := by

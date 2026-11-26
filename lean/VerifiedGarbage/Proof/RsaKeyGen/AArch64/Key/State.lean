@@ -5,14 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Rsa.Ranges
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

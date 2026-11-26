@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Top
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase

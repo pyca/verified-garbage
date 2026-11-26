@@ -7,21 +7,15 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Bignum.Layout
 import Mathlib.Algebra.GroupWithZero.Nat
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
 

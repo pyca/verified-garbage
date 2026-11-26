@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -40,9 +37,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CopyBytes
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! ### `Dsa.AArch64.Generation.OutputArgs`, which this module and modules that import it used -/
 

@@ -23,10 +23,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomClear
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
@@ -34,10 +31,7 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomScan
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomClear
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! ### `Dsa.X86_64.RandomSignInitCT`, which this module and modules that import it used -/

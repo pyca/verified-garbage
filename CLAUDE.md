@@ -512,8 +512,9 @@ lemmas and tactics to use; read it before writing a proof:
   context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
   `IntervalCases`, `NormNum`, `Ring` and heavy algebra out of modules many
-  others import; a module of one target never imports another target's,
-  and a new file directly in `TCB/` is listed in `NativeTCB`
+  others import, and never `public import` Mathlib in one that many read; a
+  module of one target never imports another target's, and a new file
+  directly in `TCB/` is listed in `NativeTCB`
   (`ci/check_lean_imports.py`).
 
 ## Iterating on one proof

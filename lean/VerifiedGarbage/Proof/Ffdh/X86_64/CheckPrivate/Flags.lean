@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ### `Ffdh.X86_64.CheckPrivate.Work`, which this module and modules that import it used -/

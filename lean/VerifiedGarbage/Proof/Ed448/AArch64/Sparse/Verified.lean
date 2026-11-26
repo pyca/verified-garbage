@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Correct
 public import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Local
 public import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.WnafWide.Limit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

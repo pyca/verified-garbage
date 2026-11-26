@@ -9,10 +9,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -25,10 +22,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

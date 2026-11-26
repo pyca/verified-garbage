@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH private-key validation on x86-64: compare the generated public value -/

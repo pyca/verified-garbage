@@ -646,7 +646,7 @@ theorem divB_vp {f g : Nat × Nat × Nat → Nat × Nat × Nat} {E : State → P
       rw [sp_lt (by simp only [ABd]; rd_ev; exact mf.1) (by simp only [ABd]; rd_ev; exact mf.2.1),
         Nat.mul_mod_mul_right]
       simp only [ABd]; rd_ev
-      refine if_congr ?_ rfl rfl
+      refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)
       rw [Nat.mul_eq_zero]
       exact or_iff_left (Nat.ne_of_gt (Nat.two_pow_pos _))
     all_goals (simp only [VB, VK]; rd_up)

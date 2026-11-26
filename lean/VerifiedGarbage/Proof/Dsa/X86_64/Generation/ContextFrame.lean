@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 import VerifiedGarbage.Proof.Framework.OmegaLit

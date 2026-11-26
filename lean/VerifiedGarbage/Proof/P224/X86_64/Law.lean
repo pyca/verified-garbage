@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Spec.P224
 import VerifiedGarbage.Proof.P224.Curve
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith

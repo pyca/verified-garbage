@@ -47,14 +47,10 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Store
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import Mathlib.Tactic.NormNum.Pow
-meta import Mathlib.Tactic.NormNum.Inv
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

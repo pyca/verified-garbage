@@ -17,11 +17,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Call
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 import VerifiedGarbage.Proof.Bignum.Math

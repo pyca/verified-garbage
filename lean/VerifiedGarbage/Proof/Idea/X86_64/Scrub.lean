@@ -51,11 +51,7 @@ import VerifiedGarbage.Proof.Idea.KeyBits
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -70,11 +66,7 @@ meta import VerifiedGarbage.Proof.Idea.KeyBits
 meta import VerifiedGarbage.Proof.Idea.Memory
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Mem

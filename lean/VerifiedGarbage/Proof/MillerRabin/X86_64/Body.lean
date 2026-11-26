@@ -8,9 +8,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.CoreFrame
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 
@@ -44,7 +41,7 @@ private theorem exponent_fits {s : State} {B : Addr} {Z w c bm : Nat} {mi : BitV
   change mrE c < (2 ^ 4) ^ (16 * w)
   rw [← Nat.pow_mul, show 4 * (16 * w) = 64 * w by omega_arith]
   have hc : c < 2 ^ (64 * w) := h.n ▸ wv_lt s.mem B (slot w aN) w
-  exact lt_of_le_of_lt (Nat.div_le_self _ _) (lt_of_le_of_lt (Nat.sub_le _ _) hc)
+  exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hc)
 
 theorem body_ok (M : Mont) {s : State} {B S : Addr} {Z w c bm b : Nat} {mi : BitVec 64}
     (hc : MrCtx s B Z w mi c bm) (h : MrDims B Z w) (he : ECtx s.mem B w c)

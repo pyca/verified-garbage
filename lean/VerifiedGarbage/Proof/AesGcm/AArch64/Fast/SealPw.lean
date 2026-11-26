@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.Scratch
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Order.Lattice
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH on x86-64: scan the public subgroup order -/

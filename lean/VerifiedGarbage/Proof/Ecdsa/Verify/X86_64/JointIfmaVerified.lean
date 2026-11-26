@@ -25,8 +25,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified

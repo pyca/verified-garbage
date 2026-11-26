@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveMath
-import Mathlib.Data.Nat.GCD.Basic
 
 /-! ### `Ffdh.Arm.ParameterCandidate.PairMath`, which this module and modules that import it used -/
 
@@ -45,7 +44,7 @@ theorem offset_divides_half {p divisor : Nat} (oddP : p%2=1) (oddD : divisor%2=1
     rw [Nat.gcd_rec,oddD]
     rfl
   rw [Nat.mul_div_cancel_left _ (by decide : 0<2)]
-  exact coprime.symm.dvd_mul_left
+  exact ⟨fun h => Nat.Coprime.dvd_of_dvd_mul_left coprime.symm h, fun h => Nat.dvd_mul_left_of_dvd h _⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end

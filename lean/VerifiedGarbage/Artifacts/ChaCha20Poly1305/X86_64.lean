@@ -5,8 +5,6 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
-import Mathlib.Tactic.NormNum.Inv
-import Mathlib.Tactic.NormNum.Pow
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo

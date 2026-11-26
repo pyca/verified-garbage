@@ -18,10 +18,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp

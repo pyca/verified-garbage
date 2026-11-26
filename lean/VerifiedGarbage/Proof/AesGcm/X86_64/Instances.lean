@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Data.List.Basic
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
@@ -76,7 +75,6 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared16To
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
-import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified

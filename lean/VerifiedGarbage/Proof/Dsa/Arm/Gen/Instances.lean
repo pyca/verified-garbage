@@ -17,8 +17,6 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 public import VerifiedGarbage.Impl.Dsa.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.Basic
 
 /-! ### `Dsa.Arm.Gen.HashInst`, which only this module used -/
 
@@ -274,7 +272,7 @@ theorem dbl_stack (b : Proof.Bignum.Arm.MontBackend) : FrameStack.armStack b.dbl
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
     PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code v.mont.callOp.op v.mont.dbl) :=
   ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v v.mont.callOp v.mont.callDbl,
-    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont) (dbl_stack v.mont)).trans
+    Nat.le_trans (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont) (dbl_stack v.mont))
       (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)

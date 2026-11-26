@@ -1,4 +1,6 @@
 module
+public import Mathlib.Algebra.Group.Int.Defs
+public import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.PackedDef
@@ -6,13 +8,10 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 import VerifiedGarbage.Proof.Divstep.Packed
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
-public import Mathlib.Algebra.Group.Int.Defs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.NormNum.Ineq

@@ -21,7 +21,6 @@ meta import VerifiedGarbage.Impl.EcKey.Compressed.X86
 meta import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 meta import VerifiedGarbage.Impl.Ecdsa.P224.X86
 meta import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.EcKey.Compressed.X86.Decompress
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -100,7 +99,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 meta import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 meta import VerifiedGarbage.Proof.Mont.Words
 meta import VerifiedGarbage.Proof.Weierstrass.Sqrt
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Impl.Ecdsa.X86
 meta import VerifiedGarbage.Proof.Mont.X86.Words
 meta import VerifiedGarbage.Proof.Weierstrass.Env

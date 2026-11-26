@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
-import Mathlib.Order.Defs.Prop
 import Mathlib.Data.Int.ModEq
 
 /-! ### `Rsa.AArch64.CkPhase`, which this module and modules that import it used -/

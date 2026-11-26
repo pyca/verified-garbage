@@ -35,8 +35,6 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 

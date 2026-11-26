@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointLit

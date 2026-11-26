@@ -11,14 +11,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base

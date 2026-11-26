@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Sat
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Finish
 public import VerifiedGarbage.Proof.Framework.Arm.Frame

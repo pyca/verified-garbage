@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.Validate
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming

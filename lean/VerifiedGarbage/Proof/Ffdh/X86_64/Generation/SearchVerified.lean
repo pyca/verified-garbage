@@ -46,9 +46,7 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
-import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
-meta import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Ffdh.X86_64.Generation.SearchBranch`, which only this module used -/
 

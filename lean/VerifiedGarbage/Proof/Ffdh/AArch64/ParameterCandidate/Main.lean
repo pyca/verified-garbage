@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

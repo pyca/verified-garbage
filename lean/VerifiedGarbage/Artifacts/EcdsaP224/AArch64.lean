@@ -11,13 +11,10 @@ import VerifiedGarbage.Proof.P224.Comb7
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -45,9 +42,6 @@ import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.P224.AArch64.Law
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.SpecApis
 

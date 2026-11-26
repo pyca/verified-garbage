@@ -508,7 +508,7 @@ theorem deMinus_vp {E : State → Prop} :
 
 /-- `(u, x / 2^k, 2^k x)` after `k` halvings from `(n - 1, x mod 2^(32 w), x)`. -/
 abbrev ts (P : RP) (f : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat × Nat × Nat :=
-  f^[k] (sub32 P.w P.n 1, xV P σ % 2 ^ (32 * P.w), xV P σ)
+  iterN f k (sub32 P.w P.n 1, xV P σ % 2 ^ (32 * P.w), xV P σ)
 
 def AT (P : RP) (f : Nat × Nat × Nat → Nat × Nat × Nat) (σ : State) (k : Nat) : Nat → Nat :=
   upd (upd (upd (upd (upd (fun _ => 0) aOneN 1) aZN 0) aN P.n) aX2 (ts P f σ k).2.1) aU (ts P f σ k).1

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Divstep.Steps
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.NormNum.Ineq

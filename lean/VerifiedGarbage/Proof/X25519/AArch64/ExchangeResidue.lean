@@ -17,13 +17,6 @@ public import VerifiedGarbage.Proof.X25519.AArch64.Exchange
 public meta import VerifiedGarbage.Proof.X25519.AArch64.Exchange
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Framework.AArch64.Lit

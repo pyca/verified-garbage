@@ -19,12 +19,9 @@ import VerifiedGarbage.Proof.Bignum.ByteWords
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyNoSpBase
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.Mont.X86.Compact.EntryArgs

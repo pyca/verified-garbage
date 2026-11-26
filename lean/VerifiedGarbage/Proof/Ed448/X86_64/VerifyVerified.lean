@@ -42,13 +42,11 @@ meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 meta import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
 import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 meta import Mathlib.FieldTheory.Finite.Basic
-meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Divstep.Packed
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Mont.X86_64.Csub
@@ -365,9 +364,9 @@ theorem pchunkC_ok {s : State} {base : Addr} {size : Nat} (hs : CScr s base size
       obtain kr : ∀ r ∈ [Reg.rbx, .r8, .rcx, .r13, .rbp, .r9, .r10, .r11, .r12], r ∉ [Reg.rax, .rdx] := by decide
       refine WP.mono (plowC_ok hs₃ ⟨hn.1, by omega_arith⟩ ht) fun s₄ ⟨w0, w1, k₄, o₄⟩ =>
         ⟨fun r hr => k₄.gpr r (kr r hr), fun _ => ⟨?_, ?_⟩, k₄, o₄⟩
-      · rw [w0, mem₃, u₃, v₃, add_comm]
+      · rw [w0, mem₃, u₃, v₃, BitVec.add_comm]
         exact Divstep.low_upd hK.2 hK.1 hI.f hI.g hmat.1
-      · rw [w1, mem₃, q₃, r₃, add_comm]
+      · rw [w1, mem₃, q₃, r₃, BitVec.add_comm]
         exact Divstep.low_upd hK.2 hK.1 hI.f hI.g hmat.2
     · simp only [↓reduceIte]
       exact WP.block_nil_iff.mpr ⟨fun _ _ => rfl, fun h => absurd h (by decide), ⟨fun _ _ => rfl, rfl, rfl⟩,

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!

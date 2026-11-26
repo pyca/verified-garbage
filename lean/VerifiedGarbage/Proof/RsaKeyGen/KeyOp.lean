@@ -5,13 +5,8 @@ public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.Rsa.KeyMath
-import Mathlib.Order.RelClasses
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Attr.Core
 
 /-!
 # An RSA key from its primes: `keyFromPrimes` as `vg_rsa_keygen_key` computes it
@@ -57,11 +52,11 @@ theorem primes_of_inverse {e P Q d : Nat} (hqp : Q ≤ P)
     rw [← hL]
     exact Nat.le_of_dvd (Nat.mul_pos (by omega_using [hqp, hq1]) (by omega_using [hq1])) (Nat.lcm_dvd_mul _ _)
   have hp3 : 3 ≤ P := by
-    by_contra h
+    refine Classical.byContradiction fun h => ?_
     have : (P - 1) * (Q - 1) ≤ 1 := by
       have : P - 1 ≤ 1 := by omega_using [h]
       have : Q - 1 ≤ 1 := by omega_using [hqp, h]
-      exact Nat.mul_le_mul (by omega) (by omega) |>.trans (by decide)
+      exact Nat.le_trans (Nat.mul_le_mul (by omega) (by omega)) (by decide)
     omega_arith
   exact ⟨hp3, by omega_using [hq1], hdL⟩
 
@@ -98,7 +93,7 @@ theorem keyFromPrimes_code {pLen e P₀ Q₀ x : Nat} (hl1 : 32 ≤ pLen) (hl2 :
     by_cases hsm : d ≤ 2 ^ (8 * pLen)
     · rw [ite_eq_left hsm, ite_eq_left hsm]
     · rw [ite_eq_right hsm, ite_eq_right hsm]
-      have h2 : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega_using [hl1]) 2 |>.trans' (by decide)
+      have h2 : 2 ≤ 2 ^ (8 * pLen) := Nat.le_trans (by decide) (Nat.le_self_pow (by omega_using [hl1]) 2)
       obtain ⟨hp3, hq2, hdL⟩ := primes_of_inverse hqp hd (by omega_using [hP₀, hsm])
       have hdb : 2 ^ (8 * pLen) < d := by omega_using [hsm]
       by_cases hc : (decide (2 ^ (16 * pLen - 1) ≤ P * Q) && decide (Nat.gcd Q (qModP P) = 1) &&
@@ -123,7 +118,7 @@ theorem keyFromPrimes_code {pLen e P₀ Q₀ x : Nat} (hl1 : 32 ≤ pLen) (hl2 :
           simp only [Bool.and_eq_true, decide_eq_true_eq]
           refine ⟨⟨⟨⟨htop, ?_⟩, hpo⟩, hqo⟩, hev⟩
           rw [hM]
-          by_contra hg
+          refine Classical.byContradiction fun hg => ?_
           rw [inverse_none hg] at hqi
           cases hqi
 

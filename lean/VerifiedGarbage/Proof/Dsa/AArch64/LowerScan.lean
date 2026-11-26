@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -122,10 +121,10 @@ theorem lowerScan_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     constructor
     · intro h i hi hiw
       have hh := h (i - 1) (by omega_using [hw, hiw])
-      convert hh using 2 <;> omega_using [hi]
+      rwa [show slot w aX + 8 + 8 * (i - 1) = slot w aX + 8 * i by omega_using [hi]] at hh
     · intro h i hi
       have hh := h (i + 1) (by omega_using []) (by omega_using [hi])
-      convert hh using 2 <;> omega_using []
+      rwa [show slot w aX + 8 * (i + 1) = slot w aX + 8 + 8 * i by omega_using []] at hh
   rw [he, rangeLow_words (by omega_using [hw]) aboveOne] at ht
   exact ⟨ht, htm.trans hm, (hk.trans hkt).mono (by decide)⟩
 
