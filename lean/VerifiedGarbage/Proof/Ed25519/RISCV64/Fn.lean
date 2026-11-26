@@ -43,9 +43,13 @@ theorem signExpanded :
 
 theorem verify :
     VerifiedScrubbed target Impl.Ed25519.RISCV64.Fn.verify
-      (Spec.Ed25519.verifyContract (abi.withConsts bConsts) 480) 32 :=
-  verifiedScrubbedAll (api := Spec.Ed25519.verifyApi) (W := 480)
-    { code := Impl.Ed25519.RISCV64.Whole.verifyCode, verified := Whole.verify_framed }
-    (verifyOut bConsts _) (by lit_decide)
+      (Spec.Ed25519.verifyContract (abi.withConsts bConsts) 480) 32 := by
+  have hsp : Impl.Ed25519.RISCV64.Whole.verifyCode.all (fun i => !isa.writesSp i) = true := by
+    sp_safe
+  have hside : scrubSide Impl.Ed25519.RISCV64.Whole.verifyCode 480 32 [] = true := by
+    lit_decide
+  exact verifiedScrubbedAll (api := Spec.Ed25519.verifyApi) (W := 480)
+    { code := Impl.Ed25519.RISCV64.Whole.verifyCode, verified := Whole.verify_framed, spSafe := hsp }
+    (verifyOut bConsts _) hside
 
 end VG.Proof.Ed25519.RISCV64.Fn
