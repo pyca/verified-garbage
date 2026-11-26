@@ -1899,7 +1899,7 @@ theorem montZetas_getD {k : Nat} (hk : k < 128) : montZetas.getD k 0 = (zeta k).
   have h1 : zetaTable.getD k 0 = (zeta k).val := zetas_getD hk
   rw [← h1, montZetas, List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_eq_getElem (show k < zetaTable.length by rw [show zetaTable.length = 128 from zetas_length]; exact hk)]
-  rfl
+  rw [Option.map_some, Option.getD_some, Option.getD_some]
 
 theorem tab : TabOK montZetas zeta := fun _ hk => montZetas_getD hk
 
