@@ -1588,7 +1588,7 @@ theorem verifyLhs_ok {b pk sig challenge T : BitVec 32} {s : State}
   obtain cp' : c.gpr .r12 = sig + 32 := by rw [cp, ap, hc.sigHeader]
   obtain cT : TblAt c T := ht.tbl.of_frame (L := []) (by rw [kc.rest.rd, kc.rest.wr])
     (by rw [cm, am]; exact Frame.refl _ _) (fun _ hr => absurd hr List.not_mem_nil)
-  refine WP.seq (WP.mono (combMultiply_ok cc.ctx (by rw [cm, am]; exact hl) cp' ci.fit ci.readable ci.separate
+  refine WP.seq (WP.mono (combMultiply_ok cc.ctx (by rw [cm, am]; exact hl) cp' ci.fit ci.readable (.inl ci.separate)
     cT ((congrFun (syc.trans sya) _).trans ht.sym) ht.apart) fun e ⟨ek, el, ep⟩ => ?_)
   obtain ke := kc.toCombKeep.trans ek
   rw [(hc.sigInput.suffix32).bytes (VerifyKeep.of_point kc)] at ep

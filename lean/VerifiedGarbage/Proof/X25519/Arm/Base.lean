@@ -230,30 +230,39 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr ptr + BitVec.ofNat 64 i) 1)
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
-    WP isa (engine umaal) s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
+    WP isa (engine umaal) s fun t => CombKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) Spec.X25519.basePoint =
         Spec.Ed25519.encodeLE 32 (V t.mem (State.addr base) FR) := by
   have hk : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   rw [engine]
   refine WP.seq (WP.mono (prep_ok hc hp hfit hr hsep hT hsym apart) fun v ⟨kav, lv, tv, syv, cv⟩ => ?_)
   have hcv := kav.ctx hc
-  refine WP.seq (WP.mono (combInit_ok hcv lv tv syv apart) fun w ⟨kw, E, I⟩ => ?_)
-  rw [cv, ← decode_clamp hk] at I
-  have hS : Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) < 2 ^ 256 := by
-    have h := VG.Proof.X25519.Edwards.decodeScalar25519_shift hk
-    rw [Nat.shiftRight_eq_div_pow] at h
-    have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
-    omega_using [h]
-  refine WP.seq (WP.mono (combFrom_ok E I hS) fun x ⟨kx, lx, rx⟩ => ?_)
-  have hcx := (kav.trans (kw.trans kx)).ctx hc
+  refine WP.seq (WP.mono_syms (scratchAddr_ok hcv SCAL (by decide)) fun a ⟨ar, am, ap⟩ sya => ?_)
+  have ka : PointKeep base v a := ⟨ar.mono (by decide), by rw [am]; exact Frame.refl _ _⟩
+  have hca := ka.ctx hcv
+  have fit : (base + BitVec.ofNat 32 SCAL).toNat + 32 ≤ 2 ^ 32 := by
+    rw [BitVec.toNat_add_of_lt (by simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit])]
+    simp only [SCAL, BitVec.toNat_ofNat]
+    omega_using [hc.fit]
+  have readable : ∀ k < 32, InRegions (a.rd ++ a.wr)
+      (State.addr (base + BitVec.ofNat 32 SCAL) + BitVec.ofNat 64 k) 1 := by
+    intro k hk
+    rw [addr_add (by simp only [SCAL]; omega_using [hc.fit]), Offset.add_add]
+    exact in_base (List.mem_append_right _ hca.wr) (by simp only [SCAL]; omega_using [hk])
+      (by simp only [SCAL]; omega_using [hk])
+  refine WP.seq (WP.mono (combMultiply_ok hca (by rw [am]; exact lv) ap fit readable (.inr rfl)
+    (by exact ⟨tv.fit, by rw [ar.rd, ar.wr]; exact tv.rd, by rw [am]; exact tv.words⟩)
+    (by rw [sya]; exact syv) apart) fun x ⟨kx, lx, rx⟩ => ?_)
+  rw [am, cv, ← decode_clamp hk] at rx
+  have hcx := kx.ctx hca
   rw [uEncode]
   refine WP.seq (WP.mono (fieldCode_ok uOps hcx lx) fun y ⟨ky, ly, ey⟩ => ?_)
   have hcy := ky.ctx hcx
   refine WP.seq (WP.mono (pointAffine_ok hcy ly) fun z ⟨kz, lz, zx, _⟩ => ?_)
   have hcz := (PointKeep.of_ikeep kz).ctx hcy
   refine WP.mono (freeze_ok hcz lz 0) fun t ⟨kt, _, _, lt, vt⟩ => ?_
-  refine ⟨(kav.trans (kw.trans (kx.trans ((PointKeep.of_keep ky).trans
-    ((PointKeep.of_ikeep kz).trans (PointKeep.of_keep kt)))))), lt, ?_⟩
+  refine ⟨(kav.trans ka).toCombKeep.trans (kx.trans (((PointKeep.of_keep ky).trans
+    ((PointKeep.of_ikeep kz).trans (PointKeep.of_keep kt))).toCombKeep)), lt, ?_⟩
   rw [VG.Proof.X25519.Edwards.x25519_basePoint hk _ (VG.Proof.X25519.Edwards.u_rep rx), vt, zx, ey,
     (uOps_eval _).1, (uOps_eval _).2]
   rfl
@@ -276,8 +285,8 @@ theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
     fun v ⟨kv, lv, vv⟩ => ?_)
   have sv : ScalarSaved (State.addr (s.gpr .r2)) s.gpr v.mem :=
     su.frame kv.frame fun r hr i hi => by
-      simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
+      simp only [combRegions, combReturnRegion, combReturn, pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact Offset.disjoint _ (.inl (by omega_using [hi])) (by omega_using [hi]) (by decide)
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0
@@ -314,7 +323,7 @@ def Mid (b T : BitVec 32) (s : State) : Prop :=
     (TBL T).Disjoint ⟨State.addr b, 8192⟩
 
 def prepCT : Prog isa := .block (initFields ++ combCopy ++ clampBytes)
-def initCT : Prog isa := combInit
+def initCT : Prog isa := .block (scratchAddr SCAL)
 
 materialize_code prepCT
 materialize_code initCT
@@ -336,15 +345,22 @@ theorem engine_ct (b p T : BitVec 32) :
       exact WP.mono (prep_ok hc hp hfit hr hsep hT hsym apart) fun v ⟨kv, lv, tv, sv, _⟩ =>
         ⟨kv.ctx hc, lv, tv, sv, apart⟩
   have h2 : CT (fun x y => Mid b T x ∧ Mid b T y) initCT
-      (fun x y => CombRun b T 0 x ∧ CombRun b T 0 y) := by
+      (fun x y => CombCTPre b (b + BitVec.ofNat 32 SCAL) T x ∧
+        CombCTPre b (b + BitVec.ofNat 32 SCAL) T y) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
-      rw [List.mem_singleton] at hr
-      subst r
-      exact h.1.1.r0.trans h.2.1.r0.symm
-    · intro s ⟨hc, hl, hT, hsym, apart⟩
-      exact WP.mono (combInit_ok hc hl hT hsym apart) fun w ⟨_, E, I⟩ => ⟨w, _, _, E, I⟩
+      rw [List.mem_singleton.mp hr]; exact h.1.1.r0.trans h.2.1.r0.symm
+    · intro s ⟨hc, hl, ht, hy, ha⟩
+      refine WP.mono_syms (scratchAddr_ok hc SCAL (by decide)) fun t ⟨rt, mt, pt⟩ syt => ?_
+      have hct := hc.of_rest rt (by decide)
+      refine ⟨⟨hct, pt, ?_, ?_, .inr rfl, ?_, by rw [syt]; exact hy, ha⟩, by rw [mt]; exact hl⟩
+      · rw [BitVec.toNat_add_of_lt (by simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit])]
+        simp only [SCAL, BitVec.toNat_ofNat]; omega_using [hc.fit]
+      · intro k hk
+        rw [addr_add (by simp only [SCAL]; omega_using [hc.fit]), Offset.add_add]
+        exact in_base (List.mem_append_right _ hct.wr) (by simp only [SCAL]; omega_using [hk]) (by simp only [SCAL]; omega_using [hk])
+      · exact ⟨ht.fit, by rw [rt.rd, rt.wr]; exact ht.rd, by rw [mt]; exact ht.words⟩
   have h4 : CT (fun x y => VG.Proof.Ed25519.Arm.Ctx b x ∧ VG.Proof.Ed25519.Arm.Ctx b y) (uEncode umaal)
       (fun _ _ => True) := by
     cases umaal <;> [apply ctRegs [.r0] _ (by native_taint_decide); apply ctRegsU [.r0] _ (by taint_decide)]
@@ -353,7 +369,7 @@ theorem engine_ct (b p T : BitVec 32) :
       rw [List.mem_singleton] at hr
       subst r
       exact h.1.r0.trans h.2.r0.symm
-  exact RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (combLoop_ct b T) h4))
+  exact RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (combMultiply_ct b (b + BitVec.ofNat 32 SCAL) T) h4))
 
 theorem work_ct (b p out T : BitVec 32) :
     CT (fun x y => BaseWorkCTPre b p out T x ∧ BaseWorkCTPre b p out T y)
@@ -460,7 +476,7 @@ instructions that set the registers a callee may change and the flags to
 constants. -/
 
 theorem x25519Base_noFrames (umaal : Bool) : (x25519Base umaal).noFrames = true := by
-  simp only [x25519Base, engine, uEncode, Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.pointAffine,
+  simp only [x25519Base, engine, uEncode, Impl.Ed25519.Arm.combMultiply, Impl.Ed25519.Arm.combMultiplyFn, Impl.Ed25519.Arm.combMultiplyInline, Impl.Ed25519.Arm.combPrepare, Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.pointAffine,
     Impl.Ed25519.Arm.invert, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.chain250,
     Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.sqrCall, Impl.Ed25519.Arm.sqrFn,
     Impl.Ed25519.Arm.sqLoop, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Code.noFrames,

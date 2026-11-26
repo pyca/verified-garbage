@@ -136,7 +136,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr T : BitVec 32} (hc : Ctx base 
   have hTa : TblAt a T := hT.of_frame (by rw [ak.rest.rd, ak.rest.wr]) ak.frame fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right fa
   rw [WP.seq_iff]
-  refine WP.mono (combMultiply_ok hca al up hfit ur hsep hTa (by rw [sya]; exact hsym) apart)
+  refine WP.mono (combMultiply_ok hca al up hfit ur (.inl hsep) hTa (by rw [sya]; exact hsym) apart)
     fun v ⟨vk, vl, vrep⟩ => ?_
   refine WP.mono (pointEncode_ok (vk.ctx hca) vl) fun t ⟨tk, tl, tv⟩ => ?_
   refine ⟨(PointKeep.of_keep ak).toCombKeep.trans (vk.trans (PointKeep.of_ikeep tk).toCombKeep), tl, ?_⟩
@@ -165,7 +165,11 @@ def BaseCTPre (b p T : BitVec 32) (s : State) : Prop :=
     TblAt s T ∧ s.syms combSym = T ∧ (TBL T).Disjoint ⟨State.addr b, 8192⟩
 
 /-- What the comb needs, in each run. -/
-def CombCTPre (b p T : BitVec 32) (s : State) : Prop := BaseCTPre b p T s ∧ AllLim s.mem b
+def CombCTPre (b p T : BitVec 32) (s : State) : Prop :=
+  (Ctx b s ∧ s.gpr .r12 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
+    (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
+    CombInputOk b p ∧ TblAt s T ∧ s.syms combSym = T ∧
+    (TBL T).Disjoint ⟨State.addr b, 8192⟩) ∧ AllLim s.mem b
 
 /-- Each run's loop state, from its own start. -/
 def CombRun (b T : BitVec 32) (j : Nat) (s : State) : Prop :=
@@ -243,7 +247,7 @@ theorem combMultiplyInline_ct (b p T : BitVec 32) :
 def CombFnCTPre (b p T : BitVec 32) (s : State) : Prop :=
   Ctx b s ∧ s.mem.readW (State.addr b + BitVec.ofNat 64 combInput) 32 = p ∧ p.toNat + 32 ≤ 2 ^ 32 ∧
     (∀ i < 32, InRegions (s.rd ++ s.wr) (State.addr p + BitVec.ofNat 64 i) 1) ∧
-    (⟨State.addr p, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩ ∧
+    CombInputOk b p ∧
     TblAt s T ∧ s.syms combSym = T ∧ (TBL T).Disjoint ⟨State.addr b, 8192⟩ ∧ AllLim s.mem b
 
 def combEnterCT : Prog isa :=
@@ -332,7 +336,7 @@ theorem scalarBaseEngine_ct (base ptr T : BitVec 32) :
     · intro s ⟨hc, hp, hfit, hr, hsep, hT, hsym, apart⟩
       have fa : (FA base).Sub ⟨State.addr base, 8192⟩ := Offset.sub_base _ (by decide)
       refine WP.mono_syms (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ sya => ⟨⟨ak.ctx hc,
-        (ar.gpr _ (by decide)).trans hp, hfit, by rw [ak.rest.rd, ak.rest.wr]; exact hr, hsep, ?_,
+        (ar.gpr _ (by decide)).trans hp, hfit, by rw [ak.rest.rd, ak.rest.wr]; exact hr, .inl hsep, ?_,
         by rw [sya]; exact hsym, apart⟩, al⟩
       exact hT.of_frame (by rw [ak.rest.rd, ak.rest.wr]) ak.frame fun r hr => by
         rw [List.mem_singleton.mp hr]; exact apart.sub_right fa
