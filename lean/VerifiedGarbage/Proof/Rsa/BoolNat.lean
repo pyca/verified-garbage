@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.TwosMath
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-!

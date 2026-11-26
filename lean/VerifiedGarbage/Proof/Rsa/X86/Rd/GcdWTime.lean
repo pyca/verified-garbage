@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.InitWords
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Divstep.Alg32
-import Mathlib.Algebra.Order.Ring.Abs
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.FBatchRel
 meta import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint

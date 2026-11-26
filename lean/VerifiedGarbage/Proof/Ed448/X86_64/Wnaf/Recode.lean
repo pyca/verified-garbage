@@ -4,13 +4,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Load
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 import VerifiedGarbage.Proof.X448.X86_64.Bits

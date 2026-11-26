@@ -14,12 +14,6 @@ import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
-import Mathlib.Data.BitVec
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
@@ -38,11 +32,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.InvAllocated
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Finset.Card
 import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
@@ -128,9 +120,6 @@ import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import VerifiedGarbage.Proof.P256.AArch64.Law
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P256
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.SpecApis
 

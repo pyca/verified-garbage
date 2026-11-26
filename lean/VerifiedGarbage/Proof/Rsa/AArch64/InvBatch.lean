@@ -47,7 +47,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Double
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Int.GCD
 
 /-!
 # RSA private keys on AArch64: the batched inverse's proof

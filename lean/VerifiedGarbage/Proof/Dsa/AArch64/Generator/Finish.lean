@@ -20,8 +20,6 @@ public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -43,8 +41,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CopyBytes
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! ### `Dsa.AArch64.Generation.ValidateCore`, which this module and modules that import it used -/
 

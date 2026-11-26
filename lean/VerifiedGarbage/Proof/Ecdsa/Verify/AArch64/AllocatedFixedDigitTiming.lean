@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
@@ -19,7 +18,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd

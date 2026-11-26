@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Spec.P521
 import VerifiedGarbage.Proof.P521.Curve
 import VerifiedGarbage.Proof.P521.PrimeOrder
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point

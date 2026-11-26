@@ -66,10 +66,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import Mathlib.Algebra.Order.Ring.Nat
-import Mathlib.Algebra.Order.Sub.Basic
 import Mathlib.Data.Nat.Cast.Order.Basic
-import Mathlib.Tactic.Ring
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls

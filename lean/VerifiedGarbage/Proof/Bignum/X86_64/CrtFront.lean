@@ -10,11 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -413,7 +408,7 @@ theorem nPartWith_ok (M : Mont) (r2 : Prog isa) {s : State} {B : Addr} {Z k : Na
   have hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_arith
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ Z :=
-    fun h' r hr => (h' r hr).trans hZ
+    fun h' r hr => Nat.le_trans (h' r hr) hZ
   -- The modulus, the input, `-n⁻¹`, 1 and the mask of `c < n`.
   refine wp_seqs_append (by simp [loadSteps]) (by simp)
     (WP.mono (setup_ok h.scr h.rdi hZ (by omega_arith) (by omega_arith) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
@@ -665,7 +660,7 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have hZq := h.z
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
-  exact checksPartWith_ok h hv hr (checks_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ; omega_arith)
+  exact checksPartWith_ok h hv hr (checks_ok hr.n.good (by omega_arith) (by omega_arith) (Nat.le_refl _) (by unfold offQ; omega_arith)
     (by unfold offQ at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
     (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
     hr.qiv hodd)
@@ -689,7 +684,7 @@ theorem checksPartP_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have hZq := h.z
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_arith
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_arith
-  exact checksPartWith_ok h hv hr (checksP_ok hr.n.good (by omega_arith) (by omega_arith) (le_refl _) (by unfold offQ; omega_arith)
+  exact checksPartWith_ok h hv hr (checksP_ok hr.n.good (by omega_arith) (by omega_arith) (Nat.le_refl _) (by unfold offQ; omega_arith)
     (by unfold offQ at hZq ⊢; omega_arith) hwp2 (wsWords_le (by have := h.pl2; omega_arith) (by omega_arith)) hwq2
     (wsWords_le (by have := h.ql2; omega_arith) (by omega_arith)) hr.wsP hr.wsQ hr.pws hr.qws hr.n.msk hr.pv hr.qv
     hr.qiv hodd hpq)

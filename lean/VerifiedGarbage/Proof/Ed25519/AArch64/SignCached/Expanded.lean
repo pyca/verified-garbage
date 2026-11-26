@@ -36,13 +36,6 @@ import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
@@ -50,26 +43,13 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Preserve
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 meta import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-public import Mathlib.Tactic.Push
-public import Mathlib.Data.Nat.Basic
-public import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Data.Nat.Basic
-meta import Mathlib.Order.RelClasses
 
 /-! ### `Ed25519.AArch64.SignCached.Verified`, which only this module used -/
 

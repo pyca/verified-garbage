@@ -6,13 +6,11 @@ public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 public import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Tactic.Ring
 import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Algebra.Group.Int.Defs
 import Mathlib.Algebra.Order.Group.Unbundled.Abs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import VerifiedGarbage.Proof.Divstep.Tc32
 import Mathlib.Algebra.Order.Ring.Int
-import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Rsa.Divstep.InvBounds`, which this module and modules that import it used -/
 

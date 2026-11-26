@@ -30,8 +30,6 @@ public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW

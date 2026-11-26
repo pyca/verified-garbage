@@ -22,12 +22,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
@@ -35,7 +30,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Order.RelClasses
 
 /-! ### `Dsa.X86_64.DeriveWrite`, which this module and modules that import it used -/
 

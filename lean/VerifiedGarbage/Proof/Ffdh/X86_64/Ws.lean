@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # FFDH on x86-64: the nested workspaces -/
 
@@ -148,6 +143,6 @@ theorem wsSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w)
     fun j hj => by rw [hm]; exact ha j hj⟩, by rw [hm]; exact hl,
     by rw [hb _ (by decide) (by decide)]; exact h.hw,
     fun j hj => by rw [hb _ (by unfold sArr; omega) (by unfold sArr sWs sFn; omega)]; exact h.harr j hj,
-    le_refl _, by omega⟩, by omega, by rw [hm]; exact hWs, f, K.mono (by decide)⟩
+    Nat.le_refl _, by omega⟩, by omega, by rw [hm]; exact hWs, f, K.mono (by decide)⟩
 
 end VG.Proof.Ffdh.X86_64

@@ -8,8 +8,6 @@ public import VerifiedGarbage.Spec.EcKey.Validate
 import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Lit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

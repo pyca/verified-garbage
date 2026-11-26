@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Weierstrass.PointContract

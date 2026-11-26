@@ -7,15 +7,7 @@ import VerifiedGarbage.Proof.X448.X86_64.Bits
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Nat.Totient
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! Bounded byte output for public signed digits. -/
 

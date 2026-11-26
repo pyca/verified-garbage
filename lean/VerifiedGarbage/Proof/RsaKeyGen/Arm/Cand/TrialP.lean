@@ -7,15 +7,10 @@ public import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # A candidate on ARMv7: trial division by one prime (`prime_ok`)
 

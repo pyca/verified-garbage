@@ -9,11 +9,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
 import Mathlib.Tactic.FinCases
 import Mathlib.Data.Fintype.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 
 /-! ### `MlDsa.AArch64.Optimized.PairedFinalArithmetic`, which only this module used -/
 

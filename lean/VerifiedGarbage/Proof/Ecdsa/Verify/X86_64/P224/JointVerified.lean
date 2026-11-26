@@ -26,8 +26,6 @@ import VerifiedGarbage.Impl.P224.X86_64.Joint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointCT
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64

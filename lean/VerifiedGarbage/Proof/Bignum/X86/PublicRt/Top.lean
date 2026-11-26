@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame

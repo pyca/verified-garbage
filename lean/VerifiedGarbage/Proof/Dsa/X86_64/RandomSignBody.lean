@@ -14,11 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! ### `Dsa.X86_64.RandomSignFinishResult`, which this module and modules that import it used -/

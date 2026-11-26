@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.PhaseRounds`, which this module and modules that import it used -/
 

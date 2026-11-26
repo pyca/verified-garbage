@@ -45,24 +45,12 @@ public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 -- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
-public import Mathlib.Data.Nat.Basic
-public import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 meta import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
@@ -77,23 +65,11 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Sha512.Stream
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import Mathlib.Data.Nat.Basic
-meta import Mathlib.Order.RelClasses
 
 /-! ### `Ed25519.X86.PublicKey.CTReady`, which only this module used -/
 

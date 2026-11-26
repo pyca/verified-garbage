@@ -106,7 +106,7 @@ of `u = n - 1` and of `u ∨ x₂` (`RecoverDetWords.twos_closed`), each array s
 theorem twos_ok (h : DS s0 true A [(true, 15), (true, 10), (true, 9), (false, 32)] V [sB1, sB0] s)
     (z : A true 15 = 0) (n2 : 2 ≤ A false 32) :
     WP isa twos s fun t => ∃ A' V', DS s0 true A' twL V' [sB1, sB0] t ∧
-      (A' true 14, A' true 13, A' true 12) = (twoStep (32 * vw s0 true))^[32 * ww (kK s0)]
+      (A' true 14, A' true 13, A' true 12) = iterN (twoStep (32 * vw s0 true)) (32 * ww (kK s0))
         (wsub (32 * ww (kK s0)) (A false 32) 1, A true 10 % 2 ^ (32 * ww (kK s0)), A true 10) ∧
       A' true 15 = 0 ∧ A' true 8 = 0 ∧ A' true 9 = A true 9 ∧ A' false 32 = A false 32 ∧ A' false 42 = 1 ∧
       V' sB0 = V sB0 ∧ V' sB1 = V sB1 := by

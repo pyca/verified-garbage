@@ -70,7 +70,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
 public import VerifiedGarbage.Impl.Ed448.X86_64.SignCached
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
@@ -82,13 +81,6 @@ import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Data.Nat.Totient
-import Mathlib.Algebra.Order.Field.Basic
 import VerifiedGarbage.Proof.Ed448.Facts
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantForLit

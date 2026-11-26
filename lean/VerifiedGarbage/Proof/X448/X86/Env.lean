@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X448.X86.Copy
 public import VerifiedGarbage.Proof.X448.X86.Swap
 public import VerifiedGarbage.Proof.Framework.FunUpdate
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `X448.X86.FieldCall`, which only this module used -/

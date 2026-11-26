@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
 import VerifiedGarbage.Proof.EcKey.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA

@@ -734,7 +734,7 @@ theorem check_okP (P : PublicImpl) (pdName : String)
           simp only [hpo, Spec.Rsa.written] at this ⊢
         · exact this.1
         · exact this)
-    first | (rw [hax]; exact hl.1) | (rw [hout]; exact if_congr hl.2 rfl rfl)
+    first | (rw [hax]; exact hl.1) | (rw [hout]; exact ite_congr (propext hl.2) (fun _ => rfl) (fun _ => rfl))
 
 /-! ## The function -/
 

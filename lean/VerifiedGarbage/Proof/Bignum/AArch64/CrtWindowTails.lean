@@ -17,14 +17,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab

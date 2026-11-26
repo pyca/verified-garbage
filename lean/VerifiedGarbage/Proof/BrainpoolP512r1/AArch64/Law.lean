@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Spec.BrainpoolP512r1
 import VerifiedGarbage.Proof.BrainpoolP512r1.Curve
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point

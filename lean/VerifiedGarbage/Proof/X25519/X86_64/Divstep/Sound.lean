@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.NormNum.DivMod
@@ -291,12 +290,12 @@ theorem pkChunkV_rel {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ n ≤ 15)
       (w.G * BitVec.ofInt 64 m.v + w.F * BitVec.ofInt 64 m.u) >>> n).toNat : Int) % 2 ^ (K - n) =
         m.f % 2 ^ (K - n)) := fun h => by
     rw [h]; simp only [Bool.false_eq_true, ↓reduceIte]
-    rw [add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.1
+    rw [BitVec.add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.1
   have lowG : last = false → (((if last = true then w.G else
       (w.G * BitVec.ofInt 64 m.r + w.F * BitVec.ofInt 64 m.q) >>> n).toNat : Int) % 2 ^ (K - n) =
         m.g % 2 ^ (K - n)) := fun h => by
     rw [h]; simp only [Bool.false_eq_true, ↓reduceIte]
-    rw [add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.2
+    rw [BitVec.add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.2
   cases first
   · obtain ⟨m9, m10, m11, m12⟩ := hI.mat rfl
     simp only [Bool.false_eq_true, ↓reduceIte, m9, m10, m11, m12]

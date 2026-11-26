@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Contract
@@ -22,7 +21,6 @@ import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Spec.Dsa
 
 /-! # A complete native seed attempt implements all parameter-generation decisions -/

@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH domain validation on x86-64: workspace preservation -/

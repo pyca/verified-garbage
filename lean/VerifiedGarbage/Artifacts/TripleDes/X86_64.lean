@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
 import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
 import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Verified
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit

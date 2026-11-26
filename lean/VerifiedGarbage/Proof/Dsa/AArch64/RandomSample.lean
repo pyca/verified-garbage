@@ -15,10 +15,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
@@ -28,9 +25,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
-import Mathlib.Order.Basic
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Push
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-! ### `Dsa.AArch64.RandomSampleLoop`, which this module and modules that import it used -/

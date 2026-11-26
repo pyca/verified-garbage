@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Framework.ModArith
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: the computation

@@ -22,16 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-! ### `Ecdsa.Rfc6979.X86_64.P256`, which only this module used -/
 

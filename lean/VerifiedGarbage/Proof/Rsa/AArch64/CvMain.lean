@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: `main`

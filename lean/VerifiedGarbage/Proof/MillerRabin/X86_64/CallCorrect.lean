@@ -1,7 +1,5 @@
 module
 
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
@@ -126,7 +124,7 @@ theorem round_call_correct (M : Mont) {code : Prog isa} (hi : code.InlineOk = tr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · have ha : s.gpr .rsp = (s.gpr .rsp - 120#64) + 120#64 := by bv_omega
-        conv_lhs => rw [ha]
+        conv => lhs; rw [ha]
         exact Offset.disjoint_base (s.gpr .rsp - 120#64) (by decide : 120 ≤ 120) (by decide : 120 + 8 ≤ 2 ^ 64)
       · exact h.2.2.2.2.1
     · decide

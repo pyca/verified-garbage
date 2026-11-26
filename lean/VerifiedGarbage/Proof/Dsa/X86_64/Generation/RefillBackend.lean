@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Spec.Dsa.Generate
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
@@ -30,7 +29,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape

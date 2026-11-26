@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Bignum.CrtExp
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
@@ -14,8 +12,6 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 meta import VerifiedGarbage.Proof.Bignum.CrtExp
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

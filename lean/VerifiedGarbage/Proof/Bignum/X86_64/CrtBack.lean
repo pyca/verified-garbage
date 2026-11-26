@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -189,7 +185,7 @@ theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : N
   have hh₁ : ∀ i < 32, hFixed i = true → word t₁.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   refine WP.mono (pPhase_ok M E (X := if Mk then P else 3) (c := Mk) (eb := dpb) (qib := qib)
     (oq := offQ ((k + 7) / 8) pl) (wq := wsWords ql) hr.good (by omega_using [hk1]) (by omega_using [hk2])
-    (show slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) from le_refl _) (by unfold offQ offP; omega_using []) hZq hwp2 hwp
+    (show slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) from Nat.le_refl _) (by unfold offQ offP; omega_using []) hZq hwp2 hwp
     (by omega_using [hwq2]) hwq hr.wsP hr.pws hr.wsQ hr.qws hr.nv hodd hN1 hr.xm hr.pxv hP'.1 hP'.2 hr.pmask
     (fun hm => by obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨Q, hpq.symm⟩)
     (by rw [hh₁ _ (by decide) (by decide)]; exact h.hDp)
@@ -200,7 +196,7 @@ theorem pPart_ok (M : Mont) (E : CrtExpL M) {s t₁ : State} {B : Addr} {Z k : N
     (by rw [h.qil]; unfold wsWords; omega_using [])
     (fun hm => by obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte, hQIe]; exact hqi))
     fun t₂ ⟨hg₂, hwsp₂, hxp₂, hlt₂, hh₂, f₂, k₂⟩ => ?_
-  obtain hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := le_refl _
+  obtain hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := Nat.le_refl _
   obtain hb₂ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word t₂.mem B (8 * i) = word t₁.mem B (8 * i) :=
     fun i hi h1 h2 => f₂.px_hdr hlop hi h1 h2
   obtain hqk : ∀ d, offQ ((k + 7) / 8) pl ≤ d → d + 8 ≤ 2 ^ 64 → word t₂.mem B d = word t₁.mem B d :=
@@ -272,7 +268,7 @@ theorem finPart_ok {s t₂ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp d
   obtain hwp := wsWords_le (len := pl) (w := (k + 7) / 8) (by omega_using [hpl2]) (by omega_using [hk1])
   obtain hwq := wsWords_le (len := ql) (w := (k + 7) / 8) (by omega_using [hql2]) (by omega_using [hwp2, hwp])
   obtain hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_using [hZq]
-  obtain hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := le_refl _
+  obtain hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := Nat.le_refl _
   obtain hY8 := slot_le (w := wsWords ql) (show Public.aY < 8 by decide)
   obtain hN8 := slot_le (w := wsWords ql) (show Public.aN < 8 by decide)
   -- `m_q + q h`.

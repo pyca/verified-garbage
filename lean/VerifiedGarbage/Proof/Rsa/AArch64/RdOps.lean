@@ -24,12 +24,6 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 
 /-! ### `Rsa.AArch64.RdArgs`, which this module and modules that import it used -/
 

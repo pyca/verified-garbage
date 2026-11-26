@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.Octets
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Dsa.AArch64.SigningABI`, which this module and modules that import it used -/
 

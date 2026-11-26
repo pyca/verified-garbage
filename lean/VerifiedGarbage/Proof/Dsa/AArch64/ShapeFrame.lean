@@ -5,11 +5,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import Aesop.BuiltinRules
 
-import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp

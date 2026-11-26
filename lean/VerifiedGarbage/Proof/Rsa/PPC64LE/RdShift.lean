@@ -1259,7 +1259,7 @@ theorem tzScan_ok {s : State} {B : Addr} {Z dA dB L : Nat} (hs : Scr s B Z)
     · subst hYi
       by_cases hyz : y = 0#64
       · subst hyz; simp
-      · have hne : 2 ^ (64 * i) * y.toNat ≠ 0 := Nat.mul_ne_zero hp (hy0.not.mp hyz)
+      · have hne : 2 ^ (64 * i) * y.toNat ≠ 0 := Nat.mul_ne_zero hp ((not_congr hy0).mp hyz)
         simp [hyz, hne]
     · simp [hYi]
   · -- `r10`.
@@ -1269,7 +1269,7 @@ theorem tzScan_ok {s : State} {B : Addr} {Z dA dB L : Nat} (hs : Scr s B Z)
       by_cases hyz : y = 0#64
       · subst hyz
         (apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add]) <;> omega_arith
-      · have hyt := hy0.not.mp hyz
+      · have hyt := (not_congr hy0).mp hyz
         obtain hne : 2 ^ (64 * i) * y.toNat ≠ 0 := Nat.mul_ne_zero hp hyt
         rw [(z2 rfl hyt).1]
         simp [hyz, hne]
@@ -1281,7 +1281,7 @@ theorem tzScan_ok {s : State} {B : Addr} {Z dA dB L : Nat} (hs : Scr s B Z)
     · subst hYi
       by_cases hyz : y = 0#64
       · subst hyz; simp
-      · have hyt := hy0.not.mp hyz
+      · have hyt := (not_congr hy0).mp hyz
         obtain hne : 2 ^ (64 * i) * y.toNat ≠ 0 := Nat.mul_ne_zero hp hyt
         rw [(z2 rfl hyt).2]
         apply BitVec.eq_of_toNat_eq
@@ -1584,7 +1584,7 @@ theorem clzScan_ok {s : State} {B : Addr} {Z d H : Nat} (hs : Scr s B Z)
     · subst hT
       by_cases hyz : y = 0#64
       · subst hyz; simp
-      · simp [hyz, hy0.not.mp hyz]
+      · simp [hyz, (not_congr hy0).mp hyz]
     · have hne : y.toNat + 2 ^ 64 * T ≠ 0 := fun e => hT (by omega_using [e])
       simp only [hT, hne, ↓reduceIte, BitVec.zero_and]
   · rw [l10, l9, j9, j10]
@@ -1595,7 +1595,7 @@ theorem clzScan_ok {s : State} {B : Addr} {Z d H : Nat} (hs : Scr s B Z)
       · subst hyz
         simp only [↓reduceIte, BitVec.and_allOnes]
         (apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_add]) <;> omega_arith
-      · simp [hyz, hy0.not.mp hyz]
+      · simp [hyz, (not_congr hy0).mp hyz]
     · simp [hT]
 
 /-- `clzW m sl`, for the narrow `w = 2 H + 2` (`H ≥ 1`): the slot `sl :=` the leading zero words of

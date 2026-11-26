@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 -- parallel
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
-import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.Int.ModEq
 
 /-! # The fused batched inverse on i686

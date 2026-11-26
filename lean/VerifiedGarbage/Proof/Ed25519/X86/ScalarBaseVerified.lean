@@ -13,8 +13,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
@@ -55,8 +53,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 meta import VerifiedGarbage.Proof.Ed25519.Group.Double
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
-meta import Mathlib.Tactic.FieldSimp
-meta import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
 public import VerifiedGarbage.Impl.Ed25519.X86.InputBits

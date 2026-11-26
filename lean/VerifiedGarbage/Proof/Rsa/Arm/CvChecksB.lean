@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Push
-import Mathlib.Algebra.NeZero
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

@@ -1,5 +1,6 @@
 module
 
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
@@ -16,24 +17,20 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import Mathlib.Basic.IsEmpty.Defs
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
 meta import VerifiedGarbage.Proof.Rsa.BytesFrame
-meta import Mathlib.Data.Int.GCD
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 meta import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 meta import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-meta import Mathlib.Basic.IsEmpty.Defs
 
 /-! ### `RsaPkcs1Sig.X86_64.RecPcContract`, which only this module used -/
 
@@ -193,7 +190,7 @@ theorem release_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr rfl
-      · exact .inl ⟨80, n, rfl, le_refl _, by omega_arith⟩
+      · exact .inl ⟨80, n, rfl, Nat.le_refl _, by omega_arith⟩
   · have hrdx : t₄.gpr .rdx = pmask ok := by rw [hR.keep.gpr (by decide), hdx₃, hw8]
     rw [hax, hrdx, pmask_and1]
     obtain hb : Spec.Rsa.bytesAt u.mem (s.gpr .rdi) n =
@@ -340,7 +337,7 @@ theorem afterPub_ok {s t : State} (hp : PreR s) (he : Env s t) {h : Spec.RsaPkcs
   refine WP.mono (encArgs_ok hp he₁) fun t₂ ⟨hK₂, hm₂, h8₂, hcx₂, hdx₂, h9₂, hsi₂⟩ => ?_
   obtain he₂ : Env s t₂ := he₁.regs (hK₂.gpr (by decide)) hm₂ hK₂.2.1 hK₂.2.2
   obtain hem : Spec.Rsa.bytesAt t₂.mem (off (fb s) oEM1) k = em := by
-    rw [hm₂, hm₁]; exact bytes_low (by decide) _ (le_refl _) (by unfold oEM1 frameBytes; omega_arith)
+    rw [hm₂, hm₁]; exact bytes_low (by decide) _ (Nat.le_refl _) (by unfold oEM1 frameBytes; omega_arith)
   obtain hst : Bignum.word t₂.mem (fb s) 0 = t.gpr .rax := by
     rw [hm₂, hm₁]; exact word_writeW_self _ _ _ _
   obtain hval : Spec.Rsa.bytesAt t₂.mem (valA s) (s.gpr .rsi).toNat = em.drop (k - (s.gpr .rsi).toNat) := by
@@ -697,7 +694,7 @@ theorem relOut_written {m : Mem} {p : Addr} {k : Nat} {h : Spec.RsaPkcs1Sig.Hash
   | some em =>
     obtain ⟨h1, h2⟩ := hw
     rw [relOut, h1, h2, recOf]
-    exact if_congr ⟨fun h => h.2, fun h => ⟨by decide, h⟩⟩ rfl rfl
+    exact ite_congr (propext ⟨fun h => h.2, fun h => ⟨by decide, h⟩⟩) (fun _ => rfl) (fun _ => rfl)
 
 theorem recOut_eq (nB eB sig : List Byte) (h : Spec.RsaPkcs1Sig.Hash) :
     recOut nB eB h sig = recOf nB.length h (Spec.Rsa.publicOpChecked nB eB sig) := by

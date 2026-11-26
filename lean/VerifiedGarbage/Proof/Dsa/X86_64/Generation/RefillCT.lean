@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.TCB.X86_64.Target
@@ -62,11 +61,6 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
@@ -78,12 +72,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr

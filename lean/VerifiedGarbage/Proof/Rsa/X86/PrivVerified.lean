@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 public import VerifiedGarbage.Spec.Weierstrass
 

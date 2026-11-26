@@ -11,10 +11,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBody
 import VerifiedGarbage.Proof.Dsa.Generation.Search
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
@@ -45,7 +43,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Framework.Offset

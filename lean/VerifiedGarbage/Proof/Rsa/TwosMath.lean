@@ -3,15 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Basic
 import Mathlib.Data.Prod.Basic
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-public import Mathlib.Logic.Function.Iterate
-import Mathlib.Basic.IsEmpty.Defs
+public import VerifiedGarbage.Proof.Rsa.Iterate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -48,8 +42,8 @@ theorem splitTwos_even {m : Nat} (h0 : m ≠ 0) (h : m % 2 = 0) :
 /-- `m = 2^t r` with `r` odd. -/
 theorem splitTwos_spec {m : Nat} (hm : 0 < m) :
     m = 2 ^ (splitTwos m).1 * (splitTwos m).2 ∧ (splitTwos m).2 % 2 = 1 := by
-  induction m using Nat.strong_induction_on with
-  | _ m ih =>
+  induction m using Nat.strongRecOn with
+  | ind m ih =>
     rcases Nat.mod_two_eq_zero_or_one m with h | h
     · obtain ⟨e1, e2⟩ := ih (m / 2) (by omega_using [hm]) (by omega_using [hm, h])
       rw [splitTwos_even (by omega_using [hm]) h]
@@ -68,7 +62,7 @@ theorem splitTwos_lt {m K : Nat} (hm : 0 < m) (hK : m < 2 ^ K) : (splitTwos m).1
 
 /-- At least `t` halvings of `m = 2^t r` leave `(r, s + t)`. -/
 theorem halve_iter {m : Nat} (hm : 0 < m) {K : Nat} (hK : (splitTwos m).1 ≤ K) (s : Nat) :
-    halveStep^[K] (m, s) = ((splitTwos m).2, s + (splitTwos m).1) := by
+    iterN halveStep K (m, s) = ((splitTwos m).2, s + (splitTwos m).1) := by
   induction K generalizing m s with
   | zero =>
     have h0 : (splitTwos m).1 = 0 := by omega_using [hK]
@@ -77,7 +71,7 @@ theorem halve_iter {m : Nat} (hm : 0 < m) {K : Nat} (hK : (splitTwos m).1 ≤ K)
       have := (splitTwos_spec hm).2; omega_arith
     rw [splitTwos_odd hodd]; rfl
   | succ K ih =>
-    rw [Function.iterate_succ_apply]
+    rw [iterN_succ]
     rcases Nat.mod_two_eq_zero_or_one m with h | h
     · have e := splitTwos_even (by omega_using [hm]) h
       have hs : halveStep (m, s) = (m / 2, s + 1) := by simp [halveStep, h]
@@ -89,7 +83,7 @@ theorem halve_iter {m : Nat} (hm : 0 < m) {K : Nat} (hK : (splitTwos m).1 ≤ K)
 
 /-- `K` halvings of `0 < m < 2^K`, from `t = 0`: `splitTwos m`, swapped. -/
 theorem halve_done {m K : Nat} (hm : 0 < m) (hK : m < 2 ^ K) :
-    halveStep^[K] (m, 0) = ((splitTwos m).2, (splitTwos m).1) := by
+    iterN halveStep K (m, 0) = ((splitTwos m).2, (splitTwos m).1) := by
   rw [halve_iter hm (Nat.le_of_lt (splitTwos_lt hm hK)), Nat.zero_add]
 
 /-! ## Arithmetic of the code

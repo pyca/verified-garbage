@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! # Precomputed public RSA at a run-time width, from the values to the result
 

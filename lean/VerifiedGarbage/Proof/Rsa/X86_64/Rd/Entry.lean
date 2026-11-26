@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 public import VerifiedGarbage.Proof.Rsa.X86_64.Rd.Args
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import VerifiedGarbage.Proof.Rsa.X86_64.InvLaw
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.X86_64.CvMain

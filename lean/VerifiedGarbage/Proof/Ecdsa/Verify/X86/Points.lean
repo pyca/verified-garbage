@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays

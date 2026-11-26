@@ -155,7 +155,7 @@ theorem wv_zero_sub {m : Mem} {B : Addr} {d n a k : Nat} (h : wv m B d n = 0) (h
 
 /-- The halvings' state after `64 w` steps from `n - 1`, `x mod 2^(64 w)` and `x`. -/
 abbrev twosSt (w N X : Nat) : Nat × Nat × Nat :=
-  (twoStep (64 * (2 * w + 2)))^[64 * w] (wsub (64 * w) N 1, X % 2 ^ (64 * w), X)
+  iterN (twoStep (64 * (2 * w + 2))) (64 * w) (wsub (64 * w) N 1, X % 2 ^ (64 * w), X)
 
 theorem mask_and1 (a b : Bool) : mask a &&& mask b = mask (a && b) := by cases a <;> cases b <;> decide
 

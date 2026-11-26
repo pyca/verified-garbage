@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Divstep.Batch
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.WordDef
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

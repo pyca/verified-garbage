@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Proof.Rsa.PreKey
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall

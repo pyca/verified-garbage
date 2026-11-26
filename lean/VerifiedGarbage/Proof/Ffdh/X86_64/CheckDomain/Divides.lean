@@ -8,15 +8,11 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 import VerifiedGarbage.Proof.Ffdh.X86_64.R2
-import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Ffdh.Domain
 
 /-! ### `Ffdh.X86_64.CheckDomain.Reduce`, which this module and modules that import it used -/

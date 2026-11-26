@@ -3,12 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.Secp256k1
 import VerifiedGarbage.Proof.Secp256k1.Curve
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Secp256k1.Point
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 

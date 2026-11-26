@@ -20,8 +20,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase

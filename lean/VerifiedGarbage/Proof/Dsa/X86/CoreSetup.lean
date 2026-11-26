@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Dsa.X86.CoreInputs`, which the modules that import this one used -/
 

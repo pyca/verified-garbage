@@ -10,15 +10,12 @@ import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 import VerifiedGarbage.Impl.AArch64Instrs
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
@@ -107,9 +104,6 @@ import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.P521.AArch64.Law
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.SpecApis
 

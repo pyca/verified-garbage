@@ -3,16 +3,10 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Push
 
 /-! ### `Dsa.X86_64.EntryFieldsFrame`, which the modules that import this one used -/
 

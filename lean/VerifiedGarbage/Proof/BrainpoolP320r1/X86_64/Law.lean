@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Spec.BrainpoolP320r1
 import VerifiedGarbage.Proof.BrainpoolP320r1.Curve
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith

@@ -16,10 +16,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Data.BitVec
 import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Linarith
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Proof.Weierstrass.MontContract

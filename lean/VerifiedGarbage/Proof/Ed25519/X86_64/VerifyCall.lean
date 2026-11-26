@@ -59,11 +59,9 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import Mathlib.FieldTheory.Finite.Basic
-meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Framework.RegSetOrder
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
@@ -81,13 +79,11 @@ meta import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Block
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.Framework.Block
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring

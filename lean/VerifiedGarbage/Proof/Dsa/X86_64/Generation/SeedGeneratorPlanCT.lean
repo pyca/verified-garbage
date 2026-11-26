@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGenerator
 import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorSearch
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeIteration
 import VerifiedGarbage.Proof.Framework.Offset
@@ -58,7 +57,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInvariant
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TapeLoop
 

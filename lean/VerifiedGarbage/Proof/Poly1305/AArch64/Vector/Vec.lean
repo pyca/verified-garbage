@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.Contract

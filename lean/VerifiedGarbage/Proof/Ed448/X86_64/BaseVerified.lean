@@ -5,16 +5,8 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
@@ -22,16 +14,8 @@ meta import VerifiedGarbage.Proof.Ed448.Ref
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 meta import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Spec.Ed448.Contract

@@ -21,8 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 
 /-!
 # P-384 public keys on x86 (32-bit): `Verified`

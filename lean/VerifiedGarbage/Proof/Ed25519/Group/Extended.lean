@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Edwards.Group
 public import VerifiedGarbage.Spec.Ed25519
 import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Algebra.Field.ZMod
-import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Merged from `Proof.Ed25519.Group.Field`. -/

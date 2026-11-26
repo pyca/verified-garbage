@@ -52,7 +52,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `Rsa.X86.Rd.Taint`, which this module and modules that import it used -/
 

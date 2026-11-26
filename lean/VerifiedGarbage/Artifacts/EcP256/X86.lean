@@ -6,8 +6,6 @@ public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.Spec.EcKey.P256
 import VerifiedGarbage.Proof.EcKey.X86.CombVerified
 import VerifiedGarbage.Proof.EcKey.X86.Lit
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.X86.CombContract
 import VerifiedGarbage.Proof.EcKey.PublicKey

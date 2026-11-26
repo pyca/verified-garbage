@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.Impl.Ecdh.P256.X86
 import VerifiedGarbage.Proof.Ecdh.X86.Verified
 import VerifiedGarbage.Proof.Ecdh.X86.Lit
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Framework.X86.Sse

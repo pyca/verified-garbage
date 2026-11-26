@@ -7,10 +7,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitInverse
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

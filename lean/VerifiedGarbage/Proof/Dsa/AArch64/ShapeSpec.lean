@@ -14,17 +14,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.Block
 public import Aesop.BuiltinRules
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 
 /-! ### `Dsa.AArch64.InitializedFields`, which the modules that import this one used -/
 

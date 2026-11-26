@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

@@ -19,8 +19,6 @@ public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.X448.Bytes
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
@@ -32,8 +30,6 @@ meta import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.X448.AArch64.Finish
 meta import VerifiedGarbage.Proof.X448.Bytes
-meta import Mathlib.Tactic.FieldSimp
-meta import Mathlib.Tactic.Ring
 
 /-! ### `X448.AArch64.Base.Main`, which only this module used -/
 

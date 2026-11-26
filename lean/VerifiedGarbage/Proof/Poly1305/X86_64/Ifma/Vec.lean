@@ -1,7 +1,7 @@
 module
 
-import Mathlib.Tactic.NormNum.Pow
 import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Mul

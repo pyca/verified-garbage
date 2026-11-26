@@ -10,10 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Screen
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Contract
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ScreenedStream
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.PolicyResult`, which only this module used -/

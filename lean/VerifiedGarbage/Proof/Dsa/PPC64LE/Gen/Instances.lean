@@ -401,7 +401,7 @@ theorem prime_stack (bits : Nat) (name : String) (rc : Prog isa) :
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : VG.Proof.Dsa.PPC64LE.Prime.Bits bits := by decide) :
     PrimeOk (Impl.Dsa.PPC64LE.ProbablePrime.layout bits) (Impl.Dsa.PPC64LE.ProbablePrime.code bits v.name v.code) :=
-  ⟨VG.Proof.Dsa.PPC64LE.Prime.verified v bits hb, (prime_stack bits v.name v.code).trans v.stack⟩
+  ⟨VG.Proof.Dsa.PPC64LE.Prime.verified v bits hb, Nat.le_trans (prime_stack bits v.name v.code) v.stack⟩
 
 /-- A test's layout in the working space of the tests of a `pLen`-byte search. -/
 theorem lay_ok (pL bits : Nat) (h : Impl.Dsa.PPC64LE.ProbablePrime.keyOff +

@@ -23,11 +23,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.Set
 meta import Mathlib.Data.Int.ModEq
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit

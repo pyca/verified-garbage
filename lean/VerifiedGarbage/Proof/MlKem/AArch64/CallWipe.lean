@@ -66,7 +66,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 public import VerifiedGarbage.TCB.Artifact
@@ -88,7 +87,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.Matrix
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-meta import Mathlib.Tactic.IntervalCases
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon

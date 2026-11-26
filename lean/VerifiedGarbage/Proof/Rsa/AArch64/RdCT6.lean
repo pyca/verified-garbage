@@ -47,7 +47,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RdGcd
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdCT2
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RdGcd
 import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Rsa.TwosMath
 import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Bignum.CrtFrame
@@ -64,7 +63,6 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RdDiv
 import VerifiedGarbage.Proof.Rsa.AArch64.RdSqrtDigits
 import VerifiedGarbage.Proof.Rsa.RecoverRoot
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Rsa.TwosMath
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 meta import VerifiedGarbage.Proof.Bignum.CrtFrame
@@ -119,7 +117,7 @@ theorem bool_shuffle (a l r f x z : Bool) :
 
 theorem mask_eq {nb wb N de q rem k : Nat} (hk : k = wb / 2) :
     (okDE wb de && ltOf nb wb N de && (stage2 nb wb N q rem).1) =
-      (decide (((sqrtStep nb wb)^[k] (xOf nb wb N (bOf nb q), 0, 0)).2.1 = 0) &&
+      (decide ((iterN (sqrtStep nb wb) k (xOf nb wb N (bOf nb q), 0, 0)).2.1 = 0) &&
         (decide (rem = 0) && (true && okDE wb de && ltOf nb wb N de) &&
           decide (fourN wb N ≤ sqOf nb wb (bOf nb q)) && decide (1 ≤ xOf nb wb N (bOf nb q)))) := by
   subst hk
@@ -141,7 +139,7 @@ theorem m1_pos {nb wb N de : Nat} (hN : N < 2 ^ nb) (hl : ltOf nb wb N de = true
 theorem mask_root {nb wb N de q rem : Nat} (three : 3 ≤ N) (hn : 8 * (N + 2) ≤ 2 ^ nb) (hw : 2 * nb ≤ wb)
     (hwe : wb % 2 = 0) (hN : N < 2 ^ nb)
     (hdiv : 0 < m1Of nb wb N de → q = dOf nb wb N de / m1Of nb wb N de ∧ rem = dOf nb wb N de % m1Of nb wb N de) :
-    (decide (((sqrtStep nb wb)^[wb / 2] (xOf nb wb N (bOf nb q), 0, 0)).2.1 = 0) &&
+    (decide ((iterN (sqrtStep nb wb) (wb / 2) (xOf nb wb N (bOf nb q), 0, 0)).2.1 = 0) &&
       (decide (rem = 0) && (true && okDE wb de && ltOf nb wb N de) &&
         decide (fourN wb N ≤ sqOf nb wb (bOf nb q)) && decide (1 ≤ xOf nb wb N (bOf nb q)))) =
     (decide (Spec.Rsa.isqrt (xOf nb wb N (bOf nb q)) * Spec.Rsa.isqrt (xOf nb wb N (bOf nb q)) =
@@ -194,10 +192,10 @@ theorem mid4_ok [GcdLaw gcdB] {I : RpIn} {m₀ : Mem} {s : State} (h : G I m₀ 
   refine WP.seq (WP.mono (twos_ok g₂ L n₂ (by omega_using [h3]) X₂) fun s₃ hT => ?_)
   have hnb : 2 ^ (64 * vk I.k) ≤ 2 ^ (64 * Wk I.k) := Nat.pow_le_pow_right (by decide) (by omega_using [hW])
   have hstart : twosOut (64 * vk I.k) (64 * Wk I.k) N de =
-      (twoStep (64 * Wk I.k))^[64 * vk I.k] (N - 1, deX (64 * Wk I.k) de % 2 ^ (64 * vk I.k), deX (64 * Wk I.k) de) := by
+      iterN (twoStep (64 * Wk I.k)) (64 * vk I.k) (N - 1, deX (64 * Wk I.k) de % 2 ^ (64 * vk I.k), deX (64 * Wk I.k) de) := by
     unfold twosOut; rw [wsub_of_le hNlt (by omega_using [hodd])]
   have hval := hT.val
-  generalize hst : (twoStep (64 * Wk I.k))^[64 * vk I.k] (N - 1, deX (64 * Wk I.k) de % 2 ^ (64 * vk I.k),
+  generalize hst : iterN (twoStep (64 * Wk I.k)) (64 * vk I.k) (N - 1, deX (64 * Wk I.k) de % 2 ^ (64 * vk I.k),
     deX (64 * Wk I.k) de) = st at hval hstart
   -- `u` is odd.
   have uodd : st.1 % 2 = 1 := by

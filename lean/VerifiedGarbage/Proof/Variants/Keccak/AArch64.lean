@@ -1,12 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Backend
-import Mathlib.Data.Finset.Attr
-import Mathlib.Data.Rat.Cast.Order
-import Mathlib.Tactic.NormNum.Abs
-import Mathlib.Tactic.NormNum.DivMod
-import Mathlib.Tactic.NormNum.OfScientific
-import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 
 /-! # The implementations of `Keccak` on AArch64 -/

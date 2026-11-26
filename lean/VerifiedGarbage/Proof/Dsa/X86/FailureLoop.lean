@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Spec.Weierstrass
 
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Impl.Dsa.X86.Bytes

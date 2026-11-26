@@ -23,7 +23,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
 import VerifiedGarbage.Proof.Dsa.Encoding
-public import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -53,7 +52,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
@@ -62,9 +60,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Dsa.Encoding
-meta import Mathlib.Data.Nat.Basic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory

@@ -8,9 +8,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 import VerifiedGarbage.Proof.Ed25519.Expanded
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
@@ -20,9 +18,7 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 meta import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 meta import VerifiedGarbage.Proof.Ed25519.Expanded
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -63,34 +59,14 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-public import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import Mathlib.Data.Nat.Basic
-public import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import Mathlib.Data.Nat.Basic
-meta import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Framework.X86.Wp
 meta import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
@@ -105,12 +81,10 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import Mathlib.Tactic.ToAdditive
 
 /-! ### `Ed25519.X86.SignCached.Base`, which only this module used -/
 

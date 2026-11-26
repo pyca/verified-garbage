@@ -4,9 +4,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Idea.Arm.Scrub
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.SpecApis
 

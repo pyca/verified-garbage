@@ -12,12 +12,8 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.TermCongr
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 meta import Mathlib.Data.Int.ModEq
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT

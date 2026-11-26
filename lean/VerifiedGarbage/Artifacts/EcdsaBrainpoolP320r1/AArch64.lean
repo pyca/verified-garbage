@@ -9,11 +9,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.Verified
 import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP320r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP320r1.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP320r1.Lit
@@ -39,9 +36,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.BrainpoolP320r1.AArch64.Law
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP320r1
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.SpecApis
 

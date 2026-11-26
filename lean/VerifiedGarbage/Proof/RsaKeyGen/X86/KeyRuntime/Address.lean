@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Public counts and array pointers for the shared key code -/

@@ -28,24 +28,17 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Spec.Dsa
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.Basic
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Parent
-import Mathlib.Tactic.Attr.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
@@ -563,8 +556,8 @@ theorem generatorFromFrame_ok {s : State} {B F S : Addr} {Z len : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl) <;> right
       · exact Nat.le_trans hz (by omega_using [hn])
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 0 < 16))) (by omega_using [hn])
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 1 < 16))) (by omega_using [hn])),
+      · exact Nat.le_trans (Nat.le_trans (slot_lt (by decide : 0 < 16)) hZ) (by omega_using [hn])
+      · exact Nat.le_trans (Nat.le_trans (slot_lt (by decide : 1 < 16)) hZ) (by omega_using [hn])),
       fv a (fun r hr => Or.inr (Nat.le_trans (bounds r hr) (by omega_using [hn]))), hm]
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)

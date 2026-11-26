@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 public import VerifiedGarbage.Spec.Ed448
 import VerifiedGarbage.Proof.Framework.Block
@@ -32,7 +31,6 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.X448.RISCV64.Ladder
 meta import VerifiedGarbage.Spec.Ed448
 meta import VerifiedGarbage.Proof.Framework.Block

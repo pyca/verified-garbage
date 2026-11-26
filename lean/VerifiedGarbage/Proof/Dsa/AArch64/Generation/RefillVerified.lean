@@ -83,18 +83,12 @@ meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource

@@ -11,11 +11,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.X86.Lit

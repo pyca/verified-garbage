@@ -20,8 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyOps
 import VerifiedGarbage.Proof.Bignum.OddDivision
 import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Basic.IsEmpty.Defs
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ExponentStep
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals

@@ -5,13 +5,6 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.PublicKeyVerified
 import VerifiedGarbage.Proof.Ed448.Facts
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignVerified

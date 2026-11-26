@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.CrtMath
 
@@ -278,7 +274,7 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
   refine WP.mono (powPhase_ok M E hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hslv) (hws₁.of_words fun i hi => hxo i (by omega_using [hi]))
-    (hX₁.of_below f₂ (fun r hr => (gRanges_le w r hr).trans hlo) hoL)
+    (hX₁.of_below f₂ (fun r hr => Nat.le_trans (gRanges_le w r hr) hlo) hoL)
     hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))

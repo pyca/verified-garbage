@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Spec.RsaPkcs1Sig
@@ -19,8 +17,6 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Spec.RsaPkcs1Sig

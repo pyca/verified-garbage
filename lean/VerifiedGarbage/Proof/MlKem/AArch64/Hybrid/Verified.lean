@@ -5,17 +5,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.OfScientific
-import Mathlib.Tactic.NormNum.DivMod
-import Mathlib.Tactic.NormNum.Abs
-import Mathlib.Data.Rat.Cast.Order
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
@@ -25,17 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 meta import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import Mathlib.Tactic.NormNum.Pow
-meta import Mathlib.Tactic.NormNum.OfScientific
-meta import Mathlib.Tactic.NormNum.DivMod
-meta import Mathlib.Tactic.NormNum.Abs
-meta import Mathlib.Data.Rat.Cast.Order
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit

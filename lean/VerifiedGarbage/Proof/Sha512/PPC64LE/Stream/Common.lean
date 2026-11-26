@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

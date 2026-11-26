@@ -6,8 +6,6 @@ public import VerifiedGarbage.Spec.Ecdh.P224
 import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

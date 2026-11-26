@@ -15,7 +15,6 @@ import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
@@ -29,9 +28,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 import Mathlib.Tactic.IntervalCases
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! ### `Gcm.X86_64.StitchAvx8.Blocks`, which this module and modules that import it used -/
 

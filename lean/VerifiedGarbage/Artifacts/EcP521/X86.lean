@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.EcKey.X86.P521.Verified
 import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.Registration
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Framework.X86.TaintMono

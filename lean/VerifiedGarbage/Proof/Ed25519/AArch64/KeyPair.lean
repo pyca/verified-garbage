@@ -62,14 +62,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
@@ -77,14 +69,6 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
-meta import Mathlib.Tactic.Attr.Core
 
 /-! ### `Ed25519.AArch64.PublicKey.Expanded`, which only this module used -/
 

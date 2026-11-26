@@ -5,11 +5,6 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.GcmSiv.Contract
 import VerifiedGarbage.Proof.Gcm.Arm.Law
 import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.SpecApis
 

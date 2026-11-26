@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Rsa.X86.KeyRt.ShiftDown`, which only this module used -/
 

@@ -34,20 +34,13 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Words
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.Layout
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
@@ -62,20 +55,13 @@ meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 meta import Mathlib.Algebra.GroupWithZero.Nat
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Bignum.Words
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! ### `Ffdh.X86_64.GenerateKey.PublicOutputCT`, which the modules that import this one used -/

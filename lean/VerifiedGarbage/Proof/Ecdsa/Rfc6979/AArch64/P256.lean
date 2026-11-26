@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
@@ -19,10 +15,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.CombW
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot

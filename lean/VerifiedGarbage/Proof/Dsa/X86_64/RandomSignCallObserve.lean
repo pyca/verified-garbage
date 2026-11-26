@@ -13,26 +13,14 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Order.RelClasses
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Push
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

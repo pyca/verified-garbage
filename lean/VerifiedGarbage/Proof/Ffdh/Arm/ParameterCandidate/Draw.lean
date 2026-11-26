@@ -40,8 +40,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialFlag
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp4

@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Ed448.WnafWide.Word
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn

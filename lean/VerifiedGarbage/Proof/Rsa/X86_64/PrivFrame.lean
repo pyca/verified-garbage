@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Set
-import Mathlib.Order.Defs.PartialOrder
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import Mathlib.Data.Int.GCD
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the frame
@@ -319,7 +317,7 @@ theorem crtArgs_ok {s : State} (hp : PreF X s) :
     simp (disch := decide) only [word_wo, word_writeW_self, oOut, oN, oK, oE, oEl]
     exact ⟨rfl, rfl, rfl, rfl, rfl⟩
   rw [WP.block_append_iff]
-  refine WP.mono (copies_ok hp 12 (le_refl _) t₁ ((k₁.gpr (by decide)).trans hsp) (hs.congr k₁.2.2) k₁.2.1 ho₁)
+  refine WP.mono (copies_ok hp 12 (Nat.le_refl _) t₁ ((k₁.gpr (by decide)).trans hsp) (hs.congr k₁.2.2) k₁.2.1 ho₁)
     fun t₂ ⟨ho₂, hw₂, hk₂, k₂⟩ => ?_
   have k12 := k₁.trans k₂
   have hrd₂ : InRegions (t₂.rd ++ t₂.wr) (stackArgAddr s 0) 8 :=

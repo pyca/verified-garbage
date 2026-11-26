@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
@@ -74,7 +75,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 public import VerifiedGarbage.Proof.Weierstrass.CheckPointContract
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB

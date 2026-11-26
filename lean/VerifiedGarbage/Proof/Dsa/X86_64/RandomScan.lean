@@ -4,12 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! Adapt the existing verified width scan to the random sampler. -/
 @[expose] public section

@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

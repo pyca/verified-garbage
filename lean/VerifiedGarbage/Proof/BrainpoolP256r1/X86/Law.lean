@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.BrainpoolP256r1
 import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.BrainpoolP256r1.Curve
-import Mathlib.Data.BitVec
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.X25519.X86.Column

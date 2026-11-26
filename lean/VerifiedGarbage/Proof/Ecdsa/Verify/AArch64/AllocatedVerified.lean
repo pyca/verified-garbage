@@ -110,9 +110,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Framework.IsPrime
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
@@ -122,9 +120,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-meta import Mathlib.Tactic.ClearExcept
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 meta import VerifiedGarbage.Proof.Framework.IsPrime
 meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
@@ -168,11 +164,7 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNaf9
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
-meta import Mathlib.Tactic.FieldSimp
-meta import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Impl.NatPairs
 meta import VerifiedGarbage.Impl.NatPairs
 

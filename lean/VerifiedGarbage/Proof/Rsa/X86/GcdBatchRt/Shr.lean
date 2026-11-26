@@ -1,5 +1,6 @@
 module
 
+public import Mathlib.Algebra.Group.Int.Defs
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Shr
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
@@ -15,7 +16,6 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
-public import Mathlib.Algebra.Group.Int.Defs
 
 /-! ### `Rsa.X86.InvBatchRt.Linear`, which only this module used -/
 

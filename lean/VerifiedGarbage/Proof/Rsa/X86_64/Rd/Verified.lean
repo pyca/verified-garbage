@@ -793,7 +793,7 @@ theorem zeroX_ct (hF : Stab F fun y => SqW y ∨ (232 ≤ y ∧ y < 240)) : RelC
   obtain hf : FrmP p.B (fun y => 232 ≤ y ∧ y < 240 ∨ slot (wW p.k) sqZ ≤ y ∧ y < slot (wW p.k) sqZ + 8 ∨
       248 ≤ y ∧ y < 256) s.mem t.mem := by
     intro x hx
-    simp only [not_or, not_and_or, Nat.not_le, Nat.not_lt] at hx
+    simp only [not_or, Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
     rw [hm, writeW_outside _ _ _ (d := 8 * sK2) (by simp only [sK2, sFn]; omega_arith) x
         (by simp only [sK2, sFn]; omega_arith),
       writeW_outside _ _ _ (d := slot (wW p.k) sqZ) (by omega_arith) x (by omega_arith),
@@ -1007,7 +1007,7 @@ theorem mulSubX_ct : RelCT isa (Two SM) mulSubX (Two SM) := by
       y < slot (wW a.1.k) sqZ + 16 * (a.2 - 1) + 8 * (wk a.1.k - (a.2 - 1) + 2) ∨
       slot (wW a.1.k) sqD + 8 * (a.2 - 1) ≤ y ∧ y < slot (wW a.1.k) sqD + 8 * (a.2 - 1) + 8)
       (fun x hx => ?_) (fun y hy => by omega_arith) k (by decide)
-  simp only [not_or, not_and_or, Nat.not_le, Nat.not_lt] at hx
+  simp only [not_or, Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
   rw [o x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x (by omega_arith)]
 
 theorem two_ct (blk : List Instr) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -1022,7 +1022,7 @@ theorem two_ct (blk : List Instr) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   refine WP.mono (hok a s h) fun t ⟨lo, hi, hm, k⟩ =>
     h.frm (P := fun y => slot (wW a.1.k) sqD + 8 * (a.2 - 1) ≤ y ∧ y < slot (wW a.1.k) sqD + 8 * (a.2 - 1) + 16)
       (fun x hx => ?_) (fun y hy => by omega_arith) k (by simp [mmRegs])
-  simp only [not_and_or, Nat.not_le, Nat.not_lt] at hx
+  simp only [Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
   rw [hm, writeW_outside _ _ _ (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x
     (by omega_arith)]
 
@@ -1051,7 +1051,7 @@ theorem fixX_ct : RelCT isa (Two SM) fixX (Two SM) := by
       y < slot (wW a.1.k) sqZ + 16 * (a.2 - 1) + 8 * (wk a.1.k - (a.2 - 1) + 2) ∨
       slot (wW a.1.k) sqD + 8 * (a.2 - 1) ≤ y ∧ y < slot (wW a.1.k) sqD + 8 * (a.2 - 1) + 16)
       (fun x hx => ?_) (fun y hy => by omega_arith) k (by simp [mmRegs])
-  simp only [not_or, not_and_or, Nat.not_le, Nat.not_lt] at hx
+  simp only [not_or, Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
   rw [hm, writeW_outside _ _ _ (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (by omega_arith) x
     (by omega_arith), o x (by omega_arith)]
 
@@ -1236,7 +1236,7 @@ theorem firstSt_ct (hG : Arr G) :
     h.arr (P := fun y => slot (wW p.k) sqS ≤ y ∧ y < slot (wW p.k) 8) ?_
     (fun y hy => ⟨by simp only [sqS] at hy; omega_arith, by simp only [sqS] at hy; omega_arith⟩) k (by decide) hG
   intro x hx
-  simp only [sqS, not_and_or, Nat.not_le, Nat.not_lt] at hx
+  simp only [sqS, Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
   rw [hm, writeW_outside _ _ _ (d := slot (wW p.k) sqS + 16) (by simp only [sqS]; omega_arith) x
       (by simp only [sqS]; omega_arith),
     writeW_outside _ _ _ (d := slot (wW p.k) sqD + 8 * wk p.k) (by simp only [sqD]; omega_arith) x
@@ -1408,7 +1408,7 @@ theorem kBlk_ct {F : RpIn → State → Prop} (hF : ArrS F) :
     generalize (word s.mem p.B (8 * sK2)).toNat = K at hK hm
     obtain hf : FrmP p.B (fun y => 240 ≤ y ∧ y < 256) s.mem t.mem := by
       intro x hx
-      simp only [not_and_or, Nat.not_le, Nat.not_lt] at hx
+      simp only [Classical.not_and_iff_not_or_not, Nat.not_le, Nat.not_lt] at hx
       rw [hm, writeW_outside _ _ _ (d := 8 * sC) (by omega_arith) x (by omega_arith),
         writeW_outside _ _ _ (d := 8 * sK2) (by omega_arith) x (by omega_arith)]
     refine h.next hf (fun y hy => ⟨by unfold DOk; omega_arith, by omega_arith⟩) k (by decide)

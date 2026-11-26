@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.Idea.X86.Key
 import VerifiedGarbage.Proof.Idea.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Idea.X86.Lit
@@ -22,7 +17,6 @@ import VerifiedGarbage.Proof.Idea.Arith32
 import VerifiedGarbage.Proof.Idea.KeyBits
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import Batteries.Data.List.Lemmas
-import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Idea.X86.Key
 meta import VerifiedGarbage.Proof.Idea.Inverse
 meta import VerifiedGarbage.Proof.Idea.Scratch32
@@ -35,11 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Idea.X86.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Idea.Arith

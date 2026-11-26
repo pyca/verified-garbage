@@ -16,11 +16,9 @@ public import VerifiedGarbage.Spec.Dsa.Prevalidated
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.DomainWidths
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
 public import VerifiedGarbage.Proof.Bignum.Octets
