@@ -36,6 +36,7 @@ import VerifiedGarbage.Proof.Divstep.RowWord
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
@@ -4011,7 +4012,7 @@ theorem minv_exists {q : Nat} (hq : q % 2 = 1) : ∃ mi : BitVec 64, ((q : Int) 
 arrays of `w` words), for `[v] = [m] = p` and `[u] = a`: `x1`, `x2` kept,
 only the arrays `u`, `v`, `x₁`, `x₂` and `t` changed, and for an odd
 `p > 1`, `[v] = gcd(p, a)`, `p ∣ [x₂] a - gcd(p, a)` and `[x₂] < p`. -/
-theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+theorem inverseBRaw_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
     (h0 : s.gpr .x0 = B) (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
     (hn1 : 1 ≤ n) (hnw : n ≤ w) (hw : w < 2 ^ 24) (hn21 : n < 2 ^ 21) (hZ : slot w 16 ≤ Z)
     (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
@@ -4019,7 +4020,7 @@ theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM i
     (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
     (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
     (hVM : wv s.mem B (slot w iV) n = wv s.mem B (slot w iM) n) :
-    WP isa (inverseB iU iV iX₁ iX₂ iM iT) s fun t =>
+    WP isa (inverseBRaw iU iV iX₁ iX₂ iM iT) s fun t =>
       Scr t B Z ∧ t.gpr .x0 = B ∧ t.gpr .x1 = s.gpr .x1 ∧ t.gpr .x2 = s.gpr .x2 ∧
       t.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .x12 = BitVec.ofNat 64 n ∧
       Frm B [(slot w iU, 8 * (w + 2)), (slot w iV, 8 * (w + 2)), (slot w iX₁, 8 * (w + 2)),
@@ -4043,7 +4044,7 @@ theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM i
       show Rsa.Divstep.oddInput p a < 2 ^ (64 * n + 1)
       rw [Nat.pow_succ]; omega_arith,
     by exact_mod_cast hmi⟩
-  unfold inverseB
+  unfold inverseBRaw
   rw [List.append_assoc]
   refine wp_seqs_append (by simp [batchInit]) (by simp) (WP.mono (batchInit_ok (C := C) hC hs h0 h11 h12 hVM rfl rfl rfl)
     fun s₁ ⟨hI₁, h15⟩ => ?_)
@@ -4058,6 +4059,86 @@ theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM i
   obtain ⟨v1, v2, v3⟩ := val ⟨h1, h2⟩ a aC rfl
   exact ⟨v1, v2, v3⟩
 
+
+theorem inverseB_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (h11 : s.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2))) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
+    (hn1 : 1 ≤ n) (hnw : n ≤ w) (hw : w < 2 ^ 24) (hn21 : n < 2 ^ 21) (hZ : slot w 16 ≤ Z)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT)
+    (hVM : wv s.mem B (slot w iV) n = wv s.mem B (slot w iM) n) :
+    WP isa (inverseB iU iV iX₁ iX₂ iM iT) s fun t =>
+      Scr t B Z ∧ t.gpr .x0 = B ∧ t.gpr .x1 = s.gpr .x1 ∧ t.gpr .x2 = s.gpr .x2 ∧
+      t.gpr .x11 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .x12 = BitVec.ofNat 64 n ∧
+      Frm B [(slot w iU, 8 * (w + 2)), (slot w iV, 8 * (w + 2)), (slot w iX₁, 8 * (w + 2)),
+        (slot w iX₂, 8 * (w + 2)), (slot w iT, 8 * (w + 2))] s.mem t.mem ∧
+      Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17] s t ∧
+      (wv s.mem B (slot w iM) n % 2 = 1 → 1 < wv s.mem B (slot w iM) n →
+        wv t.mem B (slot w iV) n = Nat.gcd (wv s.mem B (slot w iM) n) (wv s.mem B (slot w iU) n) ∧
+        (wv s.mem B (slot w iM) n : Int) ∣ (wv t.mem B (slot w iX₂) n : Int) * wv s.mem B (slot w iU) n -
+          Nat.gcd (wv s.mem B (slot w iM) n) (wv s.mem B (slot w iU) n) ∧
+        wv t.mem B (slot w iX₂) n < wv s.mem B (slot w iM) n) := by
+  unfold inverseB
+  split
+  · rename_i heq
+    obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := heq
+    let a := s.setV .v31 (setLane (s.v .v31) 64 1 (s.gpr .x30))
+    let e := a.callEntry
+    have save : runBlock isa [.vop (.ins .d2 .v31 1 .x30)] s = some a := by
+      rw [runBlock_cons, exec_ins (by decide), runStep_some, runBlock_nil]
+    have eg (r : Reg) (hr : r ∉ linkRegs) : e.gpr r = s.gpr r :=
+      (State.callEntry_gpr a hr).trans rfl
+    have raw := inverseBRaw_ok (s := e) (hs.congr rfl)
+      ((eg .x0 (by decide)).trans h0) ((eg .x11 (by decide)).trans h11)
+      ((eg .x12 (by decide)).trans h12) hn1 hnw hw hn21 hZ
+      hU hV hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hVM
+    obtain ⟨tr, u, eu, su, u0, u1, u2, u11, u12, fu, ku, vu⟩ := raw
+    have nov31 : (inverseBRaw 2 3 6 7 9 8).allInstrs (fun i => vdstOf i != some .v31) = true := by decide +kernel
+    have uv : u.v .v31 = e.v .v31 := Exec.vec (fun i hi => by
+      have cert : (instrs (inverseBRaw 2 3 6 7 9 8)).all
+          (fun (i : Instr) => vdstOf i != some VReg.v31) = true := by
+        rw [← Code.allInstrs_eq]; exact nov31
+      have h := List.all_eq_true.mp cert i hi
+      simpa only [bne_iff_ne] using h) eu
+    have ulr : u.gpr .x30 = e.gpr .x30 := ku.gpr _ (by decide)
+    have call : WP isa (.call "vg_rsa_keygen_inverse" (inverseBRaw 2 3 6 7 9 8)) a
+        (fun t => t = u) := by
+      refine ⟨_, u, Exec.call (call_callEntry a) eu ?_, rfl⟩
+      simp only [isa, ret, ulr, e, ite_true]
+    have saved : laneOf u .v31 1 = s.gpr .x30 := by
+      rw [laneOf, uv]
+      change (setLane (s.v .v31) 64 1 (s.gpr .x30)).extractLsb' (64 * 1) 64 = _
+      rw [extract_setLane64 _ _ (by decide) (by decide), ite_eq_left rfl]
+    let t := (u.write .x .x30 (laneOf u .v31 1)).setV .v31 0
+    have finish : runBlock isa [.umov .x .x30 .v31 1, .vop (.movi0 .v31)] u = some t := by
+      rw [runBlock_cons, exec_umov (by decide), runStep_some, runBlock_cons]
+      rfl
+    have kt : Keep [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13,
+        .x14, .x15, .x16, .x17] s t := by
+      refine ⟨fun r hr => ?_, ku.rd, ku.wr, ku.sp, fun r hr => ?_⟩
+      · by_cases h30 : r = .x30
+        · subst r
+          change (u.write .x .x30 (laneOf u .v31 1)).gpr .x30 = _
+          rw [RegUpd.gpr_write_self, saved, BitVec.setWidth_eq]
+        · change (u.write .x .x30 (laneOf u .v31 1)).gpr r = _
+          rw [RegUpd.gpr_write_of_ne _ _ _ h30, ku.gpr r hr, eg r (by
+            simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+            exact ⟨fun h => hr (by simp [h]), fun h => hr (by simp [h]), h30⟩)]
+      · have hr31 : r ≠ .v31 := by intro h; subst r; simp [preservedV] at hr
+        change (((u.write .x .x30 (laneOf u .v31 1)).setV .v31 0).v r).extractLsb' 0 64 = _
+        simp only [RegUpd.v_setV, RegUpd.v_write, hr31, ite_false]
+        simpa only [e, State.callEntry_v, a, RegUpd.v_setV, hr31, ite_false] using ku.vcs r hr
+    unfold keygenInverse
+    refine WP.seq (WP.of_runBlock ⟨a, save, ?_⟩)
+    refine WP.seq (WP.mono call fun v hv => ?_)
+    subst v
+    refine WP.of_runBlock ⟨t, finish, su.congr rfl, ?_, ?_, ?_, u11, u12, fu, kt, vu⟩
+    · exact u0
+    · exact u1.trans (eg .x1 (by decide))
+    · exact u2.trans (eg .x2 (by decide))
+  · exact inverseBRaw_ok hs h0 h11 h12 hn1 hnw hw hn21 hZ hU hV hX₁ hX₂ hM hT
+      dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hVM
 
 /-- `inverseBS`: `inverseB_ok` with `x₂ 2^(5 B)` the inverse. -/
 theorem inverseBS_ok {s : State} {B : Addr} {Z w n : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)

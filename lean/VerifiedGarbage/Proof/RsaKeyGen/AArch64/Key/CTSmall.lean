@@ -250,15 +250,15 @@ theorem dOddCblk_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hev : EvOK I s)
   exact h₂.regs (mt.trans hm₅) (k35.trans kt)
 
 theorem dOdd_eq2 : dOdd = loadEv ++ (([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] :
-    List (Prog isa)) ++ ((invFrom aE ++ ([inverse aU aV aX₁ aX₂ aE aT] : List (Prog isa))) ++ (lGe2 ++ (gcdIsOne ++
+    List (Prog isa)) ++ (([copyA aM aE] : List (Prog isa)) ++ ((invFrom aM ++ ([inverse aU aV aX₁ aX₂ aM aT] : List (Prog isa))) ++ (lGe2 ++ (gcdIsOne ++
     ([.block ([ldh .x3 kEv] ++ minv ++ ws ++ base aX₂ .x16 ++ base aR .x17 ++
         ([ldh .x1 kEv, ld .x3 .x16, .sub .x .x1 .x1 .x3, ld .x3 .x17, .mul .x .x3 .x3 .x1, .addImm .x .x3 .x3 1,
           .mul .x .x10 .x3 .x4] : List Instr)),
       zeroA aDd,
       .block (ws ++ (base aDd .x8 ++ (([st .x10 .x8] : List Instr) ++ (base aQt .x9 ++
         ([movi .x7 0] : List Instr))))),
-      mulAddRow] : List (Prog isa)))))) := by
-  simp only [dOdd, List.append_assoc]
+      mulAddRow] : List (Prog isa))))))) := by
+  simp only [dOdd, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem dOdd_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG fun I t => EvOK I t ∧ I.E % 2 = 1)) (seqs dOdd) fun _ _ => True := by
   have sF : ∀ (cs : List Rc) (rs : List Reg), cs.all Rc.ok = true → .hdr kEv ∉ cs →
@@ -274,6 +274,9 @@ theorem dOdd_ct0 [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG fun I t => E
           (by decide) (by decide) (by decide) (sF _ _ (by decide) (by decide)) (by taint_decide) (by taint_decide))
           (zc_ct (by decide) (by decide) (by decide) (sF _ _ (by decide) (by decide)) (by taint_decide)
             (by taint_decide))))) ?_
+  refine rs_app (by simp) (by simp [invFrom]) (copyA_ct (by decide) (by decide) (by decide)
+    (stab_and (sF _ _ (by decide) (by decide)) (stab_top _ (by decide) (by decide) (by decide)))
+    (by taint_decide)) ?_
   -- `x = R⁻¹ mod e`, `kOk`.
   refine rs_app (by simp [invFrom]) (by simp [lGe2, constA]) (invFrom_ct (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (sF _ _ (by decide) (by decide)) (by taint_decide) (by taint_decide)) ?_
