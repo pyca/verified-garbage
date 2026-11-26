@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.Group.Projective
 public import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.X448.Ladder
-import VerifiedGarbage.Proof.Framework.Pratt
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
@@ -250,7 +249,7 @@ open VG.Proof.X448 (ladderAfter ladderAfter_step ladderAfter_448 ladderAfter_swa
 /-! ## The field facts -/
 
 private theorem one_sub_d_pow : 39082 ^ ((P - 1) / 2) % PZ = PZ - 1 := by
-  rw [← Pratt.powMod_eq PZ (by decide +kernel) 449 _ _ (by decide +kernel)]; decide +kernel
+  rw [← Ed448.powMod_eq PZ (by decide +kernel) 449 _ _ (by decide +kernel)]; decide +kernel
 
 theorem one_sub_dZ : (1 : ZMod PZ) - dZ = ((39082 : Nat) : ZMod PZ) := by
   rw [dZ, show Spec.Ed448.d = 0 - 39081 from rfl, toZ_neg, sub_neg_eq_add]

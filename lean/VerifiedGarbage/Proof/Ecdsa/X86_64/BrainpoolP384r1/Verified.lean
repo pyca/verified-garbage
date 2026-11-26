@@ -153,7 +153,7 @@ theorem brainpoolp384r1_ok (hI : InvSounds) : BaseCfgOk brainpoolp384r1 where
   sh := by rw [brainpoolp384r1_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP384r1.curve.p
+    show IsPrime Spec.BrainpoolP384r1.curve.p
     exact Proof.BrainpoolP384r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp384r1.C.n_ne_zero Proof.BrainpoolP384r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
@@ -198,7 +198,7 @@ theorem brainpoolp384r1S_ok (hI : InvSounds) : BaseCfgOk brainpoolp384r1S where
   sh := by rw [brainpoolp384r1S_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.BrainpoolP384r1.curve.p
+    show IsPrime Spec.BrainpoolP384r1.curve.p
     exact Proof.BrainpoolP384r1.p_prime),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ brainpoolp384r1S.C.n_ne_zero Proof.BrainpoolP384r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩

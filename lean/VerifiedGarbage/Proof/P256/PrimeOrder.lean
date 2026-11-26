@@ -25,10 +25,10 @@ namespace VG.Proof.P256
 open Spec.Weierstrass Weierstrass
 
 theorem primeOrder : PrimeOrder Spec.P256.curve :=
-  primeOrder_of good n_prime onCurve_G (mul_n law) (by decide +kernel)
+  primeOrder_of good (Nat.prime_def.mpr n_prime) onCurve_G (mul_n law) (by decide +kernel)
 
 /-- `n` kills every point: the group has `n` elements. -/
 theorem killedByN : KilledByN Spec.P256.curve :=
-  killedByN_of good n_prime onCurve_G (mul_n law) (by decide +kernel)
+  killedByN_of good (Nat.prime_def.mpr n_prime) onCurve_G (mul_n law) (by decide +kernel)
 
 end VG.Proof.P256

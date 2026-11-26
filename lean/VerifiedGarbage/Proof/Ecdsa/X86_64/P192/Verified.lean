@@ -139,7 +139,7 @@ theorem p192_ok (hI : InvSounds) : BaseCfgOk p192 where
   sh := by rw [p192_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P192.curve.p
+    show IsPrime Spec.P192.curve.p
     rw [show Spec.P192.curve.p = 6277101735386680763835789423207666416083908700390324961279 by decide +kernel]
     exact Proof.P192.prime_6277101735386680763835789423207666416083908700390324961279),
     InvOk.ofMod (by decide +kernel) (by decide)⟩

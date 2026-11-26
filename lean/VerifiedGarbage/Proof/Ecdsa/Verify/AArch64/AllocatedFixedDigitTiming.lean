@@ -19,7 +19,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
-public import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase

@@ -125,8 +125,6 @@ import Mathlib.Data.Nat.Find
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Nat.Init
 import Mathlib.Data.Nat.ModEq
-import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Option.Basic
 import Mathlib.Data.Prod.Basic

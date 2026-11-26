@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.Int.ModEq
-public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.EcKey.P521

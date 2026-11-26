@@ -114,7 +114,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import Mathlib.Data.Nat.Prime.Defs
+import VerifiedGarbage.Proof.Framework.IsPrime
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
@@ -126,7 +126,7 @@ meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 meta import Mathlib.Tactic.ClearExcept
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-meta import Mathlib.Data.Nat.Prime.Defs
+meta import VerifiedGarbage.Proof.Framework.IsPrime
 meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
@@ -313,7 +313,7 @@ def invAllocatedOuterW : List (Nat × Nat) := invAllocatedW ++ [(7800,32)]
 
 /-- The production inverse restores every extra callee-saved register used by allocation. -/
 theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedModulus]
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hT : InvToM invAllocatedModulus)
     (hL : InvLay invAllocatedCfg size) (hR : UnitMod invAllocatedModulus (2^256))
     {s : State} (hs : Scr s base size)
     (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
@@ -342,7 +342,7 @@ theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedM
 
 /-- Relational timing for the complete production inverse, including extra-register saves. -/
 theorem invAllocated_inverse_relCT {base : Addr} {size X : Nat} [NeZero invAllocatedModulus]
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hT : InvToM invAllocatedModulus)
     (hL : InvLay invAllocatedCfg size) (hR : UnitMod invAllocatedModulus (2^256))
     (hX : X<invAllocatedModulus) (hC : InvOk invAllocatedCfg invAllocatedModulus) :
     RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧ s.sp=t.sp ∧

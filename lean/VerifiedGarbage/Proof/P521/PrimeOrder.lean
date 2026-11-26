@@ -36,11 +36,11 @@ theorem mul_n : mul Spec.P521.curve.n (G Spec.P521.curve) = .infinity :=
 
 theorem primeOrder : PrimeOrder Spec.P521.curve := by
   haveI : Fact Spec.P521.curve.p.Prime := ⟨curve_p_prime⟩
-  exact primeOrder_of good n_prime onCurve_G mul_n (by decide +kernel)
+  exact primeOrder_of good (Nat.prime_def.mpr n_prime) onCurve_G mul_n (by decide +kernel)
 
 /-- `n` kills every point: the group has `n` elements. -/
 theorem killedByN : KilledByN Spec.P521.curve := by
   haveI : Fact Spec.P521.curve.p.Prime := ⟨curve_p_prime⟩
-  exact killedByN_of good n_prime onCurve_G mul_n (by decide +kernel)
+  exact killedByN_of good (Nat.prime_def.mpr n_prime) onCurve_G mul_n (by decide +kernel)
 
 end VG.Proof.P521

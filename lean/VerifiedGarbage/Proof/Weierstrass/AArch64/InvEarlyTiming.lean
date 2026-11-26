@@ -348,7 +348,7 @@ def invAllocatedBody : Prog isa :=
   apply hU.cover
   decide
 
- theorem invAllocated_odd (_hp : invAllocatedModulus.Prime) : invAllocatedModulus%2=1 := by decide
+ theorem invAllocated_odd (_hp : IsPrime invAllocatedModulus) : invAllocatedModulus%2=1 := by decide
 
  theorem invAllocated_nine_pos : 0<inverseNine.C := by decide +kernel
 
@@ -356,7 +356,7 @@ def invAllocatedBody : Prog isa :=
 
 /-- Correctness of the public early-exit tail after register allocation. -/
 theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedModulus]
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hT : InvToM invAllocatedModulus)
     (hL : InvLay invAllocatedCfg size) (hR : UnitMod invAllocatedModulus (2^256))
     {s : State} (hs : Scr s base size)
     (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
@@ -421,7 +421,7 @@ theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedMo
 
 /-- Full value and explicit spill/register frames for the allocated inverse body. -/
 theorem invAllocated_body_ok {base : Addr} {size : Nat} [NeZero invAllocatedModulus]
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hT : InvToM invAllocatedModulus)
     (hL : InvLay invAllocatedCfg size) (hR : UnitMod invAllocatedModulus (2^256))
     {s : State} (hs : Scr s base size)
     (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
@@ -494,7 +494,7 @@ theorem IInv.g_words_eq {P : InvCfg} {base : Addr} {I : Divstep.IState} {s t : S
   exact_mod_cast es.trans et.symm
 
  theorem invAllocated_prefix_ok {base : Addr} {size X : Nat}
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hL : InvLay invAllocatedCfg size)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hL : InvLay invAllocatedCfg size)
     {s : State} (hs : Scr s base size)
     (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
     (hX : X<invAllocatedModulus) (hval : wordsVal s.mem base invAllocatedCfg.base 4=X) :
@@ -516,7 +516,7 @@ theorem IInv.g_words_eq {P : InvCfg} {base : Addr} {I : Divstep.IState} {s t : S
       ⟨ha.of_keepRegs kt (by decide),it,(ka.mono (by decide)).trans kt⟩
 
  theorem invAllocated_checked_prefix_ok {base : Addr} {size X : Nat}
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hL : InvLay invAllocatedCfg size)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hL : InvLay invAllocatedCfg size)
     {s : State} (hs : Scr s base size)
     (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
     (hX : X<invAllocatedModulus) (hval : wordsVal s.mem base invAllocatedCfg.base 4=X) :
@@ -531,7 +531,7 @@ theorem IInv.g_words_eq {P : InvCfg} {base : Addr} {I : Divstep.IState} {s t : S
 
 /-- The canonical public signature scalar determines whether the tenth batch runs. -/
 theorem invAllocated_body_relCT {base : Addr} {size X : Nat} [NeZero invAllocatedModulus]
-    (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
+    (hsize : 8192≤size) (hpr : IsPrime invAllocatedModulus) (hT : InvToM invAllocatedModulus)
     (hL : InvLay invAllocatedCfg size) (hR : UnitMod invAllocatedModulus (2^256))
     (hX : X<invAllocatedModulus) (hC : InvOk invAllocatedCfg invAllocatedModulus) :
     RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧ s.sp=t.sp ∧
