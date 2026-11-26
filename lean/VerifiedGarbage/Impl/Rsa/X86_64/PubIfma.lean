@@ -108,13 +108,29 @@ def adxExp (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [mm aXm aX
 /-- `w` (in `rax`) compared with `n`. -/
 def cmpW (n : Nat) : Prog isa := .block [.mov .rax (.mem (hdr sW)), .alu .cmp .rax (.imm (BitVec.ofNat 32 n))]
 
-/-- For `e = 65537` and 2048-, 3072- or 4096-bit moduli, `exp65537`;
-otherwise the ADX code's. -/
+/-- Set ZF after a successful size comparison. -/
+def flagIfmaYes : Prog isa := .block [.alu .cmp .r11 (.reg .r11)]
+
+/-- Clear ZF when the exponent cannot use IFMA. -/
+def flagIfmaNo : Prog isa := .block [.mov32 .rax (.imm 0), .alu .cmp .rax (.imm 1)]
+
+/-- ZF iff the modulus has an IFMA layout. -/
+def ifmaSizes : Prog isa :=
+  .seq (cmpW 32) (.ite .e flagIfmaYes
+    (.seq (cmpW 48) (.ite .e flagIfmaYes (cmpW 64))))
+
+/-- ZF iff the exponent and modulus can use IFMA. -/
+def ifmaEligible : Prog isa :=
+  .seq Folded.is65537 (.ite .e ifmaSizes flagIfmaNo)
+
+/-- The three supported layouts, after `ifmaEligible` accepted the input. -/
+def ifmaChoose : Prog isa :=
+  .seq (cmpW 32) (.ite .e (exp65537 pay2048)
+    (.seq (cmpW 48) (.ite .e (exp65537 pay3072) (exp65537 pay4096))))
+
+/-- Select the vector path once; all other inputs share one ADX fallback. -/
 def pubExp (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq Folded.is65537 (.ite .e
-    (.seq (cmpW 32) (.ite .e (exp65537 pay2048) (.seq (cmpW 48) (.ite .e (exp65537 pay3072)
-      (.seq (cmpW 64) (.ite .e (exp65537 pay4096) (adxExp mm)))))))
-    (adxExp mm))
+  .seq ifmaEligible (.ite .e ifmaChoose (adxExp mm))
 
 /-- `Folded.rest` with `pubExp`. -/
 def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
