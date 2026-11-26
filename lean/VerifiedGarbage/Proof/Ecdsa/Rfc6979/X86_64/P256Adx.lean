@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
@@ -71,6 +72,11 @@ theorem coreK_p256 : coreK Impl.Ecdsa.X86_64.p256 = Proof.Ecdsa.X86_64.signX86_6
 theorem p256_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p256 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP256`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p256_bits : Impl.Ecdsa.X86_64.signP256.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-256, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve)
@@ -88,9 +94,9 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   coreC := Impl.Ecdsa.X86_64.signP256
   coreX := by rw [coreK_p256]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p256_bits
+  coreSp := Code.sp_of_bits rfl p256_bits
+  coreMx := Code.noMx_of_bits rfl p256_bits
   coreD := by lit_decide
   blk := p256_blk
 
@@ -118,6 +124,11 @@ open VG VG.X86_64
 /-- `coreK` is the same for `p256x` as for `p256`, the same curve. -/
 theorem coreK_p256x : coreK Impl.Ecdsa.X86_64.p256x = Proof.Ecdsa.X86_64.signX86_64 := coreK_p256
 
+/-- The tests of the instructions of `signP256Adx`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p256x_bits : Impl.Ecdsa.X86_64.signP256Adx.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-256 with BMI2 and ADX, with the group law `hL`, the comb's tables `hT`
 and the inversions' soundness `hI`. -/
 def p256x (hL : Weierstrass.Law Spec.P256.curve)
@@ -135,9 +146,9 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   coreC := Impl.Ecdsa.X86_64.signP256Adx
   coreX := by rw [coreK_p256x]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_ct_adx
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p256x_bits
+  coreSp := Code.sp_of_bits rfl p256x_bits
+  coreMx := Code.noMx_of_bits rfl p256x_bits
   coreD := by lit_decide
   blk := by exact p256_blk
 

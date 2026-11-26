@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Framework.X86_64.SideBits
 import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
@@ -55,8 +56,7 @@ def keptG (ks : List Nat) (gs : List Reg) : List Reg :=
 /-- What the scrub needs of an instruction: its vector registers are at a
 level of at most `k`, it writes none unless the tail clears them all
 (`vec`), and it writes none of the registers `kept`. -/
-def sideI (k : Nat) (vec : Bool) (kept : List Reg) (i : Instr) : Bool :=
-  decide (i.vecLevelR ≤ k) && (vec || !writesVec i) && kept.all fun r => !Taint.clobbers i r
+def sideI (k : Nat) (vec : Bool) (kept : List Reg) : Instr → Bool := sideOk k vec kept
 
 end VG.X86_64.Scrub
 
@@ -66,14 +66,51 @@ open VG.Impl.Scrub.X86_64
 
 /-! ## Any chunks, and code that leaves the same MXCSR along a path -/
 
+/-- No instruction loads MXCSR, for the kernel. -/
+noncomputable def noLoads (is : List Instr) : Bool := is.all (SideBits.none 524288)
+
+theorem noLoads_eq (is : List Instr) : noLoads is = is.all fun i => !loadsMxcsr i :=
+  congrArg is.all (funext SideBits.none_mx)
+
+/-- `mxClass`, which asks of an instruction what `sideI` does
+(`sideBits`, which the kernel then evaluates once for both). -/
+noncomputable def mxClassK : Prog isa → Option MxC
+  | .block is => if noLoads is then some .keep else none
+  | .seq a b =>
+    if restoresC a b then some .mask else
+    match mxClassK a, mxClassK b with
+    | some x, some y => some (x.comp y)
+    | _, _ => none
+  | .ite _ t e =>
+    match mxClassK t, mxClassK e with
+    | some x, some y => if x = y then some x else none
+    | _, _ => none
+  | .loop b _ => mxClassK b
+  | .call _ b => mxClassK b
+  | .frame i b j => if SideBits.none 524288 i && SideBits.none 524288 j then mxClassK b else none
+  | .icall i _ b n =>
+    if loadsMxcsr i then none else
+    match mxClassK b, mxClassK n with
+    | some x, some y => if x = y then some x else none
+    | _, _ => none
+
+theorem mxClassK_eq : ∀ c : Prog isa, mxClassK c = mxClass c
+  | .block is => by rw [mxClassK, mxClass, noLoads_eq]
+  | .seq a b => by rw [mxClassK, mxClass, mxClassK_eq a, mxClassK_eq b]; rfl
+  | .ite _ t e => by rw [mxClassK, mxClass, mxClassK_eq t, mxClassK_eq e]; rfl
+  | .loop b _ => by rw [mxClassK, mxClass, mxClassK_eq b]
+  | .call _ b => by rw [mxClassK, mxClass, mxClassK_eq b]
+  | .frame i b j => by rw [mxClassK, mxClass, SideBits.none_mx, SideBits.none_mx, mxClassK_eq b]
+  | .icall i _ b n => by rw [mxClassK, mxClass, mxClassK_eq b, mxClassK_eq n]; rfl
+
 /-- Whether two runs of `c` along the same path leave the same MXCSR if
 they started with the same: it leaves a function of MXCSR on entry
 (`mxClass`), or every `ldmxcsr` in it loads what `Mx.mx` follows. The
 kernel evaluates the second only where the first fails. -/
-noncomputable def mxSameB (c : Prog isa) : Bool := (mxClass c).isSome || (RScrub.Mx.mx c []).isSome
+noncomputable def mxSameB (c : Prog isa) : Bool := (mxClassK c).isSome || (RScrub.Mx.mx c []).isSome
 
 theorem mxSame_ofB {c : Prog isa} (h : mxSameB c = true) : MxSame c := by
-  simp only [mxSameB, Bool.or_eq_true] at h
+  simp only [mxSameB, mxClassK_eq, Bool.or_eq_true] at h
   rcases h with h | h
   · exact MxSame.of_fun (mxFun_of h)
   · exact RScrub.Mx.mxSame_of h
@@ -109,17 +146,17 @@ theorem sideI_facts {c : Prog isa} {k : Nat} {vec : Bool} {ks : List Nat} {gs : 
   · cases hvec : vec
     · refine .inr fun i hi => ?_
       have h1 := hI i hi
-      simp only [sideI, hvec, Bool.false_or, Bool.and_eq_true, Bool.not_eq_true'] at h1
+      simp only [sideI, sideOk_eq, hvec, Bool.false_or, Bool.and_eq_true, Bool.not_eq_true'] at h1
       exact h1.1.2
     · exact .inl fun x => by unfold xsFor; simp only [↓reduceIte]; exact mem_xregs x
   · intro q hq hng hnp i hi
     have h1 := hI i hi
-    simp only [sideI, Bool.and_eq_true] at h1
+    simp only [sideI, sideOk_eq, Bool.and_eq_true] at h1
     have hk : q ∈ keptG ks gs := List.mem_filter.mpr ⟨hq, by simp [hng, hnp]⟩
     simpa using List.all_eq_true.mp h1.2 q hk
   · intro i hi
     have h1 := hI i hi
-    simp only [sideI, Bool.and_eq_true, decide_eq_true_eq] at h1
+    simp only [sideI, sideOk_eq, Bool.and_eq_true, decide_eq_true_eq] at h1
     exact h1.1.1
 
 /-- `scrubSide` for a stack wiped in the chunks `cs` (from the top), at any

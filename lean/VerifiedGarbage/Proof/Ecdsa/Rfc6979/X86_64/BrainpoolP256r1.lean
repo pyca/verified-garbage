@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -72,6 +73,11 @@ theorem brainpoolp256r1SatMem_held : ∀ i < brainpoolp256r1W.length,
 theorem brainpoolp256r1_blk : RfcT (cfgC Impl.Ecdsa.X86_64.brainpoolp256r1S false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signBrainpoolP256r1`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem brainpoolp256r1_bits : Impl.Ecdsa.X86_64.signBrainpoolP256r1.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- brainpoolp256r1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve)
@@ -88,9 +94,9 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve)
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP256r1
   coreX := by rw [coreK_brainpoolp256r1]; exact fun s h hc => Proof.Ecdsa.X86_64.BrainpoolP256r1.sign_call_x86 hL hI s h hc
   coreCT := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.X86_64.BrainpoolP256r1.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl brainpoolp256r1_bits
+  coreSp := Code.sp_of_bits rfl brainpoolp256r1_bits
+  coreMx := Code.noMx_of_bits rfl brainpoolp256r1_bits
   coreD := by lit_decide
   blk := brainpoolp256r1_blk
 
