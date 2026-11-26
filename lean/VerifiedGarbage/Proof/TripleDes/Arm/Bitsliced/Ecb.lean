@@ -743,7 +743,8 @@ theorem stash_ok {s : State} (h : Room s) :
     by_cases e77 : j = 77
     · rw [ite_eq_left e77, ite_eq_left e77]; rfl
     rw [ite_eq_right e77, ite_eq_right e77, fw_stFw h (by decide) hj]
-  refine ⟨stFw s₃ 79 (s₃.gpr .r12), ?_, ?_, ?_, ?_, ?_, fun j hj => ?_, fun _ => rfl, rfl, rfl, ?_⟩
+  refine ⟨stFw s₃ 79 (s₃.gpr .r12), ?_, ?_, ?_, ?_, ?_, fun j hj => ?_,
+    fun _ => by simp only [stFw, s₁, s₂, s₃], by simp only [stFw, s₁, s₂, s₃], by simp only [stFw, s₁, s₂, s₃], ?_⟩
   · rw [stash, runBlock_cons, show base = .r3 from rfl, e₁, runStep_some, runBlock_cons, e₂,
       runStep_some, runBlock_cons, e₃, runStep_some, runBlock_cons, e₄, runStep_some, runBlock_nil]
   · rw [f _ (by decide)]; rfl

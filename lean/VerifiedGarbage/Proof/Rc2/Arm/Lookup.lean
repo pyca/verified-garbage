@@ -86,7 +86,7 @@ def kw (m : Mem) (K : BitVec 32) (q : Nat) : BitVec 32 :=
 one of the row's eight entries. -/
 theorem rowBit_split : ∀ r < 32, ∀ a < 8, ∀ b < 32,
     ((BitVec.ofNat 32 (32 * a + b) ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 =
-      (if (32 * a + b) / 8 = r then 1 else 0 : BitVec 32) := by decide
+      (if (32 * a + b) / 8 = r then 1 else 0 : BitVec 32) := by decide +kernel
 
 theorem rowBit {n r : Nat} (hn : n < 256) (hr : r < 32) :
     ((BitVec.ofNat 32 n ^^^ BitVec.ofNat 32 (8 * r)) - 8) >>> 31 = (if n / 8 = r then 1 else 0 : BitVec 32) := by
