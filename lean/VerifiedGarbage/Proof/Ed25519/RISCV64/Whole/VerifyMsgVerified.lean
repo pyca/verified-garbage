@@ -1,5 +1,11 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
+
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsgCT
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed25519.WholeLocal
@@ -89,6 +95,10 @@ cached point from a table entry or the static, and the table of `A`.
 @[expose] public section
 
 namespace VG.Proof.Ed25519.RISCV64
+
+materialize_code VG.Impl.Ed25519.RISCV64.doubleXYZ
+materialize_code VG.Impl.Ed25519.RISCV64.addCached
+
 
 /-!
 ## The windows' field programs on RISC-V
@@ -202,6 +212,44 @@ theorem tableAt_shift (m : Mem) (b : Addr) (o : Nat) : tableAt m (b + BitVec.ofN
   simp only [tableAt, FS_shift, Nat.add_zero]
 
 section
+/-- A call of a field program without nested calls has the inline field contract. -/
+private theorem fieldCall_ok (name : String) (ops : List FieldOp)
+    (hn : (fieldCode ops).noCalls = true)
+    (hra : (fieldCode ops).allInstrs (fun i => dstOf i != some .ra) = true)
+    {s : State} {b : Addr} (hc : Ctx b s) (hw : WS b s) :
+    WP isa (.call name (fieldCode ops)) s fun t =>
+      Keep b s t ∧ env t.mem b = evalOps ops (env s.mem b) := by
+  have ce : Ctx b s.callEntry :=
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hc.a3, hc.al,
+      by intro d n hd; rw [State.callEntry_wr]; exact hc.wr d n hd⟩
+  have we : WS b s.callEntry := by simpa only [WS, State.callEntry_wr] using hw
+  obtain ⟨trace, t, he, kt, et⟩ := fieldCode_ok ops ce we
+  have keepRa : t.gpr .ra = s.callEntry.gpr .ra := Exec.gpr (fun i hi => by
+    have h := List.all_eq_true.mp (by rw [← Code.allInstrs_eq]; exact hra) i hi
+    simpa using h) he (.inl hn)
+  have retok : isa.ret s.callEntry t = some t := by
+    simp only [isa, ret, keepRa, ite_true]
+  refine ⟨_, t, Exec.call (call_callEntry s) he retok, ⟨⟨?_, kt.rest.rd, kt.rest.wr, kt.rest.sp⟩,
+    kt.frame⟩, ?_⟩
+  · intro r hr
+    rw [kt.rest.gpr r hr, State.callEntry_gpr]
+    exact fun hl => hr (by
+      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at hl
+      rcases hl with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  · simpa only [State.callEntry_mem] using et
+
+private theorem addCachedCall_ok {s : State} {b : Addr} (hc : Ctx b s) (hw : WS b s) :
+    WP isa (.call "vg_ed25519_verify_add_cached" addCached) s fun t =>
+      Keep b s t ∧ env t.mem b = evalOps pointAddCachedOps (env s.mem b) :=
+  fieldCall_ok _ _ (by show addCached.noCalls = true; lit_decide)
+    (by show addCached.allInstrs _ = true; lit_decide) hc hw
+
+private theorem doubleXYZCall_ok {s : State} {b : Addr} (hc : Ctx b s) (hw : WS b s) :
+    WP isa (.call "vg_ed25519_verify_double_xyz" doubleXYZ) s fun t =>
+      Keep b s t ∧ env t.mem b = evalOps dblOpsXYZ (env s.mem b) :=
+  fieldCall_ok _ _ (by show doubleXYZ.noCalls = true; lit_decide)
+    (by show doubleXYZ.allInstrs _ = true; lit_decide) hc hw
+
 variable {b : Addr}
 
 open VG.Proof.X448.RISCV64.R64 (dw ew dw_write_self dw_write_other) in
@@ -483,7 +531,7 @@ theorem aTable_ok {s : State} (hc : Ctx8 b s) (hd : env s.mem b 16 = Spec.Ed2551
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by have := h.lo; omega_using [this]⟩
   have hlt := h.lt
   unfold aTableBody
-  refine WP.seq (WP.mono (fieldCode_ok pointAddCachedOps h.ctx.ctx h.ctx.ws) fun v1 ⟨kv1, ev1⟩ => ?_)
+  refine WP.seq (WP.mono (addCachedCall_ok h.ctx.ctx h.ctx.ws) fun v1 ⟨kv1, ev1⟩ => ?_)
   obtain hcv1 : Ctx8 b v1 := h.ctx.of_keep kv1
   obtain pv1 : point (env v1.mem b) 0 1 2 3 = aMult A (n' + 1) := by
     rw [ev1, pointAddCached_eval _ A h.q, h.pt]; rfl
@@ -552,6 +600,22 @@ open Edwards
 
 theorem evalOps_append (l₁ l₂ : List FieldOp) (e : Env) : evalOps (l₁ ++ l₂) e = evalOps l₂ (evalOps l₁ e) :=
   List.foldl_append
+
+private theorem doubleFour_ok {s : State} {b : Addr} (hc : Ctx b s) (hw : WS b s) :
+    WP isa doubleFour s fun t => Keep b s t ∧
+      env t.mem b = evalOps (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps) (env s.mem b) := by
+  rw [doubleFour]
+  refine WP.seq (WP.mono (doubleXYZCall_ok hc hw) fun a ⟨ka, ea⟩ => ?_)
+  refine WP.seq (WP.mono (doubleXYZCall_ok (ka.ctx hc) (hw.of_rest ka.rest)) fun b' ⟨kb, eb⟩ => ?_)
+  have kab := ka.trans kb
+  refine WP.seq (WP.mono (doubleXYZCall_ok (kab.ctx hc) (hw.of_rest kab.rest)) fun c ⟨kc, ec⟩ => ?_)
+  have kabc := kab.trans kc
+  refine WP.seq (WP.mono (doubleXYZCall_ok (kabc.ctx hc) (hw.of_rest kabc.rest)) fun d ⟨kd, ed⟩ => ?_)
+  have kabcd := kabc.trans kd
+  refine WP.mono (fieldCode_ok [.mul 3 11 14] (kabcd.ctx hc) (hw.of_rest kabcd.rest)) fun t ⟨kt, et⟩ => ?_
+  refine ⟨kabcd.trans kt, ?_⟩
+  rw [et, ed, ec, eb, ea, show dblOps = dblOpsXYZ ++ [.mul 3 11 14] from rfl]
+  simp only [evalOps_append]
 
 /-- `dblOpsXYZ` leaves `T` as it was and the double's `X`, `Y` and `Z`. -/
 theorem dblOpsXYZ_eval (e : Env) : point (evalOps dblOpsXYZ e) 0 1 2 3 =
@@ -688,10 +752,10 @@ theorem addCached_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h0 : s.gpr .s0 = q)
     (hp : Rep (point (env s.mem b) 0 1 2 3) a) {R : State → Prop}
     (k : ∀ t, Rest fclob s t → Frame [FA b] s.mem t.mem →
       Rep (point (env t.mem b) 0 1 2 3) (a + qa) → env t.mem b 16 = env s.mem b 16 → R t) :
-    WP isa (.block pointFromTableQ) s fun t => WP isa (fieldCode pointAddCachedOps) t R := by
+    WP isa (.block pointFromTableQ) s fun t => WP isa (.call "vg_ed25519_verify_add_cached" addCached) t R := by
   refine WP.mono (pointFromTableQ_ok hc h0 hq8 hr hd) fun s1 ⟨r1, f1, q1, k1⟩ => ?_
   obtain hc1 : Ctx8 b s1 := hc.of_rest r1 (by decide)
-  refine WP.mono (fieldCode_ok pointAddCachedOps hc1.ctx hc1.ws) fun t ⟨kt, et⟩ => k t ?_ ?_ ?_ ?_
+  refine WP.mono (addCachedCall_ok hc1.ctx hc1.ws) fun t ⟨kt, et⟩ => k t ?_ ?_ ?_ ?_
   · exact (r1.mono (by decide)).trans kt.rest
   · exact (f1.sub fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
@@ -814,7 +878,7 @@ theorem windowStep_ok {s : State} (h : WCtx b pk sig ch T A K S s) (hd : env s.m
     rw [u1.gpr, h1, BitVec.ofNat_add]; exact BitVec.add_sub_cancel _ _
   obtain r1 : Rest [.s1] s s1 := u1.rest (by decide)
   obtain h1' : WCtx b pk sig ch T A K S s1 := h.of r1 (by decide) (by decide) (by rw [u1.mem]; exact Frame.refl _ _)
-  refine WP.seq (WP.mono (fieldCode_ok _ h1'.vc.ctx.ctx h1'.vc.ctx.ws) fun s2 ⟨k2, e2⟩ => ?_)
+  refine WP.seq (WP.mono (doubleFour_ok h1'.vc.ctx.ctx h1'.vc.ctx.ws) fun s2 ⟨k2, e2⟩ => ?_)
   obtain h2 : WCtx b pk sig ch T A K S s2 := h1'.of k2.rest (by decide) (by decide) k2.frame
   obtain p2 : Rep (point (env s2.mem b) 0 1 2 3)
       ((16 : Nat) • ((K / 16 ^ (c + 1)) • Aa + (S / 16 ^ (c + 1)) • (-baseAff))) := by
@@ -1212,7 +1276,7 @@ theorem windowStep_ct {Aa : EPoint dZ} (hA : Rep A Aa) {c : Nat} (hc : c < 128) 
   refine ct_seq (B := WM b sp pk sig ch T A K S c ((16 : Nat) • v1))
     (ctRegs [.a3, .s1, .s5, .s10, .s11] (fun _ _ h₁ h₂ =>
       wregs h₁.1 h₂.1 h₁.2.1 h₂.2.1 h₁.2.2.2.1 h₂.2.2.2.1) (by taint_decide))
-    (fun s h => WP.mono (fieldCode_ok _ h.1.vc.ctx.ctx h.1.vc.ctx.ws) fun t ⟨k, e⟩ =>
+    (fun s h => WP.mono (doubleFour_ok h.1.vc.ctx.ctx h.1.vc.ctx.ws) fun t ⟨k, e⟩ =>
       ⟨h.1.of k.rest (by decide) (by decide) k.frame, by rw [k.rest.sp, h.2.1], by rw [e, dbl4_keep, h.2.2.1],
         by rw [k.rest.gpr _ (by decide), h.2.2.2.1], by rw [e, dbl4_eval]; exact dbl4_rep h.2.2.2.2⟩) ?_
   refine ct_seq (B := WD b sp pk sig ch T A K S c ((16 : Nat) • v1) (K / 16 ^ c % 16))

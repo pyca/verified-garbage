@@ -56,6 +56,20 @@ def cacheOps : List FieldOp := [.sub 0 18 17, .add 1 18 17, .add 2 20 20, .mul 2
 def pointFromTableQ : List Instr :=
   (List.range 16).flatMap fun i => [.load .d .a4 .s0 (8 * i), .store .d .a4 .a3 (192 + 8 * i)]
 
+/-- One window doubling without the unused extended coordinate. -/
+def doubleXYZ : Prog isa := fieldCode dblOpsXYZ
+
+/-- The cached-point addition shared by table construction and both window digits. -/
+def addCached : Prog isa := fieldCode pointAddCachedOps
+
+/-- Four doublings: only the fourth needs the extended coordinate. The verifier
+saves its incoming return address before the windows and restores it afterward. -/
+def doubleFour : Prog isa :=
+  .seq (.call "vg_ed25519_verify_double_xyz" doubleXYZ) <|
+  .seq (.call "vg_ed25519_verify_double_xyz" doubleXYZ) <|
+  .seq (.call "vg_ed25519_verify_double_xyz" doubleXYZ) <|
+  .seq (.call "vg_ed25519_verify_double_xyz" doubleXYZ) (fieldCode [.mul 3 11 14])
+
 /-- The point in slots 0–3, cached, to entry `s2` of the table at `TA`; slots 0–3 are kept. -/
 def storeCached : Prog isa :=
   .seq (fieldCode (savePointOps ++ cacheOps)) (.seq (.block (tableAddr TA ++ pointToTable)) restorePoint)
@@ -67,7 +81,7 @@ def aTableInit : Prog isa :=
 /-- Entry `s2` = entry `s2 - 1` (in slots 0–3) + `A` (cached in slots 4–7), cached; `a4` is
 nonzero while another entry follows. -/
 def aTableBody : Prog isa :=
-  .seq (fieldCode pointAddCachedOps) (.seq storeCached (.block [.addi .s2 .s2 1, .addi .a4 .s2 (-15)]))
+  .seq (.call "vg_ed25519_verify_add_cached" addCached) (.seq storeCached (.block [.addi .s2 .s2 1, .addi .a4 .s2 (-15)]))
 
 /-- Entries `j < 15` of the table at `TA` are the cached `[j + 1]A`, for `A` in slots 0–3. -/
 def aTable : Prog isa := .seq aTableInit (.loop aTableBody (.nonzero .a4))
@@ -101,14 +115,14 @@ def nibble (p : Reg) (o : Nat) : List Instr :=
 /-- Add entry `a2 - 1` of the table at `TA` (cached `[a2]A`), unless `a2` is zero. -/
 def addA : Prog isa :=
   .ite (.nonzero .a2)
-    (.seq (.block ([.addi .s2 .a2 (-1)] ++ tableAddr TA ++ pointFromTableQ)) (fieldCode pointAddCachedOps))
+    (.seq (.block ([.addi .s2 .a2 (-1)] ++ tableAddr TA ++ pointFromTableQ)) (.call "vg_ed25519_verify_add_cached" addCached))
     (.block [])
 
 /-- Add entry `a2 - 1` of the static (cached `-[a2]B`), unless `a2` is zero. -/
 def addB : Prog isa :=
   .ite (.nonzero .a2)
     (.seq (.block ([.addi .a4 .a2 (-1), .shift .sll .d .a4 .a4 7, .add .s0 .s5 .a4] ++ pointFromTableQ))
-      (fieldCode pointAddCachedOps))
+      (.call "vg_ed25519_verify_add_cached" addCached))
     (.block [])
 
 /-- `S`'s digit, in the low 64 windows (`a4` nonzero when `s1 < 64`). -/
@@ -119,7 +133,7 @@ def windowB : Prog isa :=
 /-- One window: the counter down, four doublings, `k`'s digit, then `S`'s. -/
 def windowStep : Prog isa :=
   .seq (.block [.addi .s1 .s1 (-1)])
-    (.seq (fieldCode (dblOpsXYZ ++ dblOpsXYZ ++ dblOpsXYZ ++ dblOps))
+    (.seq doubleFour
       (.seq (.block (nibble .s11 0)) (.seq addA windowB)))
 
 /-- Before the windows, for `A` in slots 0–3: `d`, the table of `A`, the static's address and

@@ -151,6 +151,14 @@ pub(crate) mod vg_ed25519_scalar_mul_add;
 pub(crate) mod vg_ed25519_scalar_reduce;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed25519_verify_add_cached.rs"]
+pub(crate) mod vg_ed25519_verify_add_cached;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed25519_verify_double_xyz.rs"]
+pub(crate) mod vg_ed25519_verify_double_xyz;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed25519_verify_equation.rs"]
 pub(crate) mod vg_ed25519_verify_equation;
 
