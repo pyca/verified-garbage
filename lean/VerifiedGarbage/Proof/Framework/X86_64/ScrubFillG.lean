@@ -52,13 +52,13 @@ def depthG (n : String → Nat) : Prog isa → Nat
 (`depthG`): as `stubSide`. -/
 noncomputable def stubSideG (a : Prog isa) (k : Nat) (n : String → Nat) (stack : Nat)
     (ts : List (String × List FnTable)) : Bool :=
-  decide (depthG n a ≤ stack) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+  decide (depthG n a ≤ stack) && lvAll k a &&
     tablesCall a ts
 
 /-- What `calleeSide` needs of code `a` with a stub (`depthG`): as
 `stubCallee`. -/
 noncomputable def stubCalleeG (a : Prog isa) (k : Nat) (n : String → Nat) (m : Nat) : Bool :=
-  decide (depthG n a ≤ m) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+  decide (depthG n a ≤ m) && lvAll k a &&
     (UpperLock.inames a).isEmpty
 
 /-- `b` is `a` with each of some holes `.call f (.block [])` replaced by code
@@ -103,12 +103,12 @@ theorem depth_le (h : FillG k n a b) : b.x86_64Depth ≤ depthG n a := by
   induction h with
   | block is => simp [Code.x86_64Depth, depthG]
   | hole f hd =>
-    simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at hd
     simp only [depthG]; omega
   | @holes _ b' f ds hd _ ih =>
     have := depth_foldr ds b' (n f) fun d hm => by
       have := hd d hm
-      simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at this
+      simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at this
       exact this.1.1
     simp only [depthG]; omega
   | seq _ _ iha ihb => simp only [Code.x86_64Depth, depthG]; omega
@@ -137,13 +137,13 @@ theorem side (h : FillG k n a b)
   induction h with
   | block => exact ha
   | hole _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     exact hd.1.2
   | holes _ ds hd _ ih =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha
     exact side_foldr _ ds _ (fun d hm => by
       have := hd d hm
-      simp only [calleeSide, Bool.and_eq_true] at this
+      simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at this
       exact this.1.2) (ih ha.2)
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
@@ -167,12 +167,12 @@ theorem inames_eq (h : FillG k n a b) : UpperLock.inames b = UpperLock.inames a 
   induction h with
   | block => rfl
   | hole _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     simpa [UpperLock.inames] using hd.2
   | holes _ ds hd _ ih =>
     rw [inames_foldr ds _ fun d hm => by
       have := hd d hm
-      simp only [calleeSide, Bool.and_eq_true] at this
+      simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at this
       simpa using this.2]
     simp only [UpperLock.inames, ih, List.nil_append]
   | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [UpperLock.inames, iha, ihb]
@@ -200,7 +200,7 @@ theorem refl : ∀ c : Prog isa, FillG k n c c
 /-- A call of code that meets `calleeSide` at `m`, as a hole of `m + 8` bytes. -/
 theorem calleeSide_call {d : Prog isa} {m : Nat} (g : String) (h : calleeSide d k m = true) :
     calleeSide (.call g d) k (m + 8) = true := by
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
   exact ⟨⟨by simp only [Code.x86_64Depth]; omega, by simpa only [Code.allInstrs] using h.1.2⟩,
     by simpa only [UpperLock.inames] using h.2⟩
 
@@ -246,7 +246,7 @@ theorem verifiedScrubbedAllFillG {api : Api} (r : Unscrubbed api target) (v : Ve
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
   subst hn hb htb
-  simp only [stubSideG, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubSideG, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨hd, hs⟩, ht⟩ := ha
   obtain ⟨hlv, hmx⟩ := allInstrs_level hk (hf.side (side_mono hks hs))
   have hic : tablesCall r.code r.tables = true := by rw [tablesCall, hf.inames_eq]; exact ht
@@ -257,9 +257,9 @@ implementation that others call, from `stubCalleeG` of its code with a
 stub, which the kernel evaluates once. -/
 theorem calleeSide_of_fillG {ks k : Nat} {n : String → Nat} {m : Nat} {a b : Prog isa} (hf : FillG k n a b)
     (hks : ks ≤ k) (ha : stubCalleeG a ks n m = true) : calleeSide b k m = true := by
-  simp only [stubCalleeG, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubCalleeG, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨hd, hs⟩, hi⟩ := ha
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  simp only [calleeSide, lvAll_eq, Bool.and_eq_true, decide_eq_true_eq]
   exact ⟨⟨Nat.le_trans hf.depth_le hd, hf.side (side_mono hks hs)⟩, by rw [hf.inames_eq]; exact hi⟩
 
 /-- `c` with each hole `.call f (.block [])` whose name `σ` maps to a name

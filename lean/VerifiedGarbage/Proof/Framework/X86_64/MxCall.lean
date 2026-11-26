@@ -33,16 +33,56 @@ namespace VG.X86_64.Scrub
 
 open VG.X86_64 VG.Impl.Scrub.X86_64
 
+/-- `!loadsMxcsr i`. -/
+def noLdFn : Instr → Bool
+  | .ldmxcsr _ => false
+  | _ => true
+
+/-- `Nat.ble i.vecLevelR k`. -/
+def lvRFn : Instr → Nat → Bool
+  | .ldmxcsr _ => fun k => Nat.ble 0 k
+  | i => fun k => Nat.ble i.vecLevel k
+
+/-- `!loadsMxcsr i`, as the kernel evaluates it, its cases closed. -/
+def noLd : Instr → Bool := inline_match% VG.X86_64.Scrub.noLdFn
+
+theorem noLd_eq (i : Instr) : noLd i = !loadsMxcsr i := by cases i <;> rfl
+
+/-- `decide (i.vecLevelR ≤ k)`, the same. -/
+def lvRK : Instr → Nat → Bool := inline_match% VG.X86_64.Scrub.lvRFn VG.X86_64.Instr.vecLevel
+
+/-- `decide (i.vecLevelR ≤ k)`, as the kernel evaluates it. -/
+def lvR (k : Nat) (i : Instr) : Bool := lvRK i k
+
+theorem lvR_eq (k : Nat) (i : Instr) : lvR k i = decide (i.vecLevelR ≤ k) := by
+  have h : lvRK i = lvRFn i := by cases i <;> rfl
+  have hb : ∀ n, Nat.ble n k = decide (n ≤ k) := fun n => by
+    by_cases hn : n ≤ k
+    · rw [Nat.ble_eq_true_of_le hn, decide_eq_true hn]
+    · rw [decide_eq_false hn]; exact Bool.eq_false_iff.mpr fun e => hn (Nat.le_of_ble_eq_true e)
+  rw [lvR, h]
+  cases i <;> exact hb _
+
+theorem allInstrs_noLd (c : Prog isa) : c.allInstrs noLd = c.allInstrs (fun i => !loadsMxcsr i) :=
+  congrArg (Code.allInstrs · c) (funext noLd_eq)
+
+/-- `lvR k` of every instruction of `c`. Only the kernel evaluates it. -/
+noncomputable def lvRAll (k : Nat) (c : Prog isa) : Bool := c.allInstrs (lvR k)
+
+theorem lvRAll_eq (k : Nat) (c : Prog isa) :
+    lvRAll k c = c.allInstrs (fun i => decide (i.vecLevelR ≤ k)) :=
+  congrArg (Code.allInstrs · c) (funext (lvR_eq k))
+
 /-- Whether `c` loads MXCSR only in functions it calls that meet
 `RScrub.Mx.mx` on their own, and calls nothing indirectly. Only the kernel
 evaluates it. -/
 noncomputable def mxCalls : Prog isa → Bool
-  | .block is => Code.allInstrs (fun i => !loadsMxcsr i) (.block is : Prog isa)
+  | .block is => Code.allInstrs noLd (.block is : Prog isa)
   | .seq a b => mxCalls a && mxCalls b
   | .ite _ t e => mxCalls t && mxCalls e
   | .loop b _ => mxCalls b
   | .call _ b => mxCalls b || (RScrub.Mx.mx b []).isSome
-  | .frame i b j => !loadsMxcsr i && mxCalls b && !loadsMxcsr j
+  | .frame i b j => noLd i && mxCalls b && noLd j
   | .icall .. => false
 
 /-- Two runs of code that meets `mxCalls`, whose traces agree extended by
@@ -58,7 +98,7 @@ theorem mxCalls_ok {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ 
     | block h₂ =>
       have hl := (execBlock_length h₁).trans (execBlock_length h₂).symm
       have hn : ∀ i ∈ instrs (.block _ : Prog isa), loadsMxcsr i = false := fun i hi => by
-        simpa using List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hc) i hi
+        simpa [noLd_eq] using List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hc) i hi
       rw [Exec.mxcsr hn (.block h₁), Exec.mxcsr hn (.block h₂)]
       exact ⟨(UpperLock.append_cancel hl ht).1, hm⟩
   | seq x₁ y₁ ihx ihy =>
@@ -192,18 +232,18 @@ which load no MXCSR: as `mxCalls`, but the functions it calls that meet
 `RScrub.Mx.mx` on their own are none of those implementations
 (`noHole`). Only the kernel evaluates it. -/
 noncomputable def mxCallsS : Prog isa → Bool
-  | .block is => Code.allInstrs (fun i => !loadsMxcsr i) (.block is : Prog isa)
+  | .block is => Code.allInstrs noLd (.block is : Prog isa)
   | .seq a b => mxCallsS a && mxCallsS b
   | .ite _ t e => mxCallsS t && mxCallsS e
   | .loop b _ => mxCallsS b
   | .call _ b => mxCallsS b || ((RScrub.Mx.mx b []).isSome && noHole b)
-  | .frame i b j => !loadsMxcsr i && mxCallsS b && !loadsMxcsr j
+  | .frame i b j => noLd i && mxCallsS b && noLd j
   | .icall .. => false
 
 /-- Code that loads no MXCSR and calls nothing indirectly meets `mxCalls`. -/
 theorem mxCalls_of_side : ∀ {c : Prog isa}, c.allInstrs (fun i => !loadsMxcsr i) = true →
     UpperLock.inames c = [] → mxCalls c = true
-  | .block _, h, _ => h
+  | .block _, h, _ => (allInstrs_noLd _).trans h
   | .seq a b, h, hi => by
     simp only [Code.allInstrs, Bool.and_eq_true] at h
     simp only [UpperLock.inames, List.append_eq_nil_iff] at hi
@@ -217,7 +257,7 @@ theorem mxCalls_of_side : ∀ {c : Prog isa}, c.allInstrs (fun i => !loadsMxcsr 
     simp only [mxCalls, mxCalls_of_side (c := b) h hi, Bool.true_or]
   | .frame i b j, h, hi => by
     simp only [Code.allInstrs, Bool.and_eq_true] at h
-    simp only [mxCalls, h.1.1, h.2, mxCalls_of_side h.1.2 hi, Bool.and_self]
+    simp only [mxCalls, noLd_eq, h.1.1, h.2, mxCalls_of_side h.1.2 hi, Bool.and_self]
   | .icall .., _, hi => by simp [UpperLock.inames] at hi
 
 namespace Fill
@@ -259,7 +299,7 @@ theorem mxCalls {a b : Prog isa} (hf : Fill k n a b) (h : mxCallsS a = true) : m
   induction hf with
   | block => exact h
   | hole _ _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     have hn : _ := (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi => by
       have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hd.1.2) i hi
       simp only [Bool.and_eq_true] at this; exact this.2)
@@ -287,7 +327,7 @@ theorem level {a b : Prog isa} (hf : Fill k n a b)
   induction hf with
   | block => exact ha
   | hole _ _ hd =>
-    simp only [calleeSide, Bool.and_eq_true] at hd
+    simp only [calleeSide, lvAll_eq, Bool.and_eq_true] at hd
     simp only [Code.allInstrs]
     exact (Code.allInstrs_eq _ _).trans (List.all_eq_true.mpr fun i hi => by
       have := List.all_eq_true.mp ((Code.allInstrs_eq _ _).symm.trans hd.1.2) i hi
@@ -316,7 +356,7 @@ most `stack` (`depthH`), vector instructions of at most the level `k`, and
 indirect calls only of its tables' functions. Only the kernel evaluates it. -/
 noncomputable def stubSideM (a : Prog isa) (k : Nat) (n : String → Nat) (stack : Nat)
     (ts : List (String × List FnTable)) : Bool :=
-  decide (depthH n a ≤ stack) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k)) && mxCallsS a &&
+  decide (depthH n a ≤ stack) && lvRAll k a && mxCallsS a &&
     tablesCall a ts
 
 /-- `verifiedScrubbedAllFill`, for code whose functions load MXCSR
@@ -330,7 +370,7 @@ theorem verifiedScrubbedAllFillM {api : Api} (r : Unscrubbed api target) (v : Ve
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
   subst hn hb htb
-  simp only [stubSideM, Bool.and_eq_true, decide_eq_true_eq] at ha
+  simp only [stubSideM, lvRAll_eq, Bool.and_eq_true, decide_eq_true_eq] at ha
   obtain ⟨⟨⟨hd, hs⟩, hm⟩, ht⟩ := ha
   have hlv := allInstrs_level_mono hk (hf.level (allInstrs_level_mono hks hs))
   have hic : tablesCall r.code r.tables = true := by rw [tablesCall, hf.inames_eq]; exact ht

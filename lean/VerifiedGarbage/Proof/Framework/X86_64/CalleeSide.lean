@@ -19,11 +19,45 @@ namespace VG.X86_64.Scrub
 
 open VG.X86_64
 
+/-! ## Tests of an instruction, as the kernel evaluates them
+
+Each is one match on the instruction, its cases closed (`inline_match%`):
+what the checks below state of the instructions of code is equal to it. -/
+
+/-- `decide (i.vecLevelR ≤ k) && !loadsMxcsr i`, in one match. -/
+def lvOkFn : Instr → Nat → Bool
+  | .ldmxcsr _ => fun _ => false
+  | i => fun k => Nat.ble i.vecLevel k
+
+/-- `lvOkFn`, with its cases closed. -/
+def lvOkK : Instr → Nat → Bool := inline_match% VG.X86_64.Scrub.lvOkFn VG.X86_64.Instr.vecLevel
+
+theorem lvOkK_eq (i : Instr) (k : Nat) : lvOkK i k = (decide (i.vecLevelR ≤ k) && !loadsMxcsr i) := by
+  have h : lvOkK i = lvOkFn i := by cases i <;> rfl
+  have hb : ∀ n, Nat.ble n k = decide (n ≤ k) := fun n => by
+    by_cases hn : n ≤ k
+    · rw [Nat.ble_eq_true_of_le hn, decide_eq_true hn]
+    · rw [decide_eq_false hn]; exact Bool.eq_false_iff.mpr fun e => hn (Nat.le_of_ble_eq_true e)
+  rw [h]
+  cases i <;> first
+    | exact (Bool.and_false _).symm
+    | exact (hb _).trans (Bool.and_true _).symm
+
+/-- What the cleanup needs of an instruction at the level `k`. -/
+def lvOk (k : Nat) (i : Instr) : Bool := lvOkK i k
+
+/-- `lvOk k` of every instruction of `c`. Only the kernel evaluates it. -/
+noncomputable def lvAll (k : Nat) (c : Prog isa) : Bool := c.allInstrs (lvOk k)
+
+theorem lvAll_eq (k : Nat) (c : Prog isa) :
+    lvAll k c = c.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) :=
+  congrArg (Code.allInstrs · c) (funext fun i => lvOkK_eq i k)
+
 /-- What the cleanup of a function that calls `c` needs of it: at most `n`
 bytes of stack, vector instructions of at most the level `k`, no load of
 MXCSR, and no indirect call. Only the kernel evaluates it. -/
 noncomputable def calleeSide (c : Prog isa) (k n : Nat) : Bool :=
-  decide (c.x86_64Depth ≤ n) && c.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+  decide (c.x86_64Depth ≤ n) && lvAll k c &&
     (UpperLock.inames c).isEmpty
 
 /-- `Code.x86_64Depth` of code with a stub for the implementations it calls,
@@ -45,7 +79,7 @@ it calls, which need at most `n f` bytes of stack: its stack with theirs at
 most `m`, vector instructions of at most the level `k`, no load of MXCSR,
 and no indirect call. -/
 noncomputable def stubCallee (a : Prog isa) (k : Nat) (n : String → Nat) (m : Nat) : Bool :=
-  decide (depthH n a ≤ m) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+  decide (depthH n a ≤ m) && lvAll k a &&
     (UpperLock.inames a).isEmpty
 
 end VG.X86_64.Scrub
