@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
@@ -17,8 +18,8 @@ AES state as its 16 bytes in memory order (`st`): byte `r + 4c` is
 `s[r, c]`, as FIPS 197 §3.4 lays the state out and as the SDM's AES
 instructions read it. On such registers `pxor`, `aesenc` and `aesenclast`
 are `AddRoundKey`, a full round and the last round of `Spec.Aes.cipher`
-(`pxor_st`, `aesenc_st`, `aesenclast_st`); the S-box of the ISA model,
-computed by repeated squaring, is the one of `Spec/Aes.lean` (`sbox_eq`).
+(`pxor_st`, `aesenc_st`, `aesenclast_st`); the S-box of the ISA model is the
+one of `Spec/Aes.lean` (`sbox_eq`, `Sbox.lean`).
 -/
 
 namespace VG.Proof.Aes.X86.AesNi
@@ -27,19 +28,6 @@ open VG.X86
 open VG.Spec.Aes (subBytes shiftRows mixColumns addRoundKey sbox roundKey cipher bytesAt)
 
 /-! ## GF(2⁸) -/
-
-theorem mul_eq : aesMul = Spec.Aes.mul := rfl
-
-/-- Both square and multiply `b²`, `b⁴`, …, `b¹²⁸` in the same order: unfolded
-to the same term (no evaluation left for the kernel). -/
-theorem inv_eq (b : BitVec 8) : aesInv b = Spec.Aes.inv b := by
-  simp (config := {decide := true}) only [aesInv, Spec.Aes.inv_eq_pow, Spec.Aes.pow, List.range_succ,
-    List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons, List.foldl_nil, mul_eq,
-    ite_true, ite_false]
-
-theorem sbox_eq : aesSbox = sbox := by
-  funext b
-  simp only [aesSbox, sbox, inv_eq, ofBits8]
 
 theorem mul_one' : ∀ b : BitVec 8, Spec.Aes.mul 1 b = b := by decide +kernel
 

@@ -435,6 +435,67 @@ theorem BV.same_eval {a b : BV} (h : a.same b = true) : a.eval env = b.eval env 
 
 end
 
+/-! ## Look-ups of a nibble, as numbers
+
+A fact about byte maps at the 256 bytes is checked as one about numbers,
+which the kernel reads from the tables by shifts. -/
+
+/-- Byte `x` of the 16 bytes `t`. -/
+def nib (t x : Nat) : Nat := Nat.mod (Nat.shiftRight t (Nat.mul 8 x)) 256
+
+theorem look_nib (t : BitVec 128) {b : BitVec 8} (h : b.toNat < 16) :
+    (Fn.look t).eval b = BitVec.ofNat 8 (nib t.toNat b.toNat) := by
+  have hm : b.msb = false := by rw [BitVec.msb_eq_decide]; exact decide_eq_false (by omega_using [h])
+  apply BitVec.eq_of_toNat_eq
+  simp only [Fn.eval, hm, Bool.false_eq_true, ↓reduceIte, byte, BitVec.extractLsb'_toNat, Nat.shiftRight_zero,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+  exact (Nat.mod_mod _ _).symm
+
+theorem toNat_lo (b : BitVec 8) : (b &&& 0x0f#8).toNat = b.toNat % 16 := by
+  rw [BitVec.toNat_and]; exact Nat.and_two_pow_sub_one_eq_mod _ 4
+
+theorem toNat_hi (b : BitVec 8) : (b >>> 4).toNat = b.toNat / 16 := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+
+theorem look_lo (t : BitVec 128) (b : BitVec 8) :
+    (Fn.look t).eval (b &&& 0x0f#8) = BitVec.ofNat 8 (nib t.toNat (b.toNat % 16)) := by
+  rw [look_nib t (by rw [toNat_lo]; omega_using []), toNat_lo]
+
+theorem look_hi (t : BitVec 128) (b : BitVec 8) :
+    (Fn.look t).eval (b >>> 4) = BitVec.ofNat 8 (nib t.toNat (b.toNat / 16)) := by
+  rw [look_nib t (by rw [toNat_hi]; omega_using [b.isLt]), toNat_hi]
+
+theorem look_lo_flip (t : BitVec 128) (b : BitVec 8) :
+    (Fn.look t).eval ((b &&& 0x0f#8) ^^^ 0x0f#8) = BitVec.ofNat 8 (nib t.toNat (15 ^^^ b.toNat % 16)) := by
+  have e : ((b &&& 0x0f#8) ^^^ 0x0f#8).toNat = 15 ^^^ b.toNat % 16 := by
+    rw [BitVec.toNat_xor, toNat_lo, Nat.xor_comm]; rfl
+  rw [look_nib t (by rw [e]; exact Nat.xor_lt_two_pow (n := 4) (by decide) (by omega_using [])), e]
+
+theorem nib_lt (t x : Nat) : nib t x < 256 := Nat.mod_lt _ (by decide)
+
+/-- The maps of a byte by its nibbles' look-ups in `t₀` and `t₁`. -/
+def nibs (t₀ t₁ n : Nat) : Nat := Nat.xor (nib t₀ (Nat.mod n 16)) (nib t₁ (Nat.div n 16))
+
+theorem nibs_lt (t₀ t₁ n : Nat) : nibs t₀ t₁ n < 256 :=
+  Nat.xor_lt_two_pow (n := 8) (nib_lt ..) (nib_lt ..)
+
+theorem look_nibs (t₀ t₁ : BitVec 128) (b : BitVec 8) :
+    (Fn.look t₀).eval (b &&& 0x0f#8) ^^^ (Fn.look t₁).eval (b >>> 4) =
+      BitVec.ofNat 8 (nibs t₀.toNat t₁.toNat b.toNat) := by
+  rw [look_lo, look_hi, ← BitVec.ofNat_xor]; rfl
+
+/-- `nibs` with the low nibble complemented (under `aesenclast`'s key, the mask `0x0f`). -/
+theorem look_nibs_flip (t₀ t₁ : BitVec 128) (b : BitVec 8) :
+    (Fn.look t₀).eval ((b &&& 0x0f#8) ^^^ 0x0f#8) ^^^ (Fn.look t₁).eval (b >>> 4) =
+      BitVec.ofNat 8 (nibs t₀.toNat t₁.toNat (15 ^^^ b.toNat)) := by
+  have e₀ : 15 ^^^ b.toNat % 16 = (15 ^^^ b.toNat) % 16 := by
+    rw [show (16 : Nat) = 2 ^ 4 from rfl, Nat.xor_mod_two_pow]
+  have e₁ : b.toNat / 16 = (15 ^^^ b.toNat) / 16 := by
+    rw [show (16 : Nat) = 2 ^ 4 from rfl, Nat.xor_div_two_pow]
+    show _ = 0 ^^^ _
+    rw [Nat.zero_xor]
+  rw [look_lo_flip, look_hi, ← BitVec.ofNat_xor, e₀, e₁]; rfl
+
 /-! ## Registers -/
 
 /-- A register's sixteen bytes; `sh`: the register holds them with its

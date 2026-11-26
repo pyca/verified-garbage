@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.Sm4.SboxTable
 meta import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
 meta import VerifiedGarbage.Proof.Sm4.Bitsliced
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+import VerifiedGarbage.Proof.Framework.AllBelow
+meta import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -81,9 +85,52 @@ theorem kn_all : ((List.range 256).all fun n => (List.range 8).all fun j =>
     (kn 3 (BitVec.ofNat 8 n)).getLsbD j == (decide (j < 7) && (BitVec.ofNat 8 n).getLsbD (j + 1))) = true := by
   lit_decide
 
+/-! `sbox_all` is checked on numbers, which the kernel reads from the tables
+by shifts. -/
+
+/-- `nm` and `am` at byte `n`. -/
+private def nmN (t n : Nat) : Nat := nibs (tblAt t).toNat (tblAt (t + 16)).toNat n
+private def amN (t n : Nat) : Nat := nmN t (Nat.xor 15 n)
+
+private theorem nmN_lt (t n : Nat) : nmN t n < 256 := nibs_lt ..
+
+private theorem nm_eq (t : Nat) (b : Byte) : nm t b = BitVec.ofNat 8 (nmN t b.toNat) := look_nibs ..
+private theorem am_eq (t : Nat) (b : Byte) : am t b = BitVec.ofNat 8 (amN t b.toNat) := look_nibs_flip ..
+
+/-- `kn` at byte `n`. -/
+private def knN : Nat → Nat → Nat
+  | 0, n => n
+  | 1, n => Nat.mod (Nat.mul n 32) 256
+  | 2, n => Nat.xor (Nat.div n 8) (Nat.mod (Nat.mul n 128) 256)
+  | _, n => Nat.div n 2
+
+private theorem kn_eq {r : Nat} (hr : r < 4) (b : Byte) : (kn r b).toNat = knN r b.toNat := by
+  match r, hr with
+  | 0, _ => rfl
+  | 1, _ => rw [kn, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]; rfl
+  | 2, _ =>
+    rw [kn, BitVec.toNat_xor, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow,
+      Nat.shiftLeft_eq]; rfl
+  | 3, _ =>
+    show (b >>> 1).toNat = _
+    rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; rfl
+
+private theorem sbox_chk : allBelow (fun n => allBelow (fun r =>
+    Nat.beq (amN (oQ + 32 * r) (Aes.sboxN (Nat.xor (nmN oCV n) c0.toNat))) (nmN oCV (knN r (Sm4.sboxN n)))) 4) 256 =
+      true := by
+  lit_decide
+
 theorem sbox_all : ((List.range 256).all fun n => (List.range 4).all fun r =>
     am (oQ + 32 * r) (aesSbox (pk (BitVec.ofNat 8 n))) == pl (kn r (sboxB (BitVec.ofNat 8 n)))) = true := by
-  lit_decide
+  have h8 {n : Nat} (hn : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  refine List.all_eq_true.mpr fun n hn => List.all_eq_true.mpr fun r hr => ?_
+  have hn := List.mem_range.mp hn
+  have hr := List.mem_range.mp hr
+  have h := of_allBelow (of_allBelow sbox_chk n hn) r hr
+  rw [beq_iff_eq, am_eq, Aes.X86.AesNi.aesSbox_eq_sboxN, pk, BitVec.toNat_xor, pl, pl, nm_eq, nm_eq, kn_eq hr,
+    ← Sm4.sboxN_eq hn, h8 hn, h8 (Aes.sboxN_lt _), h8 (nmN_lt ..)]
+  exact congrArg _ (Nat.eq_of_beq_eq_true h)
 
 theorem inv_all : ((List.range 256).all fun n => pv (pl (BitVec.ofNat 8 n)) == BitVec.ofNat 8 n) = true := by
   lit_decide
