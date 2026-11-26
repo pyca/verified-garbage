@@ -143,10 +143,28 @@ theorem y_b {x a b : Nat} (hx : x < 256) (ha : a < 65536) : (x + 256 * (a + 6553
 def Local (k n : Nat) : Prop :=
   ∀ (E : Env) (v v' : Nat → BitVec 128), (∀ i < n, v i = v' i) → evalK E v k = evalK E v' k
 
+/-- A kind that is not an instruction's: its value is not one of the nodes'.
+Each case names the value: the kernel, asked whether `sel E v t y` and
+`sel E v' t y` are equal, compares the cases of their `match`es, every
+instruction's meaning, before it looks at `t`. -/
+theorem sel_congr (E : Env) (v v' : Nat → BitVec 128) {t : Nat} (ht : t < 6 ∨ 12 ≤ t ∧ t < 16) (y : Nat) :
+    sel E v t y = sel E v' t y := by
+  rcases (show t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15 by
+    omega_using [ht]) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact Eq.refl (E.reg y)
+  · exact Eq.refl (E.mem y)
+  · exact Eq.refl (E.memq y)
+  · exact Eq.refl (E.key y)
+  · exact Eq.refl (E.keyq y)
+  · exact Eq.refl (BitVec.ofNat 128 y)
+  · exact Eq.refl (0 : BitVec 128)
+  · exact Eq.refl (0 : BitVec 128)
+  · exact Eq.refl (0 : BitVec 128)
+  · exact Eq.refl (0 : BitVec 128)
+
 theorem local_leaf {t : Nat} (ht : t < 6) (x n : Nat) : Local (leaf t x) n := fun E v v' _ => by
   rw [evalK_leaf E v (by omega_using [ht]), evalK_leaf E v' (by omega_using [ht])]
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 by omega_using [ht]) with
-    rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  exact sel_congr E v v' (.inl ht) x
 
 /-- A node of the nodes `a` and `b`. -/
 theorem local_mk {t x a b n : Nat} (ht : t < 16) (hx : x < 256) (ha : a < 65536) (han : a < n)
@@ -155,15 +173,8 @@ theorem local_mk {t x a b n : Nat} (ht : t < 16) (hx : x < 256) (ha : a < 65536)
   have e2 := y_a (b := b) hx ha
   have e3 := y_b (b := b) hx ha
   have va := hv a han
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨ t = 11 ∨
-      (12 ≤ t ∧ t < 16) by omega_using [ht]) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | h
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
-  · rfl
+  rcases (show t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨ t = 11 ∨ (t < 6 ∨ 12 ≤ t ∧ t < 16) by omega_using [ht]) with
+    rfl | rfl | rfl | rfl | rfl | rfl | h
   · have vb := hv b (by omega_using [hb])
     show (binOf _).eval (v _) (v _) = (binOf _).eval (v' _) (v' _)
     rw [e2, e3, va, vb]
@@ -178,7 +189,7 @@ theorem local_mk {t x a b n : Nat} (ht : t < 16) (hx : x < 256) (ha : a < 65536)
   · have vb := hv b (by omega_using [hb])
     show alignRight (v _) (v _) _ = alignRight (v' _) (v' _) _
     rw [e2, e3, va, vb]
-  · rcases (show t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15 by omega_using [h]) with rfl | rfl | rfl | rfl <;> rfl
+  · exact sel_congr E v v' h _
 
 /-! ## The table of nodes -/
 

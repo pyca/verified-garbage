@@ -27,18 +27,17 @@ private theorem addCarry (g p : BitVec w) {i : Nat} (hi : i < w)
   | succ i ih =>
     obtain ⟨h, e⟩ := ih (Nat.lt_trans (Nat.lt_succ_self _) hi) (fun j hj => disjoint j (by omega))
     rw [shifted_succ g hi, BitVec.carry_succ, carryBit, ← e]
-    have hd := disjoint i (by omega)
-    cases hg : g.getLsbD i <;> cases hp : p.getLsbD i <;>
-      cases hb : (g <<< 1).getLsbD i <;> cases hc : BitVec.carry i p (g <<< 1) false <;>
-      simp_all [Bool.atLeastTwo]
+    have key : ∀ g p b c : Bool, (b && c) = false → (g && p) = false →
+        ((g && Bool.atLeastTwo p b c) = false) ∧ (g || Bool.atLeastTwo p b c) = (g || (p && (b || c))) := by decide
+    exact key _ _ _ _ h (disjoint i (Nat.lt_succ_self i))
 
 theorem getLsbD_carryMask (g p : BitVec w) {i : Nat} (hi : i < w)
     (disjoint : ∀ j < i, (g.getLsbD j && p.getLsbD j) = false) :
     ((p + (g <<< 1)) ^^^ p).getLsbD i = carryBit g p i := by
   obtain ⟨h, e⟩ := addCarry g p hi disjoint
   rw [BitVec.getLsbD_xor, BitVec.getLsbD_add hi, ← e]
-  cases hp : p.getLsbD i <;> cases hb : (g <<< 1).getLsbD i <;>
-    cases hc : BitVec.carry i p (g <<< 1) false <;> simp_all
+  have key : ∀ p b c : Bool, (b && c) = false → ((p ^^ (b ^^ c)) ^^ p) = (b || c) := by decide
+  exact key _ _ _ h
 
 open VG.Proof.Bignum.Amm52
 
@@ -118,16 +117,23 @@ theorem compactCarryBits_bit (x : BitVec 64) {j : Nat} (hj : j < 4) :
   have hb : ∀ (b0 b1 b2 b3 : Bool) (i : Fin 64),
       (placed b0 b1 b2 b3).getLsbD i.val =
         (if i.val = 0 then b0 else if i.val = 8 then b1 else if i.val = 16 then b2
-          else if i.val = 24 then b3 else false) := by decide
+          else if i.val = 24 then b3 else false) := by decide +kernel
   have hp : x &&& 0x01010101 = placed a0 a1 a2 a3 := by
     apply BitVec.eq_of_getLsbD_eq
     intro i hi
     rw [BitVec.getLsbD_and, carryMaskByte_test i hi, hb _ _ _ _ ⟨i, hi⟩]
-    by_cases h0 : i = 0 <;> by_cases h1 : i = 8 <;> by_cases h2 : i = 16 <;>
-      by_cases h3 : i = 24 <;> simp_all [a0, a1, a2, a3]
+    by_cases h0 : i = 0
+    · subst h0; exact Bool.and_true _
+    by_cases h1 : i = 8
+    · subst h1; exact Bool.and_true _
+    by_cases h2 : i = 16
+    · subst h2; exact Bool.and_true _
+    by_cases h3 : i = 24
+    · subst h3; exact Bool.and_true _
+    simp only [h0, h1, h2, h3, or_false, decide_false, Bool.and_false, ↓reduceIte]
   have hc : ∀ (b0 b1 b2 b3 : Bool) (i : Fin 4),
       (((((placed b0 b1 b2 b3) * 0x01020408) >>> 24) &&& 15).getLsbD i.val) =
-        (if i.val = 0 then b0 else if i.val = 1 then b1 else if i.val = 2 then b2 else b3) := by decide
+        (if i.val = 0 then b0 else if i.val = 1 then b1 else if i.val = 2 then b2 else b3) := by decide +kernel
   rw [hp, hc _ _ _ _ ⟨j, hj⟩]
   rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
 
