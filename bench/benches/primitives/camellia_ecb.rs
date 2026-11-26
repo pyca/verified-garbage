@@ -22,7 +22,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, Crypter, Mode};
     use verified_garbage::cipher::camellia::CamelliaEcb;
 
-    use crate::{BenchDyn, OPENSSL, SIZES, VG};
+    use crate::{BenchDyn, OPENSSL, VG};
 
     let key: Vec<_> = (0..32).map(|i| (17 * i + 3) as u8).collect();
     for (key_len, cipher) in [
@@ -35,7 +35,7 @@ pub fn bench(c: &mut Criterion) {
             ("decrypt", false, Mode::Decrypt),
         ] {
             let mut group = c.benchmark_group(format!("camellia-ecb-{operation}-{key_len}"));
-            for size in SIZES {
+            for size in [16, 64, 128, 144, 1024, 16384] {
                 group.throughput(Throughput::Bytes(size as u64));
                 let data = vec![0x5a; size];
                 let mut buffer = crate::InPlace::new(size, &data);
@@ -64,6 +64,40 @@ pub fn bench(c: &mut Criterion) {
                 });
             }
             group.finish();
+            let mut reused =
+                c.benchmark_group(format!("camellia-ecb-{operation}-reused-{key_len}"));
+            for size in [16, 64, 128, 144, 1024, 16384] {
+                reused.throughput(Throughput::Bytes(size as u64));
+                let data = vec![0x5a; size];
+                let mut buffer = crate::InPlace::new(size, &data);
+                let ctx = CamelliaEcb::new(&key[..key_len]).unwrap();
+                let mut reference = Crypter::new(cipher, mode, &key[..key_len], None).unwrap();
+                reference.pad(false);
+                let mut expected = vec![0; size + 16];
+                // Check two consecutive chunks, including the mode's chaining state.
+                for _ in 0..2 {
+                    let mut checked = data.clone();
+                    if encrypt {
+                        ctx.encrypt(&mut checked).unwrap();
+                    } else {
+                        ctx.decrypt(&mut checked).unwrap();
+                    }
+                    let n = reference.update(&data, &mut expected).unwrap();
+                    assert_eq!(checked, expected[..n]);
+                }
+                reused.bench(BenchmarkId::new(VG, size), |b| {
+                    b.iter(|| {
+                        buffer.copy_from_slice(black_box(&data));
+                        if encrypt {
+                            ctx.encrypt(black_box(&mut buffer)).unwrap();
+                        } else {
+                            ctx.decrypt(black_box(&mut buffer)).unwrap();
+                        }
+                        black_box(&buffer);
+                    })
+                });
+            }
+            reused.finish();
         }
     }
 }

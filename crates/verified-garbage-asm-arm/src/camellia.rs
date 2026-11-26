@@ -3586,6 +3586,10 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_camellia_crypt8.rs"]
+pub(crate) mod vg_camellia_crypt8;
+
+#[rustfmt::skip]
 #[path = "internal/vg_camellia_ecb_decrypt_core.rs"]
 pub(crate) mod vg_camellia_ecb_decrypt_core;
 
