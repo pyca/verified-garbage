@@ -23,6 +23,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Proof.Sha3.PostOut
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
 
 /-!
 # SHA-3 and SHAKE's functions on x86-64, without secret residue
@@ -131,6 +133,20 @@ theorem absorb_shake128 :
 theorem finalizeShake128_codeSp : (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_sels`), which analyses the code they share once. -/
+theorem residue :
+    SelResidue Spec.Sha3.finalizeShake128Api.sig 656 [] [(8, 13), (456, 13)] (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake128.rate) ∧
+    SelResidue Spec.Sha3.squeezeShake128Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate) ∧
+    SelResidue Spec.Sha3.finalizeShake256Api.sig 656 [] [(8, 13), (456, 13)] (Impl.Sha3.X86_64.Instances.xofFinalize Spec.Sha3.xofShake256.rate) ∧
+    SelResidue Spec.Sha3.squeezeShake256Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_224Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_224.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_256Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_256.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_384Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_384.rate) ∧
+    SelResidue Spec.Sha3.updateSha3_512Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.hashSha3_512.rate) ∧
+    SelResidue Spec.Sha3.updateShake128Api.sig 656 [] [(8, 41)] (Impl.Sha3.X86_64.Instances.absorb Spec.Sha3.xofShake128.rate) := by
+  taint_decide_sels
+
 /-- `Spec.Sha3.finalizeShake128Api`'s function as emitted (`Impl.Sha3.X86_64.Fn.finalizeShake128`) meets its contract in
 constant time and returns without secret residue. -/
 theorem finalizeShake128_scrubbed :
@@ -140,7 +156,7 @@ theorem finalizeShake128_scrubbed :
       stack := 656
       verified := Proof.Sha3.X86_64.Instances.finalize_shake128
       spSafe := finalizeShake128_codeSp }
-    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) residue.1.choose_spec
 
 theorem finalizeShake128_spSafe : Impl.Sha3.X86_64.Fn.finalizeShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe finalizeShake128_codeSp
@@ -157,7 +173,7 @@ theorem squeezeShake128_scrubbed :
       stack := 656
       verified := Proof.Sha3.X86_64.Instances.squeeze_shake128
       spSafe := squeezeShake128_codeSp }
-    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) residue.2.1.choose_spec
 
 theorem squeezeShake128_spSafe : Impl.Sha3.X86_64.Fn.squeezeShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe squeezeShake128_codeSp
@@ -174,7 +190,7 @@ theorem finalizeShake256_scrubbed :
       stack := 656
       verified := Proof.Sha3.X86_64.Instances.finalize_shake256
       spSafe := finalizeShake256_codeSp }
-    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 13), (456, 13)] (xofFinalizeOut _ _) (RScrub.pubOk_nil _) residue.2.2.1.choose_spec
 
 theorem finalizeShake256_spSafe : Impl.Sha3.X86_64.Fn.finalizeShake256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe finalizeShake256_codeSp
@@ -191,7 +207,7 @@ theorem squeezeShake256_scrubbed :
       stack := 656
       verified := Proof.Sha3.X86_64.Instances.squeeze_shake256
       spSafe := squeezeShake256_codeSp }
-    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (xofSqueezeOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.1.choose_spec
 
 theorem squeezeShake256_spSafe : Impl.Sha3.X86_64.Fn.squeezeShake256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe squeezeShake256_codeSp
@@ -272,7 +288,7 @@ theorem absorbSha3_224_scrubbed :
       stack := 656
       verified := absorb_sha3_224
       spSafe := absorbSha3_224_codeSp }
-    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.1.choose_spec
 
 theorem absorbSha3_224_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe absorbSha3_224_codeSp
@@ -289,7 +305,7 @@ theorem absorbSha3_256_scrubbed :
       stack := 656
       verified := absorb_sha3_256
       spSafe := absorbSha3_256_codeSp }
-    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.1.choose_spec
 
 theorem absorbSha3_256_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe absorbSha3_256_codeSp
@@ -306,7 +322,7 @@ theorem absorbSha3_384_scrubbed :
       stack := 656
       verified := absorb_sha3_384
       spSafe := absorbSha3_384_codeSp }
-    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.1.choose_spec
 
 theorem absorbSha3_384_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_384.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe absorbSha3_384_codeSp
@@ -323,7 +339,7 @@ theorem absorbSha3_512_scrubbed :
       stack := 656
       verified := absorb_sha3_512
       spSafe := absorbSha3_512_codeSp }
-    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.1.choose_spec
 
 theorem absorbSha3_512_spSafe : Impl.Sha3.X86_64.Fn.absorbSha3_512.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe absorbSha3_512_codeSp
@@ -340,7 +356,7 @@ theorem absorbShake128_scrubbed :
       stack := 656
       verified := absorb_shake128
       spSafe := absorbShake128_codeSp }
-    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(8, 41)] (absorbOut _ _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.choose_spec
 
 theorem absorbShake128_spSafe : Impl.Sha3.X86_64.Fn.absorbShake128.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe absorbShake128_codeSp

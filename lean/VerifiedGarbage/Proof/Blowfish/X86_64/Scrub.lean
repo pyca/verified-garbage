@@ -89,6 +89,8 @@ import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
 
 /-! ### `Blowfish.X86_64.Verified`, which only this module used -/
 
@@ -1755,6 +1757,22 @@ abbrev ofbFinalCode : Prog isa :=
 theorem expandKey_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 40 .rcx 4 Impl.Blowfish.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_sels`), which analyses the code they share once. -/
+theorem residue :
+    SelResidue Spec.Blowfish.expandKeyApi.sig 40 [] [(0, 1)] expandKeyCode ∧
+    SelResidue Spec.Blowfish.ecbEncryptApi.sig 264 [] [(0, 17)] ecbEncryptCode ∧
+    SelResidue Spec.Blowfish.ecbDecryptApi.sig 264 [] [(0, 17)] ecbDecryptCode ∧
+    SelResidue Spec.Blowfish.cbcEncryptChainedApi.sig 96 [] [(0, 1)] cbcEncryptCode ∧
+    SelResidue Spec.Blowfish.cbcDecryptChainedApi.sig 96 [] [(0, 1)] cbcDecryptCode ∧
+    SelResidue Spec.Blowfish.cfbEncryptApi.sig 96 [] [(0, 1)] cfbEncryptCode ∧
+    SelResidue Spec.Blowfish.cfbDecryptApi.sig 96 [] [(0, 1)] cfbDecryptCode ∧
+    SelResidue Spec.Blowfish.cfbEncryptFinalApi.sig 96 [] [(0, 1)] cfbEncryptFinalCode ∧
+    SelResidue Spec.Blowfish.cfbDecryptFinalApi.sig 96 [] [(0, 1)] cfbDecryptFinalCode ∧
+    SelResidue Spec.Blowfish.ofbApi.sig 96 [] [(0, 1)] ofbCode ∧
+    SelResidue Spec.Blowfish.ofbFinalApi.sig 96 [] [(0, 1)] ofbFinalCode := by
+  taint_decide_sels
+
 /-- `Spec.Blowfish.expandKeyApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.expandKey`) meets its contract in
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
@@ -1764,7 +1782,7 @@ theorem expandKey_scrubbed :
       stack := 40
       verified := Proof.Blowfish.X86_64.expandKey_framed
       spSafe := expandKey_codeSp }
-    .sse [(0, 1)] (expandKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (expandKeyOut _) (RScrub.pubOk_nil _) residue.1.choose_spec
 
 theorem expandKey_spSafe : Impl.Blowfish.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe expandKey_codeSp
@@ -1781,7 +1799,7 @@ theorem ecbEncrypt_scrubbed :
       stack := 264
       verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified
       spSafe := ecbEncrypt_codeSp }
-    .sse [(0, 17)] (ecbOut .encrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 17)] (ecbOut .encrypt _) (RScrub.pubOk_nil _) residue.2.1.choose_spec
 
 theorem ecbEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbEncrypt_codeSp
@@ -1798,7 +1816,7 @@ theorem ecbDecrypt_scrubbed :
       stack := 264
       verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified
       spSafe := ecbDecrypt_codeSp }
-    .sse [(0, 17)] (ecbOut .decrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 17)] (ecbOut .decrypt _) (RScrub.pubOk_nil _) residue.2.2.1.choose_spec
 
 theorem ecbDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbDecrypt_codeSp
@@ -1815,7 +1833,7 @@ theorem cbcEncrypt_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cbcEncryptChained_framed
       spSafe := cbcEncrypt_codeSp }
-    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.1.choose_spec
 
 theorem cbcEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.cbcEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcEncrypt_codeSp
@@ -1832,7 +1850,7 @@ theorem cbcDecrypt_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cbcDecryptChained_framed
       spSafe := cbcDecrypt_codeSp }
-    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.1.choose_spec
 
 theorem cbcDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.cbcDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcDecrypt_codeSp
@@ -1849,7 +1867,7 @@ theorem cfbEncrypt_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cfbEncrypt_framed
       spSafe := cfbEncrypt_codeSp }
-    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncrypt_codeSp
@@ -1866,7 +1884,7 @@ theorem cfbDecrypt_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cfbDecrypt_framed
       spSafe := cfbDecrypt_codeSp }
-    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecrypt_codeSp
@@ -1883,7 +1901,7 @@ theorem cfbEncryptFinal_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cfbEncryptFinal_framed
       spSafe := cfbEncryptFinal_codeSp }
-    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncryptFinal_spSafe : Impl.Blowfish.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncryptFinal_codeSp
@@ -1900,7 +1918,7 @@ theorem cfbDecryptFinal_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.cfbDecryptFinal_framed
       spSafe := cfbDecryptFinal_codeSp }
-    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecryptFinal_spSafe : Impl.Blowfish.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecryptFinal_codeSp
@@ -1917,7 +1935,7 @@ theorem ofb_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.ofb_framed
       spSafe := ofb_codeSp }
-    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem ofb_spSafe : Impl.Blowfish.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofb_codeSp
@@ -1934,7 +1952,7 @@ theorem ofbFinal_scrubbed :
       stack := 96
       verified := Proof.Blowfish.X86_64.ofbFinal_framed
       spSafe := ofbFinal_codeSp }
-    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.2.choose_spec
 
 theorem ofbFinal_spSafe : Impl.Blowfish.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofbFinal_codeSp

@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -219,7 +220,7 @@ theorem pop_release {j : Instr} {s₁ s₂ s' : State} (hj : notRelease j = true
 /-- The frame's body, which releases no frame, keeps the unknowns. -/
 theorem body_unk {s s' : State} {t : List Leak} (h : Exec isa body s t s') : s'.unknowns = s.unknowns :=
   Exec.keep (fun s : State => s.unknowns) (ok := fun i => notRelease i = true)
-    (fun _ he => RTaint.exec_unknowns he)
+    (fun _ he => VG.X86_64.exec_unknowns he)
     (fun hj _ hq _ => (pop_release hj hq).elim)
     (fun i hi => List.all_eq_true.mp (by decide : (instrs body).all notRelease = true) i hi)
     (.inl (by decide)) h
