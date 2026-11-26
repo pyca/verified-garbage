@@ -29,4 +29,12 @@ def signP224 : Prog isa := p224.signWith gMulP224
 /-- `vg_p224_proj_add`, which P-224's code calls for its complete additions. -/
 def projAddP224 : Prog isa := p224.projAddFn
 
+/-- The shared variable-base window body used by ECDH and signature verification. -/
+def windowP224 : Prog isa := VG.Impl.Weierstrass.AArch64.WinCfg.window (p224.winCfg RM SS) p224.padd
+
+/-- Call the window body, saving the outer return address above its vector temporaries. -/
+def windowCallP224 : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v29 1 .x30)])
+    (.seq (.call "vg_p224_window" windowP224) (.block [.umov .x .x30 .v29 1]))
+
 end VG.Impl.Ecdsa.AArch64

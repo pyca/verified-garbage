@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Window
+
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
@@ -144,7 +146,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch6
   have hn : CallsKeep exchangeP224 := by lit_decide
   have hu : KeepsUntouched exchangeP224 := by lit_decide
   have hv : exchangeP224.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWithWindow_ok windowCallP224 Weierstrass.AArch64.windowCallP224_ok (p224_ok hI) hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP224 :=

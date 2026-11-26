@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
@@ -680,7 +682,13 @@ abbrev ptsW : List Nat :=
   [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, PT, EM]
 
 /-- `[u]G + [v]Q`, into `R`. -/
-theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
+theorem pointsWithWindow_eq (c : Cfg) (window : Prog isa) : Impl.Ecdsa.Verify.AArch64.Cfg.pointsWithWindow c window =
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg true)
+      (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq c.preparePadd (.seq (c.winPrep (c.sl V))
+      (.seq window (Impl.Ecdsa.Verify.AArch64.Cfg.sum c)))))) := rfl
+
+/-- `[u]G + [v]Q`, into `R`. -/
+theorem pointsWithWindow_ok (window : Prog isa) (hwindow : WindowOk (winQ c) c.padd window) (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid c s₀ base g s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     (hTP : TblPre c s₀ (s₀.syms c.tsym) base)
@@ -691,7 +699,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     (hQ₂ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s V) P) → Q₂ 0 X Y Z)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base g Q₁ Q₂ s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pointsWithWindow c window) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -701,7 +709,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   obtain tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0 h7
-  rw [points_eq]
+  rw [pointsWithWindow_eq]
   refine WP.seq ?_
   -- The table of `u`.
   refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega_arith) (sl_le c h7 (i := U) (by decide))
@@ -773,7 +781,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
       rw [winW_eq] at hw
       exact ⟨apart_append (apart_winX (c := c) (i := EM) (by decide)) (apart_slW (by decide)) w hw,
         apart_append (apart_winX (c := c) (i := BM) (by decide)) (apart_slW (by decide)) w hw⟩
-  refine winMul_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
+  refine winMulWith_ok window hwindow hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
         exact hrep) (ks := V) (by decide) (hpa := winAddOk hc) (hr := ready₃)
@@ -872,5 +880,18 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
       · show c.sl WB + 64 * (c.n + 1) ≤ size; omega_arith
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact sl_le' c h7 ((show ∀ i ∈ ptsW ++ tblI, i < 112 by decide) i hi)
+
+theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
+    (hM : Mid c s₀ base g s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    (hTP : TblPre c s₀ (s₀.syms c.tsym) base)
+    (hQ₁ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s U) (G c.C)) → Q₁ 0 X Y Z)
+    {P : Point c.C} (hP : onCurve c.C P = true)
+    (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P)
+    (hQ₂ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s V) P) → Q₂ 0 X Y Z)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s', Pts c s₀ base g Q₁ Q₂ s' → WP isa rest s' Q) :
+    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) rest) s Q  := pointsWithWindow_ok _ (windowCode_ok _ _) hc hM hC hT hTP hQ₁ hP hrep hQ₂ h
 
 end VG.Proof.Ecdsa.Verify.AArch64

@@ -13,7 +13,7 @@ namespace VG.Impl.Ecdh.AArch64
 open VG.AArch64
 
 /-- `vg_ecdh_p224`. -/
-def exchangeP224 : Prog isa := Cfg.exchange Impl.Ecdsa.AArch64.p224
+def exchangeP224 : Prog isa := Cfg.exchangeWithWindow Impl.Ecdsa.AArch64.p224 Impl.Ecdsa.AArch64.windowCallP224
 
 end VG.Impl.Ecdh.AArch64
 
