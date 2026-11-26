@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
@@ -31,6 +32,7 @@ meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512
 meta import VerifiedGarbage.Proof.Hmac.AnyKey
 meta import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Impl.Hmac.Stream.RISCV64.Fn
+meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -89,6 +91,23 @@ theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (sta
     rw [Sha256.Stream.bytesAt_congr ho]
     exact h k0 text h1 h2 hri hc hro
 
+/-- The residue analysis of `vg_hmac_<hash>_init` with its cleanup ends with
+nothing left. -/
+abbrev InitEnds (H : Impl.Hmac.Stream.RISCV64.Hash) : Prop :=
+  rtaint.Ends (RTaint.init (H.ibytes + H.F) [])
+    (Impl.Scrub.RISCV64.scrubSelBody
+      [(H.ibytes + H.F, [(0, H.F / 8), ((H.F + H.iso) / 8, (H.ibytes - H.iso) / 8)])] H.init) (RTaint.done 64)
+
+/-- The analyses of SHA-224's and SHA-256's, in one kernel evaluation, which
+analyses the code they share once. -/
+theorem sha256Family_ends : InitEnds Sha256Family.hash224 ∧ InitEnds Sha256Family.hash256 := by
+  taint_decide_ct_all
+
+/-- The analyses of SHA-512's family, in one kernel evaluation. -/
+theorem sha512Family_ends : InitEnds Sha384.hash ∧ InitEnds Sha512.hash ∧ InitEnds Sha512_224.hash ∧
+    InitEnds Sha512_256.hash := by
+  taint_decide_ct_all
+
 /-- `vg_hmac_md5_init` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.init`) meets its
 contract in constant time and returns without secret residue. -/
 theorem md5_init_scrubbed :
@@ -140,7 +159,7 @@ theorem sha224_init_scrubbed :
     (W := Sha256Family.hash224.ibytes + Sha256Family.hash224.F)
     { code := Sha256Family.hash224.init, verified := Sha224.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha224I Proof.Hmac.sha224_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha256Family_ends.1
 
 /-- `vg_hmac_sha224_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/
@@ -161,7 +180,7 @@ theorem sha256_init_scrubbed :
     (W := Sha256Family.hash256.ibytes + Sha256Family.hash256.F)
     { code := Sha256Family.hash256.init, verified := Sha256.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha256I Proof.Hmac.sha256_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha256Family_ends.2
 
 /-- `vg_hmac_sha256_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/
@@ -182,7 +201,7 @@ theorem sha384_init_scrubbed :
     (W := Sha384.hash.ibytes + Sha384.hash.F)
     { code := Sha384.hash.init, verified := Sha384.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha384I Proof.Hmac.sha384_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha512Family_ends.1
 
 /-- `vg_hmac_sha384_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/
@@ -203,7 +222,7 @@ theorem sha512_init_scrubbed :
     (W := Sha512.hash.ibytes + Sha512.hash.F)
     { code := Sha512.hash.init, verified := Sha512.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512I Proof.Hmac.sha512_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha512Family_ends.2.1
 
 /-- `vg_hmac_sha512_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/
@@ -224,7 +243,7 @@ theorem sha512_224_init_scrubbed :
     (W := Sha512_224.hash.ibytes + Sha512_224.hash.F)
     { code := Sha512_224.hash.init, verified := Sha512_224.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512_224I Proof.Hmac.sha512_224_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha512Family_ends.2.2.1
 
 /-- `vg_hmac_sha512_224_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/
@@ -245,7 +264,7 @@ theorem sha512_256_init_scrubbed :
     (W := Sha512_256.hash.ibytes + Sha512_256.hash.F)
     { code := Sha512_256.hash.init, verified := Sha512_256.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512_256I Proof.Hmac.sha512_256_local (by decide) _) (by lit_decide)
-    (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (hbp_nil _) sha512Family_ends.2.2.2
 
 /-- `vg_hmac_sha512_256_finalize` as emitted (`Impl.Hmac.Stream.RISCV64.Fn.finalize`) meets its
 contract in constant time and returns without secret residue. -/

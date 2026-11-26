@@ -82,9 +82,12 @@ def checkBlockC : A.T → List M.Instr → Option A.T
   | τ, [] => some τ
   | τ, i :: is => (A.step τ i).bind (checkBlockC · is)
 
-/-- The analysis of a block, a `List.rec` as `Taint.checkBlock` is. -/
+/-- The analysis of a block, a `List.rec` as `Taint.checkBlock` is, and
+`Option.rec` for `Option.bind` (`checkBlock_cons`), which the kernel would
+unfold at every instruction. -/
 @[implemented_by checkBlockC] def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
-  List.rec (motive := fun _ => A.T → Option A.T) some (fun i _ ih τ => (A.step τ i).bind ih) is τ
+  List.rec (motive := fun _ => A.T → Option A.T) some
+    (fun i _ ih τ => Option.rec (motive := fun _ => Option A.T) none ih (A.step τ i)) is τ
 
 /-- The analysis of a block, weakened to `mids` after every `chunkSize` instructions. -/
 def checkChunks (chunkSize : Nat) : A.T → List M.Instr → List A.T → Option A.T
@@ -161,6 +164,12 @@ theorem map_addr_inj : ∀ {a₁ a₂ : List Addr}, a₁.map Leak.addr = a₂.ma
     simp only [List.map_cons, List.cons.injEq, Leak.addr.injEq] at h
     rw [h.1, map_addr_inj h.2]
 
+/-- `checkBlock`'s step, as `Option.bind`. -/
+theorem checkBlock_cons (τ : A.T) (i : M.Instr) (is : List M.Instr) :
+    A.checkBlock τ (i :: is) = (A.step τ i).bind (A.checkBlock · is) := by
+  show Option.rec (motive := fun _ => Option A.T) none (A.checkBlock · is) (A.step τ i) = _
+  cases A.step τ i <;> rfl
+
 theorem checkBlock_sound {is : List M.Instr} {τ τ' : A.T} {s₁ s₂ s₁' s₂' : M.State}
     {t₁ t₂ r₁ r₂ : List Leak} (h : A.checkBlock τ is = some τ') (ha : A.Agree τ s₁ s₂)
     (e₁ : execBlock M is s₁ = some (s₁', t₁)) (e₂ : execBlock M is s₂ = some (s₂', t₂))
@@ -171,7 +180,7 @@ theorem checkBlock_sound {is : List M.Instr} {τ τ' : A.T} {s₁ s₂ s₁' s�
     simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at e₁ e₂
     obtain ⟨rfl, rfl⟩ := e₁; obtain ⟨rfl, rfl⟩ := e₂; subst h; exact ⟨rfl, ha⟩
   | cons i is ih =>
-    simp only [checkBlock, Option.bind_eq_some_iff] at h
+    rw [checkBlock_cons, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, hs, hr⟩ := h
     simp only [execBlock] at e₁ e₂
     split at e₁ <;> rename_i h₁ <;> [cases e₁; skip]
