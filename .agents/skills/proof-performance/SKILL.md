@@ -386,6 +386,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *Destructuring after the goal has grown.* An `obtain ⟨a₀, …, a₁₆⟩ := h`
     after `refine ⟨witness, ?_⟩` reduces the goal the witness made at every
     `cases` (0.5 s): take the hypothesis apart first.
+  * *The equation lemma of a conjunction of `Bool`s.* `rw [f]` and `simp [f]`
+    derive `f.eq_1`, for which the elaborator reduces `f`'s body; for
+    `decide l.Nodup && …` that evaluates the `decide` on symbolic elements
+    (`lazyOk_spec`, 11 s). `delta f` derives nothing.
   * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an
