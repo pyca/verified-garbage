@@ -256,8 +256,8 @@ def gcdIsOne : List (Prog isa) :=
 `x1`), then `d = Q t + c` with `c = (1 + R t) e⁻¹ mod 2⁶⁴` (in `x10`; `e⁻¹`
 is `minv`'s `x4`). -/
 def dOdd : List (Prog isa) :=
-  loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++ invFrom aE ++
-  [inverse aU aV aX₁ aX₂ aE aT] ++ lGe2 ++ gcdIsOne ++
+  loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR, copyA aM aE] ++ invFrom aM ++
+  [inverse aU aV aX₁ aX₂ aM aT] ++ lGe2 ++ gcdIsOne ++
   ([.block ([ldh .x3 kEv] ++ minv ++ ws ++ base aX₂ .x16 ++ base aR .x17 ++
       [ldh .x1 kEv, ld .x3 .x16, .sub .x .x1 .x1 .x3, ld .x3 .x17, .mul .x .x3 .x3 .x1, .addImm .x .x3 .x3 1,
         .mul .x .x10 .x3 .x4]),

@@ -364,9 +364,21 @@ def batchFinish (iF iG iA iM iT : Nat) : List (Prog isa) :=
       .vop (.movi0 .v16), .vop (.movi0 .v17), .vop (.movi0 .v18), .vop (.movi0 .v19), .vop (.movi0 .v20), .vop (.movi0 .v21), .vop (.movi0 .v22), .vop (.movi0 .v23), .vop (.movi0 .v24), .vop (.movi0 .v25), .vop (.movi0 .v26)]]
 
 /-- The batched inverse at the width in `x12`. -/
-def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+def inverseBRaw (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   seqs (batchInit iV iU iX₂ iX₁ iM ++ [.loop (batch iV iU iX₂ iX₁ iM) (.nonzero .x .x15)] ++
     batchFinish iV iU iX₂ iM iT)
+
+/-- The repeated key-generation inverse, preserving the caller's link in
+an otherwise unused caller-saved vector lane, then clearing that lane. -/
+def keygenInverse : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)])
+    (.seq (.call "vg_rsa_keygen_inverse" (inverseBRaw 2 3 6 7 9 8))
+      (.block [.umov .x .x30 .v31 1, .vop (.movi0 .v31)]))
+
+/-- The batched inverse; key derivation's fixed array layout shares its body. -/
+def inverseB (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  if iU = 2 ∧ iV = 3 ∧ iX₁ = 6 ∧ iX₂ = 7 ∧ iM = 9 ∧ iT = 8 then keygenInverse
+  else inverseBRaw iU iV iX₁ iX₂ iM iT
 
 /-- `batchFinish` without the doublings: `v := |f|`, `x₂ := ±a mod m`, and
 `x1`, `x2` restored; the caller multiplies `x₂` by `2^(5 B)`. -/

@@ -481,8 +481,8 @@ theorem dOddD_ok {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   exact ⟨⟨by rw [m₅, m₄, m₃], (k35.gpr .x8 (by decide)).trans h8, (k₅.gpr .x9 (by decide)).trans h9,
     (((k₂.trans k35).gpr .x12 (by decide))).trans h12, h7⟩, (k13.trans (k₄.trans k₅)).mono (by decide)⟩
 
-theorem dOdd_eq : dOdd = loadEv ++ (([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] :
-    List (Prog isa)) ++ (invFrom aE ++ (([inverse aU aV aX₁ aX₂ aE aT] : List (Prog isa)) ++ (lGe2 ++ (gcdIsOne ++
+theorem dOdd_eq : dOdd = loadEv ++ (([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR, copyA aM aE] :
+    List (Prog isa)) ++ (invFrom aM ++ (([inverse aU aV aX₁ aX₂ aM aT] : List (Prog isa)) ++ (lGe2 ++ (gcdIsOne ++
     ([.block ([ldh .x3 kEv] ++ minv ++ ws ++ base aX₂ .x16 ++ base aR .x17 ++
         ([ldh .x1 kEv, ld .x3 .x16, .sub .x .x1 .x1 .x3, ld .x3 .x17, .mul .x .x3 .x3 .x1, .addImm .x .x3 .x3 1,
           .mul .x .x10 .x3 .x4] : List Instr)),
@@ -513,8 +513,8 @@ theorem dOdd_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS 
       WP.seq (WP.mono (divmod_k h₃ (iQ := aQt) (iR := aR) (iD := aE) (iT := aT) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨h₄, f₄, d₄⟩ =>
         WP.seq (WP.mono (zeroA_k h₄ (j := aU) (by decide)) fun s₅ ⟨h₅, f₅, z₅, _, _⟩ =>
-          WP.mono (copyA_k h₅ (o := aU) (a := aR) (by decide) (by decide) (by decide))
-            fun s₆ ⟨h₆, f₆, v₆, t₆, _⟩ => ?_))))
+          WP.seq (WP.mono (copyA_k h₅ (o := aU) (a := aR) (by decide) (by decide) (by decide))
+            fun s₆ ⟨h₆, f₆, v₆, t₆, _⟩ => ?_)))))
   obtain vE₃ : av I s₃.mem aE = e := by
     rw [f₃.av (by decide) (by decide) (by decide) hZ, f₂.av (by decide) (by decide) (by decide) hZ, vE₁]
   obtain vQ₃ : av I s₃.mem aQt = L := by rw [v₃, f₂.av (by decide) (by decide) (by decide) hZ, vL₁]
@@ -537,20 +537,27 @@ theorem dOdd_k [VG.Proof.Rsa.AArch64.InvLaw] {I : KIn} {s₀ s : State} (h : KS 
   obtain vL₆ : av I s₆.mem aL = L := by
     rw [pres6 aL (by decide) (by decide) (by decide) (by decide) (by decide), f₃.av (by decide) (by decide)
       (by decide) hZ, f₂.av (by decide) (by decide) (by decide) hZ, vL₁]
+  -- Use the common modulus array before initializing the inverse.
+  refine WP.mono (copyA_k h₆ (o := aM) (a := aE) (by decide) (by decide) (by decide))
+    fun s₆a ⟨h₆a, fc, vm, _, _⟩ => ?_
+  have vM₆a : av I s₆a.mem aM = e := vm.trans vE₆
   -- `x = R⁻¹ mod e`.
-  refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₆ (j := aE) (by decide) (by decide))
-    fun s₇ ⟨h₇, f₇, vV₇, vX₁₇, vX₂₇⟩ => ?_)
-  obtain hok7 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
+  refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₆a (j := aM) (by decide) (by decide))
+    fun s₇ ⟨h₇, fi, vV₇, vX₁₇, vX₂₇⟩ => ?_)
+  have f₇ : KF I.B I.W [Rc.arr aM, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂] s₆.mem s₇.mem :=
+    (fc.trans fi).mono (by decide)
+  obtain hok7 : [Rc.arr aM, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
   obtain vU₇ : av I s₇.mem aU = L % e := by rw [f₇.av hok7 (by decide) (by decide) hZ, vU₆]
   obtain tU₇ : atop I s₇.mem aU = 0 := by rw [f₇.at hok7 (by decide) (by decide) hZ, tU₆]
   obtain vE₇ : av I s₇.mem aE = e := by rw [f₇.av hok7 (by decide) (by decide) hZ, vE₆]
+  have vM₇ : av I s₇.mem aM = e := by rw [fi.av (by decide) (by decide) (by decide) hZ, vM₆a]
   refine wp_seqs_append (by simp) (by simp [lGe2]) ?_
   simp only [seqs]
-  refine WP.mono (inverse_k h₇ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aE) (iT := aT)
+  refine WP.mono (inverse_k h₇ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aM) (iT := aT)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) tU₇ (by rw [vV₇, vE₆, vE₇]) vX₁₇ vX₂₇) fun s₈ ⟨h₈, f₈, hinv⟩ => ?_
-  rw [vE₇, vU₇] at hinv
+    (by decide) (by decide) (by decide) tU₇ (by rw [vV₇, vM₆a, vM₇]) vX₁₇ vX₂₇) fun s₈ ⟨h₈, f₈, hinv⟩ => ?_
+  rw [vM₇, vU₇] at hinv
   obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo (by omega_using [he3])
   generalize hx : av I s₈.mem aX₂ = x at hdv₈ hx₈
   obtain hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT].all Rc.ok = true := by decide
