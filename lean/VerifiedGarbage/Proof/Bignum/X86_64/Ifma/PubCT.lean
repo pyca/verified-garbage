@@ -78,6 +78,66 @@ theorem cmpW_ok {t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (n : Nat) (h
     and_intros
     rw [ofNat_sub_beq (by omega_using [hw]) (by omega_using [hn])]) rfl) fun u ⟨⟨z, m⟩, k⟩ => ⟨z, m, k⟩
 
+/-- A successful layout comparison, without changing registers or memory. -/
+theorem flagIfmaYes_ok (s : State) :
+    WP isa PubIfma.flagIfmaYes s fun t => t.zf = some true ∧ t.mem = s.mem ∧ Keep [.r11] s t := by
+  refine WP.mono (WP.keep [.r11] (Q := fun t => t.zf = some true ∧ t.mem = s.mem) (by
+    unfold PubIfma.flagIfmaYes
+    xrun [BitVec.sub_self]
+    and_intros) rfl) fun t ⟨⟨z, m⟩, k⟩ => ⟨z, m, k⟩
+
+/-- An unsupported exponent, without changing memory. -/
+theorem flagIfmaNo_ok (s : State) :
+    WP isa PubIfma.flagIfmaNo s fun t => t.zf = some false ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some false ∧ t.mem = s.mem) (by
+    unfold PubIfma.flagIfmaNo
+    xrun []
+    and_intros) rfl) fun t ⟨⟨z, m⟩, k⟩ => ⟨z, m, k⟩
+
+/-- The supported modulus widths, tested independently of the exponent. -/
+theorem ifmaSizes_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
+    (hg : VG.Proof.Bignum.X86_64.Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hw : w < 2 ^ 31) :
+    WP isa PubIfma.ifmaSizes s fun t =>
+      t.zf = some (decide (w = 32 ∨ w = 48 ∨ w = 64)) ∧ t.mem = s.mem ∧ Keep [.rax, .r11] s t := by
+  unfold PubIfma.ifmaSizes
+  refine WP.seq (WP.mono (cmpW_ok 32 hg hZ (by decide) hw) fun a ⟨za, ma, ka⟩ => ?_)
+  refine WP.ite (decide (w = 32)) (by simp [eval, za]) (fun hb => ?_) (fun hb => ?_)
+  · have he := of_decide_eq_true hb
+    exact WP.mono (flagIfmaYes_ok a) fun t ⟨zt, mt, kt⟩ =>
+      ⟨by simpa only [he, true_or, decide_true] using zt, mt.trans ma, (ka.trans kt).mono (by decide)⟩
+  have hn32 := of_decide_eq_false hb
+  have ga : VG.Proof.Bignum.X86_64.Good a B Z w mi := ⟨hg.scr.congr ka.2.2, (ka.gpr (by decide)).trans hg.rdi, by rw [ma]; exact hg.hdr⟩
+  refine WP.seq (WP.mono (cmpW_ok 48 ga hZ (by decide) hw) fun b ⟨zb, mb, kb⟩ => ?_)
+  refine WP.ite (decide (w = 48)) (by simp [eval, zb]) (fun hb => ?_) (fun hb => ?_)
+  · have he := of_decide_eq_true hb
+    exact WP.mono (flagIfmaYes_ok b) fun t ⟨zt, mt, kt⟩ =>
+      ⟨by simpa only [he, or_true, true_or, decide_true] using zt, (mt.trans mb).trans ma,
+        ((ka.trans kb).trans kt).mono (by decide)⟩
+  have hn48 := of_decide_eq_false hb
+  have gb : VG.Proof.Bignum.X86_64.Good b B Z w mi := ⟨ga.scr.congr kb.2.2, (kb.gpr (by decide)).trans ga.rdi, by rw [mb]; exact ga.hdr⟩
+  exact WP.mono (cmpW_ok 64 gb hZ (by decide) hw) fun t ⟨zt, mt, kt⟩ =>
+    ⟨by simpa only [hn32, hn48, false_or] using zt, (mt.trans mb).trans ma,
+      ((ka.trans kb).trans kt).mono (by decide)⟩
+
+/-- The single dispatch condition is exactly IFMA's supported exponent and widths. -/
+theorem ifmaEligible_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {ep : Addr} {L : Nat} {eb : List Byte}
+    (hg : VG.Proof.Bignum.X86_64.Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hw : w < 2 ^ 31) (he : word s.mem B (8*sE) = ep)
+    (hlen : word s.mem B (8*sElen) = BitVec.ofNat 64 L) (hsrc : VG.Proof.Bignum.X86_64.Src s B Z ep eb) (hel : eb.length = L)
+    (hL1 : 1 ≤ L) (hL' : L < 2^31) :
+    WP isa PubIfma.ifmaEligible s fun t =>
+      t.zf = some (decide (Spec.Rsa.os2ip eb = 65537 ∧ (w = 32 ∨ w = 48 ∨ w = 64))) ∧
+      t.mem = s.mem ∧ Keep [.rax, .r8, .r9, .r10, .r11] s t := by
+  unfold PubIfma.ifmaEligible
+  refine WP.seq (WP.mono (is65537_ok hg hZ he hlen hsrc hel hL1 hL') fun a ⟨za, ma, ka⟩ => ?_)
+  refine WP.ite (decide (Spec.Rsa.os2ip eb = 65537)) (by simp [eval, za]) (fun hb => ?_) (fun hb => ?_)
+  · have heq := of_decide_eq_true hb
+    have ga : VG.Proof.Bignum.X86_64.Good a B Z w mi := ⟨hg.scr.congr ka.2.2, (ka.gpr (by decide)).trans hg.rdi, by rw [ma]; exact hg.hdr⟩
+    exact WP.mono (ifmaSizes_ok ga hZ hw) fun t ⟨zt, mt, kt⟩ =>
+      ⟨by simpa only [heq, true_and] using zt, mt.trans ma, (ka.trans kt).mono (by decide)⟩
+  · have hne := of_decide_eq_false hb
+    exact WP.mono (flagIfmaNo_ok a) fun t ⟨zt, mt, kt⟩ =>
+      ⟨by simpa only [hne, false_and, decide_false] using zt, mt.trans ma, (ka.trans kt).mono (by decide)⟩
+
 /-- `pubExp`. -/
 theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
     {L : Nat} {eb xb : List Byte} {N R : Nat}
@@ -94,12 +154,6 @@ theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr
     fun r hr => (pdAll_le _ r hr).trans hZ
   have xa := Fixed.of_frm fa (pdAll_fixed _)
   have hsrc := h.e.congrK (InScr.of_frm fa hle) ka
-  rw [seqs_one]
-  unfold pubExp
-  refine WP.seq (WP.mono_mx (by decide +kernel) (is65537_ok so.good hZ (by rw [xa sE (by decide)]; exact h.hE)
-    (by rw [xa sElen (by decide)]; exact h.hL) hsrc h.el h.L1 (by omega_using [hk2, hL2])) fun u ⟨zu, mu, ku⟩ xu => ?_)
-  have gu : VG.Proof.Bignum.X86_64.Good u B Z ((k+7)/8) mi := ⟨so.good.scr.congr ku.2.2, (ku.gpr (by decide)).trans so.good.rdi,
-    by rw [mu]; exact so.good.hdr⟩
   -- The ADX code's, from a state with `a`'s memory.
   have adx : ∀ v : State, v.mem = a.mem → Keep [.rax, .r8, .r9, .r10, .r11] a v → v.mxcsr = a.mxcsr →
       WP isa (adxExp M.mm) v (ExpOut B Z ((k+7)/8) mi N R (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip eb) a) :=
@@ -125,24 +179,32 @@ theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr
         vd, gd, rfl,
         by rw [← mv]; exact fd, (kv.trans kd).mono (by decide), by rw [xd, xv]⟩
   have hw : (k+7)/8 < 2 ^ 31 := by omega_using [hk2]
-  refine WP.ite (decide (Spec.Rsa.os2ip eb = 65537)) (by simp [eval, zu]) (fun hb => ?_) (fun _ => adx u mu ku xu)
-  have he : Spec.Rsa.os2ip eb = 65537 := by simpa using hb
+  rw [seqs_one]
+  unfold pubExp
+  refine WP.seq (WP.mono_mx (by decide +kernel) (ifmaEligible_ok so.good hZ hw
+    (by rw [xa sE (by decide)]; exact h.hE) (by rw [xa sElen (by decide)]; exact h.hL)
+    hsrc h.el h.L1 (by omega_using [hk2, hL2])) fun u ⟨zu, mu, ku⟩ xu => ?_)
+  have gu : VG.Proof.Bignum.X86_64.Good u B Z ((k+7)/8) mi := ⟨so.good.scr.congr ku.2.2, (ku.gpr (by decide)).trans so.good.rdi,
+    by rw [mu]; exact so.good.hdr⟩
+  refine WP.ite (decide (Spec.Rsa.os2ip eb = 65537 ∧ ((k+7)/8 = 32 ∨ (k+7)/8 = 48 ∨ (k+7)/8 = 64)))
+    (by simp [eval, zu]) (fun hb => ?_) (fun _ => adx u mu ku xu)
+  have eligible := of_decide_eq_true hb
+  have he := eligible.1
+  unfold PubIfma.ifmaChoose
   refine WP.seq (WP.mono_mx (by decide +kernel) (cmpW_ok 32 gu hZ (by decide) hw) fun u₁ ⟨z₁, m₁, k₁⟩ x₁ => ?_)
   have g₁ : VG.Proof.Bignum.X86_64.Good u₁ B Z ((k+7)/8) mi := ⟨gu.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans gu.rdi, by rw [m₁]; exact gu.hdr⟩
-  refine WP.ite (decide ((k+7)/8 = 32)) (by simp [eval, z₁]) (fun hb => ?_) (fun _ => ?_)
+  refine WP.ite (decide ((k+7)/8 = 32)) (by simp [eval, z₁]) (fun hb => ?_) (fun hb => ?_)
   · exact ifma pay2048 (.inl rfl) (of_decide_eq_true hb).symm he u₁ (by rw [m₁, mu]) ((ku.trans k₁).mono (by decide))
       (by rw [x₁, xu])
+  have hn32 := of_decide_eq_false hb
   refine WP.seq (WP.mono_mx (by decide +kernel) (cmpW_ok 48 g₁ hZ (by decide) hw) fun u₂ ⟨z₂, m₂, k₂⟩ x₂ => ?_)
-  have g₂ : VG.Proof.Bignum.X86_64.Good u₂ B Z ((k+7)/8) mi := ⟨g₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans g₁.rdi, by rw [m₂]; exact g₁.hdr⟩
-  refine WP.ite (decide ((k+7)/8 = 48)) (by simp [eval, z₂]) (fun hb => ?_) (fun _ => ?_)
+  refine WP.ite (decide ((k+7)/8 = 48)) (by simp [eval, z₂]) (fun hb => ?_) (fun hb => ?_)
   · exact ifma pay3072 (.inr (.inl rfl)) (of_decide_eq_true hb).symm he u₂ (by rw [m₂, m₁, mu])
       (((ku.trans k₁).trans k₂).mono (by decide)) (by rw [x₂, x₁, xu])
-  refine WP.seq (WP.mono_mx (by decide +kernel) (cmpW_ok 64 g₂ hZ (by decide) hw) fun u₃ ⟨z₃, m₃, k₃⟩ x₃ => ?_)
-  refine WP.ite (decide ((k+7)/8 = 64)) (by simp [eval, z₃]) (fun hb => ?_) (fun _ => ?_)
-  · exact ifma pay4096 (.inr (.inr rfl)) (of_decide_eq_true hb).symm he u₃ (by rw [m₃, m₂, m₁, mu])
-      ((((ku.trans k₁).trans k₂).trans k₃).mono (by decide)) (by rw [x₃, x₂, x₁, xu])
-  · exact adx u₃ (by rw [m₃, m₂, m₁, mu]) ((((ku.trans k₁).trans k₂).trans k₃).mono (by decide))
-      (by rw [x₃, x₂, x₁, xu])
+  · have hn48 := of_decide_eq_false hb
+    have h64 : (k+7)/8 = 64 := eligible.2.elim (fun h => False.elim (hn32 h)) (fun h => h.elim (fun h => False.elim (hn48 h)) id)
+    exact ifma pay4096 (.inr (.inr rfl)) h64.symm he u₂ (by rw [m₂, m₁, mu])
+      (((ku.trans k₁).trans k₂).mono (by decide)) (by rw [x₂, x₁, xu])
 
 theorem rest_eq (M : Mont) :
     PubIfma.rest M.mm = seqs ((wordIn ++ restStepsWith VG.Impl.Rsa.X86_64.Compare8.code) ++
@@ -243,6 +305,58 @@ theorem cmpW_ct (n : Nat) (hn : n < 2 ^ 31) (P : DPub × BitVec 64 → Prop) (hT
   have hk2 := g.1.k2
   exact WP.mono (cmpW_ok n hg g.1.z hn (by omega_using [hk2])) fun t ⟨z, m, k⟩ => ⟨⟨DAw.regs h m k (by decide), hp⟩, z⟩
 
+/-- Setting the eligibility flag has no secret-dependent address or branch. -/
+theorem flagIfmaYes_ct : RelCT isa (Two DAw) PubIfma.flagIfmaYes (Two DAw) := by
+  apply two_piece [] (fun _ _ _ _ _ r hr => by cases hr) (by taint_decide)
+  intro q s h
+  exact WP.mono (flagIfmaYes_ok s) fun t ⟨_, mt, kt⟩ => DAw.regs h mt kt (by decide)
+
+theorem flagIfmaNo_ct : RelCT isa (Two DAw) PubIfma.flagIfmaNo (Two DAw) := by
+  apply two_piece [] (fun _ _ _ _ _ r hr => by cases hr) (by taint_decide)
+  intro q s h
+  exact WP.mono (flagIfmaNo_ok s) fun t ⟨_, mt, kt⟩ => DAw.regs h mt kt (by decide)
+
+/-- The width comparison, without an additional carried predicate. -/
+theorem cmpW_public_ct (n : Nat) (hn : n < 2 ^ 31) (hT : TOk [.rdi] (PubIfma.cmpW n)) :
+    RelCT isa (Two DAw) (PubIfma.cmpW n)
+      (Two fun q t => DAw q t ∧ t.zf = some (decide ((q.1.k + 7) / 8 = n))) :=
+  (two_map id (fun _ _ h => ⟨h, True.intro⟩) (cmpW_ct n hn (fun _ => True) hT)).mono
+    (fun _ _ h => h) (fun _ _ h => two_mono (fun _ _ h => ⟨h.1.1, h.2⟩) h)
+
+/-- The size decision depends only on the public width. -/
+theorem ifmaSizes_rel : RelCT isa (Two DAw) PubIfma.ifmaSizes (Two DAw) := by
+  unfold PubIfma.ifmaSizes
+  refine RelCT.seq (cmpW_public_ct 32 (by decide) ⟨_, by taint_decide⟩)
+    (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2])
+      (two_map id (fun _ _ h => h.1.1) flagIfmaYes_ct) ?_)
+  refine two_map id (fun _ _ h => h.1.1) (RelCT.seq (cmpW_public_ct 48 (by decide) ⟨_, by taint_decide⟩)
+    (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2])
+      (two_map id (fun _ _ h => h.1.1) flagIfmaYes_ct) ?_))
+  exact two_map id (fun _ _ h => h.1.1)
+    ((cmpW_public_ct 64 (by decide) ⟨_, by taint_decide⟩).mono (fun _ _ h => h) (fun _ _ h => two_mono (fun _ _ h => h.1) h))
+
+/-- Both the eligibility decision and its resulting flag are public. -/
+theorem ifmaEligible_ct : RelCT isa (Two DAw) PubIfma.ifmaEligible
+    (Two fun q t => DAw q t ∧ t.zf = some (decide (Spec.Rsa.os2ip q.1.eb = 65537 ∧
+      ((q.1.k + 7) / 8 = 32 ∨ (q.1.k + 7) / 8 = 48 ∨ (q.1.k + 7) / 8 = 64)))) := by
+  have run : RelCT isa (Two DAw) PubIfma.ifmaEligible (Two DAw) := by
+    unfold PubIfma.ifmaEligible
+    exact RelCT.seq is65537_ct
+      (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2])
+        (two_map id (fun _ _ h => h.1.1) ifmaSizes_rel)
+        (two_map id (fun _ _ h => h.1.1) flagIfmaNo_ct))
+  refine two_post (run.mono (fun _ _ h => h) (fun _ _ _ => True.intro)) ?_
+  intro q s h
+  have h' := h
+  obtain ⟨xb, σ, g, hg, _⟩ := h'
+  have hk2 := g.1.k2
+  have hL2 := g.1.L2
+  have hs := g.1.e.congrK g.inScr g.2.2.1
+  exact WP.mono (ifmaEligible_ok hg g.1.z (by omega_using [hk2])
+    (by rw [g.fixed sE (by decide)]; exact g.1.hE)
+    (by rw [g.fixed sElen (by decide)]; exact g.1.hL) hs g.1.el g.1.L1
+    (by omega_using [hk2, hL2])) fun t ⟨zt, mt, kt⟩ => ⟨DAw.regs h mt kt (by decide), zt⟩
+
 /-- The vector code, for a layout of the modulus' size and `e = 65537`. -/
 theorem vec_ct {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : PubOk l) :
     RelCT isa (Two fun q t => DAw q t ∧ Spec.Rsa.os2ip q.1.eb = 65537 ∧ (q.1.k + 7) / 8 = l.W)
@@ -267,20 +381,28 @@ theorem adx_ct (M : Mont) (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _
 theorem pubExp_ct (M : Mont) (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
     RelCT isa (Two DA) (PubIfma.pubExp M.mm) (Two DD) := by
   unfold PubIfma.pubExp
-  refine RelCT.seq (two_map id (fun _ _ h => h.weak) is65537_ct)
+  refine RelCT.seq (two_map id (fun _ _ h => h.weak) ifmaEligible_ct)
     (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_
       (adx_ct M hfinal _ fun _ _ h => h.1.1))
-  have e65 : ∀ q t, (DAw q t ∧ t.zf = some (decide (Spec.Rsa.os2ip q.1.eb = 65537))) ∧ isa.eval .e t = some true →
-      DAw q t ∧ Spec.Rsa.os2ip q.1.eb = 65537 := fun q t ⟨⟨h, z⟩, hb⟩ => ⟨h, by simpa [eval, z] using hb⟩
-  refine two_map id e65 (RelCT.seq (cmpW_ct 32 (by decide) (fun q => Spec.Rsa.os2ip q.1.eb = 65537) ⟨_, by taint_decide⟩)
+  have fits : ∀ q t, (DAw q t ∧ t.zf = some (decide (Spec.Rsa.os2ip q.1.eb = 65537 ∧
+      ((q.1.k + 7) / 8 = 32 ∨ (q.1.k + 7) / 8 = 48 ∨ (q.1.k + 7) / 8 = 64)))) ∧
+      isa.eval .e t = some true → DAw q t ∧ Spec.Rsa.os2ip q.1.eb = 65537 ∧
+      ((q.1.k + 7) / 8 = 32 ∨ (q.1.k + 7) / 8 = 48 ∨ (q.1.k + 7) / 8 = 64) :=
+    fun q t ⟨⟨h, z⟩, hb⟩ => ⟨h, by simpa [eval, z] using hb⟩
+  unfold PubIfma.ifmaChoose
+  refine two_map id fits (RelCT.seq (cmpW_ct 32 (by decide) (fun q => Spec.Rsa.os2ip q.1.eb = 65537 ∧
+      ((q.1.k + 7) / 8 = 32 ∨ (q.1.k + 7) / 8 = 48 ∨ (q.1.k + 7) / 8 = 64)) ⟨_, by taint_decide⟩)
     (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_))
-  · exact two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 = 32)⟩) (vec_ct (.inl rfl))
-  refine two_map id (fun q t ⟨⟨h, _⟩, _⟩ => h) (RelCT.seq (cmpW_ct 48 (by decide) (fun q => Spec.Rsa.os2ip q.1.eb = 65537) ⟨_, by taint_decide⟩)
-    (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_))
-  · exact two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 = 48)⟩) (vec_ct (.inr (.inl rfl)))
-  refine two_map id (fun q t ⟨⟨h, _⟩, _⟩ => h) (RelCT.seq (cmpW_ct 64 (by decide) (fun q => Spec.Rsa.os2ip q.1.eb = 65537) ⟨_, by taint_decide⟩)
-    (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ (adx_ct M hfinal _ fun _ _ h => h.1.1.1)))
-  exact two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 = 64)⟩) (vec_ct (.inr (.inr rfl)))
+  · exact two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he.1, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 = 32)⟩) (vec_ct (.inl rfl))
+  refine two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 ≠ 32)⟩)
+    (RelCT.seq (cmpW_ct 48 (by decide) (fun q => (Spec.Rsa.os2ip q.1.eb = 65537 ∧
+      ((q.1.k + 7) / 8 = 32 ∨ (q.1.k + 7) / 8 = 48 ∨ (q.1.k + 7) / 8 = 64)) ∧ (q.1.k + 7) / 8 ≠ 32) ⟨_, by taint_decide⟩)
+      (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_))
+  · exact two_map id (fun q t ⟨⟨⟨h, he⟩, z⟩, hb⟩ => ⟨h, he.1.1, (by simpa [eval, z] using hb : (q.1.k + 7) / 8 = 48)⟩) (vec_ct (.inr (.inl rfl)))
+  apply two_map id (hct := vec_ct (.inr (.inr rfl)))
+  intro q t ⟨⟨⟨h, he⟩, z⟩, hb⟩
+  have hn48 : (q.1.k + 7) / 8 ≠ 48 := by simpa [eval, z] using hb
+  exact ⟨h, he.1.1, he.1.2.elim (fun h => False.elim (he.2 h)) (fun h => h.elim (fun h => False.elim (hn48 h)) id)⟩
 
 /-- `rest` with `pubExp`: leaks the same in runs with the same public data. -/
 theorem rest_ct (M : Mont) (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
