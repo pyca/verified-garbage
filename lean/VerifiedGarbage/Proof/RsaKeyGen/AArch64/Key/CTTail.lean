@@ -47,13 +47,9 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Spec.RsaKeyGen
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Basic.IsEmpty.Defs
 meta import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 meta import VerifiedGarbage.Spec.RsaKeyGen
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Basic.IsEmpty.Defs
 
 /-! ### `RsaKeyGen.AArch64.Key.CTOut`, which this module and modules that import it used -/
 

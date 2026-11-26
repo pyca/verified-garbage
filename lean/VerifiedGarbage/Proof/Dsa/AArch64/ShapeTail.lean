@@ -9,7 +9,6 @@ import Mathlib.Order.Lattice
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks

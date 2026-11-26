@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws

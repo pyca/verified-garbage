@@ -14,10 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 public import VerifiedGarbage.Spec.Ecdsa.P521

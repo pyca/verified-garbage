@@ -6,15 +6,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
 public import VerifiedGarbage.Proof.Framework.AArch64.Call

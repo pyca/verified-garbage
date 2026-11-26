@@ -31,7 +31,7 @@ open VG.Proof.Rsa.RecoverDet
 structure TwI (I : RpIn) (m₀ : Mem) (c : Bool) (N : Nat) (st : Nat × Nat × Nat) (j : Nat) (t : State) : Prop where
   g : G I m₀ (vk I.k) c t
   val : (wv t.mem I.B (slot (vk I.k) nU) (vk I.k), wv t.mem I.B (slot (vk I.k) nXn) (vk I.k),
-    wv t.mem I.B (slot (Wk I.k) wX) (Wk I.k)) = (twoStep (64 * Wk I.k))^[j] st
+    wv t.mem I.B (slot (Wk I.k) wX) (Wk I.k)) = iterN (twoStep (64 * Wk I.k)) j st
   zU : word t.mem I.B (slot (vk I.k) nU + 8 * vk I.k) = 0
   zX : word t.mem I.B (slot (vk I.k) nXn + 8 * vk I.k) = 0
   n : wv t.mem I.B (slot (vk I.k) 0) (vk I.k) = N
@@ -96,7 +96,7 @@ theorem twosInit_ok {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h 
       o₄.wv (.inr (by have := slot_lt (w := vk I.k) (show nU < 2 * wX by decide); omega_using [this])) sW6,
       o₃.wv (.inr (by have := slot_lt (w := vk I.k) (show nU < 2 * wX by decide); omega_using [this])) sW6, hX₂]
   refine ⟨g₆, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [Function.iterate_zero_apply, Prod.mk.injEq, Prod.mk.injEq]
+  · rw [iterN_zero, Prod.mk.injEq, Prod.mk.injEq]
     refine ⟨?_, ?_, ?_⟩
     · rw [o₆.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]),
         o₅.wv (rd_sep (by decide) (by omega_using []) (by omega_using [])) (by omega_using [hb32, s2]), hu]
@@ -400,7 +400,7 @@ theorem twos_ok {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h : G 
   obtain hNlt : N < 2 ^ (64 * vk I.k) := by rw [← hN]; exact wv_lt _ _ _ _
   refine wp_seqs_append (by simp [oneA]) (by simp) (WP.mono (twosInit_ok h L hN (by omega_using [hN2]) hX) fun t₀ I₀ => ?_)
   have v₀ := I₀.val
-  simp only [Function.iterate_zero_apply, Prod.mk.injEq] at v₀
+  simp only [iterN_zero, Prod.mk.injEq] at v₀
   obtain ⟨u₀, x₀, X₀⟩ := v₀
   generalize hx : X % 2 ^ (64 * vk I.k) = x at x₀
   obtain hu0 : 0 < N - 1 := by omega_using [hN2]

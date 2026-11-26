@@ -6,7 +6,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Data.Nat.Cast.Order.Ring
-import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface

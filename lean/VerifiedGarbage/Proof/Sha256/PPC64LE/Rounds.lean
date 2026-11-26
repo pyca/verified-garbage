@@ -1,10 +1,10 @@
 module
 
+import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Offset
 
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
 import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -179,7 +179,7 @@ theorem round_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (w : Word)
       (∀ r ∈ pairs, s'.vpr r = s.vpr r) ∧ s'.gpr .r19 = kIndex (t+1) := by
   have hpairs := round_pairs_frame t
   have hs := vround_nodup t
-  have hs' := List.nodup_reverse.mpr hs
+  have hs' := (List.reverse_perm _).nodup_iff.mpr hs
   simp only [Vars, vvar_succ_zero, vvar_succ t _ (show 0 < 7 by omega_using []),
     vvar_succ t _ (show 1 < 7 by omega_using []), vvar_succ t _ (show 2 < 7 by omega_using []),
     vvar_succ t _ (show 3 < 7 by omega_using []), vvar_succ t _ (show 4 < 7 by omega_using []),
@@ -344,7 +344,7 @@ theorem pair_compute_ok (n : Nat) (hn : 8 ≤ n) (M : Block) (s : State)
   rw [show preg (n-3) = preg (n+5) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e5
   rw [show preg (n-1) = preg (n+7) by apply (preg_eq_iff _ _).mpr; omega_using [hn]] at e7
   have hs := pair_regs_nodup n
-  have hs' := List.nodup_reverse.mpr hs
+  have hs' := (List.reverse_perm _).nodup_iff.mpr hs
   have hw : ∀ r ∈ vwork, r ≠ preg n ∧ r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 :=
     fun r hr => pair_work_disjoint r hr _ (preg_mem n)
   have hp : ∀ r ∈ pairs, r ≠ .v12 ∧ r ≠ .v13 ∧ r ≠ .v14 := pair_temps_disjoint

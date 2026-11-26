@@ -16,8 +16,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

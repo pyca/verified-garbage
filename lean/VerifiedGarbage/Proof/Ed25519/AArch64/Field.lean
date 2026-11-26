@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Proof.Framework.FunUpdate
-import Mathlib.Tactic.SplitIfs
 
 /-! ### `Ed25519.AArch64.Sub`, which only this module used -/
 

@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
 import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Weierstrass.Law

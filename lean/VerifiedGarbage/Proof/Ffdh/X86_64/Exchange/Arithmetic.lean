@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Data
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -73,7 +69,7 @@ theorem ready_value (M : Mont) (E : CrtExpL M) {p : ExP} {xb : List Byte} {s : S
     (by rw [hb.ylen]; exact Nat.le_trans (by decide) hb.k1) (by rw [hb.ylen])
     (hb.hdr (sX, p.xp) (by simp [ExP.headers]))
     (by rw [hb.xlen]; exact hb.hdr (sXl, BitVec.ofNat 64 p.xl) (by simp [ExP.headers])) hb.x
-    (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; exact hb.xl2.trans hb.k2))
+    (by rw [hb.xlen]; exact hb.xl1) (by rw [hb.xlen]; exact Nat.le_trans hb.xl2 hb.k2))
     fun t ⟨hc', hy, hf, k⟩ => ?_
   obtain ⟨hb', hi, hs⟩ := hb.child hc.sub hf (fun r hr => (powRanges_ok p.w r hr).2) k
   exact ⟨⟨⟨mi, hb', hc'⟩, hy⟩, hi, hs, k.mono (by decide)⟩

@@ -17,14 +17,9 @@ import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 
 /-! ### `Dsa.X86_64.VerifyFailure`, which this module and modules that import it used -/
 

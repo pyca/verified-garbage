@@ -450,8 +450,8 @@ theorem deriveKeyBytes_iff {pLen qLen : Nat} {params x : List Byte}
       else none := by
   rw [VG.Proof.Dsa.deriveKeyBytes_eq hl hpl hxl]
   simp only [VG.Proof.Dsa.powMod_eq, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-  refine if_congr ⟨fun ⟨⟨a, b, c⟩, d, e, f, g, h⟩ => ⟨⟨a, c, b⟩, ⟨⟨g, e⟩, d⟩, h, f⟩,
-    fun ⟨⟨a, c, b⟩, ⟨⟨g, e⟩, d⟩, h, f⟩ => ⟨⟨a, b, c⟩, d, e, f, g, h⟩⟩ rfl rfl
+  refine ite_congr (propext ⟨fun ⟨⟨a, b, c⟩, d, e, f, g, h⟩ => ⟨⟨a, c, b⟩, ⟨⟨g, e⟩, d⟩, h, f⟩,
+    fun ⟨⟨a, c, b⟩, ⟨⟨g, e⟩, d⟩, h, f⟩ => ⟨⟨a, b, c⟩, d, e, f, g, h⟩⟩) (fun _ => rfl) (fun _ => rfl)
 
 /-- The derivation's failure: zeros in the output and 0 in `r0`. -/
 theorem deriveFailure_ok {s : State} {base : Addr} {size pLen qLen : Nat} (hs : Ws s base size) (hz : 120 ≤ size)

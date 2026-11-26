@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots

@@ -16,9 +16,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
 meta import VerifiedGarbage.Proof.Rsa.PPC64LE.KcFrame
 public import Aesop.BuiltinRules
-import Mathlib.Logic.Function.Iterate
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-!
 # `vg_rsa_recover_primes_det` on PPC64LE: constant time of the entry and the check of `n`

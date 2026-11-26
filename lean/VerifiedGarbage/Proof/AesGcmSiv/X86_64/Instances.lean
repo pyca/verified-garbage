@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-public import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract

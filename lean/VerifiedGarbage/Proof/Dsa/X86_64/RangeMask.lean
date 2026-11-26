@@ -10,11 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 
 /-! ### `Dsa.X86_64.RangeHead`, which this module and modules that import it used -/
 

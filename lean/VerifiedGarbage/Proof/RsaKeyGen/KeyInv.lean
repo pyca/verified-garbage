@@ -3,14 +3,8 @@ public import VerifiedGarbage.Spec.Rsa
 
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.Rsa.KeyMath
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Nat.Init
-import Mathlib.Tactic.Attr.Core
 
 /-!
 # An RSA key from its primes: `d` by an exact division

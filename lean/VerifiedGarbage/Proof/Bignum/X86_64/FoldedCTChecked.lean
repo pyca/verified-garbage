@@ -10,9 +10,6 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Logic.Relator
-import Mathlib.Data.Int.GCD
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
@@ -52,9 +49,6 @@ meta import VerifiedGarbage.Proof.Bignum.FoldedPublic
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import Mathlib.Logic.Relator
-meta import Mathlib.Data.Int.GCD
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
 meta import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
@@ -619,7 +613,7 @@ theorem restWith_ok (Es : List (Prog isa)) (hEs : Es ≠ []) {s : State} {B : Ad
   have hZ := h.z
   have hn := h.scr.nowrap
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
-    fun r hr => (pdAll_le _ r hr).trans hZ
+    fun r hr => Nat.le_trans (pdAll_le _ r hr) hZ
   refine wp_seqs_append (by simp [wordIn]) (by simp [hEs])
     (WP.mono_mx (by decide +kernel) (wordSetup_ok h) fun a ⟨mi,so,fa,ka,rra⟩ mxa => ?_)
   refine wp_seqs_append hEs (by simp [wordOutStepsArr])
@@ -669,7 +663,7 @@ theorem phasesCore_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : 
   have hw : 2 ≤ (k+7)/8 := by omega_arith
   have hR := VG.Proof.Bignum.coprime_pow2 h.odd (64*((k+7)/8))
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
-    fun r hr => (pdAll_le _ r hr).trans hZ
+    fun r hr => Nat.le_trans (pdAll_le _ r hr) hZ
   unfold phases
   -- `X = input R`.
   refine WP.seq (WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) hg hZ hw
@@ -1387,7 +1381,7 @@ theorem codeWith_correct (rest : Prog isa)
   rw [pre_wv_entry c i₁ (by omega_using [])] at hR₂
   have x₂ := Fixed.of_frm f₂ (pdLoadRanges_fixed _)
   have i₂ : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t₂.mem :=
-    i₁.trans (InScr.of_frm f₂ fun r hr => (pdLoadRanges_le _ r hr).trans hz)
+    i₁.trans (InScr.of_frm f₂ fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hz)
   have kk := k₁.trans k₂
   have hs₂ := c.hs.congr kk.2.2
   have hdi₂ : t₂.gpr .rdi = stackArg s 2 := (k₂.gpr (by decide)).trans hdi

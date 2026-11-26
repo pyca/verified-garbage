@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

@@ -1,12 +1,12 @@
 module
 
+import Mathlib.Tactic.Convert
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -25,11 +25,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 public import VerifiedGarbage.Impl.Bignum.X86_64

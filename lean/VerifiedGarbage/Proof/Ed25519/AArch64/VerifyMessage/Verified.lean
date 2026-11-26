@@ -28,13 +28,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
@@ -50,13 +43,6 @@ meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 
 /-! ### `Ed25519.AArch64.VerifyMessage.CTReady`, which only this module used -/

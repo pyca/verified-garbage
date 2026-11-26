@@ -23,17 +23,13 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Double
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ESym
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 
 /-! ### `Bignum.X86_64.Ifma.CTLemmas`, which only this module used -/
 

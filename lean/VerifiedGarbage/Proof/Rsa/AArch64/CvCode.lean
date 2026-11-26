@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: correctness

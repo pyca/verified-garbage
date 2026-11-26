@@ -1,10 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
-public import Mathlib.Logic.Function.Iterate
+public import VerifiedGarbage.Proof.Rsa.Iterate
 
-import Mathlib.Data.Nat.GCD.Basic
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -35,8 +33,8 @@ open VG.Spec.Rsa (isqrt)
 /-! ## The integer square root -/
 
 theorem isqrt_spec (x : Nat) : isqrt x * isqrt x ≤ x ∧ x < (isqrt x + 1) * (isqrt x + 1) := by
-  induction x using Nat.strong_induction_on with
-  | _ x ih =>
+  induction x using Nat.strongRecOn with
+  | ind x ih =>
     rw [isqrt]
     split
     · rename_i h
@@ -138,7 +136,7 @@ theorem twoInv_step {b N x i : Nat} {s : Nat × Nat × Nat} (h : TwoInv b N x i 
         rw [hg]
         have du := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero eu)
         have dx := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero ex)
-        conv_lhs => rw [← du, ← dx]
+        conv => lhs; rw [← du, ← dx]
         rw [Nat.gcd_mul_right]
         grind
     · simp only [ex, ↓reduceIte]
@@ -153,23 +151,23 @@ theorem twoInv_step {b N x i : Nat} {s : Nat × Nat × Nat} (h : TwoInv b N x i 
     exact ⟨g, e, hx, h3, hg, he, .inl (by omega), hle⟩
 
 theorem twoInv_iter {b N x : Nat} : ∀ k i (s : Nat × Nat × Nat), TwoInv b N x i s →
-    TwoInv b N x (i + k) ((twoStep b)^[k] s)
+    TwoInv b N x (i + k) (iterN (twoStep b) k s)
   | 0, _, _, h => h
   | k + 1, i, s, h => by
-    rw [Function.iterate_succ_apply, show i + (k + 1) = (i + 1) + k by omega_using []]
+    rw [iterN_succ, show i + (k + 1) = (i + 1) + k by omega_using []]
     exact twoInv_iter k (i + 1) _ (twoInv_step h)
 
 /-- After as many steps as `N` has bits, from `(N, x, x)`: `u` is odd, and
 `gcd(N, x) = 2^k gcd(u, x / 2^k)` with `x' = 2^k x` (modulo `2^b`). -/
 theorem twos_iter {b N x k : Nat} (pos : 0 < N) (hk : N < 2 ^ k) (hx : x < 2 ^ b) :
-    ((twoStep b)^[k] (N, x, x)).1 % 2 = 1 ∧ ((twoStep b)^[k] (N, x, x)).1 ≤ N ∧ ∃ g, ((twoStep b)^[k] (N, x, x)).2.1 * g = x ∧
-      ((twoStep b)^[k] (N, x, x)).2.2 = x * g % 2 ^ b ∧
-      Nat.gcd N x = g * Nat.gcd ((twoStep b)^[k] (N, x, x)).1 ((twoStep b)^[k] (N, x, x)).2.1 := by
+    (iterN (twoStep b) k (N, x, x)).1 % 2 = 1 ∧ (iterN (twoStep b) k (N, x, x)).1 ≤ N ∧ ∃ g, (iterN (twoStep b) k (N, x, x)).2.1 * g = x ∧
+      (iterN (twoStep b) k (N, x, x)).2.2 = x * g % 2 ^ b ∧
+      Nat.gcd N x = g * Nat.gcd (iterN (twoStep b) k (N, x, x)).1 (iterN (twoStep b) k (N, x, x)).2.1 := by
   have start : TwoInv b N x 0 (N, x, x) :=
     ⟨1, 0, Nat.mul_one _, by simp only [Nat.mul_one]; exact (Nat.mod_eq_of_lt hx).symm,
-      by simp, .inl rfl, .inr (by simp), le_refl _⟩
+      by simp, .inl rfl, .inr (by simp), Nat.le_refl _⟩
   obtain ⟨g, e, hx, h3, hg, he, hu, hle⟩ := twoInv_iter k 0 _ start
-  generalize (twoStep b)^[k] (N, x, x) = s at *
+  generalize iterN (twoStep b) k (N, x, x) = s at *
   obtain ⟨u, x2, x3⟩ := s
   simp only [Nat.zero_add] at hx h3 hg he hu hle ⊢
   have odd : u % 2 = 1 := by
@@ -189,11 +187,11 @@ theorem twos_iter {b N x k : Nat} (pos : 0 < N) (hk : N < 2 ^ k) (hx : x < 2 ^ b
       unfold Nat.Coprime; rw [Nat.gcd_rec, he]; rfl))
 
 /-- `u` and `x` after the halvings do not depend on `x'`. -/
-theorem twos_proj (b : Nat) : ∀ k u x y y', ((twoStep b)^[k] (u, x, y)).1 = ((twoStep b)^[k] (u, x, y')).1 ∧
-    ((twoStep b)^[k] (u, x, y)).2.1 = ((twoStep b)^[k] (u, x, y')).2.1
+theorem twos_proj (b : Nat) : ∀ k u x y y', (iterN (twoStep b) k (u, x, y)).1 = (iterN (twoStep b) k (u, x, y')).1 ∧
+    (iterN (twoStep b) k (u, x, y)).2.1 = (iterN (twoStep b) k (u, x, y')).2.1
   | 0, _, _, _, _ => ⟨rfl, rfl⟩
   | k + 1, u, x, y, y' => by
-    rw [Function.iterate_succ_apply, Function.iterate_succ_apply]
+    rw [iterN_succ, iterN_succ]
     unfold twoStep
     simp only
     split
@@ -203,10 +201,10 @@ theorem twos_proj (b : Nat) : ∀ k u x y y', ((twoStep b)^[k] (u, x, y)).1 = ((
     · exact twos_proj b k _ _ _ _
 
 /-- The halvings never increase `u` or `x`. -/
-theorem twos_le (b : Nat) : ∀ k (s : Nat × Nat × Nat), ((twoStep b)^[k] s).1 ≤ s.1 ∧ ((twoStep b)^[k] s).2.1 ≤ s.2.1
+theorem twos_le (b : Nat) : ∀ k (s : Nat × Nat × Nat), (iterN (twoStep b) k s).1 ≤ s.1 ∧ (iterN (twoStep b) k s).2.1 ≤ s.2.1
   | 0, _ => ⟨Nat.le_refl _, Nat.le_refl _⟩
   | k + 1, s => by
-    rw [Function.iterate_succ_apply]
+    rw [iterN_succ]
     obtain ⟨h1, h2⟩ := twos_le b k (twoStep b s)
     have : (twoStep b s).1 ≤ s.1 ∧ (twoStep b s).2.1 ≤ s.2.1 := by
       unfold twoStep
@@ -225,16 +223,16 @@ theorem twoStep_fst (b : Nat) (s : Nat × Nat × Nat) :
 
 /-- `u` after the halvings does not depend on `x` or `x'`. -/
 theorem twos_fst (b : Nat) : ∀ k (s s' : Nat × Nat × Nat), s.1 = s'.1 →
-    ((twoStep b)^[k] s).1 = ((twoStep b)^[k] s').1
+    (iterN (twoStep b) k s).1 = (iterN (twoStep b) k s').1
   | 0, _, _, h => h
   | k + 1, s, s', h => by
-    rw [Function.iterate_succ_apply', Function.iterate_succ_apply', twoStep_fst, twoStep_fst,
+    rw [iterN_succ', iterN_succ', twoStep_fst, twoStep_fst,
       twos_fst b k s s' h]
 
 /-- After as many steps as `N` has bits, `u` is odd and at most `N`, whatever
 `x` and `x'` are. -/
 theorem twos_odd {b N k : Nat} (x y : Nat) (pos : 0 < N) (hk : N < 2 ^ k) :
-    ((twoStep b)^[k] (N, x, y)).1 % 2 = 1 ∧ ((twoStep b)^[k] (N, x, y)).1 ≤ N := by
+    (iterN (twoStep b) k (N, x, y)).1 % 2 = 1 ∧ (iterN (twoStep b) k (N, x, y)).1 ≤ N := by
   rw [twos_fst b k (N, x, y) (N, 0, 0) rfl]
   obtain ⟨h1, h2, -⟩ := twos_iter (b := b) (x := 0) pos hk (Nat.two_pow_pos b)
   exact ⟨h1, h2⟩
@@ -246,11 +244,11 @@ accumulator `a` plus `x` if `y` is odd, modulo `2^b`. -/
 def prodStep (b : Nat) (s : Nat × Nat × Nat) : Nat × Nat × Nat :=
   (s.1 / 2, 2 * s.2.1 % 2 ^ b, (s.2.2 + if s.1 % 2 = 0 then 0 else s.2.1) % 2 ^ b)
 
-theorem prod_iter (b y x : Nat) (hx : x < 2 ^ b) : ∀ k, (prodStep b)^[k] (y, x, 0) =
+theorem prod_iter (b y x : Nat) (hx : x < 2 ^ b) : ∀ k, iterN (prodStep b) k (y, x, 0) =
     (y / 2 ^ k, x * 2 ^ k % 2 ^ b, y % 2 ^ k * x % 2 ^ b)
-  | 0 => by simp [Nat.mod_eq_of_lt hx, Nat.mod_one]
+  | 0 => by simp [iterN_zero, Nat.mod_eq_of_lt hx, Nat.mod_one]
   | k + 1 => by
-    rw [Function.iterate_succ_apply', prod_iter b y x hx k]
+    rw [iterN_succ', prod_iter b y x hx k]
     unfold prodStep
     simp only [Prod.mk.injEq]
     refine ⟨by rw [Nat.div_div_eq_div_mul, Nat.pow_succ], ?_, ?_⟩
@@ -292,7 +290,7 @@ theorem two_bits {xs P : Nat} (hP : 0 < P) (hx : xs < 4 * P) :
   obtain ⟨q, r, hr, rfl⟩ : ∃ q r, r < P ∧ xs = q * P + r := ⟨xs / P, xs % P, Nat.mod_lt _ hP,
     (Nat.div_add_mod' xs P).symm⟩
   have hq : q < 4 := by
-    by_contra c
+    refine Classical.byContradiction fun c => ?_
     have := Nat.mul_le_mul_right P (show 4 ≤ q by omega_using [c])
     omega_using [hx, this]
   have dP : (q * P + r) / P = q := by
@@ -359,7 +357,7 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
     rw [hy]
     have := isqrt_spec (X / (A * 4)); have := isqrt_spec X
     have d : X / (A * 4) ≤ X := Nat.div_le_self _ _
-    by_contra c
+    refine Classical.byContradiction fun c => ?_
     have : (isqrt X + 1) * (isqrt X + 1) ≤ isqrt (X / (A * 4)) * isqrt (X / (A * 4)) :=
       Nat.mul_self_le_mul_self (by omega)
     omega_arith
@@ -396,18 +394,18 @@ theorem sqrtInv_step {nb K X i : Nat} {s : Nat × Nat × Nat} (hi : i < K)
 /-- The square root's loop: `K` steps from `X < 4^K` give `isqrt X` and its remainder, if
 the root has at most `nb - 3` bits. -/
 theorem sqrt_iter {nb K X : Nat} (hX : X < 4 ^ K) (small : isqrt X < 2 ^ nb / 8) :
-    ((sqrtStep nb (2 * K))^[K] (X, 0, 0)).2.2 = isqrt X ∧
-      ((sqrtStep nb (2 * K))^[K] (X, 0, 0)).2.1 + isqrt X * isqrt X = X := by
-  have go : ∀ i ≤ K, SqrtInv K X i ((sqrtStep nb (2 * K))^[i] (X, 0, 0)) := by
+    (iterN (sqrtStep nb (2 * K)) K (X, 0, 0)).2.2 = isqrt X ∧
+      (iterN (sqrtStep nb (2 * K)) K (X, 0, 0)).2.1 + isqrt X * isqrt X = X := by
+  have go : ∀ i ≤ K, SqrtInv K X i (iterN (sqrtStep nb (2 * K)) i (X, 0, 0)) := by
     intro i
     induction i with
     | zero =>
       intro _
       have z : isqrt 0 = 0 := by rw [isqrt]; simp
-      refine ⟨?_, ?_, ?_⟩ <;> simp [Nat.mod_eq_of_lt hX, Nat.div_eq_of_lt hX, z]
+      refine ⟨?_, ?_, ?_⟩ <;> simp [iterN_zero, Nat.mod_eq_of_lt hX, Nat.div_eq_of_lt hX, z]
     | succ i ih =>
       intro hi
-      rw [Function.iterate_succ_apply']
+      rw [iterN_succ']
       exact sqrtInv_step (by omega_using [hi]) small (ih (by omega_using [hi]))
   obtain ⟨_, hy, hr⟩ := go K (Nat.le_refl _)
   simp only [Nat.sub_self, Nat.pow_zero, Nat.div_one] at hy hr

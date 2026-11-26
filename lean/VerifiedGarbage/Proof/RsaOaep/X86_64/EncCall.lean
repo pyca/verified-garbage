@@ -5,10 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.Basic
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
@@ -287,7 +283,7 @@ theorem encPro_ok {s : State} (hp : EPre H s) :
   · have hsl := hp.hsl
     have hk := hp.k1
     refine ⟨⟨stackArg s 6, 0, (stackArg s 7).toNat * 8, by rw [k18.2.2]; simp [allocState, hp.hwr],
-      (BitVec.add_zero _).symm, by unfold oRsa; omega_arith, hp.wS.trans' (by omega_arith)⟩, G'.Sw⟩
+      (BitVec.add_zero _).symm, by unfold oRsa; omega_arith, Nat.le_trans (by omega_arith) hp.wS⟩, G'.Sw⟩
   · rw [show sScr = 8 * 14 from rfl]
     exact (R8.fr 14 (by decide)).trans (by simp [encW, upd])
 

@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Scrub
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-import Mathlib.Tactic.NormNum.Inv
-import Mathlib.Tactic.NormNum.Pow
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit

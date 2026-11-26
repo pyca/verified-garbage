@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import Mathlib.Basic.IsEmpty.Defs
 
 @[expose] public section
 

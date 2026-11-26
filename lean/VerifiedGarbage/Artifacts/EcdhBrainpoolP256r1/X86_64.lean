@@ -5,8 +5,6 @@ public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP256r1.Lit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP256r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd

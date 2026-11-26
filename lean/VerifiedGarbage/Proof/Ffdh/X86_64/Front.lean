@@ -5,9 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.CrtMath
@@ -18,8 +15,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Attr.Core
 
 /-! ### `Ffdh.X86_64.Setup`, which this module and modules that import it used -/
 

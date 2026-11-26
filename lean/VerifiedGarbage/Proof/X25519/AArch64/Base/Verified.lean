@@ -18,13 +18,6 @@ public import VerifiedGarbage.Impl.X25519.AArch64.Base
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
 meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
@@ -50,13 +43,6 @@ meta import VerifiedGarbage.Impl.X25519.AArch64.Base
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint

@@ -33,10 +33,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
@@ -47,10 +43,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Math
@@ -592,7 +584,7 @@ theorem cpMain_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s t : State} (c : C
       rw [publicValid_iff, hq, hpk]
       simp only [Option.some.injEq, forall_eq']
       exact ⟨fun h => h.2, fun h => ⟨hpk ▸ hR, h⟩⟩
-    rw [h0']; unfold bit; exact if_congr e.symm rfl rfl
+    rw [h0']; unfold bit; exact ite_congr (propext e.symm) (fun _ => rfl) (fun _ => rfl)
 
 
 end VG.Proof.Ffdh.X86_64.CheckPublic

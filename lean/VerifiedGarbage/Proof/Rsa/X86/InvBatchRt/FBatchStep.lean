@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Data.Int.ModEq
-import Mathlib.Algebra.Order.Ring.Abs
 public import VerifiedGarbage.Proof.Rsa.Divstep.OddInputDef
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count

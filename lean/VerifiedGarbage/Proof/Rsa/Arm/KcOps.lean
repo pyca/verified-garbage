@@ -10,11 +10,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 import VerifiedGarbage.Proof.Rsa.MulModArithmetic
 import VerifiedGarbage.Proof.Rsa.Arm.AddMod
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs

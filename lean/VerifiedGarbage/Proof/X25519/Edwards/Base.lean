@@ -3,13 +3,6 @@ public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import VerifiedGarbage.Proof.Framework.Omega
 

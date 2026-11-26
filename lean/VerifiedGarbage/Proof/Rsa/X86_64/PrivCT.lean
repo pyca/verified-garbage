@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -13,8 +11,6 @@ meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
 meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

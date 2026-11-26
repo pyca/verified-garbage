@@ -17,20 +17,12 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
-meta import Mathlib.Tactic.NormNum.Pow
-meta import Mathlib.Tactic.NormNum.Inv
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith

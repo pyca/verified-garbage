@@ -22,14 +22,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime

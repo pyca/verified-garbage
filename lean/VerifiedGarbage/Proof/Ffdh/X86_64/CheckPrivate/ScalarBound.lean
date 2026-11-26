@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Data.Nat.Basic
 
 /-! ### `Ffdh.X86_64.CheckPrivate.ScalarLess`, which this module and modules that import it used -/
 

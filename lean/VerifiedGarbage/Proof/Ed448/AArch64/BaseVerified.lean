@@ -6,9 +6,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
@@ -20,9 +18,7 @@ meta import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 meta import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -32,7 +28,6 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
 import VerifiedGarbage.Proof.X448.AArch64.Base.Add
@@ -68,7 +63,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 meta import VerifiedGarbage.Proof.X448.AArch64.Mem
-meta import Mathlib.Tactic.NormNum.Prime
 meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 meta import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Add

@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots

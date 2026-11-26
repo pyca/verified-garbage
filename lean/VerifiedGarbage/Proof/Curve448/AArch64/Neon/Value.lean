@@ -24,12 +24,7 @@ import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.LinearCombination
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Algebra.Group.Int.Defs
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 
 /-! ### `Curve448.AArch64.Neon.Arith`, which this module and modules that import it used -/

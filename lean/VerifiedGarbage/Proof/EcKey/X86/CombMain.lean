@@ -1,7 +1,5 @@
 module
 
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.Lit

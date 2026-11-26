@@ -2,11 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem

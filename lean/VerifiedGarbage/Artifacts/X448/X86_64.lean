@@ -5,7 +5,6 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Instances

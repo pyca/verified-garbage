@@ -18,7 +18,6 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Dsa.X86.RandomFinish

@@ -1,10 +1,10 @@
 module
 
+public import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
-public import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerifyCT

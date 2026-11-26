@@ -3,9 +3,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Spec.RsaOaep
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.FnScrub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Inst
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend

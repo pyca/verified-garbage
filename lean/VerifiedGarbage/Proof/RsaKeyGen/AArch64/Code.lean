@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Algebra.Group.Nat.Defs
 
 /-! ### `RsaKeyGen.AArch64.Entry`, which only this module used -/
 

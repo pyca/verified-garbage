@@ -9,12 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Save
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail

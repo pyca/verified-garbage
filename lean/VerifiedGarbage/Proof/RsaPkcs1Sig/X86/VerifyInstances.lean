@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import Mathlib.Data.Nat.Basic
 
 /-! # Bind the verified baseline precomputed RSA operation -/
 

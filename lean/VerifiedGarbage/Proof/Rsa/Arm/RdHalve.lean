@@ -74,7 +74,7 @@ theorem twos_iter {f : Nat × Nat × Nat → Nat × Nat × Nat} {b : Nat}
     (hf : ∀ u x y, f (u, x, y) = if u % 2 = 0 then
       (if x % 2 = 0 then (u / 2, x / 2, 2 * y % 2 ^ b) else (u / 2, x, y)) else (u, x, y))
     (N u x X : Nat) (hu : u ≠ 0) (hX : X < 2 ^ b) :
-    f^[N] (u, x, X) = (u / 2 ^ tzc u N, x / 2 ^ min (tzc u N) (tzc x N),
+    iterN f N (u, x, X) = (u / 2 ^ tzc u N, x / 2 ^ min (tzc u N) (tzc x N),
       X * 2 ^ min (tzc u N) (tzc x N) % 2 ^ b) := by
   obtain ef : f = VG.Proof.Rsa.RecoverDet.twoStep b := funext fun ⟨u, x, y⟩ => by
     rw [hf]; rfl
@@ -974,10 +974,10 @@ theorem twosInit_ok {f : Nat × Nat × Nat → Nat × Nat × Nat} {σ s : State}
   refine ht.mono (fun j hj => ?_) (fun j hj => ?_) (fun d hd => ?_)
   · simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp only [AT, AN, ts, Function.iterate_zero, id] <;> rd_ev
+      simp only [AT, AN, ts, iterN_zero] <;> rd_ev
   · simp only [LWT, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp only [AWT, AW1, ts, Function.iterate_zero, id] <;> rd_up
+      simp only [AWT, AW1, ts, iterN_zero] <;> rd_up
   · exact ⟨hd, rfl⟩
 
 end
@@ -1052,7 +1052,7 @@ theorem twosW_vp {f : Nat × Nat × Nat → Nat × Nat × Nat} (hf : TwoF P f) {
     rwa [show AT P f σ 0 aN = P.n by simp only [AT]; rd_up] at this, h.sizes.wle⟩) fun ⟨hnw, wl⟩ => ?_
   obtain w2 : 2 ≤ P.w := by simp only [RP.w]; omega_using []
   obtain u0v : ∀ σ, tU0 P f σ = P.n - 1 := fun σ => by
-    simp only [tU0, AT, ts, Function.iterate_zero, id]; rd_up
+    simp only [tU0, AT, ts, iterN_zero]; rd_up
     unfold sub32; rw [show P.n + 2 ^ (32 * P.w) - 1 = (P.n - 1) + 2 ^ (32 * P.w) by omega_arith, Nat.add_mod_right,
       Nat.mod_eq_of_lt (by omega_arith)]
   obtain u1 : sub32 P.w P.n 1 ≠ 0 := by
@@ -1109,10 +1109,10 @@ theorem twosW_vp {f : Nat × Nat × Nat → Nat × Nat × Nat} (hf : TwoF P f) {
     simp only [LT, List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl | rfl | rfl
     · simp only [WAm, AT, ts]; rd_up
-      rw [it, stage_shift tl hK]; simp only [tTu, tU0, AT, ts, Function.iterate_zero, id]; rd_up
+      rw [it, stage_shift tl hK]; simp only [tTu, tU0, AT, ts, iterN_zero]; rd_up
     · simp only [WAm, AT, ts]; rd_up
       rw [it, stage_shift (show tKv P f σ < 32 * P.w by simp only [tKv]; omega_using [tl]) hK]
-      simp only [tKv, tTu, tKx, tU0, tX0, AT, ts, Function.iterate_zero, id]; rd_up
+      simp only [tKv, tTu, tKx, tU0, tX0, AT, ts, iterN_zero]; rd_up
     all_goals (simp only [WAm, AT]; rd_up)
   · have hK : P.w - 1 < 2 ^ KW P := Nat.lt_log2_self
     obtain it := twos_iter hf (32 * P.w) (sub32 P.w P.n 1) (xV P σ % 2 ^ (32 * P.w)) _ u1 (show xV P σ < 2 ^ (32 * P.W) from Nat.mod_lt _ (Nat.two_pow_pos _))
@@ -1120,7 +1120,7 @@ theorem twosW_vp {f : Nat × Nat × Nat → Nat × Nat × Nat} (hf : TwoF P f) {
     rcases hj with rfl | rfl | rfl
     · simp only [WWm, AWT, ts]; rd_up
       rw [it, stage_shift (show tKv P f σ < 32 * P.w by have := tuL σ; simp only [tKv]; omega_using [this]) hK]
-      simp only [tKv, tTu, tKx, tU0, tX0, tW0, AT, AWT, ts, Function.iterate_zero, id]; rd_up
+      simp only [tKv, tTu, tKx, tU0, tX0, tW0, AT, AWT, ts, iterN_zero]; rd_up
     all_goals (simp only [WWm, AWT]; rd_up)
   · simp only [LST, LSW, List.mem_cons, List.not_mem_nil, or_false] at hd ⊢
     rcases hd with rfl | rfl <;> simp

@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 import VerifiedGarbage.Proof.Rsa.Octets
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Algebra.NeZero
 public import VerifiedGarbage.Proof.Ffdh.Contract
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.Finish`, which only this module used -/

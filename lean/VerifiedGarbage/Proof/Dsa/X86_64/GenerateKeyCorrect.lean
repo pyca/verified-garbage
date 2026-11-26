@@ -24,11 +24,6 @@ public import VerifiedGarbage.Proof.Dsa.Contract
 public import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState

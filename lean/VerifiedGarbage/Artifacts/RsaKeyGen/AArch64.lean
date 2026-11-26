@@ -4,7 +4,6 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KeyInit
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate

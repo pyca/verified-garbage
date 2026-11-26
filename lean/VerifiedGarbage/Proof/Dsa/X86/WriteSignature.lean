@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
 public import VerifiedGarbage.Proof.Dsa.X86.OutputCall
 import VerifiedGarbage.Proof.Dsa.OutputBytes

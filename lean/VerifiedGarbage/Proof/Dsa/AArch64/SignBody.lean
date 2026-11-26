@@ -1,11 +1,11 @@
 module
 
+import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import Mathlib.Tactic.Convert
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 public import VerifiedGarbage.Spec.Rsa.Contract

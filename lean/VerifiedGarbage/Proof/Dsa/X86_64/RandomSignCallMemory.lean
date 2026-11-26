@@ -3,14 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
-import Mathlib.Data.Nat.Basic
 
 /-! ### `Dsa.X86_64.RandomSignCallGeometry`, which this module and modules that import it used -/
 

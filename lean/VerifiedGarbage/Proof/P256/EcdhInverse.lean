@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.Divstep.Bound
 public import VerifiedGarbage.Proof.Divstep.Tc
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 import VerifiedGarbage.Proof.Divstep.Iter
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc

@@ -32,7 +32,6 @@ public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Proof.X448.Wide.Product
 public import VerifiedGarbage.Proof.X448.Wide.Word
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.X448.Wide.Limbs

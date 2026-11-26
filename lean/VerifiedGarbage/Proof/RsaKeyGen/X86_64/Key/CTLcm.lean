@@ -28,15 +28,11 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import Mathlib.Algebra.GroupWithZero.Nat
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 
 /-! ### `RsaKeyGen.X86_64.Key.CTFront`, which only this module used -/

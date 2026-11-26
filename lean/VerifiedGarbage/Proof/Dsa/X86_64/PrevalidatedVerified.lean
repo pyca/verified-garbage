@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 public import VerifiedGarbage.Proof.Dsa.Validation

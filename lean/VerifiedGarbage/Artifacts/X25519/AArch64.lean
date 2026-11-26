@@ -8,13 +8,6 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Residue
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.X25519.AArch64.Exchange
 import VerifiedGarbage.Proof.X25519.AArch64.ExchangeResidue
 import VerifiedGarbage.Proof.Framework.Registration

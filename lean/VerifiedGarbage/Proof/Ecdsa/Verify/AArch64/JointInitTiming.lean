@@ -8,12 +8,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

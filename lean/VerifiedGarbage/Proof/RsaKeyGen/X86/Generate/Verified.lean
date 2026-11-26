@@ -26,7 +26,6 @@ import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 import VerifiedGarbage.Proof.Mont.X86.Words
-import Mathlib.Algebra.Group.Nat.Defs
 import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OutputPublic

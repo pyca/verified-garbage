@@ -4,12 +4,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Rsa.Octets
-import Mathlib.Order.RelClasses
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.KeyMath
 
@@ -83,17 +78,17 @@ theorem keyCheck_iff {pLen e p q d qInv : Nat} (hl1 : 32 ≤ pLen) (hl2 : pLen �
       omega_arith
     · exact h
   have hdL := hdL hL0
-  have h2p : 2 ≤ 2 ^ (8 * pLen) := Nat.le_self_pow (by omega_arith) 2 |>.trans' (by decide)
+  have h2p : 2 ≤ 2 ^ (8 * pLen) := Nat.le_trans (by decide) (Nat.le_self_pow (by omega_arith) 2)
   have hq1 : q - 1 ≠ 0 := fun h => by rw [h, Nat.lcm_zero_right] at hL; omega_arith
   have hLle : L ≤ (p - 1) * (q - 1) := by
     rw [← hL]
     exact Nat.le_of_dvd (Nat.mul_pos (by omega_arith) (by omega_arith)) (Nat.lcm_dvd_mul _ _)
   have hp3 : 3 ≤ p := by
-    by_contra h
+    refine Classical.byContradiction fun h => ?_
     have : (p - 1) * (q - 1) ≤ 1 := by
       have : p - 1 ≤ 1 := by omega_arith
       have : q - 1 ≤ 1 := by omega_arith
-      exact Nat.mul_le_mul (by omega_arith) (by omega_arith) |>.trans (by decide)
+      exact Nat.le_trans (Nat.mul_le_mul (by omega_arith) (by omega_arith)) (by decide)
     omega_arith
   have hq2 : 2 ≤ q := by omega_arith
   have hqi := hqiL (by omega_arith)
@@ -152,7 +147,7 @@ theorem keyCheck_iff {pLen e p q d qInv : Nat} (hl1 : 32 ≤ pLen) (hl2 : pLen �
       hdvd _ hpd (by omega_arith)⟩, hdvd _ hqd (by omega_arith)⟩, hdP⟩, ?_⟩, hdQ⟩, ?_⟩, hqi⟩, hqq⟩
     · exact Nat.le_trans h511 htop
     · exact Nat.lt_of_lt_of_le hn h8192
-    · refine le_trans ?_ htop
+    · refine Nat.le_trans ?_ htop
       rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
       exact Nat.pow_le_pow_right (by decide) (by omega_arith)
     · rw [Nat.mul_comm]; exact hdvd _ hpd (by omega_arith)

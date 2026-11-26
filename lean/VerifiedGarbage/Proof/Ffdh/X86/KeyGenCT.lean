@@ -21,9 +21,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
 
 /-!
 # `vg_ffdh_generate_key` on i686 in time that depends on the domain and the status only

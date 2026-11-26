@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified

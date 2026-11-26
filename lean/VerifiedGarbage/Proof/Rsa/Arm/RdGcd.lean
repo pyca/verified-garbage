@@ -126,7 +126,7 @@ abbrev ProdF (P : RP) (g : Nat × Nat × Nat → Nat × Nat × Nat) : Prop :=
   ∀ y x a, g (y, x, a) = (y / 2, 2 * x % 2 ^ (32 * P.W), (a + if y % 2 = 0 then 0 else x) % 2 ^ (32 * P.W))
 
 /-- `(y, x, a)` after `k` steps of a product. -/
-abbrev pr (g : Nat × Nat × Nat → Nat × Nat × Nat) (y x : Nat) (k : Nat) : Nat × Nat × Nat := g^[k] (y, x, 0)
+abbrev pr (g : Nat × Nat × Nat → Nat × Nat × Nat) (y x : Nat) (k : Nat) : Nat × Nat × Nat := iterN g k (y, x, 0)
 
 end
 

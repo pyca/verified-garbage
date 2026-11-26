@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify

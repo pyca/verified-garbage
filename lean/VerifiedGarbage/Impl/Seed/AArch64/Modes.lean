@@ -99,7 +99,13 @@ def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
 /-- The buffer's first block enciphered under the schedule's copy
 (`Serial.crypt`). -/
-def serialCrypt : Prog isa := .block (Serial.crypt .encrypt (8 * bufSlot) (8 * schedSlot))
+def serialCryptRaw : Prog isa := .block (Serial.crypt .encrypt (8 * bufSlot) (8 * schedSlot))
+
+/-- Share the serial cipher across the modes. Their frames save `x19`,
+which the serial arithmetic itself does not write. -/
+def serialCrypt : Prog isa :=
+  .seq (.block [movR .x19 .x30])
+    (.seq (.call "vg_seed_serial_encrypt" serialCryptRaw) (.block [movR .x30 .x19]))
 
 /-- The buffer's first block deciphered under the schedule's copy. -/
 def serialDecrypt : Prog isa := .block (Serial.crypt .decrypt (8 * bufSlot) (8 * schedSlot))

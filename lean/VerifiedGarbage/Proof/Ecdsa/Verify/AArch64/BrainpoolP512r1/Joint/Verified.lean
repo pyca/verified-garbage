@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Lit
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Hash

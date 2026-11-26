@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
@@ -52,13 +51,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
-public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
 import VerifiedGarbage.Proof.Dsa.AArch64.SignBody
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 

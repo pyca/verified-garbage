@@ -7,13 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup

@@ -26,21 +26,11 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Dsa.RandomTrace
 meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
 

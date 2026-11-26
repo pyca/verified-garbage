@@ -31,17 +31,11 @@ public import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.TermCongr
-import Mathlib.Data.Int.GCD
-import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
 meta import VerifiedGarbage.Proof.Bignum.Amm52
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import Mathlib.Tactic.TermCongr
-meta import Mathlib.Data.Int.GCD
-meta import Mathlib.Tactic.Set
 
 /-! ### `Bignum.X86_64.Ifma.PubMain`, which this module and modules that import it used -/
 
@@ -151,7 +145,7 @@ theorem pubExp_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr
   have hL2 := h.L2
   have hZ := h.z
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
-    fun r hr => (pdAll_le _ r hr).trans hZ
+    fun r hr => Nat.le_trans (pdAll_le _ r hr) hZ
   have xa := Fixed.of_frm fa (pdAll_fixed _)
   have hsrc := h.e.congrK (InScr.of_frm fa hle) ka
   -- The ADX code's, from a state with `a`'s memory.

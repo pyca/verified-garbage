@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCTFinish
 public import VerifiedGarbage.Proof.Dsa.ParameterPublic
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated

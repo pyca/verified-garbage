@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Secp256k1.GTable9
 import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Impl.Ecdsa.X86_64.VerifyHash
 import VerifiedGarbage.Proof.Mont.X86_64.Wide

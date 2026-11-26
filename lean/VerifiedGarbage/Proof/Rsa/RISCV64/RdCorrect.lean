@@ -257,7 +257,7 @@ theorem twos_ok {s : State} {B : Addr} {Z w N M : Nat} (h : Ws s B Z (W2 w) M)
     WP isa twos s fun t => Ws t B Z w N ∧
       Frame B w [2 * wX3, 2 * wX3 + 1, aOne, aU, aX2] [] s.mem t.mem ∧
       num t.mem B w aOne = 1 ∧
-      twosSt t.mem B w = (VG.Proof.Rsa.RecoverDet.twoStep (64 * W2 w))^[64 * w]
+      twosSt t.mem B w = iterN (VG.Proof.Rsa.RecoverDet.twoStep (64 * W2 w)) (64 * w)
         (VG.Proof.Rsa.RecoverDet.wsub (64 * w) (num s.mem B w aN) 1,
           num s.mem B (W2 w) wX % 2 ^ (64 * w), num s.mem B (W2 w) wX) ∧
       Keep twosRegs s t := by
@@ -448,15 +448,15 @@ theorem twoStep_snd (b : Nat) (s : Nat × Nat × Nat) : (twoStep b s).2.1 ≤ s.
 
 /-- The halvings' first part does not depend on the others. -/
 theorem iter_fst (b k : Nat) (s : Nat × Nat × Nat) :
-    ((twoStep b)^[k] s).1 = ((twoStep b)^[k] (s.1, 0, 0)).1 := by
+    (iterN (twoStep b) k s).1 = (iterN (twoStep b) k (s.1, 0, 0)).1 := by
   induction k with
   | zero => rfl
-  | succ k ih => rw [Function.iterate_succ_apply', Function.iterate_succ_apply', twoStep_fst, twoStep_fst, ih]
+  | succ k ih => rw [iterN_succ', iterN_succ', twoStep_fst, twoStep_fst, ih]
 
-theorem iter_snd (b k : Nat) (s : Nat × Nat × Nat) : ((twoStep b)^[k] s).2.1 ≤ s.2.1 := by
+theorem iter_snd (b k : Nat) (s : Nat × Nat × Nat) : (iterN (twoStep b) k s).2.1 ≤ s.2.1 := by
   induction k with
   | zero => exact Nat.le_refl _
-  | succ k ih => rw [Function.iterate_succ_apply']; exact Nat.le_trans (twoStep_snd _ _) ih
+  | succ k ih => rw [iterN_succ']; exact Nat.le_trans (twoStep_snd _ _) ih
 
 /-- What the GCD needs of the halvings' result: `u` odd and at most `n - 1`, `x` narrow. -/
 theorem twos_out {nb wb n de : Nat} (three : 3 ≤ n) (hn : n < 2 ^ nb) :
@@ -754,7 +754,7 @@ theorem stB_ok {s0 s : State} (h : PreC s0) (three : 3 ≤ Nv s0) (st : St3 s0 s
         (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD)) = true →
       slot t6.mem (bOf s0) sOk5 = if (rootOf (nbOf s0) (wbOf s0) (Nv s0)
         (RecoverDet.bOf (nbOf s0) (num t4.mem (bOf s0) (wOf s0) aD))).2.1 = 0 then 1 else 0 := fun hl h4 => by
-    rw [ok]; exact if_congr (rt hl h4).2.1.symm rfl rfl
+    rw [ok]; exact ite_congr (propext (rt hl h4).2.1.symm) (fun _ => rfl) (fun _ => rfl)
   -- The factors.
   refine WP.mono (factors_ok w6 (num_zero (fr6 _ (by rdc) (by rdc))) (by rw [b0]; exact bit_ite)
     (by rw [b1]; exact bit_ite) (by rw [lt]; exact bit_ite) (by rw [ex]; exact bit_ite)

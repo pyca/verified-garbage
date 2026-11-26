@@ -5,12 +5,7 @@ import VerifiedGarbage.Proof.Rsa.KeyParts
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.Octets
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import Mathlib.Tactic.Set
-import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
@@ -1005,7 +1004,7 @@ theorem signPro_ok {s : State} (hp : SPre tsH tsG s) :
   · have hsl := hp.hsl
     have hk := hp.k1
     refine ⟨⟨stackArg s 14, 0, (stackArg s 15).toNat * 8, by rw [k16.2.2, hA]; simp [allocState, hp.hwr], (BitVec.add_zero _).symm,
-      by unfold oRsa; omega_using [hsl], hp.wS.trans' (by omega_using [])⟩, G'.Sw⟩
+      by unfold oRsa; omega_using [hsl], Nat.le_trans (by omega_using []) hp.wS⟩, G'.Sw⟩
   · rw [show sScr = 8 * 21 from rfl]
     exact (R6.fr 21 (by decide)).trans (by simp [proW, upd])
 

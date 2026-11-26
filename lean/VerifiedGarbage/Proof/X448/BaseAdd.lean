@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Ed448.Group.Projective
 public import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.X448.Ladder
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `X448.Edwards.Ladder`, which this module and modules that import it used -/

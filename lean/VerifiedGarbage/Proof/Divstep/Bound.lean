@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Divstep.Incl
 public import VerifiedGarbage.Proof.Divstep.Steps
-import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith.Frontend

@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.TermCongr
 import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate

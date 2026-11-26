@@ -14,8 +14,6 @@ public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Dsa.X86.SaveArgument
 import VerifiedGarbage.Proof.Dsa.X86.Layout
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 

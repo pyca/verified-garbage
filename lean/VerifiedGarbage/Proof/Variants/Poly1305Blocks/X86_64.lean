@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-import Mathlib.Tactic.NormNum.Pow
-import Mathlib.Tactic.NormNum.Inv
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEven

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context

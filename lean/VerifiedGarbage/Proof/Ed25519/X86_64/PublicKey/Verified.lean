@@ -5,13 +5,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -23,13 +16,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import Mathlib.Tactic.NormNum.Prime
-meta import Mathlib.Data.Nat.Totient
-meta import Mathlib.Tactic.Positivity.Finset
-meta import Mathlib.Algebra.Order.Field.Basic
-meta import Mathlib.Tactic.NormNum.GCD
-meta import Mathlib.Data.Sym.Sym2.Init
-meta import Mathlib.Tactic.ContinuousFunctionalCalculus
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 meta import VerifiedGarbage.Proof.Framework.KernelRfl

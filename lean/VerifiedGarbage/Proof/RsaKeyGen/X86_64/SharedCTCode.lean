@@ -12,21 +12,16 @@ meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
 import Mathlib.Algebra.GroupWithZero.Nat
-import Mathlib.Basic.IsEmpty.Defs
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Basic.IsEmpty.Defs
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 meta import Mathlib.Algebra.GroupWithZero.Nat
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code

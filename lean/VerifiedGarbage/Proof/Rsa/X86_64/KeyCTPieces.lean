@@ -24,24 +24,12 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 
 /-! ### `Rsa.X86_64.KeyCTDefs`, which this module and modules that import it used -/
 

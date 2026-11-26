@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.RecoverDet
 
-import Mathlib.Data.Nat.GCD.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -37,10 +36,10 @@ def deX (wb de : Nat) : Nat := wsub wb de 1
 def okDE (wb de : Nat) : Bool := !(decide (de < 1) || decide (deX wb de < 1))
 
 def twosOut (nb wb n de : Nat) : Nat × Nat × Nat :=
-  (twoStep wb)^[nb] (wsub nb n 1, deX wb de % 2 ^ nb, deX wb de)
+  iterN (twoStep wb) nb (wsub nb n 1, deX wb de % 2 ^ nb, deX wb de)
 
 def aOf (nb wb n de : Nat) : Nat :=
-  ((prodStep wb)^[nb] (Nat.gcd (twosOut nb wb n de).1 (twosOut nb wb n de).2.1,
+  (iterN (prodStep wb) nb (Nat.gcd (twosOut nb wb n de).1 (twosOut nb wb n de).2.1,
     (twosOut nb wb n de).2.2, 0)).2.2
 
 def mOf (nb wb n de : Nat) : Nat := aOf nb wb n de / n
@@ -56,14 +55,14 @@ def dOf (nb wb n de : Nat) : Nat := wsub nb n (rOf nb wb n de % 2 ^ nb)
 def bOf (nb q : Nat) : Nat := (q + 1) % 2 ^ nb
 
 /-- `b² - 4 n` modulo `2^wb`, from `b² = (prodStep …).2.2`. -/
-def sqOf (nb wb b : Nat) : Nat := ((prodStep wb)^[nb] (b, b, 0)).2.2
+def sqOf (nb wb b : Nat) : Nat := (iterN (prodStep wb) nb (b, b, 0)).2.2
 def fourN (wb n : Nat) : Nat := 2 * (2 * n % 2 ^ wb) % 2 ^ wb
 def xOf (nb wb n b : Nat) : Nat := wsub wb (sqOf nb wb b) (fourN wb n)
 
 def ok4Of (nb wb n b : Nat) : Bool :=
   !(decide (sqOf nb wb b < fourN wb n) || decide (xOf nb wb n b < 1))
 
-def rootOf (nb wb n b : Nat) : Nat × Nat × Nat := (sqrtStep nb wb)^[wb / 2] (xOf nb wb n b, 0, 0)
+def rootOf (nb wb n b : Nat) : Nat × Nat × Nat := iterN (sqrtStep nb wb) (wb / 2) (xOf nb wb n b, 0, 0)
 
 /-- The mask and the factors, given the quotient and remainder of `n - r` by `m + 1`. -/
 def stage2 (nb wb n q rem : Nat) : Bool × Nat × Nat :=
@@ -106,7 +105,7 @@ theorem dbl_add {b a c : Nat} (hb : 1 ≤ b) (hc : c ≤ 1) : 2 * a % 2 ^ b + c 
     calc 2 * a + c = 2 * (a % Q + Q * (a / Q)) + c := by rw [Nat.mod_add_div]
       _ = (2 * (a % Q) + c) + (2 * Q) * (a / Q) := by rw [Nat.mul_add, Nat.mul_assoc]; omega_using []
   rw [Nat.mul_mod_mul_left]
-  conv_rhs => rw [e2, Nat.add_mul_mod_self_left]
+  conv => rhs; rw [e2, Nat.add_mul_mod_self_left]
   exact (Nat.mod_eq_of_lt (by omega_using [hc, this])).symm
 
 /-- The bit a doubling shifts out. -/
@@ -172,9 +171,9 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
   obtain un : wsub nb n 1 = n - 1 := wsub_of_le (by omega_using [hn]) (by omega_using [odd])
   obtain ⟨uodd, ule, g, hx2, hx3, hgcd⟩ :=
     twos_iter (b := wb) (N := n - 1) (x := de - 1) (k := nb) (by omega_using [three]) (by omega_using [hn]) (by omega_using [pnb, hde])
-  obtain tw : twosOut nb wb n de = (twoStep wb)^[nb] (n - 1, de - 1, de - 1) := by
+  obtain tw : twosOut nb wb n de = iterN (twoStep wb) nb (n - 1, de - 1, de - 1) := by
     unfold twosOut; rw [un, dx, Nat.mod_eq_of_lt xlt]
-  generalize (twoStep wb)^[nb] (n - 1, de - 1, de - 1) = s at tw uodd ule hx2 hx3 hgcd
+  generalize iterN (twoStep wb) nb (n - 1, de - 1, de - 1) = s at tw uodd ule hx2 hx3 hgcd
   obtain ⟨u, x2, x3⟩ := s
   simp only at uodd ule hx2 hx3 hgcd
   obtain gpos : 0 < Nat.gcd (n - 1) (de - 1) := Nat.gcd_pos_of_pos_left _ (by omega_using [three])
@@ -186,11 +185,11 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
           Nat.mul_lt_mul'' xlt (by omega_using [odd, three, hn, pnb, p2, p64, hde', hde, small, xlt, ule, hx2, hgcd, gpos, gle, g_le])
       _ ≤ 2 ^ wb := p2
   obtain x3v : x3 = (de - 1) * g := by
-    rw [hx3]; exact Nat.mod_eq_of_lt (lt_of_le_of_lt (Nat.mul_le_mul_left _ g_le) big)
-  obtain g1le : Nat.gcd u x2 ≤ n - 1 := le_trans (Nat.gcd_le_left _ (by omega_using [uodd])) ule
+    rw [hx3]; exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.mul_le_mul_left _ g_le) big)
+  obtain g1le : Nat.gcd u x2 ≤ n - 1 := Nat.le_trans (Nat.gcd_le_left _ (by omega_using [uodd])) ule
   obtain ha : aOf nb wb n de = (de - 1) * Nat.gcd (n - 1) (de - 1) := by
     unfold aOf
-    rw [tw, prod_iter _ _ _ (by rw [x3v]; exact lt_of_le_of_lt (Nat.mul_le_mul_left _ g_le) big)]
+    rw [tw, prod_iter _ _ _ (by rw [x3v]; exact Nat.lt_of_le_of_lt (Nat.mul_le_mul_left _ g_le) big)]
     simp only
     rw [Nat.mod_eq_of_lt (show Nat.gcd u x2 < 2 ^ nb by omega_using [odd, three, hn, pnb, p2, p64, hde', hde, small, xlt, ule, hx2, gle, big, g1le]), x3v, hgcd]
     rw [Nat.mod_eq_of_lt (by rw [hgcd] at big; simp only [Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] at big ⊢; exact big)]
@@ -201,7 +200,7 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
   obtain rlt : a % n < n := Nat.mod_lt _ (by omega_using [odd])
   -- `m ≥ n`: the division's check fails.
   by_cases lt : a / n < n
-  swap
+  rotate_left
   · have : ltOf nb wb n de = false := by simp [ltOf, hm, lt]
     simp only [this, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
     have : (n - a % n) % (a / n + 1) ≠ 0 := by
@@ -219,18 +218,18 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
   unfold stage2
   simp only
   by_cases exact : (n - a % n) % (a / n + 1) = 0
-  swap
+  rotate_left
   · simp [exact]
   simp only [exact, decide_true, Bool.true_and, ne_eq, not_true_eq_false, ↓reduceIte]
   -- `b`.
-  obtain qle : (n - a % n) / (a / n + 1) ≤ n := le_trans (Nat.div_le_self _ _) (by omega_using [])
+  obtain qle : (n - a % n) / (a / n + 1) ≤ n := Nat.le_trans (Nat.div_le_self _ _) (by omega_using [])
   obtain hb : bOf nb ((n - a % n) / (a / n + 1)) = (n - a % n) / (a / n + 1) + 1 := by
     unfold bOf; exact Nat.mod_eq_of_lt (by omega_using [odd, three, hn, hde, ule, gle, g1le, hA, big, rlt, lt, hdiv, exact, qle])
   rw [hb]
   obtain blt : (n - a % n) / (a / n + 1) + 1 < 2 ^ nb := by omega_using [odd, three, hn, pnb, p2, p64, xlt, ule, gle, g1le, hA, big, rlt, lt, hdiv, exact, qle]
   obtain bn : (n - a % n) / (a / n + 1) + 1 ≤ n + 1 := by omega_using [odd, three, hn, ule, gle, g1le, hA, big, rlt, lt, hdiv, exact, qle, blt]
   generalize (n - a % n) / (a / n + 1) + 1 = b at *
-  obtain bb : b * b < 2 ^ wb := lt_of_lt_of_le (Nat.mul_lt_mul'' blt blt) p2
+  obtain bb : b * b < 2 ^ wb := Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' blt blt) p2
   obtain sq : sqOf nb wb b = b * b := by
     unfold sqOf; rw [prod_iter _ _ _ (by omega_using [odd, three, hn, pnb, p2, p64, xlt, ule, gle, g1le, big, rlt, lt, hdiv, exact, qle, blt, bn, bb])]; simp only
     rw [Nat.mod_eq_of_lt blt, Nat.mod_eq_of_lt bb]
@@ -244,7 +243,7 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
       rw [sq, f4]
       rcases Nat.lt_or_eq_of_le le4 with c | c
       · simp [c]
-      · rw [c, wsub_of_le (by omega_using [odd, three, hn, hde, uodd, ule, hgcd, gpos, gle, g_le, g1le, hA, big, rlt, lt, m1, dv, hdiv, exact, qle, blt, bn, bb, le4, c]) (le_refl _)]; simp
+      · rw [c, wsub_of_le (by omega_using [odd, three, hn, hde, uodd, ule, hgcd, gpos, gle, g_le, g1le, hA, big, rlt, lt, m1, dv, hdiv, exact, qle, blt, bn, bb, le4, c]) (Nat.le_refl _)]; simp
     simp [this, le4]
   obtain xv : xOf nb wb n b = b * b - 4 * n := by
     unfold xOf; rw [sq, f4, wsub_of_le bb (by omega_using [odd, three, hn, ule, gle, g1le, rlt, lt, hdiv, exact, qle, blt, bn, bb, le4])]
@@ -253,7 +252,7 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
   simp only [this, le4, Bool.true_and, ↓reduceIte]
   -- The square root.
   obtain rootLt : isqrt (b * b - 4 * n) < b := by
-    by_contra c
+    refine Classical.byContradiction fun c => ?_
     have := isqrt_sq_le (b * b - 4 * n)
     have : b * b ≤ isqrt (b * b - 4 * n) * isqrt (b * b - 4 * n) := Nat.mul_self_le_mul_self (by omega_using [c])
     omega_arith
@@ -267,7 +266,7 @@ theorem model_correct {nb wb n e d q rem : Nat} (odd : n % 2 = 1) (three : 3 ≤
   unfold rootOf
   rw [xv, ry]
   generalize isqrt (b * b - 4 * n) = γ at *
-  generalize ((sqrtStep nb wb)^[wb / 2] (b * b - 4 * n, 0, 0)).2.1 = rm at *
+  generalize (iterN (sqrtStep nb wb) (wb / 2) (b * b - 4 * n, 0, 0)).2.1 = rm at *
   by_cases ex : γ * γ = b * b - 4 * n
   · have : rm = 0 := by omega_using [odd, three, hn, ule, gle, g1le, rlt, lt, hdiv, exact, qle, blt, bn, bb, le4, rootLt, rr, ex]
     simp only [this, decide_true, ex, not_true_eq_false, ↓reduceIte, Option.some.injEq,
@@ -303,7 +302,7 @@ theorem recoverDet_mul {n e d p q : Nat} (h : recoverDet n e d = some (p, q)) : 
   simp only [Option.some.injEq, Prod.mk.injEq] at h
   obtain ⟨rfl, rfl⟩ := h
   obtain gb : γ ≤ b := by
-    by_contra c
+    refine Classical.byContradiction fun c => ?_
     have : b * b < γ * γ := Nat.mul_self_lt_mul_self (by omega_using [c])
     omega_using [ex, this]
   obtain ⟨δ, rfl⟩ : ∃ δ, b = γ + δ := ⟨b - γ, by omega_using [gb]⟩

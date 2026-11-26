@@ -7,13 +7,6 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Module
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -1630,7 +1623,7 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
   refine WP.mono (pointEqual_ok (ksu.scratch hs)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨ksu.trans (PowersKeep.of_keep kt), ?_⟩
   have hKlt : K < 2 ^ (8 * c) := by
-    have := Nat.lt_of_div_eq_zero (by positivity) hK
+    have := Nat.lt_of_div_eq_zero (Nat.pow_pos (by decide)) hK
     rwa [show (256 : Nat) ^ c = 2 ^ (8 * c) by rw [Nat.pow_mul]] at this
   have hSlt : S < 2 ^ (8 * 32) := hSd ▸ decodeLE_lt32 _ _
   have gv := hh.value

@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFunction
 public import VerifiedGarbage.Spec.Ecdsa.P256
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.Sig

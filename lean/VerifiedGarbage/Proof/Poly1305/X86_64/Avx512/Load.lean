@@ -8,10 +8,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 import Mathlib.Tactic.Ring.RingNF
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! ### `Poly1305.X86_64.Avx512.Mul`, which this module and modules that import it used -/
 
@@ -238,7 +235,7 @@ theorem MulMPre.env {s : State} (hp : MulMPre s) : EnvOK s mulMB := by
   · have := BitVec.isLt (s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 (d : Int)) 64)
     simp only [mulMB]
     split
-    · subst d; have := hp.mem.mask; simp only [envOf] at this; rw [this]; decide
+    · subst d; have := hp.mem.mask; simp only [envOf] at this; rw [this]
     · omega_using []
   · have := Nat.mod_lt (s.mem.readW (s.gpr .rdi + BitVec.ofInt 64 (d : Int)) 64).toNat
       (show 2 ^ 32 > 0 by decide)

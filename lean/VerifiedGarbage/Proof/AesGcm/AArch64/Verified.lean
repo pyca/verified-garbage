@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.AesGcm.Rounds
 import VerifiedGarbage.Proof.AesGcm.AArch64.Init
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCryptCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT

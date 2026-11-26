@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Divstep.Absolute
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
@@ -29,7 +28,6 @@ import VerifiedGarbage.Proof.Rsa.X86.KeyRt.SelectX
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
-public import Mathlib.Algebra.Group.Int.Defs
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Unch

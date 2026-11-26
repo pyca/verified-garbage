@@ -1,8 +1,8 @@
 module
 
+import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 

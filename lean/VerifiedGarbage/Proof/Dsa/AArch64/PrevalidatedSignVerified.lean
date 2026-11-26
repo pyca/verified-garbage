@@ -28,7 +28,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Dsa.SizeBounds
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-public import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.Dsa.Encoding
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -37,7 +36,6 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-meta import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec

@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
@@ -24,7 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Residue
 meta import VerifiedGarbage.Proof.Framework.AArch64.Residue
 

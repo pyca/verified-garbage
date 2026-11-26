@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.P384.Curve
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.P384.PrimeOrder
-import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd

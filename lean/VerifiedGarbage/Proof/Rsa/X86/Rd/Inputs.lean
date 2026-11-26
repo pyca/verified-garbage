@@ -10,20 +10,10 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.MulMod
 import VerifiedGarbage.Proof.Rsa.ProductExact
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Data.Nat.Basic
-import Mathlib.Algebra.NeZero
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass

@@ -9,13 +9,8 @@ public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Mem
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
@@ -27,20 +22,14 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
 meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 meta import VerifiedGarbage.Proof.Framework.Block

@@ -51,14 +51,14 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Proof.Rsa.RecoverDet
 
-/-- `square`: `b = q + 1` (narrow array 6) and `b² = (prodStep^[64 v] (b, b, 0)).2.2` (wide array 6), by
+/-- `square`: `b = q + 1` (narrow array 6) and `b² = (iterN prodStep (64 v) (b, b, 0)).2.2` (wide array 6), by
 rows. -/
 theorem square_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk I.k) c s) (L : RpLens I) {q : Nat}
     (hq : wv s.mem I.B (slot (vk I.k) nD) (vk I.k) = q)
     (one : wv s.mem I.B (slot (vk I.k) nOne) (vk I.k + 2) = 1) :
     WP isa square s fun t => G I m₀ (vk I.k) c t ∧
       wv t.mem I.B (slot (vk I.k) nB) (vk I.k) = (q + 1) % 2 ^ (64 * vk I.k) ∧
-      wv t.mem I.B (slot (Wk I.k) wSq) (Wk I.k) = ((prodStep (64 * Wk I.k))^[64 * vk I.k]
+      wv t.mem I.B (slot (Wk I.k) wSq) (Wk I.k) = (iterN (prodStep (64 * Wk I.k)) (64 * vk I.k)
         ((q + 1) % 2 ^ (64 * vk I.k), (q + 1) % 2 ^ (64 * vk I.k), 0)).2.2 ∧
       (∀ j k, j < 6 ∨ j = 8 ∨ j = 9 → k ≤ vk I.k + 2 →
         wv t.mem I.B (slot (vk I.k) j) k = wv s.mem I.B (slot (vk I.k) j) k) := by

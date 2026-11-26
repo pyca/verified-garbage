@@ -3,14 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Order.RelClasses
-import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,14 +11,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Data.Nat.Basic
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.Push
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -157,7 +143,7 @@ theorem subModArr_wp {L : Ws} {s : State} (h : SmPre L s) {o a b : Nat} (ho : o 
   obtain ⟨⟨minv, hg, hZ⟩, hw, hw'⟩ := h
   have hs := hg.scr
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot L.w j + 8 * (L.w + 2) ≤ slot L.w k ∨ slot L.w k + 8 * (L.w + 2) ≤ slot L.w j :=
     fun h => slot_sep h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off L.B (8 * i)) 8 := fun i hi =>

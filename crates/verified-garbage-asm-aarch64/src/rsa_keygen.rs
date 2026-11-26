@@ -167,5 +167,9 @@ cbnz x10, 220b
 pub(crate) mod vg_rsa_keygen_candidate;
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_keygen_inverse.rs"]
+pub(crate) mod vg_rsa_keygen_inverse;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_keygen_key.rs"]
 pub(crate) mod vg_rsa_keygen_key;

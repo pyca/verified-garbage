@@ -4,13 +4,7 @@ import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Data.Nat.Init
 
 /-!
 # An RSA key from its primes: the arithmetic
@@ -333,11 +327,11 @@ theorem inverse_even_none {e L : Nat} (he : e % 2 = 0) (h : ¬ (L % 2 = 1 ∧ 3 
     have hg : Nat.gcd (e % L) L = 1 := by rw [← Nat.gcd_rec, Nat.gcd_comm]; exact h1
     refine ⟨?_, ?_, hg⟩
     · -- An even `L` shares the factor 2 with `e`.
-      by_contra hL
+      refine Classical.byContradiction fun hL => ?_
       have : 2 ∣ Nat.gcd e L := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero he) (Nat.dvd_of_mod_eq_zero (by omega_arith))
       rw [h1] at this
       omega_arith
-    · by_contra hL
+    · refine Classical.byContradiction fun hL => ?_
       have : L = 2 := by omega_arith
       subst this
       have : 2 ∣ Nat.gcd e 2 := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero he) (Nat.dvd_refl 2)

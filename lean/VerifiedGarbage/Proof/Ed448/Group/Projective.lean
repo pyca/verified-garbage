@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Proof.Ed448.Ref
 import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Algebra.Field.ZMod
-import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

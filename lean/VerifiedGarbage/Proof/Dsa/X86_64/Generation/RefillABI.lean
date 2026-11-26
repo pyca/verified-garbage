@@ -12,14 +12,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
-public import Mathlib.Algebra.Group.Nat.Defs
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

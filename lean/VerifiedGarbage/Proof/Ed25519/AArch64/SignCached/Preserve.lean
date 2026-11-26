@@ -9,14 +9,6 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseMain
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Totient
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Ed25519.AArch64.FixedBaseLit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.RegionsSub

@@ -8,10 +8,8 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrf
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-import Mathlib.Data.Nat.Basic
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
-import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt

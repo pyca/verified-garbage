@@ -23,8 +23,6 @@ import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-! ### `Ed25519.X86.WindowTables`, which this module and modules that import it used -/
 

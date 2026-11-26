@@ -79,6 +79,16 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   (`HEAVY_MATHLIB`: `Ring`, `ZMod`, `NormNum`, `Linarith`, polynomials, …)
   is imported by more than 40 others; core `grind` proves the ring
   identities `ring` is used for.
+  A `public import` of any module of Mathlib is loaded by every module that
+  reads the importing one (0.1 to 0.4 s each, with Mathlib's linters), so it
+  also fails when a module that publicly imports Mathlib is read by more than
+  40 (`PUBLIC_READERS`). State what many modules read with core Lean, and
+  convert in the few proofs that need Mathlib: `IsPrime` for `Nat.Prime`,
+  `Fun.update` for `Function.update`, `iterN` for `f^[n]`,
+  `a % n = b % n` for `[ZMOD n]`. Do not import Mathlib for an order lemma
+  (`Nat.le_trans`, `Nat.le_refl`), `conv_lhs` (`conv => lhs; …`),
+  `split_ifs` (`(repeat' split) <;> …`), `if_congr` (core's `ite_congr`) or
+  `by_contra` (`Classical.byContradiction`).
 * **Imports across targets:** a module of one target (a path with a
   directory of `TCB/`, e.g. `Proof/Sha256/Arm/…`) never imports a module of
   another target, even for a lemma that mentions no ISA: a change to one

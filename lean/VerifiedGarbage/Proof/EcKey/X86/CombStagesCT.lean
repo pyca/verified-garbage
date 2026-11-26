@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.CombCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import Mathlib.Data.Finset.Attr
 import Mathlib.Data.List.Forall2
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
@@ -15,9 +13,7 @@ meta import VerifiedGarbage.Proof.EcKey.X86.CombCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import Mathlib.Data.Finset.Attr
 meta import Mathlib.Data.List.Forall2
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit

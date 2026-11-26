@@ -6,20 +6,11 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 public import VerifiedGarbage.Proof.X448.X86_64.Env
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
 import VerifiedGarbage.Proof.X448.X86_64.Setup
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.Positivity.Finset
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Data.Nat.Totient
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Ed448.X86_64.Window

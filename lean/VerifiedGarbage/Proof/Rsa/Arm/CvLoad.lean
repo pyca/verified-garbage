@@ -1,5 +1,6 @@
 module
 
+import Batteries.Tactic.Alias
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
@@ -10,10 +11,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce

@@ -14,9 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import Mathlib.Algebra.Ring.Int.Defs
 import Mathlib.Data.Nat.Cast.Order.Basic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 
 /-!
 # Inversion by divsteps on AArch64: the reduction of the coefficients

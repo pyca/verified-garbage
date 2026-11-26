@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Front
@@ -17,7 +14,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Data.Nat.Basic
 
 /-! ### `Ffdh.X86_64.CheckDomain.Range`, which the modules that import this one used -/
 

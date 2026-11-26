@@ -31,11 +31,9 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Spec.RsaKeyGen
-import Mathlib.Data.Nat.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentBranch
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Mont.X86.Instr

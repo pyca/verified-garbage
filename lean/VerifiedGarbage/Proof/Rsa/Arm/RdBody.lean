@@ -85,7 +85,7 @@ theorem aV_eq {σ : State} : aV P (fS P) (gS P) σ = VG.Proof.Rsa.RecoverDet.aOf
 /-- The model's mask and factors, its square root still the bit model's (`sqrtStep`). -/
 theorem result_bits {σ : State} :
     VG.Proof.Rsa.RecoverDet.result (32 * P.w) (32 * P.W) P.n (Mv P σ) (qV P (fS P) (gS P) σ) (remV P (fS P) (gS P) σ) =
-      let r := (sqrtStep (32 * P.w) (32 * P.W))^[16 * P.W] (xRV P (fS P) (gS P) σ, 0, 0)
+      let r := iterN (sqrtStep (32 * P.w) (32 * P.W)) (16 * P.W) (xRV P (fS P) (gS P) σ, 0, 0)
       if okDEv P σ && decide (aV P (fS P) (gS P) σ / P.n < P.n) && decide (remV P (fS P) (gS P) σ = 0) &&
           ok4v P (fS P) (gS P) σ && decide (r.2.1 = 0)
       then some ((bV P (fS P) (gS P) σ + r.2.2) % 2 ^ (32 * P.w) / 2, sub32 P.w (bV P (fS P) (gS P) σ) r.2.2 / 2)
@@ -137,14 +137,14 @@ theorem okV_result {σ : State} (hn : 8 * (P.n + 2) ≤ 2 ^ (32 * P.w)) (n3 : 3 
     (by omega_using []) ltT hq (by rw [← hb]; exact h4)
   rw [← hb] at ry rz rl
   have hr : VG.Proof.Rsa.RecoverDet.rootOf (32 * P.w) (32 * P.W) P.n (bV P (fS P) (gS P) σ) =
-      (sqrtStep (32 * P.w) (32 * P.W))^[16 * P.W] (xRV P (fS P) (gS P) σ, 0, 0) := by
+      iterN (sqrtStep (32 * P.w) (32 * P.W)) (16 * P.W) (xRV P (fS P) (gS P) σ, 0, 0) := by
     simp only [VG.Proof.Rsa.RecoverDet.rootOf, show 32 * P.W / 2 = 16 * P.W by omega_using []]; rfl
   have hx : VG.Proof.Rsa.RecoverDet.xOf (32 * P.w) (32 * P.W) P.n (bV P (fS P) (gS P) σ) = xRV P (fS P) (gS P) σ :=
     rfl
   rw [hr, hx] at ry rz
   rw [hx] at rl
   simp only [ry]
-  have e0 : ((sqrtStep (32 * P.w) (32 * P.W))^[16 * P.W] (xRV P (fS P) (gS P) σ, 0, 0)).2.1 = 0 ↔
+  have e0 : (iterN (sqrtStep (32 * P.w) (32 * P.W)) (16 * P.W) (xRV P (fS P) (gS P) σ, 0, 0)).2.1 = 0 ↔
       rmV P (fS P) (gS P) σ = 0 := by
     have := VG.Proof.Rsa.RecoverDet.isqrt_sq_le (xRV P (fS P) (gS P) σ)
     rw [rz]; simp only [rmV]; omega_using [this]

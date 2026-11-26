@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.Framework.Offset

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract

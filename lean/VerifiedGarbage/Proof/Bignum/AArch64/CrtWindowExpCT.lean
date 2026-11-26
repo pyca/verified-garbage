@@ -4,15 +4,11 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

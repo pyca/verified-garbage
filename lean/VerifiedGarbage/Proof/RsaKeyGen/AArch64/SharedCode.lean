@@ -45,8 +45,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Basic.IsEmpty.Defs
 import Mathlib.Order.Defs.LinearOrder
 
 /-! ### `RsaKeyGen.AArch64.SharedCTFront`, which the modules that import this one used -/

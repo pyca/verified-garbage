@@ -32,8 +32,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import Mathlib.Algebra.Group.Nat.Defs
-public import Mathlib.Data.Fintype.Fin
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
 public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Verify
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
@@ -3579,7 +3577,7 @@ theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     obtain bound : (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen).toNat ≤
         (σ.gpr .x0).toNat + p.pkLen := by
       rw [Offset.toNat_add_ofNat]
-      exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
+      exact Nat.le_trans (Nat.mod_le _ _) (Nat.add_le_add_left (Nat.mod_le _ _) _)
     simp only [preparedPublicKeyBytes, hn] at n1
     omega_using [bound, n1]
   sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
@@ -3679,7 +3677,7 @@ theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     obtain bound : (σ.gpr .x0 + BitVec.ofNat 64 p.skLen).toNat ≤
         (σ.gpr .x0).toNat + p.skLen := by
       rw [Offset.toNat_add_ofNat]
-      exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
+      exact Nat.le_trans (Nat.mod_le _ _) (Nat.add_le_add_left (Nat.mod_le _ _) _)
     simp only [preparedSecretKeyBytes, hn] at n1
     omega_using [bound, n1]
   sig_pre [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]

@@ -120,7 +120,6 @@ import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.TCB.Mem
-import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
@@ -137,7 +136,6 @@ meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Ladder
 meta import VerifiedGarbage.Proof.Framework.CallLay
 meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.TCB.Mem
-meta import Mathlib.Algebra.Group.Nat.Defs
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave

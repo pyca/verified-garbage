@@ -30,8 +30,6 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Table
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Group
 import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-! ### `Ed448.AArch64.Sparse.Table`, which this module and modules that import it used -/
 

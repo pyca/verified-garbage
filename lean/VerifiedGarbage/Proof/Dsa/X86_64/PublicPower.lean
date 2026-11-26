@@ -9,11 +9,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Bignum.CrtExp

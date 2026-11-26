@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.KS
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Base
-import Mathlib.Data.Nat.Basic
-import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Framework.AddrArith

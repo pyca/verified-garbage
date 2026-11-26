@@ -16,8 +16,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Zero
 
 /-! ### `RsaKeyGen.X86.KeyRuntime.Constant`, which this module and modules that import it used -/

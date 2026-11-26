@@ -30,17 +30,11 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Random
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import Mathlib.Algebra.Group.Nat.Defs
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 meta import VerifiedGarbage.Proof.Dsa.RandomTrace

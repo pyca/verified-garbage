@@ -9,7 +9,6 @@ import VerifiedGarbage.Impl.EcKey.P192.X86
 import VerifiedGarbage.Proof.EcKey.X86.P192.Verified
 import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
 import VerifiedGarbage.Proof.Framework.Registration
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.EcKey.PublicKey

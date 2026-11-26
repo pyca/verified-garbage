@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
@@ -19,7 +20,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableT
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 

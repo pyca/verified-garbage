@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.Divstep.State
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.BatchS
 import VerifiedGarbage.Proof.Divstep.Batch
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Mathlib.Algebra.Ring.Int.Defs
 
 /-! ### `Divstep.Alg`, which this module and modules that import it used -/

@@ -6,11 +6,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # FFDH parameter candidates on x86-64: exact small remainders -/
 

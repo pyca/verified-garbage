@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx

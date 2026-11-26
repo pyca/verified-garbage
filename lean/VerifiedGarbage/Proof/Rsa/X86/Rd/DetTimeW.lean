@@ -232,7 +232,7 @@ theorem normA_rel {g : Geo} (pg : PubG g) {n a : Nat} (ha1 : a ≤ 1024) (hw1 : 
       have e' : isa.eval .ne s = s.zf.map (!·) := rfl
       rw [e', hs.2] at e
       simp only [Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at e
-      have := (zN_lt n0 hn' 0).not.mp (by simpa using e)
+      have := (not_congr (zN_lt n0 hn' 0)).mp (by simpa using e)
       omega_using [this]
     rw [this]
     exact ⟨hs.1, ht.1⟩

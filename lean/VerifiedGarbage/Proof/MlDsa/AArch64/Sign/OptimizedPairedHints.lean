@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-public import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
@@ -11,7 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
@@ -21,7 +19,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSaved
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic

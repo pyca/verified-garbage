@@ -1,10 +1,8 @@
 module
 
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Weierstrass
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.X86.RelCT

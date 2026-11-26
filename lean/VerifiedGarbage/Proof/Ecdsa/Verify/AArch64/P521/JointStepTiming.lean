@@ -1,5 +1,6 @@
 module
 
+import Batteries.Logic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry

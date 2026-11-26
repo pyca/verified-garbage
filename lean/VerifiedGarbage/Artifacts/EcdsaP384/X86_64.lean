@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit

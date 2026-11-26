@@ -5,12 +5,10 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! ### `Ffdh.X86_64.ParameterCandidate.RoundBody`, which this module and modules that import it used -/
 

@@ -20,8 +20,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 public import VerifiedGarbage.Proof.Ffdh.X86.Stages
 import VerifiedGarbage.Proof.Ffdh.ScanAt
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyScan
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
 import VerifiedGarbage.Proof.Dsa.X86.StackArgument

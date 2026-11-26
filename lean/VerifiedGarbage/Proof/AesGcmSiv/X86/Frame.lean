@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration

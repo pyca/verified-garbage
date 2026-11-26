@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit

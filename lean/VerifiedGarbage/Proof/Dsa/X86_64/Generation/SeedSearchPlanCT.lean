@@ -2,11 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearch
 import VerifiedGarbage.Proof.Framework.Omega
-public import Mathlib.Algebra.GroupWithZero.Nat
-public import Mathlib.Algebra.NeZero
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
-public import Mathlib.Algebra.Group.Nat.Defs
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
@@ -60,15 +57,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
-import Mathlib.Order.RelClasses
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
-meta import Mathlib.Order.RelClasses
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Rsa.Ranges
