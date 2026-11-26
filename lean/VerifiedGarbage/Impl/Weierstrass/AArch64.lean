@@ -40,6 +40,48 @@ def opCode (M : Mod) : FOp → List Instr
   | .add o a b => if P521.supported M then Mont.AArch64.P521.add o a b else Mont.AArch64.add M o a b
   | .sub o a b => if P521.supported M then Mont.AArch64.P521.sub o a b else Mont.AArch64.sub M o a b
 
+/-- The general Brainpool P-512 ladder's existing inline Montgomery layout. -/
+
+def ladderFieldMod : Mod :=
+  { n := 8, mo := 64, tmp := 192, minv := 9483228555485245381, tight := true }
+
+def ladderFieldArgs : List (Nat × Nat × Nat) :=
+  [(1728, 1728, 1792), (1792, 1792, 1856), (1664, 448, 1664),
+   (1792, 512, 1792), (1536, 1600, 1792), (1536, 1856, 1792), (1536, 1728, 1600)]
+
+def ladderFieldOp (i : Nat) : FOp :=
+  let args := ladderFieldArgs.getD i (0, 0, 0)
+  .mul args.1 args.2.1 args.2.2
+
+def ladderFieldBody (i : Nat) : Prog isa := .block (opCode ladderFieldMod (ladderFieldOp i))
+
+def ladderFieldName (i : Nat) : String :=
+  ["vg_brainpoolp512r1_ladder_field_0", "vg_brainpoolp512r1_ladder_field_1",
+   "vg_brainpoolp512r1_ladder_field_2", "vg_brainpoolp512r1_ladder_field_3",
+   "vg_brainpoolp512r1_ladder_field_4", "vg_brainpoolp512r1_ladder_field_5",
+   "vg_brainpoolp512r1_ladder_field_6"].getD i "vg_brainpoolp512r1_ladder_field_0"
+
+/-- The caller's link register is kept above the low lane used by field calls. -/
+def ladderFieldCall (i : Nat) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)]) <|
+    .seq (.call (ladderFieldName i) (ladderFieldBody i))
+      (.block [.umov .x .x30 .v31 1])
+
+/-- A computational layout check; every field affecting the inline kernel is fixed. -/
+def ladderFieldLayout (M : Mod) : Bool :=
+  M.n == 8 && M.mo == 64 && M.tmp == 192 && M.minv == 9483228555485245381 &&
+  (match M.red with | .general => true | .friendly _ => false) &&
+  M.tight && !M.adx && !M.sparse && !M.inl && !M.fnN && M.fnMod.isNone
+
+def sameLadderField (op : FOp) (i : Nat) : Bool :=
+  let args := ladderFieldArgs.getD i (0, 0, 0)
+  match op with
+  | .mul o a b => o == args.1 && a == args.2.1 && b == args.2.2
+  | _ => false
+
+def ladderField? (M : Mod) (op : FOp) : Option Nat :=
+  if ladderFieldLayout M then (List.range 7).find? (sameLadderField op) else none
+
 /-- A straight-line sequence of field operations. -/
 def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
 
@@ -70,11 +112,17 @@ def fieldCall521 (o a b : Nat) : Prog isa :=
 whose products are functions (`Mont.callOf`), using the dedicated square for
 P-384's field prime when both input slots agree, and P-521's field functions,
 else `opCode`. -/
-def opProg (M : Mod) (op : FOp) : Prog isa :=
+def opProgRaw (M : Mod) (op : FOp) : Prog isa :=
   match op, Mont.callOf M with
   | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a
       else if P521.isField M.n m then fieldCall521 o a b else mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
+
+/-- Share only the repeated closed ladder products; other field code retains its layout. -/
+def opProg (M : Mod) (op : FOp) : Prog isa :=
+  match ladderField? M op with
+  | some i => ladderFieldCall i
+  | none => opProgRaw M op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa

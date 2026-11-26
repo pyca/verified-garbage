@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
@@ -46,8 +45,8 @@ theorem fprogB_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     RelCT isa (FieldPair M base size m Sl V E) (fprogB M ops)
       (FieldPair M base size m Sl (validAfter ops V) (runOps ops E)) := by
   intro s t ts tt s' t' hp es et
-  have hs := (fprogB_wp M ops hnc).mpr (fprog_ok hL hAl hm ops hp.left hS hR)
-  have ht := (fprogB_wp M ops hnc).mpr (fprog_ok hL hAl hm ops hp.right hS hR)
+  have hs := fprogB_ok hL hAl hm ops hp.left hS (fun _ _ => .inl hnc) hR
+  have ht := fprogB_ok hL hAl hm ops hp.right hS (fun _ _ => .inl hnc) hR
   obtain ⟨_,_,xs,ks,is⟩ := hs
   obtain ⟨_,_,xt,kt,it⟩ := ht
   obtain ⟨_,rfl⟩ := Exec.det es xs

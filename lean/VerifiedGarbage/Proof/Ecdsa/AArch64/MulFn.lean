@@ -317,24 +317,29 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.
 the ranges `W` needs and gives, from its caller's memory. -/
 def fnK (c : Cfg) (base : Addr) (mem : Mem) (W : List (Nat × Nat)) (R : Mem → Mem → Prop) : Contract isa where
   pre t := Scr t base size ∧ t.mem = mem
-  post t t' := KeepRegs (invClob c) t t' ∧ Unch base W t.mem t'.mem ∧ t'.v = t.v ∧ R t.mem t'.mem
+  post t t' := KeepRegs (invClob c) t t' ∧ Unch base W t.mem t'.mem ∧ t'.v .v29 = t.v .v29 ∧ R t.mem t'.mem
   pub _ _ := True
 
 /-- A call of the function `name`, whose code `fn` changes only `invClob`'s
-registers (none of them callee-saved) and the ranges `W`, writes no vector
-register, and gives `R`: as `fn` inline, keeping `x30` (in `v29`). -/
+registers (none of them callee-saved) and the ranges `W`, preserves the ABI
+vector lanes and `v29`, and gives `R`: as `fn` inline, keeping `x30` in `v29`. -/
 theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
     (hs : Scr s base size) {W : List (Nat × Nat)} {R : Mem → Mem → Prop}
     (hfn : ∀ t, Scr t base size → t.mem = s.mem → WP isa fn t fun t' =>
       KeepRegs (invClob c) t t' ∧ Unch base W t.mem t'.mem ∧ R t.mem t'.mem)
     (hpres : ∀ r ∈ preserved, r ∉ clob c.n ∨ r ∈ c.invKept)
-    (hv : fn.allInstrs (fun i => (vdstOf i).isNone) = true) (hnf : fn.noFrames = true) :
+    (hv : fn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true) (hnf : fn.noFrames = true) :
     WP isa (Cfg.invCall name fn) s fun s' => KeepRegs (powClob c.n) s s' ∧
       Unch base W s.mem s'.mem ∧ R s.mem s'.mem := by
-  obtain hnv : ∀ (r : VReg), ∀ i ∈ instrs fn, vdstOf i ≠ some r := by
-    intro r i hi e
-    have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hv) i hi
-    rw [e] at this; cases this
+  have checked : ∀ i ∈ instrs fn, (vdstOf i != some .v29) = true ∧ keepsV i = true := by
+    rw [Code.allInstrs_eq] at hv
+    intro i hi
+    exact Bool.and_eq_true_iff.mp (List.all_eq_true.mp hv i hi)
+  have hnv : ∀ i ∈ instrs fn, vdstOf i ≠ some .v29 := fun i hi => by
+    simpa using (checked i hi).1
+  have hkp : fn.allInstrs keepsV = true := by
+    rw [Code.allInstrs_eq]
+    exact List.all_eq_true.mpr fun i hi => (checked i hi).2
   rw [Cfg.invCall]
   refine WP.seq (WP.mono (keepLr_ok s) fun s₁ ⟨k₁, m₁, l₁⟩ => ?_)
   obtain hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -345,12 +350,7 @@ theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
     (fun t ⟨ht, hm⟩ => by
       obtain ⟨tr, t', he, K, U, Rr⟩ := hfn t ht hm
       exact ⟨tr, t', he, ⟨fun r hr => K.gpr r fun h => (List.mem_filter.mp h).elim fun h₁ h₂ =>
-          (hpres r hr).elim (· h₁) (by simpa using h₂), K.sp, Exec.preservedV he (by
-        rw [Code.allInstrs_eq]; exact List.all_eq_true.mpr fun i hi => by
-          unfold keepsV
-          cases h : vdstOf i with
-          | none => rfl
-          | some r => exact absurd h (hnv r i hi))⟩, K, U, funext fun r => Exec.vec (hnv r) he, Rr⟩)
+          (hpres r hr).elim (· h₁) (by simpa using h₂), K.sp, Exec.preservedV he hkp⟩, K, U, Exec.vec hnv he, Rr⟩)
     (rd := []) (wr := [⟨base, size⟩]) ⟨⟨by
         rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), hs₁.x0], by simp,
         hs.nowrap, hs.enc⟩, by rw [State.withRegions_mem, State.callEntry_mem, m₁]⟩
@@ -358,7 +358,7 @@ theorem fnCall_ok {name : String} {fn : Prog isa} {s : State} {base : Addr}
   intro s₂ r₂ w₂ p₂ _ _ _ _ ⟨K, U, V, Rr⟩
   simp only [State.withRegions_mem, State.callEntry_mem] at U Rr
   rw [m₁] at U Rr
-  have V' : s₂.v = s₁.v := V
+  have V' : s₂.v .v29 = s₁.v .v29 := V
   refine WP.mono (Mont.lr_ok s₂) fun s₃ ⟨l₃, k₃⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [k₃.rd, r₂, k₁.rd], by rw [k₃.wr, w₂, k₁.wr], by rw [k₃.sp, p₂, k₁.sp]⟩,
     by rw [k₃.mem]; exact U, by rw [k₃.mem]; exact Rr⟩
@@ -438,7 +438,7 @@ theorem fixedOk_mulWF (hT : MulTmp c) : FixedOk c (mulWF c) := by
 at `px` and `py`, by a call of `vg_<curve>_mul`: `P` copied to `R`'s first two
 slots and `3 b R` to `BM`'s slot, then `b R` back; the constants are kept. -/
 theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 5 ∨ c.n = 6 ∨ c.n = 8) (hT : MulTmp c) (hL : LadLay c.mulLadder size) (hA : LadA c.mulLadder)
-    (hC : Law c.C) (hv : c.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true)
+    (hC : Law c.C) (hv : c.mulFn.allInstrs (fun i => (vdstOf i != some .v29) && keepsV i) = true)
     (hnf : c.mulFn.noFrames = true) {name : String} {px py : Nat}
     (hpx45 : px < 45) (hpy45 : py < 45) (hpxl : px ∉ [RX, RY, BM, TMP]) (hpyl : py ∉ [RX, RY, BM, TMP])
     (hpyA : py ≠ 54 ∧ py ≠ 61 ∧ py ≠ 82)

@@ -999,6 +999,7 @@ vg_ec_brainpoolp512r1_public_key:
 	movi v17.2d, #0
 	movi v18.2d, #0
 	movi v29.2d, #0
+	movi v31.2d, #0
 	tst x1, x1
 	add w0, w0, #0
 	ret
