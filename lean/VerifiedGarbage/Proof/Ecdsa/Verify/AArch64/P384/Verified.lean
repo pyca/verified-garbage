@@ -808,7 +808,7 @@ theorem fixedDigit_using {s₀ s : State} {base T : Addr} {u v j : Nat} {C : Cur
      fun x hx=>it.lt x (List.mem_append_left _ hx),
      it.point_tmv (fun x hx=>List.mem_append_left _ hx) jt,
      CacheOk.unch hL.win hL.cache ca ut h.st.scr.nowrap⟩
- · have hm0 : FastNaf.magnitude 9 u j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+ · have hm0 : FastNaf.magnitude 9 u j=0 := by simpa only [ne_eq,Classical.not_not] using of_decide_eq_false hz
    have pt : FastNaf.point C G 9 u j=.infinity := by
      rw [FastNaf.point,hm0]
      have h0 : mul 0 G=.infinity := by rw [Spec.Weierstrass.mul]; rfl

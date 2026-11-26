@@ -1840,7 +1840,7 @@ theorem lowAddr_sep (base : Addr) {i j : LowIndex} {h k : Fin 2}
     (hne : i≠j ∨ h≠k) : Mem.Sep (lowAddr base i h) 16 (lowAddr base j k) 16 := by
   have hi : i.1.val≠j.1.val ∨ i.2.val≠j.2.val ∨ h.val≠k.val := by
     by_contra hn
-    simp only [not_or,not_not] at hn
+    simp only [not_or,Classical.not_not] at hn
     have he : i=j := Prod.ext (Fin.ext hn.1) (Fin.ext hn.2.1)
     have hh : h=k := Fin.ext hn.2.2
     rcases hne with hn | hn

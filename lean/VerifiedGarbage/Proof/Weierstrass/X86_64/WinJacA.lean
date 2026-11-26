@@ -1125,8 +1125,8 @@ theorem madd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {b
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem maddJN_ok hx)
     · exact Or.inl hx
-  · exact (congrArg₂ Prod.mk (ofN_run maddJN_ok hA E 6)
-      (congrArg₂ Prod.mk (ofN_run maddJN_ok hA E 7) (ofN_run maddJN_ok hA E 8))).trans (maddJN_run _)
+  · exact (congr (congrArg Prod.mk (ofN_run maddJN_ok hA E 6))
+      (congr (congrArg Prod.mk (ofN_run maddJN_ok hA E 7)) (ofN_run maddJN_ok hA E 8))).trans (maddJN_run _)
 
 /-! ## The point -/
 

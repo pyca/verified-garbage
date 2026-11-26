@@ -410,7 +410,7 @@ theorem invAllocated_tail_ok {base : Addr} {size X : Nat} [NeZero invAllocatedMo
     intro x hx
     rw [(invAllocated_original_frame ut) x hx,(invAllocated_batch_frame uc) x hx,kb.mem,ka.mem]
   · intro hz
-    have hw : wordsVal s.mem base 2312 5=0 := by simpa only [ne_eq,decide_eq_false_iff_not,not_not] using hz
+    have hw : wordsVal s.mem base 2312 5=0 := by simpa only [ne_eq,decide_eq_false_iff_not,Classical.not_not] using hz
     have hg := hI.g_zero_of_words (lt_of_le_of_lt bg (by decide +kernel : (invAllocatedModulus:Int)<(2^(64*invAllocatedCfg.L):Nat))) hw
     have hl9 : InvLay inverseNine size := by rw [invAllocated_nine_eq]; exact hL.earlyCfg _ _
     refine WP.mono (finish_early_ok hpr hT hl9 hm2 hR ha ma hX (ia.earlyCfg 9 invAllocatedModulus) hg
