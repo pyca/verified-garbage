@@ -167,8 +167,8 @@ private theorem mixedFull_values (E : Nat → Fe C) :
   have hren := runOps_rename (rcbσ K.S K.R K.E K.D) N (jacMixedInit K.S K.R E)
     (fun op hop => apart.inj ((show ∀ op∈N,op.out<9 by decide) op hop))
   rw [jacMixedInit_rename apart] at hren
-  exact (congrArg₂ Prod.mk (congrFun hren 6)
-    (congrArg₂ Prod.mk (congrFun hren 7) (congrFun hren 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun hren 6))
+    (congr (congrArg Prod.mk (congrFun hren 7)) (congrFun hren 8))).trans
     (jacMixedN_run (fun i => E (rcbσ K.S K.R K.E K.D i)))
 
 theorem mixedTail_ok (raw : RawCorrect) {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}

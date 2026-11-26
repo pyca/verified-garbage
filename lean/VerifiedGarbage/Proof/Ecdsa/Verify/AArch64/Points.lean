@@ -507,8 +507,8 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     have U₁ : Unch base (slW c [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) s.mem s₁.mem := k₁.unch
     refine tail (k₁.scr hs) k₁.rd k₁.wr U₁ (by decide) I₁.mod (I₁.lt _ (hD DZ (by simp)))
       (I₁.lt _ (hD DX (by simp))) ?_
-    exact (congrArg₂ Prod.mk (I₁.val _ (hD DX (by simp)))
-      (congrArg₂ Prod.mk (I₁.val _ (hD DY (by simp))) (I₁.val _ (hD DZ (by simp))))).trans t₁
+    exact (congr (congrArg Prod.mk (I₁.val _ (hD DX (by simp))))
+      (congr (congrArg Prod.mk (I₁.val _ (hD DY (by simp)))) (I₁.val _ (hD DZ (by simp))))).trans t₁
   | some f =>
     obtain ⟨name, bAt⟩ := f
     obtain rfl := padd_bAt hp
@@ -620,8 +620,8 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
       fun i hi => (map_sl_disj h0 (l₁ := [BM, TX, TY, TZ]) (l₂ := [RX, RY, RZ]) (by decide)) _ (List.mem_map_of_mem hi)
     refine tail (k₃.scr hs₂) (by rw [k₃.rd, k₂.rd, k₁.rd]) (by rw [k₃.wr, k₂.wr, k₁.wr]) U₃ (by decide) I₃.mod
       (I₃.lt _ (hD DZ (by simp))) (I₃.lt _ (hD DX (by simp))) ?_
-    refine (congrArg₂ Prod.mk (I₃.val _ (hD DX (by simp)))
-      (congrArg₂ Prod.mk (I₃.val _ (hD DY (by simp))) (I₃.val _ (hD DZ (by simp))))).trans (t₃.trans ?_)
+    refine (congr (congrArg Prod.mk (I₃.val _ (hD DX (by simp))))
+      (congr (congrArg Prod.mk (I₃.val _ (hD DY (by simp)))) (I₃.val _ (hD DZ (by simp))))).trans (t₃.trans ?_)
     show rcbAdd3 (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.sl BM))
       (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.pt RX RY RZ).x)
       (rext E (c.pt RX RY RZ) (c.pt UX UY UZ) (c.pt RX RY RZ).y)
