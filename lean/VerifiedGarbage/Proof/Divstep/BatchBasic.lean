@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.Steps
-public import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Divstep matrices and their scalar state -/
@@ -59,29 +58,14 @@ theorem msteps_f_odd {t : MSt} (hf : t.f % 2 = 1) : ∀ n, (msteps n t).f % 2 = 
   | 0 => hf
   | n + 1 => by rw [msteps_succ]; exact mstep_f_odd (msteps_f_odd hf n)
 
-theorem mstep_d (t : MSt) : |(mstep t).d| ≤ |t.d| + 2 := by
-  have := abs_nonneg t.d
-  have := le_abs_self t.d
-  have := neg_abs_le t.d
-  unfold mstep; split <;> simp only <;> rw [abs_le'] <;> constructor <;>
-    omega_arith
-
-theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
-  | 0 => by simp [msteps]
-  | n + 1 => by
-    rw [msteps_succ]
-    have := mstep_d (msteps n t)
-    have := msteps_d t n
-    push_cast
-    omega_arith
-
 /-- Halving congruent even numbers. -/
 theorem half_cong {a a' : Int} {k : Nat} (h : a % 2 ^ (k + 1) = a' % 2 ^ (k + 1)) (ha : a % 2 = 0)
     (ha' : a' % 2 = 0) : (a / 2) % 2 ^ k = (a' / 2) % 2 ^ k := by
-  obtain ⟨c, hc⟩ : (2 ^ (k + 1) : Int) ∣ a' - a := Int.ModEq.dvd h
+  obtain ⟨c, hc⟩ : (2 ^ (k + 1) : Int) ∣ a' - a :=
+    Int.dvd_of_emod_eq_zero (Int.emod_eq_emod_iff_emod_sub_eq_zero.mp h.symm)
   have hc' : a' - a = 2 * (2 ^ k * c) := by
-    rw [hc, pow_succ, mul_assoc, mul_left_comm]
-  have E : a' / 2 - a / 2 = 2 ^ k * c := by omega
-  exact Int.modEq_of_dvd ⟨c, E⟩
+    rw [hc, Int.pow_succ, Int.mul_assoc, Int.mul_left_comm]
+  have E : a' / 2 - a / 2 = 2 ^ k * c := by omega_using [hc', ha, ha']
+  exact (Int.emod_eq_emod_iff_emod_sub_eq_zero.mpr (Int.emod_eq_zero_of_dvd ⟨c, E⟩)).symm
 
 end VG.Proof.Divstep

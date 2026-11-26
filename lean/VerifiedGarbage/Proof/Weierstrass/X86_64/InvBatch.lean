@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Framework.Omega

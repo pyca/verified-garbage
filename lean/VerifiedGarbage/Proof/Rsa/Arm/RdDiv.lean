@@ -620,7 +620,7 @@ theorem top_pos {m : Mem} {B : BitVec 32} {W j k M : Nat} (hk : k < W) (hM : num
   rcases Nat.eq_zero_or_pos (w32 m (State.addr B) (arr W j + 4 * k)) with c | c
   · rw [c, Nat.zero_add] at hM
     rcases Nat.eq_zero_or_pos (val32 m (State.addr B) (arr W j + 4 * k + 4) (W - k - 1)) with d | d
-    · rw [d, Nat.mul_zero, Nat.mul_zero, Nat.add_zero] at hM; omega
+    · simp only [d, Nat.mul_zero, Nat.add_zero] at hM; omega
     · have p : 2 ^ (32 * (k + 1)) ≤ 2 ^ (32 * k) * (2 ^ 32 * val32 m (State.addr B) (arr W j + 4 * k + 4) (W - k - 1)) := by
         rw [Nat.mul_succ, Nat.pow_add]; exact Nat.mul_le_mul_left _ (Nat.le_mul_of_pos_right _ d)
       omega

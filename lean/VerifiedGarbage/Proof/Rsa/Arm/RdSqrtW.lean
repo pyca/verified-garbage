@@ -2015,7 +2015,7 @@ theorem isqTop_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → 
       Nat.div_eq_of_lt (show T < 4 ^ (32 - 0) by rw [four_pow_eq]; exact Tl), isqrt_zero]; rfl
   · have g4 : (s9.gpr .r4).toNat = 0 := by rw [u9.other _ (by decide), u8.other _ (by decide), u7.gpr]; rfl
     obtain g5 : (s9.gpr .r5).toNat = 0 := by rw [u9.other _ (by decide), u8.gpr]; rfl
-    rw [g4, g5, Nat.div_eq_of_lt (show T < 4 ^ (32 - 0) by rw [four_pow_eq]; exact Tl), isqrt_zero]; rfl
+    rw [g4, g5, Nat.div_eq_of_lt (show T < 4 ^ (32 - 0) by rw [four_pow_eq]; exact Tl), isqrt_zero]
   · rw [u9.gpr]; rfl
   rw [Nat.sub_self, Nat.pow_zero, Nat.div_one] at q3 q45
   obtain sl := isq_root_lt Tl (le_refl 32)

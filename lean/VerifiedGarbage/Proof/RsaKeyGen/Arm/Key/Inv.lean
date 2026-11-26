@@ -48,7 +48,7 @@ theorem inverseCall_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : 
         num t.mem B w 1 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.1 ∧
         num t.mem B w 3 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.2.2) := by
   have g : VG.Proof.Rsa.Arm.Inv.Gk s B Z w w N :=
-    ⟨h.nowrap, h.writable, h.fits, h.wpos, le_refl _, h.wle, h.r7, h.r8, h.r9⟩
+    ⟨h.nowrap, h.writable, h.fits, h.wpos, Nat.le_refl _, h.wle, h.r7, h.r8, h.r9⟩
   exact WP.mono (inverseCall_ok g hN15 hN hW8) fun t ⟨gt, kt, rt, v⟩ =>
     ⟨⟨gt.nowrap, gt.writable, gt.fits, gt.kpos, gt.wle, gt.r7, gt.r8, gt.r9⟩, kt, rt,
       fun _ _ hmo hm1 _ => by simp only [VG.Proof.RsaKeyGen.Arm.Key.ivr]; exact v hmo hm1⟩

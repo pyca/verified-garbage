@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -18,6 +19,22 @@ the low words and its matrix updates the whole numbers.
 @[expose] public section
 
 namespace VG.Proof.Divstep
+
+theorem mstep_d (t : MSt) : |(mstep t).d| ≤ |t.d| + 2 := by
+  have := abs_nonneg t.d
+  have := le_abs_self t.d
+  have := neg_abs_le t.d
+  unfold mstep; split <;> simp only <;> rw [abs_le'] <;> constructor <;>
+    omega_arith
+
+theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
+  | 0 => by simp [msteps]
+  | n + 1 => by
+    rw [msteps_succ]
+    have := mstep_d (msteps n t)
+    have := msteps_d t n
+    push_cast
+    omega_arith
 
 /-- The matrix: `2^k f = u f₀ + v g₀`, `2^k g = q f₀ + r g₀` is kept, with `k + 1`,
 by a step from an odd `f`. -/

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.EcKey.P192.X86
 public import VerifiedGarbage.Proof.EcKey.X86.P192.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.P192.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TaintSum

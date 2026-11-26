@@ -5,6 +5,7 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Positivity
 import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.State
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.Divstep.BatchS

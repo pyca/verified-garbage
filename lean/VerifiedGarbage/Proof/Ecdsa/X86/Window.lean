@@ -1954,7 +1954,7 @@ theorem swinStep_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {base : Addr
   have hbit0 := bitsAt_le c h7 (j := 0) (by decide)
   have hfit := winTbl_fit (c := c) hc.n10
   have hn := I.ctx.scr.nowrap
-  have h8 : 2 ^ c.winW = 8 := by rw [h3]; rfl
+  have h8 : 2 ^ c.winW = 8 := congrArg (2 ^ ·) h3
   have mul0 : mul 0 P = .infinity := by rw [Spec.Weierstrass.mul]; simp
   obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [hj]⟩
   rw [Nat.add_sub_cancel]
@@ -2188,7 +2188,7 @@ theorem swinTop_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {px py : Nat}
   have hn := ctx.scr.nowrap
   have hfit := winTbl_fit (c := c) hc.n10
   have hp := winPc_le (c := c) h7
-  have h8 : 2 ^ c.winW = 8 := by rw [h3]; rfl
+  have h8 : 2 ^ c.winW = 8 := congrArg (2 ^ ·) h3
   have below : ∀ {l : List Nat}, (∀ i ∈ l, i < 45) → ∀ w ∈ pW c l,
       w.1 + w.2 ≤ c.winTbl ∨ c.winTbl + 16 * c.winPc * 2 ^ c.winW ≤ w.1 :=
     fun hl => pW_tbl h7 hl hfit

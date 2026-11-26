@@ -61,19 +61,6 @@ structure MatrixAt (P : InvCfg) (base : Addr) (T : Divstep.MSt) (s : State) : Pr
   q : s.mem.readW (off base (P.sW + 20)) 32 = BitVec.ofInt 32 T.q
   r : s.mem.readW (off base (P.sW + 24)) 32 = BitVec.ofInt 32 T.r
 
-/-- The mathematical bounds and exact divisions required by one batch. -/
-structure BatchFacts (I : Divstep.W32.IState) (p : Nat) : Prop where
-  delta : |I.d| + 64 < 2 ^ 30
-  odd : I.f % 2 = 1
-  f : |I.f| ≤ p
-  g : |I.g| ≤ p
-  a : |I.a| ≤ p
-  b : |I.b| ≤ p
-  matrix : let T := Divstep.msteps 30 (Divstep.MSt.init I.d I.f I.g)
-    |T.u| + |T.v| ≤ 2 ^ 30 ∧ |T.q| + |T.r| ≤ 2 ^ 30
-  division : let T := Divstep.msteps 30 (Divstep.MSt.init I.d I.f I.g)
-    2 ^ 30 ∣ T.u * I.f + T.v * I.g ∧ 2 ^ 30 ∣ T.q * I.f + T.r * I.g
-
 end VG.Proof.Weierstrass.X86.Inv
 
 end

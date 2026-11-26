@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import Mathlib.Data.BitVec
-public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.LinearCombination
