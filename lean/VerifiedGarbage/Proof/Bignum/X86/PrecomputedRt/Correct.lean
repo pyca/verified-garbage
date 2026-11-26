@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.Contract

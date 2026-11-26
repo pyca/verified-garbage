@@ -23,7 +23,7 @@ open VG.Proof.X25519 (sqn)
 
 variable {umaal : Bool}
 
-def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
+def opMul (o a b : Slot) (e : Env) : Env := Fun.update e o (e a * e b)
 
 /-- Field work and its fixed-count squaring counter. -/
 structure IKeep (b : BitVec 32) (s t : State) : Prop where
@@ -69,11 +69,11 @@ theorem decR10_ok {s : State} {k : Nat} (hk : k < 2 ^ 32)
     exact BitVec.add_sub_cancel _ _
   exact ⟨ht.gpr.trans he, by rw [hz, he, ofNat_beq_zero hk], ht.rest (by decide), ht.mem⟩
 
-def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 theorem mulcI (base : BitVec 32) (o a b : Slot) : ISpec base (mulPc umaal o a b) (opMul o a b) :=
   fun _ hc hl => WP.mono (fieldOp_ok hc hl (.mulc o a b)) fun _ ⟨hk, hlt, he⟩ =>
@@ -94,15 +94,15 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
     (x : Spec.X25519.Fe) (n : Nat) (hn : n < 65536) :
     ∀ m s, 1 ≤ m → m ≤ n → Rest (.r10 :: clob) s₀ s → Frame (wRegions base W) s₀.mem s.mem →
       LimOn s.mem base (o :: S) → s.gpr .r10 = BitVec.ofNat 32 m →
-      env s.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) →
+      env s.mem base = Fun.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) →
       WP isa (.loop (.seq (mulP umaal o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
         Rest (.r10 :: clob) s₀ t ∧ Frame (wRegions base W) s₀.mem t.mem ∧ LimOn t.mem base (o :: S) ∧
-        env t.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x n) := by
+        env t.mem base = Fun.update (env s₀.mem base) o (VG.Proof.X25519.sqn x n) := by
   intro m s h1 h2 hr hf hl hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) =>
     1 ≤ m ∧ m ≤ n ∧ Rest (.r10 :: clob) s₀ s ∧ Frame (wRegions base W) s₀.mem s.mem ∧ LimOn s.mem base (o :: S) ∧
     s.gpr .r10 = BitVec.ofNat 32 m ∧
-    env s.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m))) ?_
+    env s.mem base = Fun.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m))) ?_
     m s ⟨h1, h2, hr, hf, hl, hb, he⟩
   intro m s ⟨h1, h2, hr, hf, hl, hb, he⟩
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
@@ -114,9 +114,9 @@ theorem sqLoopO_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀) (o : S
   have f2 : Frame (wRegions base W) s₀.mem s2.mem := by rw [mem2]; exact hf.trans f1
   have l2 : LimOn s2.mem base (o :: S) := by
     rw [mem2]; exact l1.mono fun i hi => List.mem_cons_of_mem _ hi
-  have e2 : env s2.mem base = Function.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) := by
+  have e2 : env s2.mem base = Fun.update (env s₀.mem base) o (VG.Proof.X25519.sqn x (n - m)) := by
     rw [mem2, e1, he, opMul_update]
-    apply congrArg (Function.update (env s₀.mem base) o)
+    apply congrArg (Fun.update (env s₀.mem base) o)
     rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
     rfl
   simp only [VG.Arm.eval, z2]
@@ -145,7 +145,7 @@ theorem sqrFn_ok {b : BitVec 32} (o : Slot) {n : Nat} (hn : 1 ≤ n) (hn' : n < 
       (fun r hr => by revert r; decide)
       (fun s₁ hc₁ hl₁ hg => sqLoopO_ok (umaal := umaal) hc₁ o allSlots (List.mem_singleton_self o) (env s₁.mem b o) n hn' n s₁
         hn (Nat.le_refl _) (Rest.refl _ _) (Frame.refl _ _) hl₁ (by rw [hg]; exact h10)
-        (by rw [Nat.sub_self]; exact (Function.update_eq_self _ _).symm)) hc (LimOn.of_all hl _))
+        (by rw [Nat.sub_self]; exact (Fun.update_eq_self _ _).symm)) hc (LimOn.of_all hl _))
     fun _ ⟨hr, hf, hl', he⟩ => ⟨hr, frameS_FA hf, hl'.all fun i => List.mem_cons_of_mem _ (mem_allSlots i), he⟩
 
 /-- `sqrCall o n`: slot `o` squared `n` times. -/
@@ -176,7 +176,7 @@ theorem sqnI (base : BitVec 32) (o a : Slot) (n : Nat) (hn : 2 ≤ n) (hn' : n <
     (sqrCallI (umaal := umaal) base o (n - 1) (by omega_using [hn]) (by omega_using [hn']))
   refine fun s hc hl => WP.mono (h s hc hl) fun t ⟨k, l, e⟩ => ⟨k, l, ?_⟩
   rw [e]
-  simp only [opSqn, opMul, Function.update_self, Function.update_idem, sqn_sq]
+  simp only [opSqn, opMul, Fun.update_self, Fun.update_idem, sqn_sq]
   rw [show n - 1 + 1 = n by omega_using [hn]]
 
 end VG.Proof.Ed25519.Arm
@@ -239,11 +239,11 @@ theorem rootPower_spec (base : BitVec 32) : ISpec base (Impl.Ed25519.Arm.rootPow
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by
-  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Fun.update_apply]
   rfl
 
 theorem rootEnv_eval (e : Env) : rootEnv e 15 = VG.Proof.Ed25519.rootPower (e 2) := by
-  simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Fun.update_apply]
   rfl
 
 end VG.Proof.Ed25519.Arm
@@ -268,7 +268,7 @@ theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
 
 theorem invEnv_xy (e : Env) : invEnv e 0 = e 0 ∧ invEnv e 1 = e 1 := by
-  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Fun.update_apply]
   exact ⟨rfl, rfl⟩
 
 theorem pointAffine_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :

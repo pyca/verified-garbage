@@ -137,7 +137,7 @@ theorem dblJXChoice_eq (direct : Bool) (S : RcbSlots) (p o : Pt) :
 theorem dblJXN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJXN e 6, runOps dblJXN e 7, runOps dblJXN e 8) =
       dblJF (e 11) (e 12) (e 13) := by
-  dsimp only [dblJXN, WinCfg.dblJX, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJXN, WinCfg.dblJX, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblJF, Prod.mk.injEq]
   constructor
   · grind

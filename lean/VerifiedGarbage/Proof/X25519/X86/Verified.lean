@@ -245,7 +245,7 @@ theorem run_step (V : Nat → Fe) :
     run stepOps V X2 = AA * BB ∧ run stepOps V Z2 = Ee * (AA + a24 * Ee) ∧
       run stepOps V X3 = (DA + CB) * (DA + CB) ∧ run stepOps V Z3 = V X1 * ((DA - CB) * (DA - CB)) ∧
       run stepOps V X1 = V X1 := by
-  simp only [run, stepOps, opOut, opVal, Function.update_apply, X1, X2, Z2, X3, Z3, A, B, C, D, AA, BB,
+  simp only [run, stepOps, opOut, opVal, Fun.update_apply, X1, X2, Z2, X3, Z3, A, B, C, D, AA, BB,
     Impl.X25519.X86.E, DA, CB]
   simp only [↓reduceIte, Nat.reduceEqDiff, and_self]
 
@@ -724,7 +724,7 @@ theorem invert_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ 
   refine ⟨a₂.of_frame k₃.edi k₃.esp k₃.rd k₃.wr k₃.frame (by decide) (by decide) (by decide), ?_, ?_⟩
   · change cenv s₃.mem x 1 = _
     rw [e₃]
-    simp only [opMul, opSqn, Function.update_self, Function.update_of_ne (show (0 : Cs) ≠ 1 by decide)]
+    simp only [opMul, opSqn, Fun.update_self, Fun.update_of_ne (show (0 : Cs) ≠ 1 by decide)]
     change VG.Proof.X25519.sqn (F s₂.mem x Field32.E1) 5 * F s₂.mem x Field32.E0 = _
     rw [p₁, p₀, z₁, invert_tail]
   · rw [← x₁, ← x₂]
@@ -1352,7 +1352,7 @@ theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : After (arg s₀ 3) s₀
   obtain hv : fe s₂.mem (arg s₀ 3) X2 = (F s.mem (arg s₀ 3) X2 * F s.mem (arg s₀ 3) Field32.E1).val := by
     rw [e₂, ← toFe_val]
     have := e₁ X2 (by decide)
-    simp only [X86.run, opOut, opVal, Function.update_self] at this
+    simp only [X86.run, opOut, opVal, Fun.update_self] at this
     exact congrArg Fin.val this
   refine Wp.wp_ldm (B := s₂.gpr .esp) (o := 4) rfl (by rw [b₂.esp, b₂.rd, b₂.wr]; exact hp.argIn (i := 0) (by decide))
     fun s₃ u₃ => ?_

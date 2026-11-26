@@ -38,7 +38,7 @@ theorem stepEnvF_eval (e : Env) (st : Spec.X448.Ladder) (k : Nat) (u : Spec.X448
   rw [ladderStep_eq]
   cases hsw : decide (st.swap ^^^ bit k t = 1)
   all_goals
-    simp (config := {decide := true}) only [stepEnvF, stepOpsEnv, bflyEnv, swp, Function.update_apply,
+    simp (config := {decide := true}) only [stepEnvF, stepOpsEnv, bflyEnv, swp, Fun.update_apply,
       cswap_fst, cswap_snd, hsw, h0, h1, h2, h3, h4, ite_true, ite_false, Bool.false_eq_true]
 
 /-- The ladder's loop invariant. -/

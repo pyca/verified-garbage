@@ -67,11 +67,11 @@ theorem invert_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     (mulI base 15 15 14 ⟨by decide, by decide⟩)
   refine WP.mono (h t (kt.ctx hs)) fun u ⟨ku, eu⟩ => ⟨kt.trans ku, ?_, fun i hi => ?_⟩
   · rw [eu]
-    simp only [opMul, opSqn, Function.update_self, Function.update_of_ne (show (14 : Slot) ≠ 15 by decide)]
+    simp only [opMul, opSqn, Fun.update_self, Fun.update_of_ne (show (14 : Slot) ≠ 15 by decide)]
     rw [h15, h14, invert_tail]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
     rw [eu]
-    simp only [opMul, opSqn, Function.update_of_ne h15]
+    simp only [opMul, opSqn, Fun.update_of_ne h15]
     exact hlow i hi
 
 theorem rootPower_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
@@ -83,11 +83,11 @@ theorem rootPower_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     (mulI base 15 15 2 ⟨by decide, by decide⟩)
   refine WP.mono (h t (kt.ctx hs)) fun u ⟨ku, eu⟩ => ⟨kt.trans ku, ?_, fun i hi => ?_⟩
   · rw [eu]
-    simp only [opMul, opSqn, Function.update_self, Function.update_of_ne (show (2 : Slot) ≠ 15 by decide)]
+    simp only [opMul, opSqn, Fun.update_self, Fun.update_of_ne (show (2 : Slot) ≠ 15 by decide)]
     rw [h15, hlow 2 (by decide), root_tail]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
     rw [eu]
-    simp only [opMul, opSqn, Function.update_of_ne h15]
+    simp only [opMul, opSqn, Fun.update_of_ne h15]
     exact hlow i hi
 
 end VG.Proof.Ed25519.X86

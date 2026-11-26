@@ -227,7 +227,7 @@ def cachedEntryEnv (K : WinCfg) {m : Nat} (E : Nat → Fin m)
     (tbl dst : Nat) (b : BitVec 8) : Nat → Fin m :=
   let e := cachedTransferEnv K.M.n E K.E (K.tblPt ((nafMagnitude b-1)/2+1))
     dst (tbl+16*K.M.n*((nafMagnitude b-1)/2))
-  if b.toNat<128 then e else Function.update e K.E.y (-e K.E.y)
+  if b.toNat<128 then e else Fun.update e K.E.y (-e K.E.y)
 
 private theorem prefix_keep {M : Mod} {base : Addr} {W : List Nat} {s t : State}
     {rs : List Reg} (hk : Keeps rs s t) (hr : ∀ r∈rs,r∈clob M.n) :
@@ -349,8 +349,8 @@ theorem cachedEntryEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {tbl ds
   unfold cachedEntryEnv
   split
   · exact h
-  · simp only [CachedPoint,Function.update_self,Function.update_of_ne hxy,
-      Function.update_of_ne hzy,Function.update_of_ne hd,Function.update_of_ne hd']
+  · simp only [CachedPoint,Fun.update_self,Fun.update_of_ne hxy,
+      Fun.update_of_ne hzy,Fun.update_of_ne hd,Fun.update_of_ne hd']
     exact ⟨h.1.negY,h.2⟩
 
 end VG.Proof.Weierstrass.X86_64

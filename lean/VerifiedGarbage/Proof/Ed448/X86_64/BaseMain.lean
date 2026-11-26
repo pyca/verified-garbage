@@ -165,8 +165,8 @@ theorem entry_ok {s : State} {base : Addr} (hs : Scr s base) {k t i : Nat}
       simp [opSwap, he]
   · intro j h3 h4 h8 h9
     rw [eu, e4, m3, e2, e1]
-    simp only [opSwap, Function.update_of_ne h3, Function.update_of_ne h4,
-      Function.update_of_ne h8, Function.update_of_ne h9]
+    simp only [opSwap, Fun.update_of_ne h3, Fun.update_of_ne h4,
+      Fun.update_of_ne h8, Fun.update_of_ne h9]
 
 private def picked (xs : List Nat) (d : Nat) (q : Spec.X448.Fe × Spec.X448.Fe) :=
   xs.foldl (fun q i => if d = i then Impl.Ed448.Comb.entry i else q) q
@@ -246,8 +246,8 @@ theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat}
     ru.trans (k3.rd.trans (k2.rd.trans k1.rd)), wu.trans (k3.wr.trans (k2.wr.trans k1.wr)), ?_⟩,
     ?_, ?_, zu⟩
   · rw [mu]; exact (k1.mem.trans k2.mem).trans k3.mem
-  · rw [mu, e3, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
-  · rw [mu, e3, e2, e1]; simp (disch := decide) only [Function.update_of_ne]
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [pt, Fun.update_self, Fun.update_of_ne]
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [Fun.update_of_ne]
 
 private theorem step_rep {p : Spec.Ed448.Point} {k t : Nat} (ht : t < 114)
     (hp : Rep p (accScalar k (t + 1) • baseAff)) :

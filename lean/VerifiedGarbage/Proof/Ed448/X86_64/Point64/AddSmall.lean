@@ -47,14 +47,14 @@ theorem mulD_ok {s : State} {base : Addr} (hs : Scr s base)
     (slot_lt (16 : Index)) (slot_lt (16 : Index))) fun t ⟨kt, et⟩ => ?_
   refine ⟨(k₁.trans k₂).trans (Proof.X448.X86_64.Op.keep (o := 16) kt), ?_, fun x hx ha => ?_⟩
   · rw [E_update (o := 16) kt.mem]
-    change Function.update (E s₂.mem base) 16 (Proof.X448.X86_64.F t.mem base (slot 16)) = _
+    change Fun.update (E s₂.mem base) 16 (Proof.X448.X86_64.F t.mem base (slot 16)) = _
     rw [et]
-    change Function.update (E s₂.mem base) 16 (Spec.X448.a24 * E s₂.mem base 16) = _
+    change Fun.update (E s₂.mem base) 16 (Spec.X448.a24 * E s₂.mem base 16) = _
     rw [e₂, e₁]
     simp only [evalOp, show idx 16 = (16 : Index) from rfl,
       show idx 14 = (14 : Index) from rfl, show idx 11 = (11 : Index) from rfl]
-    simp only [Function.update_self, Function.update_of_ne (by decide : (14 : Index) ≠ 16),
-      Fin.sub_self, Function.update_idem, hd]
+    simp only [Fun.update_self, Fun.update_of_ne (by decide : (14 : Index) ≠ 16),
+      Fin.sub_self, Fun.update_idem, hd]
     rw [small_neg]
   · rw [kt.mem x hx ha, f₂ x hx ha, f₁ x hx ha]
 

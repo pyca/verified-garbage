@@ -92,8 +92,8 @@ theorem CSpec.append {x : BitVec 32} {c d : List Instr} {f g : CEnv → CEnv}
   exact WP.mono (h s hc) fun t ⟨ht, et⟩ =>
     WP.mono (k t (ht.ctx hc)) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et]⟩
 
-def opMul (o a b : Cs) (e : CEnv) : CEnv := Function.update e o (e a * e b)
-def opSqn (o a : Cs) (n : Nat) (e : CEnv) : CEnv := Function.update e o (sqn (e a) n)
+def opMul (o a b : Cs) (e : CEnv) : CEnv := Fun.update e o (e a * e b)
+def opSqn (o a : Cs) (n : Nat) (e : CEnv) : CEnv := Fun.update e o (sqn (e a) n)
 
 /-- A multiplication of slots, with what it keeps. -/
 theorem mul_keep {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a b : Cs) :
@@ -106,28 +106,28 @@ theorem mul_keep {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a b : Cs) :
   rw [cenv, e (coff i) (coff_slot i)]
   simp only [opOut, opVal, opMul]
   by_cases hi : i = o
-  · subst hi; rw [Function.update_self, Function.update_self]; rfl
-  · rw [Function.update_of_ne (fun h => hi (coff_inj h)), Function.update_of_ne hi]; rfl
+  · subst hi; rw [Fun.update_self, Fun.update_self]; rfl
+  · rw [Fun.update_of_ne (fun h => hi (coff_inj h)), Fun.update_of_ne hi]; rfl
 
 theorem mulC (x : BitVec 32) (o a b : Cs) :
     CSpec x (.block (mul (coff o) (coff a) (coff b))) (opMul o a b) := fun _ hc =>
   WP.mono (mul_keep hc o a b) fun _ ⟨_, k, e⟩ => ⟨k, e⟩
 
 theorem opMul_update (o : Cs) (e : CEnv) (v : Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : Cs) (v : Fe) (n : Nat)
     (hn : n < 2 ^ 32) :
     ∀ m s, 1 ≤ m → m ≤ n → CKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
-      cenv s.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - m)) →
+      cenv s.mem x = Fun.update (cenv s₀.mem x) o (sqn v (n - m)) →
       WP isa (.loop (.block (mul (coff o) (coff o) (coff o) ++
         ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
-        CKeep x s₀ t ∧ cenv t.mem x = Function.update (cenv s₀.mem x) o (sqn v n) := by
+        CKeep x s₀ t ∧ cenv t.mem x = Fun.update (cenv s₀.mem x) o (sqn v n) := by
   intro m s h1 h2 hk hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ CKeep x s₀ s ∧
     s.gpr .esi = BitVec.ofNat 32 m ∧
-    cenv s.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
+    cenv s.mem x = Fun.update (cenv s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
   rw [WP.block_append_iff]
   refine WP.mono (mul_keep (hk.ctx hc₀) o o o) fun t ⟨kt, ht, et⟩ => ?_
@@ -135,7 +135,7 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : 
   have ku := hk.trans (ht.trans (CKeep.of_counter hu))
   have bu : u.gpr .esi = BitVec.ofNat 32 (m - 1) := by
     rw [hu.gpr, kt.esi, hb]; exact Wp.ofNat_pred h1
-  have eu : cenv u.mem x = Function.update (cenv s₀.mem x) o (sqn v (n - (m - 1))) := by
+  have eu : cenv u.mem x = Fun.update (cenv s₀.mem x) o (sqn v (n - (m - 1))) := by
     rw [hu.mem, et, he, opMul_update, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
     rfl
   have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
@@ -151,11 +151,11 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (o : 
 /-- `a` copied to `o`, unless they are the same slot. -/
 theorem copyC {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a : Cs) :
     WP isa (.block (if coff o = coff a then [] else copy (coff o) (coff a))) s fun t =>
-      CKeep x s t ∧ cenv t.mem x = Function.update (cenv s.mem x) o (cenv s.mem x a) := by
+      CKeep x s t ∧ cenv t.mem x = Fun.update (cenv s.mem x) o (cenv s.mem x a) := by
   by_cases h : o = a
   · subst h
     simp only [↓reduceIte]
-    exact WP.block_nil ⟨CKeep.refl x s, (Function.update_eq_self o _).symm⟩
+    exact WP.block_nil ⟨CKeep.refl x s, (Fun.update_eq_self o _).symm⟩
   · have hfit := hc.fit
     have ho := coff_slot o
     have hb : 512 ≤ coff o ∧ coff o + 32 ≤ 928 := (by decide : ∀ i : Cs, 512 ≤ coff i ∧ coff i + 32 ≤ 928) o
@@ -165,8 +165,8 @@ theorem copyC {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) (o a : Cs) :
       ⟨⟨k.edi, k.esp, k.rd, k.wr, frameWiden f hfit hb.1 (by omega_using [hb]) (by omega_using [hb])⟩,
         funext fun i => ?_⟩
     by_cases hi : i = o
-    · subst hi; rw [Function.update_self]; exact congrArg toFe e
-    · rw [Function.update_of_ne hi]
+    · subst hi; rw [Fun.update_self]; exact congrArg toFe e
+    · rw [Fun.update_of_ne hi]
       have hib : coff i + 32 ≤ 928 := (by decide : ∀ i : Cs, coff i + 32 ≤ 928) i
       exact congrArg toFe (fe_frame1 f hfit (by omega_using [hb]) (by omega_using [hib])
         (slot_ne ho (coff_slot i) fun e => hi (coff_inj e)))
@@ -192,7 +192,7 @@ def chainEnv (e : CEnv) : CEnv :=
     (opMul 0 4 4 e))))))))))))))))))))
 
 theorem chainEnv_eval (e : CEnv) : chainEnv e 1 = (chainF (e 4)).1 ∧ chainEnv e 0 = (chainF (e 4)).2 := by
-  simp only [chainEnv, opMul, opSqn, Function.update_apply]
+  simp only [chainEnv, opMul, opSqn, Fun.update_apply]
   simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
   exact ⟨rfl, rfl⟩
 
@@ -227,7 +227,7 @@ open VG.Proof.X25519 (sqn)
 
 /-- The slots from byte 512 keep their elements, but `o`, which gets `v`. -/
 def Upd1 (m m' : Mem) (x : BitVec 32) (o : Nat) (v : Fe) : Prop :=
-  ∀ q, isSlot 512 q = true → F m' x q = Function.update (F m x) o v q
+  ∀ q, isSlot 512 q = true → F m' x q = Fun.update (F m x) o v q
 
 theorem OpA_slot : isSlot 512 OpA = true := by decide
 theorem OpB_slot : isSlot 512 OpB = true := by decide
@@ -344,8 +344,8 @@ theorem exit_end {x : BitVec 32} {s t u : State} (hfit : x.toNat + 4096 ≤ 2 ^ 
         rw [List.mem_singleton.mp hr]; exact sub_sub hfit (Nat.le_refl _) (by decide) (by decide)⟩)
   · rw [rm, eu q hq]
     by_cases e : q = OpA
-    · subst e; rw [Function.update_self, Function.update_self]
-    · rw [Function.update_of_ne e, Function.update_of_ne e, F_save hf hfit hq]
+    · subst e; rw [Fun.update_self, Fun.update_self]
+    · rw [Fun.update_of_ne e, Fun.update_of_ne e, F_save hf hfit hq]
 
 theorem mulFn_ok {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) :
     WP isa mulFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
@@ -357,7 +357,7 @@ theorem mulFn_ok {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) :
   refine WP.mono (op_ok (lo := 512) ct (.mul OpA OpA OpB) (by decide)) fun u ⟨k, fu, eu⟩ => ?_
   refine exit_end hfit (k.ctx ct) g hsv rd wr k.esp k.rd k.wr hf fu fun q hq => ?_
   rw [eu q hq]
-  show Function.update (F t.mem x) OpA (F t.mem x OpA * F t.mem x OpB) q = _
+  show Fun.update (F t.mem x) OpA (F t.mem x OpA * F t.mem x OpB) q = _
   rw [F_save hf hfit OpA_slot, F_save hf hfit OpB_slot]
 
 /-- `sqnFn`'s loop: `[OpA]` squared in place, `esi` times. -/
@@ -379,11 +379,11 @@ theorem sqLoopP {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (v : Fe
     rw [hu.gpr, kt.esi, hb]; exact Wp.ofNat_pred h1
   have eu : Upd1 s₀.mem u.mem x OpA (sqn v (n - (m - 1))) := fun q hq => by
     rw [hu.mem, et q hq]
-    show Function.update (F s.mem x) OpA (F s.mem x OpA * F s.mem x OpA) q = _
-    rw [he OpA OpA_slot, Function.update_self, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
+    show Fun.update (F s.mem x) OpA (F s.mem x OpA * F s.mem x OpA) q = _
+    rw [he OpA OpA_slot, Fun.update_self, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
     by_cases e : q = OpA
-    · subst e; rw [Function.update_self, Function.update_self]; rfl
-    · rw [Function.update_of_ne e, Function.update_of_ne e, he q hq, Function.update_of_ne e]
+    · subst e; rw [Fun.update_self, Fun.update_self]; rfl
+    · rw [Fun.update_of_ne e, Fun.update_of_ne e, he q hq, Fun.update_of_ne e]
   have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
     show u.zf.map (!·) = _
     rw [hz, kt.esi, hb, Wp.ofNat_pred h1, Wp.ofNat_beq_zero (by omega_using [h2, hn])]
@@ -410,8 +410,8 @@ theorem sqnFn_ok {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) {n : Nat}
   refine WP.seq (WP.mono (sqLoopP ct (F t₁.mem x OpA) n h2 n t₁ h1 (Nat.le_refl _) (CKeep.refl x t₁) e₁
     fun q _ => by
       rw [Nat.sub_self]
-      show F t₁.mem x q = Function.update (F t₁.mem x) OpA (F t₁.mem x OpA) q
-      rw [Function.update_eq_self]) fun u ⟨ku, eu⟩ => ?_)
+      show F t₁.mem x q = Fun.update (F t₁.mem x) OpA (F t₁.mem x OpA) q
+      rw [Fun.update_eq_self]) fun u ⟨ku, eu⟩ => ?_)
   have fu : Frame [sub x 512 416] t.mem u.mem := by rw [← u₁.mem]; exact ku.frame
   refine exit_end hfit (ku.ctx ct) g hsv rd wr (by rw [ku.esp, g₁ _ (by decide), g]) (by rw [ku.rd, u₁.rd])
     (by rw [ku.wr, u₁.wr]) hf fu fun q hq => ?_
@@ -522,8 +522,8 @@ theorem fieldCall_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx 
     simp only [Below, T] at hb
     rw [hu2 q hq]
     by_cases e : q = OpA
-    · subst e; rw [Function.update_self, Function.update_self]
-    · rw [Function.update_of_ne e, Function.update_of_ne e]
+    · subst e; rw [Fun.update_self, Fun.update_self]
+    · rw [Fun.update_of_ne e, Fun.update_of_ne e]
       exact F_callee hc hE dis (by omega_using [hb])
 
 theorem mulCall_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c)
@@ -585,8 +585,8 @@ theorem copyS {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) {o a : Nat}
   have hv : opValid 512 (.copy o a) = true := by
     simp only [opValid, opOut, opIns, ho, ha, List.all_cons, List.all_nil, Bool.and_self]
   refine WP.mono (op_ok (lo := 512) hc (.copy o a) hv) fun t ⟨k, f, e⟩ => ⟨k, f, ?_, fun q hq h => ?_⟩
-  · rw [e o ho]; exact Function.update_self ..
-  · rw [e q hq]; exact Function.update_of_ne h ..
+  · rw [e o ho]; exact Fun.update_self ..
+  · rw [e q hq]; exact Fun.update_of_ne h ..
 
 theorem cmulS {W : Nat} (x : BitVec 32) (o a b : Cs) :
     SSpec W x (cmul (coff o) (coff a) (coff b)) (opMul o a b) := by
@@ -602,20 +602,20 @@ theorem cmulS {W : Nat} (x : BitVec 32) (o a b : Cs) :
   refine WP.seq (WP.mono (mulCall_ok c₂ (by rw [sp₂]; exact hE) (by rw [sp₂]; exact hd)) fun t₃ ⟨k₃, f₃, e₃⟩ => ?_)
   obtain c₃ := k₃.ctx c₂
   refine WP.mono (copyS c₃ (coff_slot o) OpA_slot) fun t₄ ⟨k₄, f₄, o₄, a₄⟩ => ?_
-  obtain p₃ : F t₃.mem x OpA = F t₂.mem x OpA * F t₂.mem x OpB := by rw [e₃ OpA OpA_slot]; exact Function.update_self ..
+  obtain p₃ : F t₃.mem x OpA = F t₂.mem x OpA * F t₂.mem x OpB := by rw [e₃ OpA OpA_slot]; exact Fun.update_self ..
   obtain a₃ : ∀ q, isSlot 512 q = true → q ≠ OpA → F t₃.mem x q = F t₂.mem x q := fun q hq h => by
-    rw [e₃ q hq]; exact Function.update_of_ne h ..
+    rw [e₃ q hq]; exact Fun.update_of_ne h ..
   refine ⟨((SKeep.of_keep k₁ f₁ hfit).trans (SKeep.of_keep k₂ f₂ hfit)).trans
     ((⟨k₃, f₃⟩ : SKeep x t₂ t₃).trans (SKeep.of_keep k₄ f₄ hfit)), funext fun i => ?_⟩
   show F t₄.mem x (coff i) = opMul o a b (cenv s.mem x) i
   by_cases h : i = o
   · subst h
     rw [o₄, p₃, a₂ OpA OpA_slot OpA_ne_OpB, p₁, q₂, a₁ (coff b) (coff_slot b) (coff_ne_OpA b)]
-    simp only [opMul, Function.update_self]
+    simp only [opMul, Fun.update_self]
     rfl
   · rw [a₄ (coff i) (coff_slot i) (fun e => h (coff_inj e)), a₃ _ (coff_slot i) (coff_ne_OpA i),
       a₂ _ (coff_slot i) (coff_ne_OpB i), a₁ _ (coff_slot i) (coff_ne_OpA i)]
-    simp only [opMul, Function.update_of_ne h]
+    simp only [opMul, Fun.update_of_ne h]
     rfl
 
 theorem csqnS {W : Nat} (x : BitVec 32) (o a : Cs) (n : Nat) (h1 : 1 ≤ n) (h2 : n < 2 ^ 32) :
@@ -633,9 +633,9 @@ theorem csqnS {W : Nat} (x : BitVec 32) (o a : Cs) (n : Nat) (h1 : 1 ≤ n) (h2 
     fun t₃ ⟨k₃, f₃, e₃⟩ => ?_)
   obtain c₃ := k₃.ctx c₂
   refine WP.mono (copyS c₃ (coff_slot o) OpA_slot) fun t₄ ⟨k₄, f₄, o₄, a₄⟩ => ?_
-  obtain p₃ : F t₃.mem x OpA = sqn (F t₂.mem x OpA) n := by rw [e₃ OpA OpA_slot]; exact Function.update_self ..
+  obtain p₃ : F t₃.mem x OpA = sqn (F t₂.mem x OpA) n := by rw [e₃ OpA OpA_slot]; exact Fun.update_self ..
   obtain a₃ : ∀ q, isSlot 512 q = true → q ≠ OpA → F t₃.mem x q = F t₂.mem x q := fun q hq h => by
-    rw [e₃ q hq]; exact Function.update_of_ne h ..
+    rw [e₃ q hq]; exact Fun.update_of_ne h ..
   obtain f₂ : Frame [sub x 512 416] t₁.mem t₂.mem := by rw [u₂.mem]; exact Frame.refl _ _
   refine ⟨((SKeep.of_keep k₁ f₁ hfit).trans (SKeep.of_keep k₂ f₂ hfit)).trans
     ((⟨k₃, f₃⟩ : SKeep x t₂ t₃).trans (SKeep.of_keep k₄ f₄ hfit)), funext fun i => ?_⟩
@@ -643,11 +643,11 @@ theorem csqnS {W : Nat} (x : BitVec 32) (o a : Cs) (n : Nat) (h1 : 1 ≤ n) (h2 
   by_cases h : i = o
   · subst h
     rw [o₄, p₃, u₂.mem, p₁]
-    simp only [opSqn, Function.update_self]
+    simp only [opSqn, Fun.update_self]
     rfl
   · rw [a₄ (coff i) (coff_slot i) (fun e => h (coff_inj e)), a₃ _ (coff_slot i) (coff_ne_OpA i), u₂.mem,
       a₁ _ (coff_slot i) (coff_ne_OpA i)]
-    simp only [opSqn, Function.update_of_ne h]
+    simp only [opSqn, Fun.update_of_ne h]
     rfl
 
 /-- A square, as a run of one squaring. -/

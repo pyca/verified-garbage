@@ -314,10 +314,10 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (xo : Index) (
     cases hd : decide ((E s.mem base xo).val % 2 ≠ sb) with
     | false =>
       simp only [opSwap, Bool.not_false, ite_true, Bool.false_eq_true, ite_false]
-      rw [Function.update_of_ne hx12, Function.update_self, e6, nk xo hx12, e5]
+      rw [Fun.update_of_ne hx12, Fun.update_self, e6, nk xo hx12, e5]
     | true =>
       simp only [opSwap, Bool.not_true, ite_true, Bool.false_eq_true, ite_false]
-      rw [Function.update_of_ne hx12, Function.update_self, e6, n12, e5]
+      rw [Fun.update_of_ne hx12, Fun.update_self, e6, n12, e5]
   · rw [d4, d3, g3 _ (by decide), a2]
     have hz : (s2.gpr .rdx = 0) ↔ E s.mem base xo = 0 := by
       rw [d2, rvW_zero, hxv]
@@ -343,7 +343,7 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (xo : Index) (
       (by decide), k1.2.1]
   · rw [et]
     simp only [opSwap]
-    rw [Function.update_of_ne h2, Function.update_of_ne h1, e6, nk i h2, e5]
+    rw [Fun.update_of_ne h2, Fun.update_of_ne h1, e6, nk i h2, e5]
   · have hr' : ∀ x ∈ Reg.rax :: Reg.r15 :: W, x ∈ VG.Proof.X448.X86_64.clob := by decide
     rw [kt.gpr r hr, g7 r (fun h => hr (h ▸ by decide)), k6.gpr r hr, g5 r (fun h => hr (h ▸ by decide)),
       g4 r (fun h => hr (h ▸ by decide)), g3 r (fun h => hr (h ▸ by decide)),

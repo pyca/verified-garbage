@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.X448.X86.Copy
 public import VerifiedGarbage.Proof.X448.X86.Swap
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -385,21 +385,21 @@ theorem Keep.ctx {base : Addr} {s t : State} (h : Keep base s t) (hc : CallCtx s
   hc.keep (h.regs.1 _ (by decide))
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : WsField base (slot o.val) m m') :
-    E m' base = Function.update (E m base) o (F m' base (slot o.val)) := by
+    E m' base = Fun.update (E m base) o (F m' base (slot o.val)) := by
   funext i
   by_cases hi : i = o
-  · subst i; simp only [Function.update_self, E]
-  · rw [Function.update_of_ne hi]
+  · subst i; simp only [Fun.update_self, E]
+  · rw [Fun.update_of_ne hi]
     simp only [E, F]
     rw [h.fe (slot_sep hi) (slot_bound i)]
 
-def opMul (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
-def opAdd (o a b : Index) (e : Env) : Env := Function.update e o (e a + e b)
-def opSub (o a b : Index) (e : Env) : Env := Function.update e o (e a - e b)
-def opA24 (o a : Index) (e : Env) : Env := Function.update e o (Spec.X448.a24 * e a)
-def opCopy (o a : Index) (e : Env) : Env := Function.update e o (e a)
+def opMul (o a b : Index) (e : Env) : Env := Fun.update e o (e a * e b)
+def opAdd (o a b : Index) (e : Env) : Env := Fun.update e o (e a + e b)
+def opSub (o a b : Index) (e : Env) : Env := Fun.update e o (e a - e b)
+def opA24 (o a : Index) (e : Env) : Env := Fun.update e o (Spec.X448.a24 * e a)
+def opCopy (o a : Index) (e : Env) : Env := Fun.update e o (e a)
 def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
+  Fun.update (Fun.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 theorem mulE {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
     (o a b : Index) :
@@ -473,11 +473,11 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base)
     apply tm p <;> simp only [slot] <;> omega_using [hp]
   · funext i
     by_cases hiy : i = y
-    · subst i; rw [opSwap, Function.update_self]; exact fy
-    · rw [opSwap, Function.update_of_ne hiy]
+    · subst i; rw [opSwap, Fun.update_self]; exact fy
+    · rw [opSwap, Fun.update_of_ne hiy]
       by_cases hix : i = x
-      · subst i; rw [Function.update_self]; exact fx
-      · rw [Function.update_of_ne hix]
+      · subst i; rw [Fun.update_self]; exact fx
+      · rw [Fun.update_of_ne hix]
         exact congrArg toFe (Proof.X25519.X86.num_congr (other i hix hiy))
 
 end VG.Proof.X448.X86

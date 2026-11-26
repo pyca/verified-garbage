@@ -30,7 +30,7 @@ theorem dblJa_eq (S : RcbSlots) (p o : Pt) : dblJa S p o = ofN dblJaN S p p o :=
 
 theorem dblJaN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJaN e 6, runOps dblJaN e 7, runOps dblJaN e 8) = dblAF (e 9) (e 11) (e 12) (e 13) := by
-  dsimp only [dblJaN, dblJa, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJaN, dblJa, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblAF, Prod.mk.injEq]
   constructor
   · grind

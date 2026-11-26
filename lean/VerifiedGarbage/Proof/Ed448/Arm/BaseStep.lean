@@ -173,7 +173,7 @@ def pt (e : Env) (i j k : Index) : Spec.Ed448.Point := ⟨e i, e j, e k⟩
 
 /-- The table's entry `i` in `Q`'s `x` and `y`. -/
 def selEnv (i : Nat) (e : Env) : Env :=
-  Function.update (Function.update e 8 (Impl.Ed448.Comb.entry i).1) 9 (Impl.Ed448.Comb.entry i).2
+  Fun.update (Fun.update e 8 (Impl.Ed448.Comb.entry i).1) 9 (Impl.Ed448.Comb.entry i).2
 
 /-- The slots after a row of index `i`. -/
 def rowEnv (i : Nat) (e : Env) : Env :=
@@ -502,11 +502,11 @@ theorem combSelect_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : Bounded
       · rw [other i i8 i9 j hj]; exact hbd i j hj
   · funext i
     by_cases i9 : i = 9
-    · subst i9; rw [selEnv, Function.update_self]; exact F_digits _ ly
-    · rw [selEnv, Function.update_of_ne i9]
+    · subst i9; rw [selEnv, Fun.update_self]; exact F_digits _ ly
+    · rw [selEnv, Fun.update_of_ne i9]
       by_cases i8 : i = 8
-      · subst i8; rw [Function.update_self]; exact F_digits _ lx
-      · rw [Function.update_of_ne i8]
+      · subst i8; rw [Fun.update_self]; exact F_digits _ lx
+      · rw [Fun.update_of_ne i8]
         exact congrArg Proof.X448.toFe (valN_congr (other i i8 i9))
 
 /-! ## One row -/

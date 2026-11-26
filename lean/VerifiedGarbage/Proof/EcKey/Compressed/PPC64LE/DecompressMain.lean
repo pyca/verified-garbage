@@ -116,7 +116,7 @@ theorem rhsOps_eq (c : Cfg) : fprog c.SP (Impl.EcKey.Compressed.PPC64LE.rhsOps c
 
 theorem rhsN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps rhsN e W2 = e QXM * e QXM * e QXM + e AP * e QXM + e BP := by
-  simp only [rhsN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [rhsN, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [W1, W2, W3, QXM, AP, BP, TT, SM, RM, XM, EM, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem rhsN_reads : readsOk rhsN [QXM, AP, BP] = true := by decide
@@ -177,7 +177,7 @@ theorem checkOps_eq (c : Cfg) :
 
 theorem checkN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps checkN e W3 = (e QY * e R2P) * (e QY * e R2P) - e W2 := by
-  simp only [checkN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [checkN, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [QYM, QY, R2P, W1, W2, X, RR, DM, TT, SM, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem checkN_reads : readsOk checkN [QY, R2P, W2] = true := by decide

@@ -1,5 +1,4 @@
 module
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit

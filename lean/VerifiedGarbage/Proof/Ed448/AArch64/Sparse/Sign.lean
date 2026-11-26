@@ -32,7 +32,7 @@ theorem negateSelected_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem b
     (hz:Bnd Mb s.mem base (slot 19)) (hx:Bnd Mb s.mem base (slot 6)) :
     WP isa negateSelected s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [6] s.mem t.mem ∧
-      EV t.mem base=Function.update (EV s.mem base) 6 (EV s.mem base 19-EV s.mem base 6) := by
+      EV t.mem base=Fun.update (EV s.mem base) 6 (EV s.mem base 19-EV s.mem base 6) := by
   unfold negateSelected VG.Impl.X448.AArch64.Fast.opsK VG.Impl.X448.AArch64.Fast.Op.progK
   refine WP.seq (WP.mono (subAliasE hs hb 6 19 6 hz hx)
     fun t ⟨tk,tb,ts,te⟩ => WP.block_nil ⟨tk,tb,ts,te⟩)
@@ -56,7 +56,7 @@ open VG.Proof.Curve448.AArch64.Fast (Mb)
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
 def signedEnv (negative:Bool) (e:Env) : Env :=
-  if negative then Function.update e 6 (0-e 6) else e
+  if negative then Fun.update e 6 (0-e 6) else e
 
 theorem negateIf_ok (negative:Bool) {s:State} {base:Addr} (h:Core base s)
     (hx:Bnd Mb s.mem base (slot 6))

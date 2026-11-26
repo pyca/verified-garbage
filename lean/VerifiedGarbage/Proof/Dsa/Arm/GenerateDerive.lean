@@ -20,7 +20,6 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 public import VerifiedGarbage.Proof.Dsa.Arm.GenerateCompute
 import Mathlib.Basic.Logic.Basic
-import Mathlib.Logic.Function.Basic
 
 /-! ### `Dsa.Arm.GenerateWrite`, which only this module used -/
 

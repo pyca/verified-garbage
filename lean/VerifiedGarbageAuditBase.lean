@@ -135,7 +135,6 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Data.ZMod.Defs
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Perm.Cycle.Type
-import Mathlib.Logic.Function.Basic
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Logic.Relator
 import Mathlib.Order.Basic

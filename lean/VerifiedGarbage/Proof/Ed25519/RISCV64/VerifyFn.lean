@@ -319,13 +319,13 @@ open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.Ed25519.RISCV64 VG.Proof.X25519.RISC
 open VG.Proof.X25519 (sqn)
 open VG.Proof.X448.RISCV64.R64 (clob64)
 
-def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
+def opMul (o a b : Slot) (e : Env) : Env := Fun.update e o (e a * e b)
 
-def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 /-- What the chain writes: bytes 512 to 1023 of the working space. -/
 abbrev PR (b : Addr) : Region := ⟨b + BitVec.ofNat 64 512, 512⟩
@@ -373,15 +373,15 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
     (x : Spec.X25519.Fe) (n : Nat) (hn : n < 2048) :
     ∀ m s, 1 ≤ m → m ≤ n → Rest (.t1 :: clob64) s₀ s → Frame [PR b] s₀.mem s.mem →
       s.gpr .t1 = BitVec.ofNat 64 m →
-      env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m)) →
+      env s.mem b = Fun.update (env s₀.mem b) o (sqn x (n - m)) →
       WP isa (.loop (.seq (mulP o o o) (.block [.addi .t1 .t1 (-1)])) (.nonzero .t1)) s fun t =>
         Rest (.t1 :: clob64) s₀ t ∧ Frame [PR b] s₀.mem t.mem ∧
-        env t.mem b = Function.update (env s₀.mem b) o (sqn x n) := by
+        env t.mem b = Fun.update (env s₀.mem b) o (sqn x n) := by
   intro m s h1 h2 hr hf hb he
   refine WP.loop (M := isa) (fun m (s : State) =>
     1 ≤ m ∧ m ≤ n ∧ Rest (.t1 :: clob64) s₀ s ∧ Frame [PR b] s₀.mem s.mem ∧
     s.gpr .t1 = BitVec.ofNat 64 m ∧
-    env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m))) ?_
+    env s.mem b = Fun.update (env s₀.mem b) o (sqn x (n - m))) ?_
     m s ⟨h1, h2, hr, hf, hb, he⟩
   intro m s ⟨h1, h2, hr, hf, hb, he⟩
   have hcs : Ctx b s := hc.of_rest hr (by decide)
@@ -391,9 +391,9 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
     rw [u2.gpr, r1.gpr _ (by decide), hb, ofNat_sub_one h1 (by omega_arith)]
   have k2 : Rest (.t1 :: clob64) s₀ s2 := hr.trans ((r1.mono (by decide)).trans (u2.rest (by decide)))
   have f2 : Frame [PR b] s₀.mem s2.mem := by rw [u2.mem]; exact hf.trans f1
-  have e2 : env s2.mem b = Function.update (env s₀.mem b) o (sqn x (n - (m - 1))) := by
+  have e2 : env s2.mem b = Fun.update (env s₀.mem b) o (sqn x (n - (m - 1))) := by
     rw [u2.mem, e1, he, opMul_update]
-    apply congrArg (Function.update (env s₀.mem b) o)
+    apply congrArg (Fun.update (env s₀.mem b) o)
     rw [show n - (m - 1) = (n - m) + 1 by omega_arith]
     rfl
   have hz : (s2.gpr .t1 != 0) = decide (m - 1 ≠ 0) := by rw [b2, ofNat_ne_zero (by omega_arith)]
@@ -445,7 +445,7 @@ theorem chain250S (b : Addr) : PSpec b chain250 power250Env :=
 
 theorem power250Env_eval (e : Env) :
     power250Env e 15 = (Proof.X25519.chainF (e 2)).1 ∧ power250Env e 14 = (Proof.X25519.chainF (e 2)).2 := by
-  simp only [power250Env, opMul, opSqn, Function.update_apply]
+  simp only [power250Env, opMul, opSqn, Fun.update_apply]
   simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
   exact ⟨rfl, rfl⟩
 
@@ -686,13 +686,13 @@ theorem sqnLoop_ok {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (ho : 14 ≤
     (hn' : n < 2048) :
     WP isa (sqnLoop o n) s fun t =>
       Rest (.t1 :: clob64) s t ∧ Frame [PR b] s.mem t.mem ∧
-      env t.mem b = Function.update (env s.mem b) o (sqn (env s.mem b o) n) := by
+      env t.mem b = Fun.update (env s.mem b) o (sqn (env s.mem b o) n) := by
   unfold sqnLoop
   refine WP.seq (wp_li (by omega_arith) fun s1 u1 => WP.block_nil ?_)
   refine sqLoop_ok hc o ho (env s.mem b o) n hn' n s1 hn (Nat.le_refl _) (u1.rest (by decide))
     (by rw [u1.mem]; exact Frame.refl _ _) u1.gpr ?_
   rw [u1.mem, Nat.sub_self]
-  exact (Function.update_eq_self _ _).symm
+  exact (Fun.update_eq_self _ _).symm
 
 theorem inv_exp : (2 ^ 250 - 1) * 2 ^ 5 + 11 = P - 2 := by decide
 
@@ -710,10 +710,10 @@ theorem invert_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
   refine WP.mono (mulCall_ok hc2.ctx hc2.ws 15 15 14) fun t3 ⟨k3, e3⟩ => ⟨?_, ?_, fun i hi => ?_⟩
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  · rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, e14,
+  · rw [e3, Fun.update_self, e2, Fun.update_self, Fun.update_of_ne (by decide), e15, e14,
       Proof.X25519.sqn_pw, Proof.X25519.pw_mul, inv_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
-    rw [e3, Function.update_of_ne h15, e2, Function.update_of_ne h15, ek i hi]
+    rw [e3, Fun.update_of_ne h15, e2, Fun.update_of_ne h15, ek i hi]
 
 theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
@@ -890,12 +890,12 @@ theorem rootPower_ok {s : State} (hc : Ctx8 b s) :
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])
   · have hz : env t1.mem b 2 = env s.mem b 2 := ek 2 (by decide)
-    rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, hz,
+    rw [e3, Fun.update_self, e2, Fun.update_self, Fun.update_of_ne (by decide), e15, hz,
       Proof.X25519.sqn_pw]
     conv => lhs; arg 2; rw [← Proof.X25519.pw_one (env s.mem b 2)]
     rw [Proof.X25519.pw_mul, root_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
-    rw [e3, Function.update_of_ne h15, e2, Function.update_of_ne h15, ek i hi]
+    rw [e3, Fun.update_of_ne h15, e2, Fun.update_of_ne h15, ek i hi]
 
 /-- The slots `recoverInitOps` computes from `y` in slot 1. -/
 theorem recoverInit_eval (e : Env) :
@@ -1102,7 +1102,7 @@ theorem fieldEqual_ok {s : State} (hc : Ctx b s) (hw : WS b s) (a c : Slot) :
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX, this])) (by omega_using [this]) (by omega_using [hX])
     rw [ek, e1]
   · have e21 : env s1.mem b 21 = env s.mem b a - env s.mem b c := by
-      rw [e1]; simp only [evalOps, List.foldl, evalOp, Function.update_self]
+      rw [e1]; simp only [evalOps, List.foldl, evalOp, Fun.update_self]
     rw [h2, ← fe_sub_eq_zero, ← e21, Fin.ext_iff]
     rfl
 

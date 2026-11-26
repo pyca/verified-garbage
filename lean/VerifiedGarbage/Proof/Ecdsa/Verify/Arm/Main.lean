@@ -780,7 +780,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) (
     obtain vz := I₁.val _ (hD DZ (by simp))
     show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
-    exact (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+    exact (congr (congrArg Prod.mk vx) (congr (congrArg Prod.mk vy) vz)).trans t₁
 
 /-- `Step` depends only on what the slots of `a`, `3b` and `G` stand for. -/
 theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k : Nat}

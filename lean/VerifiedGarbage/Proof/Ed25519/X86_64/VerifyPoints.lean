@@ -1503,7 +1503,7 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
   rw [windowPrep]
   -- The constant `d`.
   refine WP.seq (WP.seq (WP.mono (constFieldWide_ok hs 16 Spec.Ed25519.d) fun a ⟨ka, va⟩ => ?_))
-  obtain ad : env a.mem base 16 = Spec.Ed25519.d := by rw [va]; exact Function.update_self ..
+  obtain ad : env a.mem base 16 = Spec.Ed25519.d := by rw [va]; exact Fun.update_self ..
   obtain aA : tablePoint a.mem base 7424 = tablePoint s.mem base 7424 :=
     workspace_tablePoint ka.mem (by decide) (by decide)
   obtain aR : tablePoint a.mem base 7552 = tablePoint s.mem base 7552 :=

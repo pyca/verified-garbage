@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Formulas
 public import VerifiedGarbage.Proof.Ed448.Ref
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -36,10 +36,10 @@ instance (op : FOp) : Decidable (fopValid op) := by cases op <;> unfold fopValid
 
 /-- The slots after an operation. -/
 def evalOp : FOp → (Fin 22 → Fe) → Fin 22 → Fe
-  | .mul o a b, e => Function.update e (idx o) (e (idx a) * e (idx b))
-  | .sqr o a, e => Function.update e (idx o) (e (idx a) * e (idx a))
-  | .add o a b, e => Function.update e (idx o) (e (idx a) + e (idx b))
-  | .sub o a b, e => Function.update e (idx o) (e (idx a) - e (idx b))
+  | .mul o a b, e => Fun.update e (idx o) (e (idx a) * e (idx b))
+  | .sqr o a, e => Fun.update e (idx o) (e (idx a) * e (idx a))
+  | .add o a b, e => Fun.update e (idx o) (e (idx a) + e (idx b))
+  | .sub o a b, e => Fun.update e (idx o) (e (idx a) - e (idx b))
 
 def evalOps (ops : List FOp) (e : Fin 22 → Fe) : Fin 22 → Fe := ops.foldl (fun e op => evalOp op e) e
 
@@ -77,7 +77,7 @@ theorem evalOps_keep (ops : List FOp) (e : Fin 22 → Fe) (i : Fin 22)
     rw [ih _ fun o h => hi o (List.mem_cons_of_mem _ h)]
     have h := hi op List.mem_cons_self
     have hne : i ≠ idx (fopDest op) := fun h' => h (by rw [h']; rfl)
-    cases op <;> simp only [evalOp] <;> exact Function.update_of_ne hne _ _
+    cases op <;> simp only [evalOp] <;> exact Fun.update_of_ne hne _ _
 
 theorem doubleOps_keep (e : Fin 22 → Fe) (i : Fin 22) (hi : 3 ≤ i.val ∧ i.val < 12 ∨ i.val = 20 ∨ i.val = 21) :
     evalOps doubleOps e i = e i :=

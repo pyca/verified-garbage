@@ -130,7 +130,7 @@ def copies (l : List (Nat × Nat)) : List Instr := l.flatMap fun p => copy 4 p.1
 /-- The environment after the copies `l`. -/
 def copiesEnv {F : Type _} : List (Nat × Nat) → (Nat → F) → Nat → F
   | [], E => E
-  | p :: l, E => copiesEnv l (Function.update E p.1 (E p.2))
+  | p :: l, E => copiesEnv l (Fun.update E p.1 (E p.2))
 
 /-- The live slots after the copies `l` from the live slots `V`. -/
 def copiesV : List (Nat × Nat) → List Nat → List Nat
@@ -608,7 +608,7 @@ theorem copiesEnv_keep {F : Type _} : ∀ (l : List (Nat × Nat)) (E : Nat → F
   | [], _, _, _ => rfl
   | p :: l, E, x, hx => by
     simp only [List.map_cons,List.mem_cons,not_or] at hx
-    rw [copiesEnv,copiesEnv_keep l _ hx.2,Function.update_of_ne hx.1]
+    rw [copiesEnv,copiesEnv_keep l _ hx.2,Fun.update_of_ne hx.1]
 
 /-- The co-Z state after `k` steps: `D = 2Q` and `E = (2k+1)Q` at one `Z`,
 its powers, and the first `k+1` entries. -/
@@ -761,7 +761,7 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
     intro j hj
     have : j=0∨j=1∨j=2∨j=3∨j=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;>
-      simp only [copiesEnv,l1,src,Function.update_apply,Nat.reduceEqDiff,Nat.reduceLT,↓reduceIte,
+      simp only [copiesEnv,l1,src,Fun.update_apply,Nat.reduceEqDiff,Nat.reduceLT,↓reduceIte,
         Nat.reduceMul,Nat.reduceAdd,Nat.reduceSub,List.getD_cons_zero,List.getD_cons_succ]
   obtain ⟨hT,h11,h12,h5,h4⟩ := Proof.P256.EcdhJac.dbluN_run (fun j => startEnv E (tblσ j))
     (st 224 (by decide) |>.trans h1)
@@ -784,16 +784,16 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
   -- After the swap.
   obtain sw : ∀ x,dbluEnv E x=copiesEnv l2 (runOps (ops true) (startEnv E)) x := fun _ => rfl
   obtain w0 : dbluEnv E 608=r 8 := by
-    rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
+    rw [sw]; simp only [copiesEnv,l2,Fun.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 8 (by decide)
   obtain w1 : dbluEnv E 640=r 9 := by
-    rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
+    rw [sw]; simp only [copiesEnv,l2,Fun.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 9 (by decide)
   obtain w8 : dbluEnv E 704=r 5 := by
-    rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
+    rw [sw]; simp only [copiesEnv,l2,Fun.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 5 (by decide)
   obtain w9 : dbluEnv E 736=r 4 := by
-    rw [sw]; simp only [copiesEnv,l2,Function.update_apply,Nat.reduceEqDiff,↓reduceIte]
+    rw [sw]; simp only [copiesEnv,l2,Fun.update_apply,Nat.reduceEqDiff,↓reduceIte]
     exact g 4 (by decide)
   have wk (x : Nat) (hx : x∉l2.map Prod.fst) : dbluEnv E x=runOps (ops true) (startEnv E) x :=
     copiesEnv_keep _ _ hx

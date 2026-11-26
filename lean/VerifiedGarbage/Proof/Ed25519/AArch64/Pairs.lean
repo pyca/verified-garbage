@@ -297,7 +297,7 @@ theorem Put.zero {base : Addr} {o : Slot} {s t : State} (h : Put base o s t) (hz
     t.gpr .x10 = 0 := (h.gpr _ (by decide)).trans hz
 
 theorem Put.env {base : Addr} {o : Slot} {s t : State} (h : Put base o s t) :
-    env t.mem base = Function.update (env s.mem base) o (F t.mem base (offset o)) := env_update o h.mem
+    env t.mem base = Fun.update (env s.mem base) o (F t.mem base (offset o)) := env_update o h.mem
 
 theorem Put.fe {base : Addr} {o i : Slot} {s t : State} (h : Put base o s t) (hi : i ≠ o) :
     fe t.mem base (offset i) = fe s.mem base (offset i) := by

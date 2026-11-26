@@ -91,11 +91,11 @@ def env (m : Mem) (base : BitVec 32) : Env := fun i => F m base (offset i)
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b => Function.update e o (e a * e b)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b => Fun.update e o (e a * e b)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -119,20 +119,20 @@ theorem offset_inj {a b : Slot} (h : offset a = offset b) : a = b := by
   omega_using [h]
 
 theorem restrict_update (e : Nat → Spec.X25519.Fe) (o : Slot) (v : Spec.X25519.Fe) :
-    (fun i : Slot => Function.update e (offset o) v (offset i)) =
-      Function.update (fun i : Slot => e (offset i)) o v := by
+    (fun i : Slot => Fun.update e (offset o) v (offset i)) =
+      Fun.update (fun i : Slot => e (offset i)) o v := by
   funext i
   by_cases hi : i = o
-  · subst i; rw [Function.update_self, Function.update_self]
-  · rw [Function.update_of_ne hi, Function.update_of_ne (fun h => hi (offset_inj h))]
+  · subst i; rw [Fun.update_self, Fun.update_self]
+  · rw [Fun.update_of_ne hi, Fun.update_of_ne (fun h => hi (offset_inj h))]
 
 theorem const_env {x : BitVec 32} {m m' : Mem} (hx : x.toNat + 8192 ≤ 2 ^ 32) (o : Slot)
     (hf : Frame [sub x (offset o) 32] m m') :
-    env m' x = Function.update (env m x) o (F m' x (offset o)) := by
+    env m' x = Fun.update (env m x) o (F m' x (offset o)) := by
   funext i
   by_cases hi : i = o
-  · subst i; rw [Function.update_self]; rfl
-  · rw [Function.update_of_ne hi]
+  · subst i; rw [Fun.update_self]; rfl
+  · rw [Fun.update_of_ne hi]
     apply congrArg VG.Proof.X25519.toFe
     exact fe_frame1 hf hx (by simp only [offset]; omega_using [])
       (by simp only [offset]; omega_using []) (slot_ne (slot_valid o) (slot_valid i) (fun h => hi (offset_inj h)))
@@ -140,12 +140,12 @@ theorem const_env {x : BitVec 32} {m m' : Mem} (hx : x.toNat + 8192 ≤ 2 ^ 32) 
 theorem raw_field_ok {s : State} {x : BitVec 32} (hc : Ctx x s c) (op : Op)
     (hv : opValid 64 op = true) (o : Slot) (ho : opOut op = offset o) :
     WP isa (.block op.code) s fun t => FieldKeep x s t ∧
-      env t.mem x = Function.update (env s.mem x) o (opVal op (F s.mem x)) := by
+      env t.mem x = Fun.update (env s.mem x) o (opVal op (F s.mem x)) := by
   refine WP.mono (op_ok hc op hv) fun t ⟨hk, hf, he⟩ => ?_
   refine ⟨⟨hk, hf⟩, ?_⟩
   have hr := restrict_update (F s.mem x) o (opVal op (F s.mem x))
   funext i
-  change F t.mem x (offset i) = Function.update (fun j => F s.mem x (offset j)) o (opVal op (F s.mem x)) i
+  change F t.mem x (offset i) = Fun.update (fun j => F s.mem x (offset j)) o (opVal op (F s.mem x)) i
   rw [← congrFun hr i]
   exact (he (offset i) (slot_valid i)).trans (by rw [ho])
 

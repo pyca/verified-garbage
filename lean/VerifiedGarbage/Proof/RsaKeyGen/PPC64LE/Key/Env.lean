@@ -213,7 +213,7 @@ end
 `KS m B w V F`: the arrays hold `V` (`num m B w j = V j` for every array
 `j`), the flag slots `X0`–`X8` hold `F`, and the extra digit of the
 divisor's array `aDv` is 0. The key routines, restated on `KS`: each
-updates `V` or `F` (`Function.update`) and keeps the frame of the body
+updates `V` or `F` (`Fun.update`) and keeps the frame of the body
 (`KK`: memory but the arrays and the slots) and the registers but
 `opsRegs`.
 -/

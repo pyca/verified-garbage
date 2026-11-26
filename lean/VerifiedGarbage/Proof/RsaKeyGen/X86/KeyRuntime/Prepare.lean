@@ -23,7 +23,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 import Mathlib.Data.Nat.Init
-import Mathlib.Logic.Function.Basic
 import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic

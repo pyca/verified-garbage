@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.WordConst
 import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
@@ -285,7 +284,7 @@ theorem checkZero_ok {s : State} {base : Addr} {size n a flag : Nat}
     refine WP.mono (andFlag_ok flag (hs.of_keeps Kv (by decide)) hf) fun t ⟨Vt, Kt, Ot⟩ => ?_
     refine ⟨?_, (Kv.mono (by decide)).widen Kt, ?_⟩
     · rw [Vt, uv.gpr, Vu]
-      simp only [reduceCtorEq, ite_false, mask_not, ne_eq, not_not, flagW, uv.mem, Mu]
+      simp only [reduceCtorEq, ite_false, mask_not, ne_eq, Classical.not_not, flagW, uv.mem, Mu]
     · rw [uv.mem, Mu] at Ot
       exact Ot
 

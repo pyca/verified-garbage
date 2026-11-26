@@ -739,7 +739,7 @@ theorem slotFrom_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv
     (hbq : Bounded s.mem base q) :
     WP isa (.block (fromEntry (slot o.val) a)) s fun t =>
       Keep base s t ∧ Keeps [.r3] s t ∧ BoundedEnv t.mem base ∧
-      E t.mem base = Function.update (E s.mem base) o (F s.mem base q) := by
+      E t.mem base = Fun.update (E s.mem base) o (F s.mem base q) := by
   refine WP.mono (fromEntry_ok hs (Nat.le_trans (slot_bound o) (by decide)) ha hq1 hq2 hea)
     fun t ⟨tf, tm, tk⟩ => ?_
   have op : Op base (slot o.val) s t := ⟨tk.mono (by decide), FieldMem.output tm⟩
@@ -884,7 +884,7 @@ theorem ventryLoad_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
     (he : EntryOk base s.mem ((d - 1) / 2) p) :
     WP isa (.block ventryLoad) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧
-      E t.mem base = Function.update (Function.update (Function.update (E s.mem base) 6 p.X) 7 p.Y) 1 p.Z := by
+      E t.mem base = Fun.update (Fun.update (Fun.update (E s.mem base) 6 p.X) 7 p.Y) 1 p.Z := by
   have hT : VTAB = 4096 := rfl
   obtain ⟨j, hj⟩ : ∃ j, (d - 1) / 2 = j := ⟨_, rfl⟩
   obtain hj8 : j < 8 := by omega_using [hd, hj]
@@ -1115,7 +1115,7 @@ variable {fv : Bool}
 /-- The slots after the point `p` is put in slots 6, 7 and 1 and added, made if `nz`. -/
 def entEnv (p : Spec.Ed448.Point) : Bool → Env → Env
   | true, e => applyOps (addF 6 7 1 ++ takeF)
-      (Function.update (Function.update (Function.update e 6 p.X) 7 p.Y) 1 p.Z)
+      (Fun.update (Fun.update (Fun.update e 6 p.X) 7 p.Y) 1 p.Z)
   | false, e => e
 
 /-- The slots after the comb's entry `i` is selected and added, in a row of the comb. -/
@@ -1134,9 +1134,9 @@ theorem entEnv_keep (p : Spec.Ed448.Point) (nz : Bool) (e : Env) (i : Index) (hi
   cases nz
   · rfl
   · rw [entEnv, addTake_keep _ _ _ _ _ (Or.inr (by omega_using [hi])),
-      Function.update_of_ne (fun h => by subst h; omega_arith),
-      Function.update_of_ne (fun h => by subst h; omega_arith),
-      Function.update_of_ne (fun h => by subst h; omega_arith)]
+      Fun.update_of_ne (fun h => by subst h; omega_arith),
+      Fun.update_of_ne (fun h => by subst h; omega_arith),
+      Fun.update_of_ne (fun h => by subst h; omega_arith)]
 
 /-- The comb's addition keeps 1 and `d`. -/
 theorem combEnv_keep (i : Nat) (row : Bool) (e : Env) (j : Index) (hj : j.val = 10 ∨ j.val = 11) :
@@ -1146,7 +1146,7 @@ theorem combEnv_keep (i : Nat) (row : Bool) (e : Env) (j : Index) (hj : j.val = 
   · have h8 : j ≠ 8 := fun h => by subst h; omega_arith
     have h9 : j ≠ 9 := fun h => by subst h; omega_arith
     rw [combEnv, addTake_keep _ _ _ _ _ (Or.inr (by omega_using [hj])), selEnv,
-      Function.update_of_ne h9, Function.update_of_ne h8]
+      Fun.update_of_ne h9, Fun.update_of_ne h8]
 
 theorem combEnv_pt (i : Nat) (row : Bool) (e : Env) :
     pt (combEnv i row e) 0 21 2 =
@@ -1617,9 +1617,9 @@ theorem vstart_ok {s : State} {base sq : Addr} (hs : Scr s base)
   obtain hsw := hsv.of_keeps kw (by decide)
   refine WP.mono (copyE3 hsw (initSlots_bounded lw) 21 1) fun t ⟨kt, k3, bt, et⟩ => ?_
   obtain ev : ∀ i : Index, i ≠ 21 → E t.mem base i = Proof.X448.toFe (initVal i.val) := fun i hi => by
-    rw [et, opCopy, Function.update_of_ne hi, initSlots_E lw i]
+    rw [et, opCopy, Fun.update_of_ne hi, initSlots_E lw i]
   obtain e21 : E t.mem base 21 = Proof.X448.toFe (initVal 1) := by
-    rw [et, opCopy, Function.update_self, initSlots_E lw 1]; rfl
+    rw [et, opCopy, Fun.update_self, initSlots_E lw 1]; rfl
   refine ⟨⟨?_, ?_⟩, ?_, bt, ?_, ?_, ?_, ?_, ?_⟩
   · refine (rest_keeps (hu.rest (ws := .r10 :: .r11 :: workRegs) (by decide))).trans
       ((kv.mono ?_).trans ((kw.mono ?_).trans (kt.regs.mono ?_))) <;> decide
@@ -1839,7 +1839,7 @@ theorem vbefore_ok (hR : RecoverOk) {s : State} (h : VerifyPre s) {base pk sig c
   refine WP.mono (ops_ok hs4 b4 [.sub 6 0 6]) fun s5 ⟨k5, b5, e5⟩ => ?_
   obtain hs5 := k5.scr hs4
   obtain k5' : ∀ i : Index, i ≠ 6 → E s5.mem base i = E s4.mem base i := fun i hi => by
-    rw [e5]; exact Function.update_of_ne hi _ _
+    rw [e5]; exact Fun.update_of_ne hi _ _
   obtain k43 : ∀ i : Index, i.val = 0 ∨ i.val = 2 ∨ (8 ≤ i.val ∧ i.val ≤ 11) ∨ i.val = 21 →
       E s5.mem base i = E s3.mem base i := fun i hi => by
     rw [k5' i (fun h => by subst h; omega_using [hi]), e4 i (fun h => by subst h; omega_using [hi]) (fun h => by subst h; omega_using [hi])
@@ -1933,7 +1933,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqCombOk) {s : State} (
     · exact st 7 (by decide)
     · rw [lt, lr7]
   · rw [rt, hpk, hsig, hch]
-    refine if_congr ?_ rfl rfl
+    refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)
     rw [z7.1]
     cases ha : Spec.Ed448.decodePoint (bytesAt s.mem pk 57) with
     | none =>

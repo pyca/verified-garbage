@@ -16,7 +16,7 @@ def fieldDest : FieldOp → Slot
 
 theorem evalOp_unchanged (op : FieldOp) (e : Env) (i : Slot) (hi : i ≠ fieldDest op) :
     evalOp op e i = e i := by
-  cases op <;> exact Function.update_of_ne hi _ _
+  cases op <;> exact Fun.update_of_ne hi _ _
 
 theorem evalOps_unchanged (ops : List FieldOp) (e : Env) (i : Slot)
     (hi : ∀ op ∈ ops, i ≠ fieldDest op) : evalOps ops e i = e i := by

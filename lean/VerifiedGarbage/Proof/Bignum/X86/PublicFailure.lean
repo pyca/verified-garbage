@@ -1,5 +1,4 @@
 module
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract

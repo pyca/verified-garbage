@@ -438,7 +438,7 @@ theorem env_copyPointToQ (e : Env) : point (evalOps copyPointToQOps e) 4 5 6 7 =
     point (evalOps copyPointToQOps e) 0 1 2 3 = point e 0 1 2 3 ∧
     ∀ i : Slot, 8 ≤ i.val → evalOps copyPointToQOps e i = e i := by
   refine ⟨rfl, rfl, fun i hi => ?_⟩
-  simp only [evalOps, copyPointToQOps, List.foldl, evalOp, Function.update_apply]
+  simp only [evalOps, copyPointToQOps, List.foldl, evalOp, Fun.update_apply]
   obtain h4 : i ≠ 4 := fun h => by subst h; exact absurd hi (by decide)
   obtain h5 : i ≠ 5 := fun h => by subst h; exact absurd hi (by decide)
   obtain h6 : i ≠ 6 := fun h => by subst h; exact absurd hi (by decide)

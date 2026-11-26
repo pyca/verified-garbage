@@ -282,7 +282,7 @@ theorem entry_ok {C : Curve} {base : Addr} {size u v j : Nat}
     have vy := it.val
     have same (x : Nat) (hx : x∈entryLive (jointLive cfg)) (hn : x≠K.E.y) :
         tmv C K.M.n base t x=tmv C K.M.n base e x := by
-      exact (vy x hx).trans (Function.update_of_ne hn _ _)
+      exact (vy x hx).trans (Fun.update_of_ne hn _ _)
     refine ⟨kpe.trans (kt.mono (by simp [entryWrites])),it.to_tmv,?_,?_,?_⟩
     · rw [hn]; exact it.point_tmv (fun x hx => by
         simp only [entryLive,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind) jt
@@ -398,7 +398,7 @@ theorem allocatedCachedDigit_ok {C : Curve} {base : Addr} {size u v j : Nat}
       hExt cb b19 b2) fun d ⟨⟨kd,id,jd,d2,d3⟩,cd⟩ => ?_
     exact WP.mono (hsum hA (FastNaf.onCurve_point hC hQ 5 v j) cd id jd d2 d3)
       fun t ⟨kt,ct⟩ => ⟨(AllocatedFrame.of_prog (kp.trans (kd.mono entry_work)) hregs hcover).trans kt,ct⟩
-  · have hm0 : FastNaf.magnitude 5 v j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+  · have hm0 : FastNaf.magnitude 5 v j=0 := by simpa only [ne_eq,Classical.not_not] using of_decide_eq_false hz
     have hp : FastNaf.point C Q 5 v j=.infinity := by
       unfold FastNaf.point
       rw [hm0,Spec.Weierstrass.mul]
@@ -469,7 +469,7 @@ theorem allocatedJointFixedDigit_ok
       fun b ⟨kb,cb,ib,jb,zb⟩ => ?_
     exact WP.mono (hsum hA (FastNaf.onCurve_point hC hG c.gw u j) cb ib jb zb)
       fun t ⟨kt,ct⟩ => ⟨(AllocatedFrame.of_prog (kp.trans kb) hregs hcover).trans kt,ct⟩
-  · have hm0 : FastNaf.magnitude c.gw u j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+  · have hm0 : FastNaf.magnitude c.gw u j=0 := by simpa only [ne_eq,Classical.not_not] using of_decide_eq_false hz
     have hp : FastNaf.point C G c.gw u j=.infinity := by
       rw [FastNaf.point,hm0]
       have h0 : mul 0 G=.infinity := by rw [Spec.Weierstrass.mul]; rfl

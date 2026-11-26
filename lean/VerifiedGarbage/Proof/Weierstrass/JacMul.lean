@@ -24,7 +24,7 @@ theorem dblJChoice_eq (direct : Bool) (S : RcbSlots) (p o : Pt) :
 theorem dblJMulN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJMulN e 6, runOps dblJMulN e 7, runOps dblJMulN e 8) =
       dblJF (e 11) (e 12) (e 13) := by
-  dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblJF, Prod.mk.injEq]
   constructor
   · grind
@@ -51,7 +51,7 @@ theorem dblJSChoice_eq (direct : Bool) (S : RcbSlots) (p o : Pt) :
 theorem dblJSN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJSN e 6, runOps dblJSN e 7, runOps dblJSN e 8) =
       dblJF (e 11) (e 12) (e 13) := by
-  dsimp only [dblJSN, dblJS, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJSN, dblJS, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblJF, Prod.mk.injEq]
   constructor
   · grind

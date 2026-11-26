@@ -217,7 +217,7 @@ theorem choose_ok {s : State} {base : Addr} (hs : Scr s base) {x y : Nat} (hx : 
 
 /-- Two selections, by the same flag. -/
 def opSel (o x x' p y y' : Fin 128) (z : Bool) (e : Env) : Env :=
-  Function.update (Function.update e o (if z then e x else e x')) p (if z then e y else e y')
+  Fun.update (Fun.update e o (if z then e x else e x')) p (if z then e y else e y')
 
 theorem choose2E {s : State} {base : Addr} (hs : Scr s base) (o x x' p y y' : Fin 128) (ho : LSlot o)
     (hp : LSlot p) (hop : o ≠ p) {z : Bool} (hz : s.zf = some z) :
@@ -378,30 +378,30 @@ theorem envIter_x2 (z : Bool) (e : Env) : envIter z e 3 =
     let b := if z then e 3 - e 4 else e 5 - e 6
     a * a * (b * b) := by
   simp only [envIter, env1, env2, opSel, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem envIter_z2 (z : Bool) (e : Env) : envIter z e 4 =
     let a := if z then e 3 + e 4 else e 5 + e 6
     let b := if z then e 3 - e 4 else e 5 - e 6
     (a * a - b * b) * (a * a + Spec.X25519.a24 * (a * a - b * b)) := by
   simp only [envIter, env1, env2, opSel, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem envIter_x3 (z : Bool) (e : Env) : envIter z e 5 =
     ((e 5 - e 6) * (e 3 + e 4) + (e 5 + e 6) * (e 3 - e 4)) *
       ((e 5 - e 6) * (e 3 + e 4) + (e 5 + e 6) * (e 3 - e 4)) := by
   simp only [envIter, env1, env2, opSel, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem envIter_z3 (z : Bool) (e : Env) : envIter z e 6 =
     e 2 * (((e 5 - e 6) * (e 3 + e 4) - (e 5 + e 6) * (e 3 - e 4)) *
       ((e 5 - e 6) * (e 3 + e 4) - (e 5 + e 6) * (e 3 - e 4))) := by
   simp only [envIter, env1, env2, opSel, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem envIter_x1 (z : Bool) (e : Env) : envIter z e 2 = e 2 := by
   simp only [envIter, env1, env2, opSel, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 /-- The ladder's variables are in their slots. -/
 structure Holds (u : Fe) (e : Env) (st : Spec.X25519.Ladder) : Prop where
@@ -603,11 +603,11 @@ def envDouble (e : Env) : Env :=
 
 theorem envDouble_x (e : Env) : envDouble e 3 = dblX (e 3) (e 4) := by
   simp only [envDouble, dblX, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem envDouble_z (e : Env) : envDouble e 4 = dblZ (e 3) (e 4) := by
   simp only [envDouble, dblZ, opMul, opAdd, opSub, opA24Add,
-    Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    Fun.update_apply, Fin.reduceEq, ↓reduceIte]
 
 theorem double_ok (hf : FieldOk fld) (h : Run base s₀ s e [4]) :
     WP isa (.block (double fld)) s fun s' => Run base s₀ s' (envDouble e) [4] := by
@@ -758,10 +758,10 @@ theorem ladderPoint_ok {k : Nat} {u : Fe} (hbits : s₀.mem (off base (BITS + 3)
   refine WP.mono (movRbx_ok s₂ 3) fun s₃ ⟨b₃, k₃⟩ => ⟨(h.toRest.keep (K₁.trans K₂)).count k₃, b₃, ?_, ?_, ?_⟩
   · change _ = (Spec.X25519.cswap _ _ _).1
     rw [k₃.2.1, e₂, k₁.2.1, ← cswap_test hk, ← h.holds.x2, ← h.holds.x3]
-    simp only [opSel, Function.update_apply, Fin.reduceEq, ↓reduceIte]
+    simp only [opSel, Fun.update_apply, Fin.reduceEq, ↓reduceIte]
   · change _ = (Spec.X25519.cswap _ _ _).1
     rw [k₃.2.1, e₂, k₁.2.1, ← cswap_test hk, ← h.holds.z2, ← h.holds.z3]
-    simp only [opSel, Function.update_apply, ↓reduceIte]
+    simp only [opSel, Fun.update_apply, ↓reduceIte]
   · rw [k₃.2.1]
     refine Nat.le_trans (Nat.le_of_eq f₂) ?_
     rw [k₁.2.1]

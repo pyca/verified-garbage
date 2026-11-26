@@ -270,7 +270,7 @@ theorem tail_ok {lad inv : Prog isa}
     rw [← toFe_val]
     change (E s₇.mem base 1).val = _
     rw [e₇]
-    simp only [opMul, Function.update_self]
+    simp only [opMul, Fun.update_self]
     rw [E_outside o₆ 1 (by decide), e1₅, e₆, e2₅]
 
 include hf in

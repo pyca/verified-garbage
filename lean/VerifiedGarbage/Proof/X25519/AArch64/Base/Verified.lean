@@ -198,7 +198,7 @@ theorem clampNibbles_ok {s : State} {base : Addr} (hs : Scr s base) {S : Nat} (h
 
 theorem uOps_eval (e : Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
-  simp [uOps, evalOps, evalOp, Function.update]
+  simp [uOps, evalOps, evalOp, Fun.update]
 
 theorem uEncode_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa uEncode s fun t => CounterKeep base s t ∧

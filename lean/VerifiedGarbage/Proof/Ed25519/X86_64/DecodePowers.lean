@@ -687,12 +687,12 @@ theorem RSpec.ops (base : Addr) (ops : List FieldOp) :
 
 /-- Slots `o` and `o'` set to `v` and `v'`. -/
 abbrev upd2 (e : Env) (o o' : Slot) (v v' : Spec.X25519.Fe) : Env :=
-  Function.update (Function.update e o v) o' v'
+  Fun.update (Fun.update e o v) o' v'
 
 theorem sq2_eval (e : Env) {o o' : Slot} (ho : o ≠ o') (v v' : Spec.X25519.Fe) :
     evalOps [.sqr o o, .sqr o' o'] (upd2 e o o' v v') = upd2 e o o' (v * v) (v' * v') := by
   funext i
-  simp only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, Function.update_apply, ↓reduceIte,
+  simp only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, Fun.update_apply, ↓reduceIte,
     ho, Ne.symm ho]
   by_cases h₁ : i = o' <;> simp only [h₁, ↓reduceIte]
   by_cases h₂ : i = o <;> simp only [h₂, ↓reduceIte]
@@ -700,7 +700,7 @@ theorem sq2_eval (e : Env) {o o' : Slot} (ho : o ≠ o') (v v' : Spec.X25519.Fe)
 theorem sq2_first (e : Env) {o a o' a' : Slot} (ha : o ≠ a') :
     evalOps [.sqr o a, .sqr o' a'] e = upd2 e o o' (sqn (e a) 1) (sqn (e a') 1) := by
   funext i
-  simp only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, Function.update_apply, ↓reduceIte,
+  simp only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, Fun.update_apply, ↓reduceIte,
     Ne.symm ha]
   rfl
 
@@ -821,7 +821,7 @@ theorem step_env (e : Env) (n : Nat) (u v : Bool) :
       (e₄ 19, e₄ 21) = stepVals (n, u, v) (e 19, e 21) ∧ e₄ 2 = e 2 ∧ e₄ 3 = e 3 := by
   cases u <;> cases v <;>
     simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
-      Function.update_apply, stepVals, Bool.false_eq_true, ↓reduceIte, and_self]
+      Fun.update_apply, stepVals, Bool.false_eq_true, ↓reduceIte, and_self]
 
 theorem chainVals_succ (p : Spec.X25519.Fe × Spec.X25519.Fe) {j : Nat} (hj : j < 7) :
     chainVals p (j + 1) = stepVals (rootSteps.getD j (0, false, false)) (chainVals p j) := by
@@ -910,7 +910,7 @@ theorem rootStep_ok {s₁ s : State} {base : Addr} (hs₁ : Scratch s₁ base) {
   have k₄ : RbxKeep base s₄ s₄ := ⟨fun _ _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _⟩
   refine WP.seq (WP.mono (sqLoop_ok (fld := fld) hs₄ (o := 15) (o' := 19) (by decide)
     (env s₄.mem base 15) (env s₄.mem base 19) n fn2 n s₄ fn1 (Nat.le_refl _) k₄ b₄ (fun _ _ => rfl)
-    (by rw [Nat.sub_self]; simp only [upd2, sqn, Function.update_eq_self]))
+    (by rw [Nat.sub_self]; simp only [upd2, sqn, Fun.update_eq_self]))
     fun s₅ ⟨k₅, f₅, e₅⟩ => ?_)
   have hs₅ := k₅.scratch hs₄
   -- The products, and `test rsi, 256`.
@@ -985,7 +985,7 @@ theorem chain_rootPower (e : Env) (b b' : Spec.X25519.Fe) :
     sqn (chainVals (e₃ 15, b) 7).1 2 * e₃ 2 = VG.Proof.Ed25519.rootPower (e 2) ∧
       sqn (chainVals (e₃ 19, b') 7).1 2 * e₃ 3 = VG.Proof.Ed25519.rootPower (e 3) := by
   simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, evalOp,
-    Function.update_apply, ↓reduceIte, chainVals, rootSteps, List.take, List.foldl, stepVals]
+    Fun.update_apply, ↓reduceIte, chainVals, rootSteps, List.take, List.foldl, stepVals]
   exact ⟨rfl, rfl⟩
 
 /-- `rootPowerLoop2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3)
@@ -1071,13 +1071,13 @@ theorem rootPowerLoop2_ok {s : State} {base : Addr} (hs : Scratch s base) :
     rw [← VG.Proof.Ed25519.rootPower_eq, ← (chain_rootPower (env s.mem base) (env s₃.mem base 17)
       (env s₃.mem base 21)).1, ← e₁, ← e₂, ← e₃, ← hl, ← I₅.x2, ← m₆, e₈, e₇]
     simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
-      Function.update_apply, ↓reduceIte]
+      Fun.update_apply, ↓reduceIte]
   · have hl : env s₅.mem base 19 = (chainVals (env s₃.mem base 19, env s₃.mem base 21) 7).1 :=
       congrArg Prod.fst I₅.lane'
     rw [← VG.Proof.Ed25519.rootPower_eq, ← (chain_rootPower (env s.mem base) (env s₃.mem base 17)
       (env s₃.mem base 21)).2, ← e₁, ← e₂, ← e₃, ← hl, ← I₅.x3, ← m₆, e₈, e₇]
     simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
-      Function.update_apply, ↓reduceIte]
+      Fun.update_apply, ↓reduceIte]
 
 theorem rootPowerUnrolled2_spec (base : Addr) :
     ∃ f, RSpec base (rootPowerUnrolled2 fld) f ∧ ∀ e, f e 15 = VG.Proof.Ed25519.rootPower (e 2) ∧
@@ -1094,7 +1094,7 @@ theorem rootPowerUnrolled2_spec (base : Addr) :
     fun e => ⟨?_, ?_⟩⟩
   all_goals
     dsimp only [Fin.isValue, Fin.reduceEq, ↓reduceIte, upd2, evalOps, List.foldl_cons, List.foldl_nil,
-      evalOp, Function.update_apply]
+      evalOp, Fun.update_apply]
     rfl
 
 /-- `rootPowerUnrolled2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into
@@ -1159,7 +1159,7 @@ theorem decodeInput_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp : s
     (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) (o : Slot) :
     WP isa (.block (decodeInput fld o)) s fun t => Keep base s t ∧
       env t.mem base = evalOps (rootInputOps o)
-        (Function.update (env s.mem base) 1 (decodedY (Spec.Ed25519.bytesAt s.mem p 32))) := by
+        (Fun.update (env s.mem base) 1 (decodedY (Spec.Ed25519.bytesAt s.mem p 32))) := by
   rw [decodeInput, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loadY_ok s p hp hr) fun a ⟨av, ka⟩ => ?_
   rw [WP.block_append_iff]
@@ -1168,9 +1168,9 @@ theorem decodeInput_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp : s
   have bo : Outside base (offset 1) 32 a.mem b.mem := by
     rw [bm]; exact st4_outside _ _ (by decide) _ _ _ _
   have be : env b.mem base =
-      Function.update (env s.mem base) 1 (decodedY (Spec.Ed25519.bytesAt s.mem p 32)) := by
+      Fun.update (env s.mem base) 1 (decodedY (Spec.Ed25519.bytesAt s.mem p 32)) := by
     rw [env_update 1 bo, ka.2.1]
-    refine congrArg (Function.update (env s.mem base) 1) ?_
+    refine congrArg (Fun.update (env s.mem base) 1) ?_
     rw [F, bm, fe_st4 _ _ (by decide), av]
     rfl
   have kab : Keep base s b :=
@@ -1222,7 +1222,7 @@ theorem powerSave_ok {s : State} {base : Addr} (hs : Scratch s base) :
 /-- Byte 7680 back to slot 15. -/
 theorem powerRestore_ok {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (.block powerRestore) s fun t => Keep base s t ∧
-      env t.mem base = Function.update (env s.mem base) 15 (F s.mem base 7680) := by
+      env t.mem base = Fun.update (env s.mem base) 15 (F s.mem base 7680) := by
   rw [powerRestore, List.append_assoc, WP.block_append_iff]
   refine WP.mono (movRaxRdi_ok s) fun a ⟨ap, ka⟩ => ?_
   have has : Scratch a base := hs.of_keeps ka (by decide)
@@ -1240,7 +1240,7 @@ theorem powerRestore_ok {s : State} {base : Addr} (hs : Scratch s base) :
     trd.trans (kb.2.2.1.trans ka.2.2.1), twr.trans (kb.2.2.2.trans ka.2.2.2),
     sm ▸ hto.mono (by decide) (by decide)⟩, ?_⟩
   rw [env_update 15 hto, sm]
-  refine congrArg (Function.update (env s.mem base) 15) ?_
+  refine congrArg (Fun.update (env s.mem base) 15) ?_
   rw [F, F, tm, fe_st4 _ _ (by decide), bv, Nat.zero_add, ka.2.1]
 
 /-- Both powers: A's into slot 15 and R's into byte 7680. -/
@@ -1274,11 +1274,11 @@ theorem decodePowers_ok {s : State} {base pk sig challenge : Addr}
     verifyKeep_bytes ((kap.trans kbp).trans kcp) h.pkFar
   have d2 : env d.mem base 2 = rootU (decodedY (Spec.Ed25519.bytesAt s.mem pk 32)) *
       Spec.X25519.pow (rootV (decodedY (Spec.Ed25519.bytesAt s.mem pk 32))) 7 := by
-    rw [vd, (rootInput2_eval _).1, Function.update_self, bpk]
+    rw [vd, (rootInput2_eval _).1, Fun.update_self, bpk]
   have d3 : env d.mem base 3 = rootU (decodedY (Spec.Ed25519.bytesAt s.mem sig 32)) *
       Spec.X25519.pow (rootV (decodedY (Spec.Ed25519.bytesAt s.mem sig 32))) 7 := by
-    rw [vd, (rootInput2_eval _).2, Function.update_of_ne (by decide), kc.2.1, vb, rootInput3_eval,
-      Function.update_self, bsig]
+    rw [vd, (rootInput2_eval _).2, Fun.update_of_ne (by decide), kc.2.1, vb, rootInput3_eval,
+      Fun.update_self, bsig]
   refine ⟨(((((kap.trans kbp).trans kcp).trans kdp).trans kep).trans ktp), ?_, ?_⟩
   · rw [tv, e15, d2]; rfl
   · rw [tf, e19, d3]; rfl

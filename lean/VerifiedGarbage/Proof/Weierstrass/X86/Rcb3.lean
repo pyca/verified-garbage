@@ -31,6 +31,6 @@ theorem ofN_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6)) (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 end VG.Proof.Weierstrass.X86

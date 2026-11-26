@@ -140,7 +140,7 @@ theorem fieldEqual_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
   refine WP.mono (fieldZero_ok (uk.ctx hc) ul 21) fun t ⟨tk, tl, te, tz⟩ => ?_
   refine ⟨uk.trans tk, tl, fun i hi => ?_, ?_⟩
   · rw [te, ue]
-    exact Function.update_of_ne hi _ _
+    exact Fun.update_of_ne hi _ _
   · rw [tz, ue]
     change decide (env s.mem base a - env s.mem base b = 0) = _
     simp only [show ∀ u v : VG.Spec.X25519.Fe, u - v = 0 ↔ u = v from
@@ -368,8 +368,8 @@ theorem rootEnv_low (e : Env) (i : Slot) (hi : i.val < 14) : rootEnv e i = e i :
   have h15 : i ≠ 15 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
   have h16 : i ≠ 16 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
   have h17 : i ≠ 17 := by intro h; have := congrArg Fin.val h; omega_using [hi, this]
-  simp only [rootEnv, power250Env, opMul, opSqn, Function.update_of_ne h14,
-    Function.update_of_ne h15, Function.update_of_ne h16, Function.update_of_ne h17]
+  simp only [rootEnv, power250Env, opMul, opSqn, Fun.update_of_ne h14,
+    Fun.update_of_ne h15, Fun.update_of_ne h16, Fun.update_of_ne h17]
 
 theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :
     WP isa (recoverCandidate umaal) s fun t => IKeep base s t ∧ AllLim t.mem base ∧

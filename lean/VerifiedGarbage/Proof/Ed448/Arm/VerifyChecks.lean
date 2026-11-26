@@ -80,7 +80,7 @@ def fdest : FieldOp → Index
 
 theorem fop_apply_keep (op : FieldOp) (e : Env) {i : Index} (h : fdest op ≠ i) :
     op.apply e i = e i := by
-  cases op <;> exact Function.update_of_ne (Ne.symm h) _ _
+  cases op <;> exact Fun.update_of_ne (Ne.symm h) _ _
 
 theorem applyOps_keep (xs : List FieldOp) (e : Env) {i : Index} (h : i ∉ xs.map fdest) :
     applyOps xs e i = e i := by

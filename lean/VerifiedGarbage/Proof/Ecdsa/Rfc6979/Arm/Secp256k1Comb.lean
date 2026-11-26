@@ -47,7 +47,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Impl.NatPairs
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
@@ -59,7 +58,6 @@ public import VerifiedGarbage.Proof.Weierstrass.MulContract
 meta import VerifiedGarbage.Proof.Weierstrass.PointContract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.NatPairs
-meta import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm

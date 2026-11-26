@@ -16,7 +16,7 @@ private def dblJMulN : List FOp := dblJMul ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨6, 7
 /-- On numbered slots the reads through the writes are decided, and what is left is the identity. -/
 private theorem dblJMulN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJMulN e 6, runOps dblJMulN e 7, runOps dblJMulN e 8) = dblJF (e 6) (e 7) (e 8) := by
-  dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblJF, Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 

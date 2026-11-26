@@ -20,7 +20,7 @@ public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Proof.X25519.Field32Contract
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.MulFn
 public import VerifiedGarbage.Proof.Framework.Covers
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.Reduce
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Basic
@@ -60,11 +60,11 @@ def env (m : Mem) (b : Addr) : Env := fun i => FS m b (offset i)
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b | .mulc o a b => Function.update e o (e a * e b)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b | .mulc o a b => Fun.update e o (e a * e b)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -113,11 +113,11 @@ theorem slot_frame {b : Addr} {m m' : Mem} {o i : Slot} (hne : i ≠ o) {e k : N
 
 theorem field_update {b : Addr} {m m' : Mem} (o : Slot) {e k : Nat} (he : 768 ≤ e) (hk : e + k ≤ 2048)
     (hf : Frame [⟨b + BitVec.ofNat 64 (offset o), 32⟩, ⟨b + BitVec.ofNat 64 e, k⟩] m m') :
-    env m' b = Function.update (env m b) o (FS m' b (offset o)) := by
+    env m' b = Fun.update (env m b) o (FS m' b (offset o)) := by
   funext i
   by_cases hi : i = o
-  · subst hi; simp only [Function.update_self, env]
-  · rw [Function.update_of_ne hi]
+  · subst hi; simp only [Fun.update_self, env]
+  · rw [Fun.update_of_ne hi]
     exact slot_frame hi he hk hf
 
 theorem frame_FA {b : Addr} {o : Slot} {e k : Nat} (he : 64 ≤ e) (hk : e + k ≤ 1024) {m m' : Mem}
@@ -137,7 +137,7 @@ theorem frame_o {b : Addr} {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofN
 theorem field_finish {b : Addr} {s t : State} (o : Slot) (hr : Rest fclob s t)
     (hf : Frame (opFrame b (offset o)) s.mem t.mem) {v : Spec.X25519.Fe}
     (hv : FS t.mem b (offset o) = v) :
-    Keep b s t ∧ env t.mem b = Function.update (env s.mem b) o v := by
+    Keep b s t ∧ env t.mem b = Fun.update (env s.mem b) o v := by
   have hA := eACC_eq
   rw [← hv]
   exact ⟨⟨hr, frame_FA (by omega_using [hA]) (by omega_using [hA]) hf⟩, field_update o (by omega_using [hA]) (by omega_using [hA]) hf⟩
@@ -158,7 +158,7 @@ def mulK (b : Addr) (o a c : Slot) : Contract isa where
     offArg t .a1 = BitVec.ofNat 32 (offset o) ∧ offArg t .a2 = BitVec.ofNat 32 (offset a) ∧
     offArg t .a3 = BitVec.ofNat 32 (offset c)
   post t t' := Frame [FA b] t.mem t'.mem ∧
-    env t'.mem b = Function.update (env t.mem b) o (env t.mem b a * env t.mem b c)
+    env t'.mem b = Fun.update (env t.mem b) o (env t.mem b a * env t.mem b c)
   pub _ _ := True
 
 theorem fits_slot (i : Slot) : Proof.X25519.Field32.Fits (BitVec.ofNat 32 (offset i)) := by
@@ -192,7 +192,7 @@ theorem low_word (v : Nat) (hv : v < 2 ^ 32) : (BitVec.ofNat 64 v).setWidth 32 =
 /-- **A call of `vg_gf25519_r32_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (hw : WS b s) (o a c : Slot) :
     WP isa (mulCall (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧
-      env t.mem b = Function.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
+      env t.mem b = Fun.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
   have ho := slot_range o
   have ha := slot_range a
   have hc' := slot_range c

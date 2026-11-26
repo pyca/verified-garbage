@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Sha512.Stream
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
 public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached

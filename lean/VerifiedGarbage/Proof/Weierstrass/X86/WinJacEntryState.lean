@@ -47,7 +47,7 @@ theorem dbluN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) (h20 : e 
       runOps dbluN e 3 * (1 * 1) = e 18 * (runOps dbluN e 14 * runOps dbluN e 14) ∧
       runOps dbluN e 2 * (1 * 1 * 1) =
         e 19 * (runOps dbluN e 14 * runOps dbluN e 14 * runOps dbluN e 14) := by
-  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
     Nat.reduceEqDiff, ↓reduceIte, h20, dblJF, Prod.mk.injEq]
   refine ⟨⟨?_, ?_, ?_⟩, trivial, trivial, ?_, ?_⟩ <;> grind
 
@@ -57,7 +57,7 @@ theorem zadduN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
         zadduF (e 9) (e 10) (e 12) (e 13) (e 14) ∧
       (e 15 = e 14 * e 14 → runOps zadduN e 15 = runOps zadduN e 14 * runOps zadduN e 14) ∧
       runOps zadduN e 16 = runOps zadduN e 15 * runOps zadduN e 14 := by
-  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
     Nat.reduceEqDiff, ↓reduceIte, zadduF]
   refine ⟨?_, fun h => ?_, ?_⟩ <;> first | trivial | grind
 
@@ -202,7 +202,7 @@ theorem build_copy_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
     have : c=0 ∨ c=1 ∨ c=2 ∨ c=3 ∨ c=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;> simp
   all_goals
-    simp only [JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,Function.update_apply]
+    simp only [JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,Fun.update_apply]
     simp only [spy,spz0,spz 1 (by decide),spz 2 (by decide),spz 3 (by decide),ite_false]
     simp (disch := omega_arith) only [ite_eq_right,ite_true]
   · exact hJ
@@ -253,7 +253,7 @@ theorem dblN_out : ∀ op∈dblN,op.out<9 := by decide
 
 theorem dblN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblN e 6,runOps dblN e 7,runOps dblN e 8)=dblJF (e 6) (e 7) (e 8) := by
-  simp only [dblN, dblJMul, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply, Nat.reduceEqDiff,
+  simp only [dblN, dblJMul, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply, Nat.reduceEqDiff,
     ↓reduceIte, dblJF, Prod.mk.injEq]
   constructor
   · grind
@@ -267,8 +267,8 @@ theorem dbl_run {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p : Pt}
   have inj {w : Nat} (hw : w<9) (y : Nat) (he : dblσ S p y=dblσ S p w) : y=w :=
     getD_append_inj (R:=[]) hN (by simp) ha hw y (by simpa only [List.append_nil,dblσ] using he)
   obtain he := runOps_rename (dblσ S p) dblN e (fun op hop => inj (dblN_out op hop))
-  exact (congrArg₂ Prod.mk (congrFun he 6)
-    (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans (dblN_run (fun i => e (dblσ S p i)))
+  exact (congr (congrArg Prod.mk (congrFun he 6))
+    (congr (congrArg Prod.mk (congrFun he 7)) (congrFun he 8))).trans (dblN_run (fun i => e (dblσ S p i)))
 
 theorem dbl_field_ok {K : JacWinCfg} {base : Addr} {size wk : Nat} {C : Curve} {Sl : Nat → Prop}
     (hL : Lay K.M size Sl) (hW : WkOk K.F K.M C.p size wk Sl)
@@ -571,10 +571,10 @@ theorem copy_shared_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
   rw [n8] at second
   refine WP.mono second fun t ⟨kt,it⟩ => ⟨_,
     (progKeep_of_op ka (by simp)).trans (progKeep_of_op kt (by simp)),it,?_,?_,?_⟩
-  · simp only [Function.update_apply,dxy,ite_false,ite_true]
-  · simp only [Function.update_apply,tdx,ite_false,ite_true]
+  · simp only [Fun.update_apply,dxy,ite_false,ite_true]
+  · simp only [Fun.update_apply,tdx,ite_false,ite_true]
   · intro x hx
-    simp only [Function.update_apply,(sep x hx).1,(sep x hx).2,ite_false]
+    simp only [Fun.update_apply,(sep x hx).1,(sep x hx).2,ite_false]
 
 end VG.Proof.Weierstrass.X86.JWin
 
@@ -976,7 +976,7 @@ theorem choose_field_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Ad
     (c : Bool) (hc : s.gpr .ecx=bmask c) :
     WP isa (.block (sel (2*M.n) o a b)) s fun t =>
       ProgKeep M base wk [o] s t ∧
-      Inv M base size m Sl (o::V) (Function.update E o (if c then E b else E a)) t := by
+      Inv M base size m Sl (o::V) (Fun.update E o (if c then E b else E a)) t := by
   have sep (x : Nat) (hx : x∈V) : o≤x ∨ x+8*M.n≤o := by
     by_cases he : o=x
     · exact Or.inl (Nat.le_of_eq he)

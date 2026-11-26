@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Tauto
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 import Mathlib.Tactic.SplitIfs

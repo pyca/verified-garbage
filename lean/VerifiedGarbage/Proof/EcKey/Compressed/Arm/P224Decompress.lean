@@ -641,7 +641,7 @@ theorem descentN_run {F : Type} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps descentN e ACC = e ACC * e T4 ∧
     runOps descentN e T0 = e T0 * (e T4 * e T4) ∧
     runOps descentN e T1 = e T1 * e T1 := by
-  simp only [descentN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [descentN, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [ACC, T0, T1, T4, Nat.reduceEqDiff, ↓reduceIte, and_self]
 
 theorem descentN_reads : readsOk descentN descentFields = true := by decide

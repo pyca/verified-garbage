@@ -290,7 +290,7 @@ theorem finish_point_ok (hC : Law C) {base : Addr} {P Q : Point C} {k : Nat} {s 
       runOps tc.outOps E K.R.y,runOps tc.outOps E K.R.z)=
       (E K.R.x*E K.R.z,E K.R.y,E K.R.z*E K.R.z*E K.R.z) := by
     simp only [tc,Impl.P256.EcdhJac.tc,TCombCfg.outOps,runOps,List.foldl_cons,List.foldl_nil,
-      FOp.run,Function.update_apply,
+      FOp.run,Fun.update_apply,
       show K.R.x≠K.R.z from by decide,show K.R.x≠K.S.t0 from by decide,
       show K.R.y≠K.R.x from by decide,show K.R.y≠K.R.z from by decide,
       show K.R.y≠K.S.t0 from by decide,show K.R.z≠K.R.x from by decide,
@@ -485,8 +485,8 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
   obtain hez : tmv C 4 base t K.E.z=tmv C 4 base s₁ K.E.z := by
     have hh:=iv.val K.E.z (by apply List.mem_append_left; decide)
     change tmv C 4 base t K.E.z=_ at hh
-    simpa only [Function.update_of_ne (by decide : K.E.z≠K.E.y),
-      Function.update_of_ne (by decide : K.E.z≠K.neg)] using hh
+    simpa only [Fun.update_of_ne (by decide : K.E.z≠K.E.y),
+      Fun.update_of_ne (by decide : K.E.z≠K.neg)] using hh
   have he (i : Nat) (hi' : i<5) (hne : i≠1) :
       tmv C 4 base t (selectedSlot i)=tmv C 4 base s₁ (selectedSlot i) := by
     obtain hv := iv.val _ (List.mem_append_left _ (selected_mem i hi'))
@@ -494,7 +494,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       obtain hh : ∀ i<5,i≠1→selectedSlot i≠K.E.y ∧ selectedSlot i≠K.neg := by decide
       exact hh i hi' hne
     change tmv C 4 base t (selectedSlot i)=_ at hv
-    simpa only [Function.update_of_ne ne.1,Function.update_of_ne ne.2] using hv
+    simpa only [Fun.update_of_ne ne.1,Fun.update_of_ne ne.2] using hv
   obtain hc2 : tmv C 4 base s₁ 5400=tmv C 4 base s₁ K.E.z*tmv C 4 base s₁ K.E.z := by
     by_cases hz : magH 16 (Window5.nib (k+offset) j)=0
     · have e2:=z₁ hz 2 (by decide)
@@ -536,7 +536,7 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       else tmv C 4 base s₁ (selectedSlot 1) := by
     obtain hv := iv.val _ (List.mem_append_left _ (selected_mem 1 (by decide)))
     change tmv C 4 base t (selectedSlot 1)=_ at hv
-    simpa only [show selectedSlot 1=K.E.y from rfl,Function.update_self,Window5.combWin_five,
+    simpa only [show selectedSlot 1=K.E.y from rfl,Fun.update_self,Window5.combWin_five,
       show 2^(5-1)=16 from rfl] using hv
   refine ⟨fun i hi'=>iv.lt _ (List.mem_append_left _ (selected_mem i hi')),?_,?_,?_,?_⟩
   · rw [he 0 (by decide) (by decide),hey,he 2 (by decide) (by decide),Window5.winPt_mag]

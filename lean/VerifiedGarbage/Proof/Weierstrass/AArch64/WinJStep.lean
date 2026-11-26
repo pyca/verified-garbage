@@ -172,7 +172,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     · exact Or.inl ⟨o, winOther_ws K o ho, rfl⟩
     · exact Or.inr rfl
   · have v := I'.val o (List.mem_cons_self ..)
-    simp only [FOp.run, Function.update_self] at v
+    simp only [FOp.run, Fun.update_self] at v
     exact v
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl

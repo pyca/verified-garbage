@@ -313,7 +313,7 @@ theorem setup0_ok {s : State} (hp : LPre s) :
   refine ⟨kg.scr hsf, bitsAt_outside ot (by decide) kd, ?_, ?_, savedW_outside ot (by decide) svd, ?_, fun r hr => ?_, ?_, ?_⟩
   · exact ⟨sg 1 (small0 1 (by decide)), sg 2 (small0 2 (by decide)), sg 3 (small0 3 (by decide)), sg 4 (small0 4 (by decide))⟩
   · rw [Holds, eg, ladderAfter_255]
-    simp only [evalOps, evalOp, List.foldl_cons, List.foldl_nil, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
+    simp only [evalOps, evalOp, List.foldl_cons, List.foldl_nil, Fun.update_apply, Fin.reduceEq, ite_true, ite_false]
     exact ⟨uv, rfl, rfl, uv, rfl⟩
   · rw [kg.gpr _ (by decide), gf, ke.gpr _ (by decide), d1, kc.gpr _ (by decide), ka.gpr _ (by decide)]
   · simp only [List.mem_cons, not_or] at hr

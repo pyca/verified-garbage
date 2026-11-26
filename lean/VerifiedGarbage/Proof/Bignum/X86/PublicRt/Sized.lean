@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Set
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 
 /-! # The setup of public RSA at a run-time width

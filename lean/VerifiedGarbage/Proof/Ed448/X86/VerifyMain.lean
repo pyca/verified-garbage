@@ -524,7 +524,7 @@ def fdest : FieldOp → Index
 
 theorem fop_apply_keep (op : FieldOp) (e : Env) {i : Index} (h : fdest op ≠ i) :
     op.apply e i = e i := by
-  cases op <;> exact Function.update_of_ne (Ne.symm h) _ _
+  cases op <;> exact Fun.update_of_ne (Ne.symm h) _ _
 
 theorem applyOps_keep (xs : List FieldOp) (e : Env) {i : Index} (h : i ∉ xs.map fdest) :
     applyOps xs e i = e i := by
@@ -669,7 +669,7 @@ theorem slotFrom_ok {s : State} {base : Addr} (hs : Scr s base) (o : Index)
     (hq2 : e + a + 56 ≤ 8192) :
     WP isa (.block (fromEntry (slot o.val) a)) s fun t =>
       Keep base s t ∧ Keeps [.eax] s t ∧
-      E t.mem base = Function.update (E s.mem base) o (F s.mem base (e + a)) := by
+      E t.mem base = Fun.update (E s.mem base) o (F s.mem base (e + a)) := by
   refine WP.mono (fromEntry_ok hs (Nat.le_trans (slot_bound o) (by decide)) hp hq1 hq2)
     fun t ⟨tf, tm, tk⟩ => ?_
   have op : Op base (slot o.val) s t := ⟨tk.mono (by decide), FieldMem.output tm⟩
@@ -799,7 +799,7 @@ theorem ventryLoad_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
     (he : EntryOk base s.mem ((d - 1) / 2) p) :
     WP isa (.block ventryLoad) s fun t =>
       Keep base s t ∧
-      E t.mem base = Function.update (Function.update (Function.update (E s.mem base) 6 p.X) 7 p.Y) 21 p.Z := by
+      E t.mem base = Fun.update (Fun.update (Fun.update (E s.mem base) 6 p.X) 7 p.Y) 21 p.Z := by
   have hT : VTAB = 5120 := rfl
   obtain ⟨j, hj⟩ : ∃ j, (d - 1) / 2 = j := ⟨_, rfl⟩
   obtain hj8 : j < 8 := by omega_using [hd, hj]
@@ -1076,7 +1076,7 @@ open VG.Impl.X448.X86 (BITS slot ACC at_ st ld ops)
 /-- The slots after the point `p` is put in slots 6, 7 and 21 and added, made if `nz`. -/
 def entEnv (p : Spec.Ed448.Point) : Bool → Env → Env
   | true, e => applyOps (addF 6 7 21 ++ takeF)
-      (Function.update (Function.update (Function.update e 6 p.X) 7 p.Y) 21 p.Z)
+      (Fun.update (Fun.update (Fun.update e 6 p.X) 7 p.Y) 21 p.Z)
   | false, e => e
 
 /-- The slots after the affine point `q` is put in slots 8 and 9 and added, made if `nz`. -/
@@ -1095,9 +1095,9 @@ theorem entEnv_keep (p : Spec.Ed448.Point) (nz : Bool) (e : Env) (i : Index) (hi
   cases nz
   · rfl
   · rw [entEnv, addTake_keep _ _ _ _ _ (Or.inl (by omega_using [hi])),
-      Function.update_of_ne (fun h => by subst h; omega_arith),
-      Function.update_of_ne (fun h => by subst h; omega_arith),
-      Function.update_of_ne (fun h => by subst h; omega_arith)]
+      Fun.update_of_ne (fun h => by subst h; omega_arith),
+      Fun.update_of_ne (fun h => by subst h; omega_arith),
+      Fun.update_of_ne (fun h => by subst h; omega_arith)]
 
 /-- The addition of the static's entry keeps 1 and `d`. -/
 theorem baseEnv_keep (q : Spec.X448.Fe × Spec.X448.Fe) (bz : Bool) (e : Env) (j : Index) (hj : j.val = 10 ∨ j.val = 11) :
@@ -1107,7 +1107,7 @@ theorem baseEnv_keep (q : Spec.X448.Fe × Spec.X448.Fe) (bz : Bool) (e : Env) (j
   · have h8 : j ≠ 8 := fun h => by subst h; omega_arith
     have h9 : j ≠ 9 := fun h => by subst h; omega_arith
     rw [baseEnv, applyOps_keep _ _ (by revert j; decide), selEnvT,
-      Function.update_of_ne h9, Function.update_of_ne h8]
+      Fun.update_of_ne h9, Fun.update_of_ne h8]
 
 theorem baseEnv_pt (q : Spec.X448.Fe × Spec.X448.Fe) (bz : Bool) (e : Env) :
     pt (baseEnv q bz e) 0 1 2 = if bz then affAdd (pt e 0 1 2) q else pt e 0 1 2 := by
@@ -1247,7 +1247,7 @@ theorem slotFromT_ok {s : State} {base : Addr} (hs : Scr s base) (o : Index) {a 
     (ha : s.gpr .ebp = a) {x : Spec.X448.Fe} (hv : Cands base a c (fun w => x.val / 2 ^ (32 * w)) s) :
     WP isa (.block (fromEntry (slot o.val) c)) s fun t =>
       Keep base s t ∧ Keeps [.eax] s t ∧ Outside base (slot o.val) 56 s.mem t.mem ∧
-      E t.mem base = Function.update (E s.mem base) o x := by
+      E t.mem base = Fun.update (E s.mem base) o x := by
   have ho : slot o.val + 56 ≤ 4096 := Nat.le_trans (slot_bound o) (by decide)
   let inv := fun n (t : State) =>
     (∀ i < n, word t.mem base (slot o.val + 4 * i) = BitVec.ofNat 32 (x.val / 2 ^ (32 * i))) ∧
@@ -2263,7 +2263,7 @@ theorem vbase_dig {base : Addr} {m m' : Mem} {S K : Nat}
 /-! ## The whole function -/
 
 theorem sub6_E (e : Env) : evalOps [.sub 6 0 6] e 6 = e 0 - e 6 ∧ ∀ i : Index, i ≠ 6 → evalOps [.sub 6 0 6] e i = e i :=
-  ⟨rfl, fun _ hi => Function.update_of_ne hi _ _⟩
+  ⟨rfl, fun _ hi => Fun.update_of_ne hi _ _⟩
 
 theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqWinOk) {s₀ : State} (h : VerifyPre s₀) :
     WP isa verifyEquation s₀ fun t => abiPreserved s₀ t ∧
@@ -2420,9 +2420,9 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqWinOk) {s₀ : State}
   refine WP.seq (WP.mono (ops_ok hs₆ I₆.ctx [.copy 6 1]) fun s₇ ⟨k₇, e₇⟩ => ?_)
   obtain hs₇ := k₇.scr hs₆
   obtain e₇6 : E s₇.mem base 6 = E s₆.mem base 1 := by
-    rw [e₇]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self]
+    rw [e₇]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_self]
   obtain e₇k : ∀ i : Index, i ≠ 6 → E s₇.mem base i = E s₆.mem base i := fun i hi => by
-    rw [e₇]; exact Function.update_of_ne hi _ _
+    rw [e₇]; exact Fun.update_of_ne hi _ _
   obtain k07 : Keeps (.esi :: workRegs) s₁ s₇ :=
     ((D₂.keeps.trans (k₃.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
       ((k₄.mono (by decide)).trans T₅.regs)).trans
@@ -2473,7 +2473,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqWinOk) {s₀ : State}
     · exact st (.ebp, 12) (by decide)
     · rw [spt, k₈.regs.1 _ (by decide), k07.1 _ (by decide), k₁.1 _ (by decide)]
   · rw [rt]
-    refine if_congr ?_ rfl rfl
+    refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)
     rw [z₈]
     cases ha : Spec.Ed448.decodePoint (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) 57) with
     | none =>

@@ -80,7 +80,7 @@ theorem directKeyCoord_ok {s : State} {base : Addr} (hs : Scr s base)
     (hr : s.gpr .r15 = BitVec.ofNat 64 (192 * d)) :
     WP isa (.block (directKeyCoord c)) s fun u =>
       Keep base s u ∧ u.gpr .r15 = s.gpr .r15 ∧
-      E u.mem base = Function.update (E s.mem base) ⟨8 + c, by omega_using [hc]⟩ (F s.mem base (tabOffset d c)) := by
+      E u.mem base = Fun.update (E s.mem base) ⟨8 + c, by omega_using [hc]⟩ (F s.mem base (tabOffset d c)) := by
   rw [directKeyCoord, WP.block_append_iff]
   refine WP.mono (directKeyLoads_ok hs hd hc hr) fun v ⟨ev, kv⟩ => ?_
   refine WP.mono (stores_E (hs.of_keeps kv (by decide)) ⟨8 + c, by omega_using [hc]⟩ W rfl)

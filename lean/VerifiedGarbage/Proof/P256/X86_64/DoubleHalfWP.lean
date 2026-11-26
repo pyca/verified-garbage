@@ -53,7 +53,7 @@ theorem half_inv_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     (ho : Sl o) (ha : a∈V) :
     WP isa (.block (half o a)) s fun t =>
       OpKeep M base o s t ∧
-      Inv M base size Spec.P256.p Sl (o::V) (Function.update E o (halfFe (E a))) t := by
+      Inv M base size Spec.P256.p Sl (o::V) (Fun.update E o (halfFe (E a))) t := by
   have hao := hL.le a (hI.sl a ha)
   have hoo := hL.le o ho
   have hlt := hI.lt a ha
@@ -95,7 +95,7 @@ def doubleSlots (S : RcbSlots) (p : Pt) : List Nat :=
 
 def doubleHalfEnv (S : RcbSlots) (p : Pt) (E : Nat → Fin Spec.P256.p) : Nat → Fin Spec.P256.p :=
   let E₁ := runOps (DoubleHalf.before S p) E
-  runOps (DoubleHalf.after S p) (Function.update E₁ S.t1 (halfFe (E₁ S.t1)))
+  runOps (DoubleHalf.after S p) (Fun.update E₁ S.t1 (halfFe (E₁ S.t1)))
 
 private theorem half_fourth {F : Type _} [Lean.Grind.CommRing F]
     {y i : F} (hi : (2:F)*i=1) :
@@ -140,7 +140,7 @@ theorem doubleHalfEnv_run (S : RcbSlots) (p : Pt) (E : Nat → Fin Spec.P256.p)
   have h75 := Ne.symm h57
   have h76 := Ne.symm h67
   simp only [doubleHalfEnv,DoubleHalf.before,DoubleHalf.after,runOps,List.foldl,FOp.run,
-    Function.update_apply,halfFe,dblJF,Prod.mk.injEq, *,ite_true,ite_false]
+    Fun.update_apply,halfFe,dblJF,Prod.mk.injEq, *,ite_true,ite_false]
   constructor
   -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
   -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).

@@ -40,7 +40,7 @@ theorem jacMixedHead_readonly {F : Type _} [Lean.Grind.CommRing F]
   have hn2 : x≠S.t2 := fun he => hA.apart x hx (by rw [he]; simp [rcbW])
   have hn4 : x≠S.t4 := fun he => hA.apart x hx (by rw [he]; simp [rcbW])
   rw [runOps_of_not_out]
-  · simp only [jacMixedInit,Function.update_of_ne hn2,Function.update_of_ne hn4]
+  · simp only [jacMixedInit,Fun.update_of_ne hn2,Fun.update_of_ne hn4]
   · intro op hop he
     have ho : op.out ∈ rcbW S o := by
       rw [jacMixedHead_eq S p q o] at hop

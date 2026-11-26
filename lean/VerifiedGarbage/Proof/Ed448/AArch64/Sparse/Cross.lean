@@ -214,12 +214,12 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
         o6 x (by simp only [slot] at a ⊢;omega_arith),f5 x (by simp only [slot] at a ⊢;omega_arith)]
     exact ((((k3.mem.trans k4.mem).trans o58).trans k9.mem).trans k10.mem).trans kf.mem
   · rw [Same.env s14 (i := 12) (by decide), Same.env s13 (i := 12) (by decide), Same.env s12 (i := 12) (by decide),
-      e11, Function.update_self, qx, rz]
-  · rw [Same.env s14 (i := 13) (by decide), Same.env s13 (i := 13) (by decide), e12, Function.update_self,
+      e11, Fun.update_self, qx, rz]
+  · rw [Same.env s14 (i := 13) (by decide), Same.env s13 (i := 13) (by decide), e12, Fun.update_self,
       Same.env s11 (i := 3) (by decide), Same.env s11 (i := 2) (by decide), rx, qz]
-  · rw [Same.env s14 (i := 14) (by decide), e13, Function.update_self, Same.env s12 (i := 1) (by decide),
+  · rw [Same.env s14 (i := 14) (by decide), e13, Fun.update_self, Same.env s12 (i := 1) (by decide),
       Same.env s11 (i := 1) (by decide), Same.env s12 (i := 5) (by decide), Same.env s11 (i := 5) (by decide), qy, rz]
-  · rw [e14, Function.update_self, Same.env s13 (i := 4) (by decide), Same.env s12 (i := 4) (by decide),
+  · rw [e14, Fun.update_self, Same.env s13 (i := 4) (by decide), Same.env s12 (i := 4) (by decide),
       Same.env s11 (i := 4) (by decide), Same.env s13 (i := 2) (by decide), Same.env s12 (i := 2) (by decide),
       Same.env s11 (i := 2) (by decide), ry, qz]
   · intro i h1 h2

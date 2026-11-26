@@ -13,7 +13,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.LadderCT
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.ToAdditive

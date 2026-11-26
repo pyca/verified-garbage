@@ -100,7 +100,7 @@ theorem fieldEqual_ok {x : BitVec 32} {s : State} (hc : Ctx x s) (a b : Slot) :
   refine ⟨ku.trans kt, ?_, ?_⟩
   · intro i hi
     rw [et, eu]
-    exact Function.update_of_ne hi _ _
+    exact Fun.update_of_ne hi _ _
   · rw [zt, eu]
     change some (decide (env s.mem x a - env s.mem x b = 0)) = _
     simp only [show ∀ u v : VG.Spec.X25519.Fe, u - v = 0 ↔ u = v from

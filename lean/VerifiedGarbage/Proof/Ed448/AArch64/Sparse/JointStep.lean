@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import Batteries.Tactic.PermuteGoals
 import Batteries.Tactic.SeqFocus
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Impl.X448.AArch64.Base
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PowLit

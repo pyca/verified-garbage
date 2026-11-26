@@ -322,7 +322,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : ProgKeep M base wk [o] s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    Inv M base size m Sl (o :: V) (Function.update E o v) s' := by
+    Inv M base size m Sl (o :: V) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   have hM := hI.mod
   have heq : ∀ x, Sl x → x ≠ o → wordsVal s'.mem base x M.n = wordsVal s.mem base x M.n :=
@@ -349,9 +349,9 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
       exact hI.lt x (List.mem_of_ne_of_mem hxo hx)
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x (hI.sl x hx') hxo, Function.update_of_ne hxo]
+      rw [heq x (hI.sl x hx') hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 /-- What a program writing one slot changes, as a list. -/

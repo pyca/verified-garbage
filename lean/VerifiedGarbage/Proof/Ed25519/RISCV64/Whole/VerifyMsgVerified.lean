@@ -129,7 +129,7 @@ theorem evalOps_keep (ops : List FieldOp) (e : Env) (i : Slot)
     simp only [evalOps, List.foldl_cons] at ih ⊢
     rw [ih _ fun op' h' => h op' (List.mem_cons_of_mem _ h')]
     obtain hop := h op List.mem_cons_self
-    cases op <;> simp only [evalOp] at hop ⊢ <;> exact Function.update_of_ne (Ne.symm hop) _ _
+    cases op <;> simp only [evalOp] at hop ⊢ <;> exact Fun.update_of_ne (Ne.symm hop) _ _
 
 theorem dblOps_keep (e : Env) (i : Slot) (hi : 4 ≤ i.val ∧ i.val < 8 ∨ 15 ≤ i.val) :
     evalOps dblOps e i = e i :=

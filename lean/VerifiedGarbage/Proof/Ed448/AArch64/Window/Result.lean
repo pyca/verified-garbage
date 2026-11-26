@@ -261,7 +261,7 @@ theorem wfinish_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (VG.Proof.X448.AArch64.Fast.vrestore_ok hs7 (by rw [m7, m6', m6, m25]; exact LFrame.savedV f02 svv))
     fun t ⟨tv, mt, gt, rdt, wrt⟩ => ⟨?_, ?_, ?_, fun k hk => by rw [gt]; exact tx k hk, tv, ?_, ?_, ?_⟩
   · rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide), k6.1 _ (by decide), v5, v4, v3]
-    exact if_congr h20 rfl rfl
+    exact ite_congr (propext h20) (fun _ => rfl) (fun _ => rfl)
   · rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide)]; exact t19
   · rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide)]; exact t20
   · rw [gt, k7.1 _ (by decide), t30, m6, m25]; exact LFrame.lrs f02 lrs

@@ -654,7 +654,7 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) :
 /-- `RX`, or `RY`, copied into slot `i`. -/
 theorem copyIn_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) {a : Nat} (ha' : a + 56 ≤ 8192) :
     WP isa (.block (copyOut (slot i.val) a)) s fun t =>
-      Keep base s t ∧ E t.mem base = Function.update (E s.mem base) i (F s.mem base a) := by
+      Keep base s t ∧ E t.mem base = Fun.update (E s.mem base) i (F s.mem base a) := by
   obtain hW : ∀ x ∈ W, x ∈ clob := by decide
   obtain hi := Proof.X448.X86_64.slot_lt i
   obtain gi := Proof.X448.X86_64.slot_ge i
@@ -664,10 +664,10 @@ theorem copyIn_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) {a : N
   funext k
   by_cases hk : k = i
   · subst hk
-    rw [Function.update_self]
+    rw [Fun.update_self]
     show VG.Proof.X448.toFe (fe t.mem base (slot k.val)) = VG.Proof.X448.toFe (fe s.mem base a)
     rw [ft]
-  · rw [Function.update_of_ne hk]
+  · rw [Fun.update_of_ne hk]
     exact E_outside ot k (Proof.X448.X86_64.slot_sep hk)
 
 /-- `[4]Q` (slots 0–2) into slots 3–5, and `R` (`RX`, `RY`, 1) into slots 0–2. -/
@@ -700,12 +700,12 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) :
     rw [(((k1.mem.trans k2.mem).trans k3.mem).trans k4.mem).fe (Or.inr (by decide)) (by decide)]
   refine ⟨((((k1.trans k2).trans k3).trans k4).trans k5).trans kt, ?_, ?_, fun i hi => ?_⟩
   · rw [et, e5, e4, e3, e2, e1]
-    simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
+    simp (disch := decide) only [pt, Fun.update_self, Fun.update_of_ne]
   · rw [et, e5, e4, fx, fy]; rfl
   · have ne : ∀ j : Index, j.val < 6 → i ≠ j := fun j hj h => by subst h; omega_arith
-    rw [et, e5, e4, e3, e2, e1, Function.update_of_ne (ne 2 (by decide)), Function.update_of_ne (ne 1 (by decide)),
-      Function.update_of_ne (ne 0 (by decide)), Function.update_of_ne (ne 5 (by decide)),
-      Function.update_of_ne (ne 4 (by decide)), Function.update_of_ne (ne 3 (by decide))]
+    rw [et, e5, e4, e3, e2, e1, Fun.update_of_ne (ne 2 (by decide)), Fun.update_of_ne (ne 1 (by decide)),
+      Fun.update_of_ne (ne 0 (by decide)), Fun.update_of_ne (ne 5 (by decide)),
+      Fun.update_of_ne (ne 4 (by decide)), Fun.update_of_ne (ne 3 (by decide))]
 
 include hf hP in
 theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVec 64}

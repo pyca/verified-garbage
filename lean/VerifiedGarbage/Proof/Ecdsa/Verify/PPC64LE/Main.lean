@@ -697,8 +697,8 @@ theorem sum_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K₀ : K
     grind
   · show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
-    exact (congrArg₂ Prod.mk (I₁.val 0 (hD 0 (by decide)))
-      (congrArg₂ Prod.mk (I₁.val 1 (hD 1 (by decide))) (I₁.val 2 (hD 2 (by decide))))).trans t₁
+    exact (congr (congrArg Prod.mk (I₁.val 0 (hD 0 (by decide))))
+      (congr (congrArg Prod.mk (I₁.val 1 (hD 1 (by decide)))) (I₁.val 2 (hD 2 (by decide))))).trans t₁
 
 /-- After `[u]G + [v]Q`: `R` represents `[u]G + [v]P`. -/
 structure Pts (c : Cfg) (s₀ : State) (base : Addr) (u v : Nat) (P : Point c.C) (s : State) : Prop

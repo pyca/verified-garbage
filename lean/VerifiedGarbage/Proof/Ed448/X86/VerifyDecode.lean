@@ -99,7 +99,7 @@ theorem root_spec (base : Addr) : ISpec base root rootEnv := by
 
 theorem rootEnv_eval (e : Env) : rootEnv e 21 = Proof.Ed448.rootPow (e 12) := by
   simp only [↓reduceIte, rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
-    Function.update_apply]
+    Fun.update_apply]
   rfl
 
 theorem rootEnv_keep (e : Env) (i : Index) (hi : i.val < 14) : rootEnv e i = e i := by
@@ -112,9 +112,9 @@ theorem rootEnv_keep (e : Env) (i : Index) (hi : i.val < 14) : rootEnv e i = e i
   have h20 : i ≠ 20 := fun h => by subst h; omega_using [hi]
   have h21 : i ≠ 21 := fun h => by subst h; omega_using [hi]
   simp only [rootEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
-    Function.update_of_ne h21, Function.update_of_ne h14, Function.update_of_ne h15,
-    Function.update_of_ne h16, Function.update_of_ne h17, Function.update_of_ne h18,
-    Function.update_of_ne h19, Function.update_of_ne h20]
+    Fun.update_of_ne h21, Fun.update_of_ne h14, Fun.update_of_ne h15,
+    Fun.update_of_ne h16, Fun.update_of_ne h17, Fun.update_of_ne h18,
+    Fun.update_of_ne h19, Fun.update_of_ne h20]
 
 theorem root_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) :
     WP isa root s fun t =>

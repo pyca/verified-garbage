@@ -21,7 +21,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Phase
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Main
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Sieve
 public import VerifiedGarbage.Spec.Ffdh.SievedCandidate
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ffdh.Contract

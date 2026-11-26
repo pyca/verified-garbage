@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym

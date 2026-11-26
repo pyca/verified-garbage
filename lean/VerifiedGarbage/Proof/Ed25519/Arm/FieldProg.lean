@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Call
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 public import VerifiedGarbage.Proof.X25519.Arm.Invert
 public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
@@ -1419,11 +1419,11 @@ def AllLim (m : Mem) (b : BitVec 32) : Prop := ∀ i : Slot, Lim m (State.addr b
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b | .mulc o a b => Function.update e o (e a * e b)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b | .mulc o a b => Fun.update e o (e a * e b)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -1461,7 +1461,7 @@ theorem field_update {b : BitVec 32} {m m' : Mem} (o : Slot) (hl : AllLim m b)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
       ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m')
     (ho : Lim m' (State.addr b) (offset o)) :
-    AllLim m' b ∧ env m' b = Function.update (env m b) o (FS m' (State.addr b) (offset o)) := by
+    AllLim m' b ∧ env m' b = Fun.update (env m b) o (FS m' (State.addr b) (offset o)) := by
   constructor
   · intro i
     by_cases hi : i = o
@@ -1471,8 +1471,8 @@ theorem field_update {b : BitVec 32} {m m' : Mem} (o : Slot) (hl : AllLim m b)
       exact hl i k hk
   · funext i
     by_cases hi : i = o
-    · subst hi; simp only [Function.update_self, env]
-    · rw [Function.update_of_ne hi]
+    · subst hi; simp only [Fun.update_self, env]
+    · rw [Fun.update_of_ne hi]
       exact congrArg VG.Proof.X25519.toFe (val16_congr (limb_slot_frame hi hf))
 
 /-- An operation's frame at `o` and in the product's own working space is
@@ -1510,7 +1510,7 @@ theorem field_finish {b : BitVec 32} {s t : State} (o : Slot) (hl : AllLim s.mem
       ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] s.mem t.mem)
     (ho : Lim t.mem (State.addr b) (offset o)) {v : Spec.X25519.Fe}
     (hv : FS t.mem (State.addr b) (offset o) = v) :
-    Keep b s t ∧ AllLim t.mem b ∧ env t.mem b = Function.update (env s.mem b) o v := by
+    Keep b s t ∧ AllLim t.mem b ∧ env t.mem b = Fun.update (env s.mem b) o v := by
   obtain ⟨hlim, he⟩ := field_update o hl hf ho
   rw [hv] at he
   exact ⟨⟨hr, frame_FA16 hf⟩, hlim, he⟩
@@ -1522,7 +1522,7 @@ def mulK (b : BitVec 32) (o a c : Slot) : Contract isa where
     t.gpr .r1 = BitVec.ofNat 32 (offset o) ∧ t.gpr .r2 = BitVec.ofNat 32 (offset a) ∧
     t.gpr .r3 = BitVec.ofNat 32 (offset c)
   post t t' := Rest mulFnClob t t' ∧ Frame [FA b] t.mem t'.mem ∧ AllLim t'.mem b ∧
-    env t'.mem b = Function.update (env t.mem b) o (env t.mem b a * env t.mem b c)
+    env t'.mem b = Fun.update (env t.mem b) o (env t.mem b a * env t.mem b c)
   pub _ _ := True
 
 theorem movw_offset (o : Slot) : ((BitVec.ofNat 16 (offset o)).setWidth 32) = BitVec.ofNat 32 (offset o) := by
@@ -1535,7 +1535,7 @@ theorem movw_offset (o : Slot) : ((BitVec.ofNat 16 (offset o)).setWidth 32) = Bi
 /-- **A call of `vg_gf25519_r16_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) (o a c : Slot) :
     WP isa (mulCall umaal (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
-      env t.mem b = Function.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
+      env t.mem b = Fun.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
   have ho := slot_range o
   have ha := slot_range a
   have hc' := slot_range c

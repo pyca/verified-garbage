@@ -180,7 +180,7 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   rw [WP.seq_iff]
   refine WP.mono (VG.Proof.Ed448.AArch64.Point56.mulCallKE (k3.scr hs2) b3 1 0 21 (by decide))
     fun s4 ⟨k4, b4, m4, _, e4⟩ => ?_
-  replace e4 : EV s4.mem base = Function.update (EV s3.mem base) 1 (EV s3.mem base 0 * EV s3.mem base 21) := e4
+  replace e4 : EV s4.mem base = Fun.update (EV s3.mem base) 1 (EV s3.mem base 0 * EV s3.mem base 21) := e4
   obtain hs4 : Scr s4 base := k4.scr (k3.scr hs2)
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.toLegacy_ok' hs4 (o := X2) (by decide) (by decide)
@@ -205,7 +205,7 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
     simp only [ofs] at far56 hx
     omega
   obtain f46 : FieldMem base X2 s4.mem s6.mem := c5.2.trans m6
-  obtain e6 : EV s6.mem base = Function.update (EV s4.mem base) 1
+  obtain e6 : EV s6.mem base = Fun.update (EV s4.mem base) 1
       (VG.Proof.X448.AArch64.Weak.F s6.mem base X2) := E_update f46
   obtain e76 : ∀ i : Index, EV s7.mem base i = EV s6.mem base i := fun i =>
     E_outside o67 i (Or.inl (by have := i.isLt; simp only [slot]; omega_using []))
@@ -256,15 +256,15 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
       (fr (k8.mem.whole (by decide) (by decide)))).trans ft'
   · -- The values.
     obtain v1 : EV s8.mem base 1 = EV s.mem base 1 := by
-      simp only [e8, e76, e6, e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Function.update_apply, invEnv_x2, Fin.reduceEq,
+      simp only [e8, e76, e6, e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Fun.update_apply, invEnv_x2, Fin.reduceEq,
         ↓reduceIte]
     obtain v21 : EV s8.mem base 21 = Proof.X448.invert (EV s.mem base 2) := by
-      simp only [e8, e76, e6, e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Function.update_apply, invEnv_eval, Fin.reduceEq,
+      simp only [e8, e76, e6, e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Fun.update_apply, invEnv_eval, Fin.reduceEq,
         ↓reduceIte]
     obtain vx : VG.Proof.X448.AArch64.F s5.mem base X2 = EV s.mem base 0 * Proof.X448.invert (EV s.mem base 2) := by
       rw [v5]
       change EV s4.mem base 1 = _
-      simp only [e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Function.update_apply, invEnv_0, invEnv_eval, Fin.reduceEq,
+      simp only [e4, e3, m2, e1, VG.Proof.X448.AArch64.opCopy, Fun.update_apply, invEnv_0, invEnv_eval, Fin.reduceEq,
         ↓reduceIte]
     -- The sign: the low bit of `x`, fully reduced.
     obtain sgn : (word s6.mem base X2).toNat % 2 =

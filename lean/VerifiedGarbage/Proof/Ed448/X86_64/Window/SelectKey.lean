@@ -94,7 +94,7 @@ theorem scanCoord_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat �
     (i : Index) {d : Nat} (hd : d < 17) (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
     WP isa (.block (scanCoord pick (slot i.val))) s fun u =>
       Keep base s u ∧ u.gpr .r15 = s.gpr .r15 ∧
-      E u.mem base = Function.update (E s.mem base) i (value s.mem base d) := by
+      E u.mem base = Fun.update (E s.mem base) i (value s.mem base d) := by
   rw [scanCoord, WP.block_append_iff]
   refine WP.mono (entries_ok hp (List.range 17) (fun j hj => List.mem_range.mp hj) hs hd hr)
     fun v ⟨ev, kv⟩ => ?_

@@ -54,7 +54,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops

@@ -116,13 +116,13 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   obtain hs₂ := k₂.scr hs₁
   obtain ex : E s₂.mem base 1 = E s.mem base 0 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
-    simp only [applyOps, encodeFields, FieldOp.apply, opMul, Function.update_self]
-    rw [Function.update_of_ne (show (21 : Index) ≠ 4 by decide),
-      Function.update_of_ne (show (0 : Index) ≠ 4 by decide), invEnv_x0, invEnv_eval]
+    simp only [applyOps, encodeFields, FieldOp.apply, opMul, Fun.update_self]
+    rw [Fun.update_of_ne (show (21 : Index) ≠ 4 by decide),
+      Fun.update_of_ne (show (0 : Index) ≠ 4 by decide), invEnv_x0, invEnv_eval]
   obtain ey : E s₂.mem base 4 = E s.mem base 1 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
     simp only [applyOps, encodeFields, FieldOp.apply, opMul]
-    rw [Function.update_of_ne (show (4 : Index) ≠ 1 by decide), Function.update_self, invEnv_x2,
+    rw [Fun.update_of_ne (show (4 : Index) ≠ 1 by decide), Fun.update_self, invEnv_x2,
       invEnv_eval]
   simp only [List.append_assoc]
   -- `x` fully reduced.
@@ -173,10 +173,10 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     rw [E_update (o := 1) (m₃.ws (by decide))]
     funext i
     by_cases hi : i = 1
-    · subst hi; rw [Function.update_self]
+    · subst hi; rw [Fun.update_self]
       change Proof.X448.toFe (fe s₃.mem base X2) = Proof.X448.toFe (fe s₂.mem base X2)
       rw [vx₃]; exact Proof.X448.toFe_mod _
-    · rw [Function.update_of_ne hi]
+    · rw [Fun.update_of_ne hi]
   -- `y` into slot 1, fully reduced.
   change WP isa (.block (Impl.X448.X86.copy X2 (slot 4) ++ _)) s₈ _
   rw [WP.block_append_iff]
@@ -189,7 +189,7 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   obtain y₁₀ : fe s₁₀.mem base X2 = (E s.mem base 1 * Proof.X448.invert (E s.mem base 2)).val := by
     obtain hy : (E s₉.mem base 1).val = fe s₉.mem base X2 % Spec.X448.P := Proof.X448.toFe_val _
     obtain h9 : E s₉.mem base 1 = E s₈.mem base 4 := by
-      rw [e₉]; exact Function.update_self _ _ _
+      rw [e₉]; exact Fun.update_self _ _ _
     rw [vy₁₀, ← hy, h9, E₈, E₃, ey]
   -- The output.
   obtain esi₁₀ : s₁₀.gpr .esi = arg s₀ 0 := by

@@ -168,7 +168,7 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.m
   refine ops_seq hs hb _ fun s1 k1 b1 e1 => ?_
   have hs1 := k1.scr hs
   have hk1 : ∀ i : Index, i ≠ 12 → i ≠ 13 → E s1.mem base i = E s.mem base i := fun i h12 h13 => by
-    rw [e1]; simp only [applyOps, FieldOp.apply, opMul, Function.update_of_ne h13, Function.update_of_ne h12]
+    rw [e1]; simp only [applyOps, FieldOp.apply, opMul, Fun.update_of_ne h13, Fun.update_of_ne h12]
   have x12 : E s1.mem base 12 = E s.mem base 0 * E s.mem base 10 := by rw [e1]; rfl
   have x13 : E s1.mem base 13 = E s.mem base 8 * E s.mem base 2 := by rw [e1]; rfl
   refine WP.seq (WP.mono (eqSlots_ok hs1 b1 12 13 (by decide) (by decide) (by decide))
@@ -182,13 +182,13 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.m
   refine VG.Proof.X25519.Arm.WP.append (decR11_ok (t := k) r11₃) fun v ⟨ev, gv, mv, rv, wv⟩ => ?_
   refine VG.Proof.X25519.Arm.wp_cmp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun t vt hz => WP.block_nil ?_
   have e30 : E s3.mem base 0 = E s2.mem base 21 := by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_of_ne (by decide : (0 : Index) ≠ 8),
-      Function.update_self]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_of_ne (by decide : (0 : Index) ≠ 8),
+      Fun.update_self]
   have e38 : E s3.mem base 8 = E s2.mem base 9 := by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self,
-      Function.update_of_ne (by decide : (9 : Index) ≠ 0)]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_self,
+      Fun.update_of_ne (by decide : (9 : Index) ≠ 0)]
   have e3k : ∀ i : Index, i ≠ 0 → i ≠ 8 → E s3.mem base i = E s2.mem base i := fun i h0 h8 => by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_of_ne h8, Function.update_of_ne h0]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_of_ne h8, Fun.update_of_ne h0]
   have mt : t.mem = s3.mem := by rw [vt.mem, mv]
   obtain ⟨c, hcl, hcz, hcb⟩ := c2
   refine ⟨by rw [vt.gpr, ev], ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, by rw [mt]; exact b3, ?_, ?_, fun i hi => ?_,
@@ -252,7 +252,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       (by decide)).outside2 o3 (by decide) (by decide)
   refine WP.mono (vresult_ok hs3 sv3 h12') fun t ⟨rt, st, lt, gt⟩ => ⟨?_, st, ?_, fun r hr => ?_⟩
   · rw [rt]
-    refine if_congr ?_ rfl rfl
+    refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)
     rw [r10]
     refine (BitVec.or_eq_zero_iff.trans (and_congr_left fun _ => BitVec.or_eq_zero_iff)).trans ?_
     refine (and_congr (and_congr Iff.rfl hcz) hcz').trans ?_

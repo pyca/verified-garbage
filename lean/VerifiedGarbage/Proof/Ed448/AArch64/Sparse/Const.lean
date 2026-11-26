@@ -26,7 +26,7 @@ theorem constE {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
     (o:Index) (v:Spec.X448.Fe) :
     WP isa (.block (constSlot (slot o.val) v)) s fun t =>
       BEnv t.mem base ∧ Same base [o] s.mem t.mem ∧
-      EV t.mem base=Function.update (EV s.mem base) o v ∧
+      EV t.mem base=Fun.update (EV s.mem base) o v ∧
       (∀ j<8,word t.mem base (slot o.val+8*j)=limb v j) ∧
       Outside base (slot o.val) 64 s.mem t.mem ∧ Keeps [.x4] s t := by
   have ho:=o.isLt

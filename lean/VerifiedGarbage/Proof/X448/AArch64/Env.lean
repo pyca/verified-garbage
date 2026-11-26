@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.X448.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -63,10 +63,10 @@ theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val
   simp only [slot]
   omega_using [hp]
 
-def opMul (o a b : Index) (e : Env) : Env := Function.update e o (e a * e b)
-def opSub (o a b : Index) (e : Env) : Env := Function.update e o (e a - e b)
-def opCopy (o a : Index) (e : Env) : Env := Function.update e o (e a)
+def opMul (o a b : Index) (e : Env) : Env := Fun.update e o (e a * e b)
+def opSub (o a b : Index) (e : Env) : Env := Fun.update e o (e a - e b)
+def opCopy (o a : Index) (e : Env) : Env := Fun.update e o (e a)
 def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
+  Fun.update (Fun.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 end VG.Proof.X448.AArch64

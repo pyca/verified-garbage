@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym

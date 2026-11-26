@@ -74,9 +74,9 @@ abbrev FieldCT (c : Prog isa) :=
   ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) c
 
 def copyPointEnv {F : Type _} (E : Nat → F) (o q : Pt) : Nat → F :=
-  let e₁ := Function.update E o.x (E q.x)
-  let e₂ := Function.update e₁ o.y (e₁ q.y)
-  Function.update e₂ o.z (e₂ q.z)
+  let e₁ := Fun.update E o.x (E q.x)
+  let e₂ := Fun.update e₁ o.y (e₁ q.y)
+  Fun.update e₂ o.z (e₂ q.z)
 
 theorem copyPoint_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
@@ -100,7 +100,7 @@ theorem copyPoint_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   grind
 
 def infinityEnv (M : Mod) (m one : Nat) [NeZero m] (E : Nat → Fin m) (o : Pt) : Nat → Fin m :=
-  Function.update (Function.update (Function.update E o.x (toM m (2^(64*M.n)) 0))
+  Fun.update (Fun.update (Fun.update E o.x (toM m (2^(64*M.n)) 0))
     o.y (toM m (2^(64*M.n)) one)) o.z (toM m (2^(64*M.n)) 0)
 
 theorem infinity_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]

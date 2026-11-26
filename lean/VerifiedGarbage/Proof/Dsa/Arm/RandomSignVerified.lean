@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.RandomSign

@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.Checks
 meta import VerifiedGarbage.Proof.Ffdh.X86.StagesCT
 public import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.ToAdditive
@@ -56,7 +55,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Ffdh.Power
 meta import VerifiedGarbage.Proof.Ffdh.KeyScalar
-meta import Mathlib.Logic.Function.Basic
 meta import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.SplitIfs
 

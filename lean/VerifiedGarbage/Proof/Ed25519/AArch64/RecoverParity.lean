@@ -71,8 +71,8 @@ theorem fieldEqual_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Slot) :
       fun _ _ => ⟨fun _ => by grind, fun _ => by grind⟩]
   · intro i hi
     rw [tm, vu]
-    change Function.update (env s.mem base) 21 (env s.mem base a - env s.mem base b) i = _
-    exact Function.update_of_ne hi _ _
+    change Fun.update (env s.mem base) 21 (env s.mem base a - env s.mem base b) i = _
+    exact Fun.update_of_ne hi _ _
 
 end VG.Proof.Ed25519.AArch64
 end

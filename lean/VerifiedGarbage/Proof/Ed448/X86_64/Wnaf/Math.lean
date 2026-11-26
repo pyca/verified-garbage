@@ -181,19 +181,19 @@ theorem negateSelected_ok {s : State} {base : Addr} (hs : Scr s base) {o t : Nat
   refine ⟨ksw.trans ku, ?_, ?_⟩
   · have vy : rv y W = rv x W := rv_congr (fun r hr => ky.1 r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; intro h; subst r; exact absurd hr (by decide)))
-    rw [eu, Function.update_self, vz, vy, vx, ky.2.1, kx.2.1]
+    rw [eu, Fun.update_self, vz, vy, vx, ky.2.1, kx.2.1]
     change VG.Proof.X448.toFe (if decide (d < 0) then fe w.mem base (slot 3)
       else fe w.mem base (slot 8)) = _
     simp only [apply_ite VG.Proof.X448.toFe]
     change (if decide (d < 0) then E w.mem base 3 else E w.mem base 8) = _
     rw [ew, ev]
     simp only [VG.Proof.Ed448.evalOp, show VG.Proof.Ed448.idx 3 = (3 : Index) from rfl,
-      show VG.Proof.Ed448.idx 8 = (8 : Index) from rfl, Function.update_self, Function.update_of_ne (by decide : (8 : Index) ≠ 3),
+      show VG.Proof.Ed448.idx 8 = (8 : Index) from rfl, Fun.update_self, Fun.update_of_ne (by decide : (8 : Index) ≠ 3),
       zero_sub, decide_eq_true_eq]
   · intro j h3 h8
-    rw [eu, Function.update_of_ne h8, km, ew, ev]
+    rw [eu, Fun.update_of_ne h8, km, ew, ev]
     simp only [VG.Proof.Ed448.evalOp, show VG.Proof.Ed448.idx 3 = (3 : Index) from rfl,
-      show VG.Proof.Ed448.idx 8 = (8 : Index) from rfl, Function.update_of_ne h3]
+      show VG.Proof.Ed448.idx 8 = (8 : Index) from rfl, Fun.update_of_ne h3]
 
 end VG.Proof.Ed448.X86_64.Wnaf
 

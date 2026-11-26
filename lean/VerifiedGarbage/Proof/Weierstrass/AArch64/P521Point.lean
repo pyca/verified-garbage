@@ -53,7 +53,7 @@ theorem ProgKeep.trans {M : Mod} {base : Addr} {W : List Nat} {s t u : State} (h
 /-- Doublings of a number, as a multiple. -/
 private theorem toM_shl {m R v k : Nat} [NeZero m] (hk : k = 1 ∨ k = 2 ∨ k = 3) (o a : Nat) (E : Nat → Fin m)
     (hv : toM m R v = E a) :
-    Function.update E o (toM m R (2 ^ k * v % m)) = runOps (Step.ops (.shl k o a)) E := by
+    Fun.update E o (toM m R (2 ^ k * v % m)) = runOps (Step.ops (.shl k o a)) E := by
   have dbl : ∀ x, toM m R ((x + x) % m) = toM m R x + toM m R x := fun x => toM_add ..
   have e2 : ∀ x, 2 * x % m = (x % m + x % m) % m := fun x => by rw [Nat.two_mul, Nat.add_mod]
   have step : ∀ x, toM m R (2 * x % m) = toM m R (x % m) + toM m R (x % m) := fun x => by rw [e2, dbl]
@@ -65,7 +65,7 @@ private theorem toM_shl {m R v k : Nat} [NeZero m] (hk : k = 1 ∨ k = 2 ∨ k =
     have two : toM m R (4 * v % m) = (E a + E a) + (E a + E a) := by
       rw [show 4 * v = 2 * (2 * v) by omega_arith, step, one]
     simp only [Step.ops, List.replicate, Nat.reduceSub, runOps_cons, runOps_nil, FOp.run, Nat.reducePow, two,
-      Function.update_apply]
+      Fun.update_apply]
     split <;> rfl
   · funext y
     have two : toM m R (4 * v % m) = (E a + E a) + (E a + E a) := by
@@ -73,7 +73,7 @@ private theorem toM_shl {m R v k : Nat} [NeZero m] (hk : k = 1 ∨ k = 2 ∨ k =
     have three : toM m R (8 * v % m) = ((E a + E a) + (E a + E a)) + ((E a + E a) + (E a + E a)) := by
       rw [show 8 * v = 2 * (4 * v) by omega_arith, step, two]
     simp only [Step.ops, List.replicate, Nat.reduceSub, runOps_cons, runOps_nil, FOp.run, Nat.reducePow, three,
-      Function.update_apply]
+      Fun.update_apply]
     split <;> rfl
 
 theorem step_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hsp : supported M = true)
@@ -197,7 +197,7 @@ theorem doubleSteps_ok (S : RcbSlots) (p o : Pt) : ∀ st ∈ doubleSteps S p o,
 theorem doubleN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps doubleN e 6, runOps doubleN e 7, runOps doubleN e 8) = dblJF (e 11) (e 12) (e 13) := by
   simp only [doubleN, flat, doubleSteps, List.flatMap_cons, List.flatMap_nil, Step.ops, List.replicate, Nat.reduceSub,
-    List.cons_append, List.nil_append, runOps_cons, runOps_nil, FOp.run, Function.update_apply, dblJF, Prod.mk.injEq,
+    List.cons_append, List.nil_append, runOps_cons, runOps_nil, FOp.run, Fun.update_apply, dblJF, Prod.mk.injEq,
     Nat.reduceEqDiff, ite_true, ite_false]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 

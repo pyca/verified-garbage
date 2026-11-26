@@ -29,7 +29,6 @@ import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rsa.BytesFrame

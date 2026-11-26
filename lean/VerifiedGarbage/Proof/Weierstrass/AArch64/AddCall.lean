@@ -47,7 +47,7 @@ there: the same values but at `b`. -/
 theorem runOps_rcb3_b3 {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) {b : Nat} (hb : b ∉ rcbW S o ++ rcbR S p q) (E : Nat → F) {x : Nat}
     (hx : x ≠ b) :
-    runOps (rcb3 { S with b3 := b } p q o) (Function.update E b (E S.b3)) x =
+    runOps (rcb3 { S with b3 := b } p q o) (Fun.update E b (E S.b3)) x =
       runOps (rcb3 S p q o) E x := by
   obtain hA₂ : RcbApart { S with b3 := b } p q o :=
     ⟨hA.nodup, fun y hy => by
@@ -56,13 +56,13 @@ theorem runOps_rcb3_b3 {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q 
       rcases List.mem_cons.mp hy with rfl | hy
       · exact fun h => hb (List.mem_append_left _ (show y ∈ rcbW S o from h))
       · exact hA.apart _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hy))⟩
-  obtain he : (fun y => Function.update E b (E S.b3) (rcbσ { S with b3 := b } p q o y)) =
+  obtain he : (fun y => Fun.update E b (E S.b3) (rcbσ { S with b3 := b } p q o y)) =
       fun y => E (rcbσ S p q o y) := by
     funext y
     by_cases hy : y = 10
     · subst hy
       simp [rcbσ, rcbW, rcbR]
-    · rw [rcbσ_b3 S p q o b hy, Function.update_of_ne fun h => hb (by rw [← h]; exact rcbσ_mem S p q o y)]
+    · rw [rcbσ_b3 S p q o b hy, Fun.update_of_ne fun h => hb (by rw [← h]; exact rcbσ_mem S p q o y)]
   by_cases hw : x ∈ rcbW S o
   · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hw
     obtain e : (rcbW S o)[i] = rcbσ S p q o i := by
@@ -75,7 +75,7 @@ theorem runOps_rcb3_b3 {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q 
   · have hout : ∀ (S' : RcbSlots), rcbW S' o = rcbW S o → ∀ op ∈ rcb3 S' p q o, op.out ≠ x :=
       fun S' hS op hop h => hw (hS ▸ h ▸ (rcb3_eq S' p q o ▸ ofN_out rcb3N_ok) op hop)
     rw [runOps_of_not_out _ _ (hout { S with b3 := b } rfl), runOps_of_not_out _ _ (hout S rfl),
-      Function.update_of_ne hx]
+      Fun.update_of_ne hx]
 
 /-! ## The call -/
 
@@ -186,7 +186,7 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
   obtain hb3V : S.b3 ∈ V := hV _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   obtain outW : ∀ x ∈ rcbW S o, x ≠ bAt := fun x hx h => hc.apart (List.mem_append_left _ (h ▸ hx))
   obtain outR : ∀ x ∈ rcbR S p q, x ≠ bAt := fun x hx h => hc.apart (List.mem_append_right _ (h ▸ hx))
-  let E₂ := Function.update E bAt (E S.b3)
+  let E₂ := Fun.update E bAt (E S.b3)
   obtain hr3 : rcb3 { S with a := bAt, b3 := bAt } p q o = rcb3 { S with b3 := bAt } p q o := rfl
   rw [addP]
   refine WP.seq (WP.mono (insLr_ok s) fun s₁ e₁ => ?_)
@@ -205,8 +205,8 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
       · exact hI.lt x ((List.mem_cons.mp hx).resolve_left hxb)
     · rw [m₁]
       by_cases hxb : x = bAt
-      · rw [hxb, hr, hI.val _ hb3V]; exact (Function.update_self bAt (E S.b3) E).symm
-      · rw [hI.val x ((List.mem_cons.mp hx).resolve_left hxb)]; exact (Function.update_of_ne hxb ..).symm
+      · rw [hxb, hr, hI.val _ hb3V]; exact (Fun.update_self bAt (E S.b3) E).symm
+      · rw [hI.val x ((List.mem_cons.mp hx).resolve_left hxb)]; exact (Fun.update_of_ne hxb ..).symm
   -- the call
   obtain hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
     have := hs.contains (d := 0) (n := size) (by have := hL'.le bAt hbS; omega_using []) (by
@@ -293,8 +293,8 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
   obtain Eb : runOps (rcb3 S p q o) E bAt = E bAt := runOps_of_not_out _ _ (outs S rfl)
   obtain Eb₂ : bAt ∈ V → runOps (rcb3 { S with a := bAt, b3 := bAt } p q o) E₂ bAt = E bAt := fun hbV' => by
     rw [runOps_of_not_out _ _ (outs { S with a := bAt, b3 := bAt } rfl)]
-    show Function.update E bAt (E S.b3) bAt = _
-    rw [Function.update_self, ← hI.val _ hb3V, ← hr, hI.val _ hbV']
+    show Fun.update E bAt (E S.b3) bAt = _
+    rw [Fun.update_self, ← hI.val _ hb3V, ← hr, hI.val _ hbV']
   refine ⟨hK, ⟨hK.scr hs, by rw [m₅]; exact I₄'.mod, fun x hx => ?_, fun x hx => ?_,
     fun x hx => ?_⟩, ?_⟩
   · rcases List.mem_append.mp hx with hx | hx
@@ -306,13 +306,13 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     · subst hxb; rw [Eb₂ (hbV _ hx rfl), Eb]
     · exact hrun x hxb
   · have hp : ∀ x ∈ [p.x, p.y, p.z, q.x, q.y, q.z], E₂ x = E x := fun x hx =>
-      Function.update_of_ne (outR x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))) ..
+      Fun.update_of_ne (outR x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))) ..
     rw [← hrun _ (outW _ (hoW _ (by simp))), ← hrun _ (outW _ (hoW _ (by simp))),
       ← hrun _ (outW _ (hoW _ (by simp))), vals₄]
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hp
     rw [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1, hp.2.2.2.2.1, hp.2.2.2.2.2]
-    change VG.Proof.Weierstrass.rcbAdd3 (Function.update E bAt (E S.b3) bAt) _ _ _ _ _ _ = _
-    rw [Function.update_self]
+    change VG.Proof.Weierstrass.rcbAdd3 (Fun.update E bAt (E S.b3) bAt) _ _ _ _ _ _ = _
+    rw [Fun.update_self]
 
 /-! ## A copy, then the addition -/
 

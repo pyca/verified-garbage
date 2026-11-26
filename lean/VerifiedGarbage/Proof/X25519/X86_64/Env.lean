@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # X25519 on x86-64: the working space as slots
 
 The working space as 128 slots of 32 bytes (`E`), each read as a field
-element: each field operation updates one slot (`Function.update`) and the
+element: each field operation updates one slot (`Fun.update`) and the
 swap two, so that a sequence of operations is a chain of updates that `simp`
 evaluates at any slot. The ladder's variables and temporaries are in the slots
 2–19 (bytes 64–639), so the field operations change no byte outside `[64,
@@ -33,11 +33,11 @@ theorem Outside.mono {base : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Outside b
 
 theorem E_update {base : Addr} {m m' : Mem} {o : Fin 128}
     (h : Outside base (32 * o.val) 32 m m') :
-    E m' base = Function.update (E m base) o (F m' base (32 * o.val)) := by
+    E m' base = Fun.update (E m base) o (F m' base (32 * o.val)) := by
   funext i
   by_cases hi : i = o
   · subst hi; simp [E]
-  · rw [Function.update_of_ne hi]
+  · rw [Fun.update_of_ne hi]
     simp only [E, F]
     have : i.val ≠ o.val := fun h' => hi (Fin.ext h')
     rw [h.fe (by omega_arith) (by omega_arith)]
@@ -117,13 +117,13 @@ variable {fld : Field} (hf : FieldOk fld)
 /-- Environments: the working space's slots. -/
 abbrev Env := Fin 128 → Spec.X25519.Fe
 
-def opMul (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a * e b)
-def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
-def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
+def opMul (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a * e b)
+def opAdd (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a + e b)
+def opSub (o a b : Fin 128) (e : Env) : Env := Fun.update e o (e a - e b)
 def opA24Add (o b a : Fin 128) (e : Env) : Env :=
-  Function.update e o (e b + Spec.X25519.a24 * e a)
+  Fun.update e o (e b + Spec.X25519.a24 * e a)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
+  Fun.update (Fun.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 /-- A slot of the ladder's: 2 to 19. -/
 abbrev LSlot (o : Fin 128) : Prop := 2 ≤ o.val ∧ o.val < 20

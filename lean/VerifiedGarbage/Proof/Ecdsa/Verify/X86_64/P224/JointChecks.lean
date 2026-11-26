@@ -526,11 +526,11 @@ theorem cacheE_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
   obtain h2 : publicJointF.K.E.z ≠ publicJointF.selected := by decide +kernel
   obtain h1' : publicJointF.selected ≠ publicJointF.selected + 8*publicJointF.K.M.n := Ne.symm h1
   refine ⟨?_,?_,fun z hz1 hz2 => ?_⟩
-  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Function.update_apply, h1', h2, ite_true,
+  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Fun.update_apply, h1', h2, ite_true,
       ite_false]
-  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Function.update_apply, h1, h1', h2,
+  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Fun.update_apply, h1, h1', h2,
       ite_true, ite_false]
-  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Function.update_apply, hz1, hz2, ite_false]
+  · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Fun.update_apply, hz1, hz2, ite_false]
 
 /-- The table by calls builds the table. -/
 theorem table_call_ok : JointTableCallOk publicJointF Impl.Weierstrass.PointOps.p224 8192 := by

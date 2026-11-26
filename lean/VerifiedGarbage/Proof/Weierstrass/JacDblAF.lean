@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!

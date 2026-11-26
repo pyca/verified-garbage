@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 public import VerifiedGarbage.Proof.Ed448.SignedComb

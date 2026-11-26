@@ -362,7 +362,7 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
     rw [point_eq hL]
     show Point.affine (toM _ _ (sv base s₁ RX)) (toM _ _ (sv base s₁ RY)) = _
     rw [e₁ RX (by decide), e₁ RY (by decide), hx, hy]
-    exact congrArg₂ Point.affine (toM_mont unit) (toM_mont unit)
+    exact congr (congrArg Point.affine (toM_mont unit)) (toM_mont unit)
   -- The call, with the table its readable region.
   rw [Cfg.wsCall, eG]
   refine WP.seq (WP.seq (WP.cons (exec_addi (by decide)) (WP.block_nil ?_)))

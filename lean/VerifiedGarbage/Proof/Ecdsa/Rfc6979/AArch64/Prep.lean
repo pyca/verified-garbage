@@ -4,7 +4,6 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
 import VerifiedGarbage.Proof.Hmac.Common

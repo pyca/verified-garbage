@@ -20,7 +20,7 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
-import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.FunUpdate
 public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.TCB.Code
 
@@ -81,8 +81,8 @@ theorem uvEnv_eval (xo yo : Fin 22) (h : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo 
       ∀ i : Fin 22, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 12 → i ≠ 13 → i ≠ xo → e' i = e i := by
   have hk : ∀ i : Fin 22, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 12 → i ≠ 13 → i ≠ xo → uvEnv yo xo e i = e i :=
     fun i h3 h4 h5 h12 h13 hx => by
-      simp only [uvEnv, mulS, subS, Function.update_of_ne h3, Function.update_of_ne h4, Function.update_of_ne h5,
-        Function.update_of_ne h12, Function.update_of_ne h13, Function.update_of_ne hx]
+      simp only [uvEnv, mulS, subS, Fun.update_of_ne h3, Fun.update_of_ne h4, Fun.update_of_ne h5,
+        Fun.update_of_ne h12, Fun.update_of_ne h13, Fun.update_of_ne hx]
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · exact ⟨rfl, rfl, rfl, rfl, hk⟩
   · exact ⟨rfl, rfl, rfl, rfl, hk⟩
@@ -137,7 +137,7 @@ theorem xEnv_eval (xo : Fin 22) (h : xo = 6 ∨ xo = 8) (e : Env) :
     let e' := xEnv xo e
     e' xo = x ∧ e' 12 = e 3 * (x * x) ∧ e' 13 = e 13 ∧ ∀ i : Fin 22, i ≠ xo → i ≠ 12 → e' i = e i := by
   have hk : ∀ i : Fin 22, i ≠ xo → i ≠ 12 → xEnv xo e i = e i := fun i hx h12 => by
-    simp only [xEnv, mulS, Function.update_of_ne hx, Function.update_of_ne h12]
+    simp only [xEnv, mulS, Fun.update_of_ne hx, Fun.update_of_ne h12]
   rcases h with rfl | rfl
   · exact ⟨rfl, Fin.mul_comm _ _, rfl, hk⟩
   · exact ⟨rfl, Fin.mul_comm _ _, rfl, hk⟩

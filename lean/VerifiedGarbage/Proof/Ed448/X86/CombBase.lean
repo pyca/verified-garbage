@@ -455,7 +455,7 @@ theorem and_one_mask (b : Bool) : mask b &&& 1 = if b then (1 : BitVec 32) else 
 
 /-- The slots after a selection of entry `(x, y)`. -/
 def selEnvT (q : Spec.X448.Fe × Spec.X448.Fe) (e : Env) : Env :=
-  Function.update (Function.update e 8 q.1) 9 q.2
+  Fun.update (Fun.update e 8 q.1) 9 q.2
 
 theorem selectT_ok {s : State} {base : Addr} (hs : Scr s base) {jt d : Nat} (hd : d < 9)
     (h5 : s.gpr .ecx = BitVec.ofNat 32 d) (hrow : RowAt base jt s) :
@@ -551,11 +551,11 @@ theorem selectT_ok {s : State} {base : Addr} (hs : Scr s base) {jt d : Nat} (hd 
   refine ⟨⟨tk.mono (by decide), fun p _ hp _ => tm p (by omega_using [hp, h8])⟩, ?_⟩
   funext i
   by_cases i9 : i = 9
-  · subst i9; rw [selEnvT, Function.update_self]; exact F_digits _ ly
-  · rw [selEnvT, Function.update_of_ne i9]
+  · subst i9; rw [selEnvT, Fun.update_self]; exact F_digits _ ly
+  · rw [selEnvT, Fun.update_of_ne i9]
     by_cases i8 : i = 8
-    · subst i8; rw [Function.update_self]; exact F_digits _ lx
-    · rw [Function.update_of_ne i8]
+    · subst i8; rw [Fun.update_self]; exact F_digits _ lx
+    · rw [Fun.update_of_ne i8]
       exact congrArg Proof.X448.toFe (num_congr (other i i8 i9))
 
 /-- The digit's magnitude and its table's address. -/
@@ -652,9 +652,9 @@ theorem digitEnv_keep {x y z : Index} (h : Acc x y z) (q : Spec.X448.Fe × Spec.
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;> revert i <;> decide
   obtain ⟨h8, h9, h12, h13, h14, h15, h16, h17, h18, hx, hy, hz⟩ := hx
   simp only [digitEnv, affFields, applyOps, FieldOp.apply, opMul, opAdd, opSub, opA24, opSwap, selEnvT,
-    Function.update_of_ne h8, Function.update_of_ne h9, Function.update_of_ne h12, Function.update_of_ne h13,
-    Function.update_of_ne h14, Function.update_of_ne h15, Function.update_of_ne h16, Function.update_of_ne h17,
-    Function.update_of_ne h18, Function.update_of_ne hx, Function.update_of_ne hy, Function.update_of_ne hz]
+    Fun.update_of_ne h8, Fun.update_of_ne h9, Fun.update_of_ne h12, Fun.update_of_ne h13,
+    Fun.update_of_ne h14, Fun.update_of_ne h15, Fun.update_of_ne h16, Fun.update_of_ne h17,
+    Fun.update_of_ne h18, Fun.update_of_ne hx, Fun.update_of_ne hy, Fun.update_of_ne hz]
 
 theorem BitsAtB.keep {base : Addr} {k : Nat} {m m' : Mem} (h : BitsAtB base k m)
     (hm : WsOut2 base 64 2816 ACC 512 m m') : BitsAtB base k m' := fun t ht => by

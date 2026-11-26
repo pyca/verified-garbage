@@ -42,7 +42,6 @@ import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Proof.P384.EcdhDouble
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 meta import VerifiedGarbage.Impl.P384.CombArithmetic
@@ -59,7 +58,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Weierstrass.Jac
-meta import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 meta import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.Booth

@@ -94,7 +94,7 @@ theorem save_ok {s : State} {base : Addr} (hc : s.gpr .rcx = base)
 
 theorem E_st4 (m : Mem) (base : Addr) {o : Nat} (i : Fin 128) (hi : o = 32 * i.val)
     (w0 w1 w2 w3 : BitVec 64) :
-    E (st4 m base o w0 w1 w2 w3) base = Function.update (E m base) i (toFe (val4 w0 w1 w2 w3)) := by
+    E (st4 m base o w0 w1 w2 w3) base = Fun.update (E m base) i (toFe (val4 w0 w1 w2 w3)) := by
   subst hi
   rw [E_update (st4_outside _ _ (by omega_arith) _ _ _ _), F, fe_st4 _ _ (by omega_arith)]
 
@@ -183,7 +183,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
     rw [g', g₉, g₈, g₇, k₆.1 r hr, g₅, g₄]
   obtain G₁ : ∀ r, r ∉ [Reg.r8, .r9, .r10, .r11, .rax] → s₂.gpr r = s.gpr r := fun r hr => by
     rw [g₂, k₁.1 r hr]
-  obtain e' : E s'.mem base = Function.update (E s₉.mem base) 20 (F s'.mem base (32 * 20)) := by
+  obtain e' : E s'.mem base = Fun.update (E s₉.mem base) 20 (F s'.mem base (32 * 20)) := by
     rw [m']; exact E_update ((writeW_outside _ _ _ (by decide)).mono (by decide) (by decide))
   obtain e₉ := E_st4 (o := Z3) s₈.mem base 6 rfl (s₈.gpr .rdx) (s₈.gpr .rax) (s₈.gpr .rax) (s₈.gpr .rax)
   obtain e₈ := E_st4 (o := Z2) s₇.mem base 4 rfl (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax) (s₇.gpr .rax)
@@ -225,7 +225,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
       rcases hrd with rfl | rfl | rfl | rfl | rfl | rfl <;> exact k₁.1 _ (by decide)
     exact sv.outside o' (by omega_arith)
   · rw [e', e₉, e₈, e₇, k₆.2.1, e₅, e₄]
-    simp (config := {decide := true}) only [Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [Fun.update_apply, ite_true, ite_false]
     rw [hu s₄ (fun r _ => g₄ r), hu s₃ (fun _ _ => rfl), r₈.1, r₈.2, r₇, rdx₆, rax₆, one, zero]
     obtain ow : Outside base SWAP 8 s₉.mem s'.mem := by rw [m']; exact writeW_outside _ _ _ (by decide)
     refine ⟨rfl, rfl, rfl, rfl, rfl, ?_, ?_, ?_⟩

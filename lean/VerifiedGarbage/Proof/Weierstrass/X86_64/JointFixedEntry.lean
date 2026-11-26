@@ -157,7 +157,7 @@ open VG.Proof.X25519.X86_64 (Keeps)
 
 def fixedEntryEnv (K : WinCfg) (m : Nat) [NeZero m] (E : Nat → Fin m) (b : BitVec 8) (x y : Nat) : Nat → Fin m :=
   let e := fixedLoadEnv K m E x y
-  if b.toNat<128 then e else Function.update e K.E.y (-e K.E.y)
+  if b.toNat<128 then e else Fun.update e K.E.y (-e K.E.y)
 
 private theorem prefix_keep {M : Mod} {base : Addr} {W : List Nat} {s t : State}
     {rs : List Reg} (hk : Keeps rs s t) (hr : ∀ r∈rs,r∈clob M.n) :
@@ -246,7 +246,7 @@ theorem fixedEntryEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : N
   unfold fixedEntryEnv
   split
   · exact h
-  · simp only [Function.update_self,Function.update_of_ne hxy,Function.update_of_ne hzy]
+  · simp only [Fun.update_self,Fun.update_of_ne hxy,Fun.update_of_ne hzy]
     exact ⟨h.1.negY,h.2⟩
 
 end VG.Proof.Weierstrass.X86_64

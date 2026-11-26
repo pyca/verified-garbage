@@ -92,7 +92,7 @@ theorem FieldCompilerOn.maddJ_values_ok {arithmetic : Mod → List FOp → Prog 
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem maddJN_ok hx)
     · exact Or.inl hx
-  · exact (congrArg₂ Prod.mk (ofN_run maddJN_ok hA E 6)
-      (congrArg₂ Prod.mk (ofN_run maddJN_ok hA E 7) (ofN_run maddJN_ok hA E 8))).trans (maddJN_run _)
+  · exact (congr (congrArg Prod.mk (ofN_run maddJN_ok hA E 6))
+      (congr (congrArg Prod.mk (ofN_run maddJN_ok hA E 7)) (ofN_run maddJN_ok hA E 8))).trans (maddJN_run _)
 
 end VG.Proof.Weierstrass.AArch64

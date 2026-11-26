@@ -147,7 +147,7 @@ open Spec.Weierstrass
     have : i=0∨i=1∨i=2∨i=3∨i=4 := by omega_arith
     rcases this with rfl|rfl|rfl|rfl|rfl <;>
       simpa only [selectedSlot,show K.P.x=1280 from rfl,show K.P.y=1440 from rfl,
-        show K.P.z=224 from rfl,Function.update_apply,Nat.reduceLT,Nat.reduceAdd,Nat.reduceMul,
+        show K.P.z=224 from rfl,Fun.update_apply,Nat.reduceLT,Nat.reduceAdd,Nat.reduceMul,
         Nat.reduceSub,Nat.reduceEqDiff,ite_true,ite_false,one] using he
   refine ⟨fr,hf.keep (frame_build fr),?_,?_,?_,?_,?_⟩
   · intro i hi
@@ -319,7 +319,7 @@ theorem copyD_ok {base : Addr} {P Q : Point C} {k : Nat} {s : State}
   change tmv C 4 base t 640=_ at vy
   simp only [show K.D.x=608 from rfl,show K.D.y=640 from rfl,
     show K.S.t3=896 from rfl,show K.S.t2=864 from rfl,
-    Function.update_apply,Nat.reduceEqDiff,ite_true,ite_false] at vx vy
+    Fun.update_apply,Nat.reduceEqDiff,ite_true,ite_false] at vx vy
   refine ⟨fr,hp.congr sel,fun x hh => it.lt x ?_,?_⟩
   · rcases List.mem_cons.mp hh with rfl|hh
     · decide

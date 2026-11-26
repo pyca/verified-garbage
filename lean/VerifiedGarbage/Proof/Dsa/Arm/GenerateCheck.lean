@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 public import VerifiedGarbage.Proof.Dsa.Arm.Shape
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 import VerifiedGarbage.Proof.Framework.Offset

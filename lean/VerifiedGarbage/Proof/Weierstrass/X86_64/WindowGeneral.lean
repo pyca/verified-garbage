@@ -61,7 +61,7 @@ theorem dblJGen_eq (S : RcbSlots) (p o : Pt) : WinCfg.dblJGen S p o = ofN dblJGe
 /-- `dblJGen`'s operations compute `dblAF` of the slot `9`'s `a`. -/
 theorem dblJGenN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJGenN e 6, runOps dblJGenN e 7, runOps dblJGenN e 8) = dblAF (e 9) (e 11) (e 12) (e 13) := by
-  dsimp only [dblJGenN, WinCfg.dblJGen, runOps, List.foldl, FOp.run, Function.update]
+  dsimp only [dblJGenN, WinCfg.dblJGen, runOps, List.foldl, FOp.run, Fun.update]
   simp only [dblAF, Prod.mk.injEq]
   constructor
   · grind

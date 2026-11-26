@@ -605,7 +605,7 @@ theorem rhs_run (c : Cfg) (h1 : 1 ≤ c.n) {F : Type _} [Lean.Grind.CommRing F] 
   have h := congrFun (runOps_rename c.sl rhsOpsI e fun _ _ _ hy => TKit.sl_inj c h1 hy) RHS
   rw [rhsOps_tail]
   refine h.trans ?_
-  simp only [rhsOpsI, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [rhsOpsI, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [RHS, TT, CXM, AP, BP, T0, T1, Nat.reduceEqDiff, ↓reduceIte]
 
 /-- `x R` to `CXM` and `rhs` (in Montgomery's form) to `RHS`. -/

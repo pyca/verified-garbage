@@ -707,7 +707,7 @@ theorem neg_env (e : Env) (a b c : Slot) (sw : Bool) (hab : a ≠ b) (hc8 : c �
 theorem neg_other (e : Env) (a b c : Slot) (sw : Bool) (i : Slot) (ha : i ≠ a) (hb : i ≠ b)
     (hc : i ≠ c) (h8 : i ≠ 8) :
     swapsEnv [(a, b), (c, 8)] sw (evalOps [.sub 8 21 c] e) i = e i := by
-  cases sw <;> simp [swapsEnv, swapEnv, evalOps, evalOp, Function.update_apply, ha, hb, hc, h8]
+  cases sw <;> simp [swapsEnv, swapEnv, evalOps, evalOp, Fun.update_apply, ha, hb, hc, h8]
 
 theorem combNeg_ok {calls : Bool} {s : State} {x : BitVec 32} (hc : Ctx x s calls) (a b c : Slot) {sign : Nat}
     (hs1 : 928 ≤ sign) (hs2 : sign + 4 ≤ 8192) (sw : Bool) (hm : wd s.mem x sign = mask sw.toNat)

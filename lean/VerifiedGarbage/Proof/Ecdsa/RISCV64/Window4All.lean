@@ -336,7 +336,7 @@ theorem quad_ok (Kt : Kit) (hL : Law Kt.c.C) {base : Addr} {s : State} (hw : WsR
     rw [← toM_eq_zero_iff Kt.unit ltz]
     show tmv Kt.c.C 4 base s₆ (slot 4 RZ) = 0 ↔ _
     rw [vz', vz]
-    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
+    exact ⟨fun h => Classical.byContradiction fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
   obtain hrep := InvJ.out hL J₅
   refine ⟨KK.kp.trans ((Kp.of_rest r₇).trans (Kp.of_rest r₈)), (UK.trans O₈.unch).cover (by decide), ⟨?_, ?_, ?_, ?_⟩⟩
   · show Rep Kt.c.C (tmv Kt.c.C 4 base s₈ (slot 4 RX)) (tmv Kt.c.C 4 base s₈ (slot 4 RY)) (tmv Kt.c.C 4 base s₈ (slot 4 RZ)) _

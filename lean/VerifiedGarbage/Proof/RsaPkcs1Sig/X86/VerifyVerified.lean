@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncoding
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCmpArgs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncArgs
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
 public import VerifiedGarbage.Proof.Framework.X86.RelCT

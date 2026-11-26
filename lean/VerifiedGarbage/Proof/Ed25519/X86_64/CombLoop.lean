@@ -960,8 +960,8 @@ theorem combStartSel_ok {s : State} {base : Addr} (hs : Scratch s base) {S : Nat
     obtain h3 : i ≠ 3 := fun h => by subst h; simp at hi
     obtain h4 : i ≠ 4 := fun h => by subst h; simp at hi
     rw [vt, vc, vb, va]
-    simp only [swapEnv, evalOps, List.foldl_cons, List.foldl_nil, evalOp, Function.update_of_ne h0,
-      Function.update_of_ne h1, Function.update_of_ne h2, Function.update_of_ne h3, Function.update_of_ne h4]
+    simp only [swapEnv, evalOps, List.foldl_cons, List.foldl_nil, evalOp, Fun.update_of_ne h0,
+      Fun.update_of_ne h1, Fun.update_of_ne h2, Fun.update_of_ne h3, Fun.update_of_ne h4]
 
 /-! ## The loop -/
 

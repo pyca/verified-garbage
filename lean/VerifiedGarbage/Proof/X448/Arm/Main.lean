@@ -203,7 +203,7 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
   · rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
     rw [e₆, invEnv_x2, invEnv_eval, e₅]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
     rw [L.x2, L.x3, L.z2, L.z3, cswap_fst, cswap_fst]
 
 

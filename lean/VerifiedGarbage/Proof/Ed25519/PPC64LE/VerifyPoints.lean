@@ -76,12 +76,12 @@ theorem rootPower_ok {s : State} (hc : Ctx8 b s) :
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_using []) (by omega_using [])
   · have hz : env t1.mem b 2 = env s.mem b 2 := ek 2 (by decide)
-    rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, hz,
+    rw [e3, Fun.update_self, e2, Fun.update_self, Fun.update_of_ne (by decide), e15, hz,
       Proof.X25519.sqn_pw]
     conv => lhs; arg 2; rw [← Proof.X25519.pw_one (env s.mem b 2)]
     rw [Proof.X25519.pw_mul, root_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
-    rw [e3, Function.update_of_ne h15, e2, Function.update_of_ne h15, ek i hi]
+    rw [e3, Fun.update_of_ne h15, e2, Fun.update_of_ne h15, ek i hi]
 
 /-- The slots `recoverInitOps` computes from `y` in slot 1. -/
 theorem recoverInit_eval (e : Env) :
@@ -291,7 +291,7 @@ theorem fieldEqual_ok {s : State} (hc : Ctx b s) (a c : Slot) :
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX, this])) (by omega_using [this]) (by omega_using [hX])
     rw [ek, e1]
   · have e21 : env s1.mem b 21 = env s.mem b a - env s.mem b c := by
-      rw [e1]; simp only [evalOps, List.foldl, evalOp, Function.update_self]
+      rw [e1]; simp only [evalOps, List.foldl, evalOp, Fun.update_self]
     rw [h2, ← fe_sub_eq_zero, ← e21, Fin.ext_iff]
     rfl
 

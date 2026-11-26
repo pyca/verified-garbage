@@ -111,7 +111,7 @@ theorem stepEnv_eval (e : Env) (st : Spec.X448.Ladder) (k : Nat) (u : Spec.X448.
     stepEnv (decide (st.swap ^^^ bit k t = 1)) e 4 = (Spec.X448.ladderStep k u st t).z3 := by
   rw [ladderStep_eq]
   simp only [↓reduceIte, stepEnv, applyOps, stepFields, FieldOp.apply,
-    opMul, opAdd, opSub, opA24, opSwap, Function.update_apply,
+    opMul, opAdd, opSub, opA24, opSwap, Fun.update_apply,
     cswap_fst, cswap_snd, h0, h1, h2, h3, h4]
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 

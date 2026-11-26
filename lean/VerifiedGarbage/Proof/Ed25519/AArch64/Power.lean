@@ -21,7 +21,7 @@ variable {large : Bool}
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 open VG.Proof.X25519 (sqn)
 
-def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
+def opMul (o a b : Slot) (e : Env) : Env := Fun.update e o (e a * e b)
 
 /-- What the inversion keeps: the registers but `clob` and `x19`, the regions,
 and the memory outside `[512, 640)`. -/
@@ -108,27 +108,27 @@ theorem counter_nonzero {k : Nat} (hk : k < 2 ^ 64) :
     exact h he'
 
 /-- Slot `o` becomes slot `a` squared `n` times. -/
-def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 /-- The loop of `sqn`, with the counter `x19 = m` and slot `o` squared
 `n - m` times since `s₀`. -/
 theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base large) (o : Slot) (ho : ISlot o)
     (x : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 32) :
     ∀ m s, 1 ≤ m → m < n → IKeep base s₀ s → s.gpr .x19 = BitVec.ofNat 64 m →
-      env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) →
+      env s.mem base = Fun.update (env s₀.mem base) o (sqn x (n - m)) →
       WP isa (.loop (.block (fieldSqr (offset o) (offset o) ++
           ([.subImm .x .x19 .x19 1] : List Instr))) (.nonzero .x .x19)) s fun s' =>
-        IKeep base s₀ s' ∧ env s'.mem base = Function.update (env s₀.mem base) o (sqn x n) := by
+        IKeep base s₀ s' ∧ env s'.mem base = Fun.update (env s₀.mem base) o (sqn x n) := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   intro m s h1 h2 hk hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ IKeep base s₀ s ∧
     s.gpr .x19 = BitVec.ofNat 64 m ∧
-    env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
+    env s.mem base = Fun.update (env s₀.mem base) o (sqn x (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 1 := ⟨m - 1, by omega_using [h1]⟩
   rw [WP.block_append_iff]
@@ -136,7 +136,7 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base large) (o 
   refine WP.mono (decX19_ok (b1.trans hb)) fun s2 ⟨b2, kdec⟩ => ?_
   have k2 : IKeep base s₀ s2 := hk.trans (k1.trans ⟨fun r _ hr => kdec.gpr r (by simpa only [List.mem_singleton] using hr), kdec.rd, kdec.wr, kdec.sp,
     by rw [kdec.mem]; exact Outside.refl _ _ _ _⟩)
-  have e2 : env s2.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) := by
+  have e2 : env s2.mem base = Fun.update (env s₀.mem base) o (sqn x (n - m)) := by
     rw [kdec.mem, e1, he, opMul_update]
     congr 2
     rw [show n - m = (n - (m + 1)) + 1 by omega_using [h2]]
@@ -314,7 +314,7 @@ theorem rootPower_spec (base : Addr) : ISpec (large := large) base Impl.Ed25519.
   exact h
 
 theorem rootEnv_eval (e : Env) : rootEnv e 15 = VG.Proof.Ed25519.rootPower (e 2) := by
-  simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Fun.update_apply]
   rfl
 
 theorem rootPower_ok {s : State} {base : Addr} (hs : Scr s base large) :

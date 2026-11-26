@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.RecoverDetRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Weierstrass.MontContract

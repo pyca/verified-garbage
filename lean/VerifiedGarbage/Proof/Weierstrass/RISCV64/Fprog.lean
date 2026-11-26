@@ -95,7 +95,7 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
     (hI : Inv M.n base m Sl V E s) {o : Nat} (ho : Sl o) (hk : KeepR M.n base [o] s s')
     (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    Inv M.n base m Sl (o :: V) (Function.update E o v) s' := by
+    Inv M.n base m Sl (o :: V) (Fun.update E o v) s' := by
   have hown : own M.n ≤ 8192 := by have := rvOwn_cases M.n; simp only [own]; omega_using [this]
   have heq : ∀ x ∈ V, x ≠ o → wordsVal s'.mem base x M.n = wordsVal s.mem base x M.n := by
     intro x hx hxo
@@ -120,9 +120,9 @@ theorem Inv.update {M : Mod} {base : Addr} {m : Nat} [NeZero m] {Sl : Nat → Pr
       rw [heq x hx' hxo]; exact hI.lt x hx'
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x hx' hxo, Function.update_of_ne hxo]
+      rw [heq x hx' hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State → Prop}
@@ -250,7 +250,8 @@ theorem ofN_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk 
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6))
+      (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 /-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
 theorem rcb3_ok {M : Mod} {base : Addr} {F : Field} [NeZero F.S.m] (hF : FieldOk F) (hk : F.S.k = M.n)

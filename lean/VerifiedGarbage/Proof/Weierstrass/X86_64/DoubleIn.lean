@@ -52,7 +52,7 @@ theorem dblIn_run {F : Type _} [Lean.Grind.CommRing F] (S : RcbSlots) (p : Pt) (
   have h54 := Ne.symm h45
   have h64 := Ne.symm h46
   have h65 := Ne.symm h56
-  simp only [dblJMul, runOps, List.foldl, FOp.run, Function.update_apply, dblJF, Prod.mk.injEq, *,
+  simp only [dblJMul, runOps, List.foldl, FOp.run, Fun.update_apply, dblJF, Prod.mk.injEq, *,
     ite_true, ite_false]
   constructor
   · grind
@@ -128,7 +128,7 @@ theorem dblInT_run {F : Type _} [Lean.Grind.CommRing F] (S : RcbSlots) (p : Pt) 
   have h54 := Ne.symm h45
   have h64 := Ne.symm h46
   have h65 := Ne.symm h56
-  simp only [dblJMulT, runOps, List.foldl, FOp.run, Function.update_apply, dblJF, Prod.mk.injEq, *,
+  simp only [dblJMulT, runOps, List.foldl, FOp.run, Fun.update_apply, dblJF, Prod.mk.injEq, *,
     ite_true, ite_false]
   constructor
   · grind

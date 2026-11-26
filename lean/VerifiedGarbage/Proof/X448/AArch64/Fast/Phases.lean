@@ -801,7 +801,7 @@ theorem mul2E {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     WP isa (.block (mul2 (slot o₁.val) (slot a₁.val) (slot b₁.val) (slot o₂.val) (slot a₂.val) (slot b₂.val))) s
       fun t => FKeep base s t ∧ BEnv t.mem base ∧ Bnd Mb t.mem base (slot o₁.val) ∧
         Bnd Mb t.mem base (slot o₂.val) ∧ Same base [o₁, o₂] s.mem t.mem ∧
-        EV t.mem base = Function.update (Function.update (EV s.mem base) o₁ (EV s.mem base a₁ * EV s.mem base b₁))
+        EV t.mem base = Fun.update (Fun.update (EV s.mem base) o₁ (EV s.mem base a₁ * EV s.mem base b₁))
           o₂ (EV s.mem base a₂ * EV s.mem base b₂) := by
   have hNA : NA = 4096 := rfl
   have hACC : ACC = 3584 := rfl
@@ -823,7 +823,7 @@ theorem mul2E {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     · subst e2; exact fun j hj => Nat.lt_of_lt_of_le (m2 j hj) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib
     exact same.bnd (by simp [e1, e2]) (hb i)
   · funext i
-    simp only [Function.update_apply]
+    simp only [Fun.update_apply]
     by_cases e2 : i = o₂
     · rw [ite_eq_left e2]; subst e2; exact v2
     rw [ite_eq_right e2]
@@ -872,11 +872,11 @@ theorem opsA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
       Bnd Mb t.mem base (slot (1 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 9 (e 5 * e 5)
-        let e := Function.update e 10 (e 6 * e 6)
-        let e := Function.update e 1 (e 9 * e 10)
-        let e := Function.update e 11 (e 9 - e 10)
-        Function.update e 16 (e 9 + Spec.X448.a24 * e 11) := by
+        let e := Fun.update e 9 (e 5 * e 5)
+        let e := Fun.update e 10 (e 6 * e 6)
+        let e := Fun.update e 1 (e 9 * e 10)
+        let e := Fun.update e 11 (e 9 - e 10)
+        Fun.update e 16 (e 9 + Spec.X448.a24 * e 11) := by
   refine mulOp hs hb 9 5 5 (by decide) fun t1 k1 b1 m1 s1 e1 => ?_
   have hs1 := k1.scr hs
   refine mulOp hs1 b1 10 6 6 (by decide) fun t2 k2 b2 m2 s2 e2 => ?_
@@ -908,12 +908,12 @@ theorem stepA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
       Bnd Mb t.mem base (slot (13 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 9 (e 5 * e 5)
-        let e := Function.update e 10 (e 6 * e 6)
-        let e := Function.update e 1 (e 9 * e 10)
-        let e := Function.update e 11 (e 9 - e 10)
-        let e := Function.update e 16 (e 9 + Spec.X448.a24 * e 11)
-        Function.update (Function.update e 12 (e 8 * e 5)) 13 (e 7 * e 6) := by
+        let e := Fun.update e 9 (e 5 * e 5)
+        let e := Fun.update e 10 (e 6 * e 6)
+        let e := Fun.update e 1 (e 9 * e 10)
+        let e := Fun.update e 11 (e 9 - e 10)
+        let e := Fun.update e 16 (e 9 + Spec.X448.a24 * e 11)
+        Fun.update (Fun.update e 12 (e 8 * e 5)) 13 (e 7 * e 6) := by
   rw [stepA_eq]
   refine WP.weave (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (WP.mono (block_codeOf (opsA_ok hs hb)) fun t ⟨tk, tb, ts, t1, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 12 8 5 13 7 6 (by decide)) fun u ⟨uk, ub, u12, u13, us, ue⟩ =>
@@ -928,8 +928,8 @@ theorem opsB_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
       Bnd Mb t.mem base (slot (4 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 15 (e 15 * e 15)
-        Function.update e 4 (e 0 * e 15) := by
+        let e := Fun.update e 15 (e 15 * e 15)
+        Fun.update e 4 (e 0 * e 15) := by
   refine mulOp hs hb 15 15 15 (by decide) fun t1 k1 b1 m1 s1 e1 => ?_
   refine mulOp (k1.scr hs) b1 4 0 15 (by decide) fun t2 k2 b2 m2 s2 e2 => ?_
   refine WP.block_nil ⟨k1.trans k2, b2, s1.append s2, m2, ?_⟩
@@ -947,9 +947,9 @@ theorem stepB_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
       Bnd Mb t.mem base (slot (4 : Index).val) ∧
       EV t.mem base =
         let e := EV s.mem base
-        let e := Function.update e 15 (e 15 * e 15)
-        let e := Function.update e 4 (e 0 * e 15)
-        Function.update (Function.update e 2 (e 11 * e 16)) 3 (e 14 * e 14) := by
+        let e := Fun.update e 15 (e 15 * e 15)
+        let e := Fun.update e 4 (e 0 * e 15)
+        Fun.update (Fun.update e 2 (e 11 * e 16)) 3 (e 14 * e 14) := by
   rw [stepB_eq]
   refine WP.weave (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (WP.mono (block_codeOf (opsB_ok hs hb)) fun t ⟨tk, tb, ts, t4, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 2 11 16 3 14 14 (by decide)) fun u ⟨uk, ub, u2, u3, us, ue⟩ =>

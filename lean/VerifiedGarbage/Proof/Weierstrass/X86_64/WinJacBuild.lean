@@ -237,7 +237,7 @@ theorem dbluN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) (h15 : e 
       runOps dbluN e 5 * (1 * 1) = e 13 * (runOps dbluN e 10 * runOps dbluN e 10) ∧
       runOps dbluN e 4 * (1 * 1 * 1) =
         e 14 * (runOps dbluN e 10 * runOps dbluN e 10 * runOps dbluN e 10) := by
-  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+  simp only [dbluN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
     Nat.reduceEqDiff, ↓reduceIte, h15, dblJF, Prod.mk.injEq]
   refine ⟨⟨?_, ?_, ?_⟩, trivial, trivial, ?_, ?_⟩ <;> grind
 
@@ -247,7 +247,7 @@ theorem zadduN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
         zadduF (e 0) (e 1) (e 8) (e 9) (e 10) ∧
       (e 11 = e 10 * e 10 → runOps zadduN e 11 = runOps zadduN e 10 * runOps zadduN e 10) ∧
       runOps zadduN e 12 = runOps zadduN e 11 * runOps zadduN e 10 := by
-  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+  simp only [zadduN, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
     Nat.reduceEqDiff, ↓reduceIte, zadduF]
   refine ⟨?_, fun h => ?_, ?_⟩ <;> first | trivial | grind
 
@@ -746,9 +746,9 @@ theorem jbuildDblu_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
     ⟨fun e => hL.jg_ne (List.mem_append_right _ (by jw_mem)) (i := 80 + c) (by omega_arith) e.symm,
       fun e => hL.jg_ne (List.mem_append_right _ (by jw_mem)) (i := 80 + c) (by omega_arith) e.symm⟩
   obtain e₃ : ∀ x ∈ [K.D.y, K.D.x, K.S.t2, K.S.t3, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n],
-      tmv C K.M.n base s₃ x = Function.update (Function.update (tmv C K.M.n base s₁) K.D.x
+      tmv C K.M.n base s₃ x = Fun.update (Fun.update (tmv C K.M.n base s₁) K.D.x
         (tmv C K.M.n base s₁ K.S.t3)) K.D.y
-        (Function.update (tmv C K.M.n base s₁) K.D.x (tmv C K.M.n base s₁ K.S.t3) K.S.t2) x ∧
+        (Fun.update (tmv C K.M.n base s₁) K.D.x (tmv C K.M.n base s₁ K.S.t3) K.S.t2) x ∧
       wordsVal s₃.mem base x K.M.n < C.p := fun x hx => ⟨I₃.val x hx, I₃.lt x hx⟩
   obtain eT : ∀ c < 5, tmv C K.M.n base s₃ (TS K c) = tmv C K.M.n base s₁ (TS K c) ∧
       wordsVal s₃.mem base (TS K c) K.M.n < C.p := fun c hc => by
@@ -761,11 +761,11 @@ theorem jbuildDblu_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
       · rw [t2]; simp
       · rw [t3]; simp
     refine ⟨(e₃ _ hx).1.trans ?_, (e₃ _ hx).2⟩
-    rw [Function.update_of_ne (tD c hc).2, Function.update_of_ne (tD c hc).1]
+    rw [Fun.update_of_ne (tD c hc).2, Fun.update_of_ne (tD c hc).1]
   obtain dx₃ := e₃ K.D.x (by simp)
   obtain dy₃ := e₃ K.D.y (by simp)
-  rw [Function.update_of_ne (Ne.symm dyx), Function.update_self] at dx₃
-  rw [Function.update_self, Function.update_of_ne t2x] at dy₃
+  rw [Fun.update_of_ne (Ne.symm dyx), Fun.update_self] at dx₃
+  rw [Fun.update_self, Fun.update_of_ne t2x] at dy₃
   -- `T`.
   obtain J₃ : JPt C K.M.n base s₃ (TS K) (mul 2 P) := by
     refine ⟨fun c hc => (eT c hc).2, ?_, ?_, ?_, ?_⟩

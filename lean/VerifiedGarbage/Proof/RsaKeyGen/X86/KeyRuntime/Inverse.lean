@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Copy
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified

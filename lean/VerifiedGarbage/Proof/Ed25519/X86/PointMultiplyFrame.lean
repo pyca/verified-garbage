@@ -29,7 +29,7 @@ namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
 def swapEnv (a b : Slot) (sw : Bool) (e : Env) : Env :=
-  Function.update (Function.update e a (if sw then e b else e a)) b (if sw then e a else e b)
+  Fun.update (Fun.update e a (if sw then e b else e a)) b (if sw then e a else e b)
 
 def swapsEnv (pairs : List (Slot × Slot)) (sw : Bool) (e : Env) : Env :=
   pairs.foldl (fun e (a, b) => swapEnv a b sw e) e
@@ -54,17 +54,17 @@ theorem swapField_ok {calls : Bool} {x : BitVec 32} {s : State} (hc : Ctx x s ca
   funext i
   by_cases hia : i = a
   · subst i
-    rw [swapEnv, Function.update_of_ne hab, Function.update_self]
+    rw [swapEnv, Fun.update_of_ne hab, Fun.update_self]
     change VG.Proof.X25519.toFe (fe t.mem x (offset a)) = _
     rw [ha]
     cases sw <;> rfl
   · by_cases hib : i = b
     · subst i
-      rw [swapEnv, Function.update_self]
+      rw [swapEnv, Fun.update_self]
       change VG.Proof.X25519.toFe (fe t.mem x (offset b)) = _
       rw [hb]
       cases sw <;> rfl
-    · rw [swapEnv, Function.update_of_ne hib, Function.update_of_ne hia]
+    · rw [swapEnv, Fun.update_of_ne hib, Fun.update_of_ne hia]
       apply congrArg VG.Proof.X25519.toFe
       apply fe_frame
       intro k hk'

@@ -28,14 +28,14 @@ theorem dblu_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) (h15 : e 1
       runOps dblu e 5 * (1 * 1) = e 13 * (runOps dblu e 10 * runOps dblu e 10) ∧
       runOps dblu e 4 * (1 * 1 * 1) =
         e 14 * (runOps dblu e 10 * runOps dblu e 10 * runOps dblu e 10) := by
-  simp only [dblu, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
+  simp only [dblu, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply]
   simp only [Nat.reduceEqDiff, ite_true, ite_false, h15, dblJF, Prod.mk.injEq]
   refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩ <;> grind
 
 theorem zaddu_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     ((runOps zaddu e 8, runOps zaddu e 9, runOps zaddu e 10), (runOps zaddu e 0, runOps zaddu e 1)) =
       zadduF (e 0) (e 1) (e 8) (e 9) (e 10) := by
-  simp only [zaddu, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
+  simp only [zaddu, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply]
   simp only [Nat.reduceEqDiff, ite_true, ite_false, zadduF]
 
 theorem dblu_out : ∀ op ∈ dblu, op.out < 11 := by decide

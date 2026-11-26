@@ -124,7 +124,7 @@ theorem clampBits_ok {s : State} {base : Addr} (hs : Scratch s base) :
 
 theorem uOps_eval (e : Ed25519.X86_64.Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
-  simp [uOps, evalOps, evalOp, Function.update]
+  simp [uOps, evalOps, evalOp, Fun.update]
 
 theorem uEncode_ok [DivstepInv] {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (uEncode fld).inline s fun t => RbxKeep base s t ∧

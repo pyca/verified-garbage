@@ -176,7 +176,7 @@ theorem cacheTableEnv_other {m : Nat} [NeZero m] {n ptbl tbl : Nat} {E : Nat →
   | 0,_ => rfl
   | k+1,h => by
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-      Function.update_of_ne (h k (by omega_arith)).1,Function.update_of_ne (h k (by omega_arith)).2]
+      Fun.update_of_ne (h k (by omega_arith)).1,Fun.update_of_ne (h k (by omega_arith)).2]
     exact cacheTableEnv_other k fun j hj => h j (by omega_arith)
 
 /-- The cache keeps `Z²` and `Z³` of each entry. -/
@@ -202,15 +202,15 @@ theorem cacheTableEnv_entry {m : Nat} [NeZero m] {n ptbl tbl : Nat} {E : Nat →
     by_cases he : i=k
     · subst i
       simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-        Function.update_self,Function.update_of_ne h23,Function.update_of_ne hzk,hz]
+        Fun.update_self,Fun.update_of_ne h23,Fun.update_of_ne hzk,hz]
       refine ⟨?_,?_⟩ <;> first | trivial | rfl
     · have hik : i<k := by omega_arith
       have := entry_end_le (16*n) hik
       obtain n2 : tbl+16*n*i≠tbl+16*n*k ∧ tbl+16*n*i≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
       obtain n3 : tbl+16*n*i+8*n≠tbl+16*n*k ∧ tbl+16*n*i+8*n≠tbl+16*n*k+8*n := ⟨by omega_arith,by omega_arith⟩
       simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-        Function.update_of_ne n2.1,Function.update_of_ne n2.2,Function.update_of_ne n3.1,
-        Function.update_of_ne n3.2]
+        Fun.update_of_ne n2.1,Fun.update_of_ne n2.2,Fun.update_of_ne n3.1,
+        Fun.update_of_ne n3.2]
       exact ih hik (by omega_arith)
 
 /-- The slots the cache loop writes: the cache and `e`'s three. -/
@@ -299,8 +299,8 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   obtain v3 := i2.val (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
   obtain l2 := i2.lt e (by simp [validAfter,Naf.cacheOps,FOp.out])
   obtain l3 := i2.lt (e+8*M.n) (by simp [validAfter,Naf.cacheOps,FOp.out])
-  simp only [Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self,
-    Function.update_of_ne he2,Function.update_of_ne hez] at v2 v3
+  simp only [Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_self,
+    Fun.update_of_ne he2,Fun.update_of_ne hez] at v2 v3
   obtain s2 := k2.scr s1
   rw [WP.block_append_iff]
   refine WP.mono (nafCacheStore_ok s2 ((k2.gpr _ (rbx_not_clob _)).trans
@@ -405,16 +405,16 @@ theorem nafCacheStep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   obtain env2 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i)=
       E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) := by
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-      Function.update_self,Function.update_of_ne e23.symm,Function.update_of_ne e3z.symm,hzc]
+      Fun.update_self,Fun.update_of_ne e23.symm,Fun.update_of_ne e3z.symm,hzc]
   obtain env3 : cacheTableEnv M.n ptbl tbl E (i+1) (tbl+16*M.n*i+8*M.n)=
       E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) := by
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-      Function.update_self,Function.update_of_ne e3z.symm,hzc]
+      Fun.update_self,Fun.update_of_ne e3z.symm,hzc]
   obtain envo : ∀ x∈cacheTableSlots M.n tbl i++V,
       cacheTableEnv M.n ptbl tbl E (i+1) x=cacheTableEnv M.n ptbl tbl E i x := by
     intro x hx
     simp only [cacheTableEnv,Naf.cacheOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-      Function.update_of_ne (n2 x hx).1,Function.update_of_ne (n2 x hx).2]
+      Fun.update_of_ne (n2 x hx).1,Fun.update_of_ne (n2 x hx).2]
   obtain wt2 : wordsVal t.mem base (tbl+16*M.n*i) M.n=wordsVal u2.mem base e M.n := by
     rw [kt.2.1,w2]
   obtain wt3 : wordsVal t.mem base (tbl+16*M.n*i+8*M.n) M.n=wordsVal u2.mem base (e+8*M.n) M.n := by
@@ -627,7 +627,7 @@ theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstra
   obtain v2 := iv.val (tbl+16*M.n*i) (by simp)
   obtain v3 := iv.val (tbl+16*M.n*i+8*M.n) (by simp)
   simp only [Naf.cachePairOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-    Function.update_self,Function.update_of_ne hz2,Function.update_of_ne h23] at v2 v3
+    Fun.update_self,Fun.update_of_ne hz2,Fun.update_of_ne h23] at v2 v3
   refine ⟨kt,iv.to_tmv,v2,?_⟩
   unfold tmv
   rw [v2]

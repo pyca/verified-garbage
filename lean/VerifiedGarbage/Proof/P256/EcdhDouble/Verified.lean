@@ -422,8 +422,8 @@ def ins : Step → List Nat
   | .triple _ a | .half _ a => [a]
 def run {F : Type _} [Lean.Grind.CommRing F] (h : F) (E : Nat → F) : Step → Nat → F
   | .field f => f.run E
-  | .triple o a => Function.update E o (3 * E a)
-  | .half o a => Function.update E o (h * E a)
+  | .triple o a => Fun.update E o (3 * E a)
+  | .half o a => Fun.update E o (h * E a)
 def runs {F : Type _} [Lean.Grind.CommRing F] (h : F) (l : List Step) (E : Nat → F) : Nat → F := l.foldl (run h) E
 
 /-- The slots that hold field values after the steps, when each reads only such slots. -/
@@ -490,7 +490,7 @@ private theorem defined_append : ∀ (l : List Step) {V U : List Nat} (W : List 
 
 private theorem point_run {F : Type _} [Lean.Grind.CommRing F] {h : F} (h2 : 2 * h = 1) (E : Nat → F) :
     (runs h steps E 512, runs h steps E 544, runs h steps E 576) = dblJF (E 512) (E 544) (E 576) := by
-  simp only [runs, steps, run, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+  simp only [runs, steps, run, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
     Nat.reduceEqDiff, ite_true, ite_false, dblJF, Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
@@ -506,8 +506,8 @@ private theorem runs_other {h : Fe C} {x : Nat} : ∀ (l : List Step) (E : Nat �
       intro f' hf e
       rw [List.mem_singleton.mp hf] at e
       exact n e.symm
-    | triple o a => exact Function.update_of_ne n _ _
-    | half o a => exact Function.update_of_ne n _ _
+    | triple o a => exact Fun.update_of_ne n _ _
+    | half o a => exact Fun.update_of_ne n _ _
 
 /-- The slots the steps use. -/
 def slotsUsed : List Nat := [512, 544, 576, 800, 832, 864, 896, 928]

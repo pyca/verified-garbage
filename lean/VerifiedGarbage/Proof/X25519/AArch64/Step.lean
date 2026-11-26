@@ -307,15 +307,15 @@ theorem sumsAB_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr 
   rw [vx, vz] at ed
   rw [v4, v4, v4, ga] at eb
   refine ⟨?_, ?_, ?_, ?_, fun i h4 h5 h6 => ?_, ?_⟩
-  · rw [pt.env, Function.update_of_ne (by decide), kd.mem, pc.env, Function.update_self, F, fc]
+  · rw [pt.env, Fun.update_of_ne (by decide), kd.mem, pc.env, Fun.update_self, F, fc]
     exact eb
-  · rw [pt.env, Function.update_self, F, ft]
+  · rw [pt.env, Fun.update_self, F, ft]
     exact ed
   · rw [pt.fe (by decide), kd.mem, pc.fe (by decide), kb.mem, fa]
   · rw [v4, gt, kd.gpr _ (by decide), kd.gpr _ (by decide), kd.gpr _ (by decide), kd.gpr _ (by decide), gc,
       kb.gpr _ (by decide), kb.gpr _ (by decide), kb.gpr _ (by decide), kb.gpr _ (by decide), ga]
-  · rw [pt.env, Function.update_of_ne h6, kd.mem, pc.env, Function.update_of_ne h5, kb.mem, pa.env,
-      Function.update_of_ne h4]
+  · rw [pt.env, Fun.update_of_ne h6, kd.mem, pc.env, Fun.update_of_ne h5, kb.mem, pa.env,
+      Fun.update_of_ne h4]
   · exact (pa.lf (by decide)).trans ((LF.of_keeps kb (by decide)).trans ((pc.lf (by decide)).trans
       ((LF.of_keeps kd (by decide)).trans (pt.lf (by decide)))))
 
@@ -348,11 +348,11 @@ theorem sumsCD_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr 
   rw [vx, vz] at ed
   rw [va, ea] at eb
   refine ⟨?_, ?_, fun i h7 h8 => ?_, ?_⟩
-  · rw [pt.env, Function.update_of_ne (by decide), kd.mem, pc.env, Function.update_self, F, fc]
+  · rw [pt.env, Fun.update_of_ne (by decide), kd.mem, pc.env, Fun.update_self, F, fc]
     exact eb
-  · rw [pt.env, Function.update_self, F, ft]
+  · rw [pt.env, Fun.update_self, F, ft]
     exact ed
-  · rw [pt.env, Function.update_of_ne h8, kd.mem, pc.env, Function.update_of_ne h7, kb.mem, ka.mem]
+  · rw [pt.env, Fun.update_of_ne h8, kd.mem, pc.env, Fun.update_of_ne h7, kb.mem, ka.mem]
   · exact (LF.of_keeps ka (by decide)).trans ((LF.of_keeps kb (by decide)).trans ((pc.lf (by decide)).trans
       ((LF.of_keeps kd (by decide)).trans (pt.lf (by decide)))))
 
@@ -599,7 +599,7 @@ theorem outVal_outside {m m' : Mem} {base : Addr} {o : Slot} (h : Outside base (
 theorem packE_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x10 = 0)
     (h0 : OutLt s.mem base 0) (h1 : OutLt s.mem base 1) :
     WP isa (.block packE) s fun t =>
-      env t.mem base = Function.update (Function.update (Function.update (env s.mem base) 9 (toFe (outVal s.mem base 0))) 10
+      env t.mem base = Fun.update (Fun.update (Fun.update (env s.mem base) 9 (toFe (outVal s.mem base 0))) 10
         (toFe (outVal s.mem base 1))) 11 (toFe (outVal s.mem base 0) - toFe (outVal s.mem base 1)) ∧
       (∀ i : Slot, i ≠ 9 → i ≠ 10 → i ≠ 11 → fe t.mem base (offset i) = fe s.mem base (offset i)) ∧ LF base s t := by
   rw [packE, ← List.append_assoc, WP.block_append_iff]
@@ -700,7 +700,7 @@ theorem backA_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .
       let e := env s.mem base
       let DA := e 8 * e 5
       let CB := e 7 * e 6
-      env t.mem base = Function.update (Function.update (Function.update (Function.update e 13 CB) 12 DA) 4
+      env t.mem base = Fun.update (Fun.update (Fun.update (Fun.update e 13 CB) 12 DA) 4
         ((DA - CB) * (DA - CB))) 3 ((DA + CB) * (DA + CB)) ∧
       fe t.mem base (offset 3) < 2 ^ 255 + 2 ^ 135 ∧ LF base s t ∧
       fe t.mem base (offset 5) = fe s.mem base (offset 5) ∧ fe t.mem base (offset 6) = fe s.mem base (offset 6) := by
@@ -723,9 +723,9 @@ theorem backA_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .
   obtain ec := pc.env
   obtain et := pt.env
   simp only [fa] at ea
-  simp only [fb, ea, Function.update_apply, Fin.reduceEq, ite_false] at eb
-  simp only [fc, eb, Function.update_apply, Fin.reduceEq, ite_true, ite_false] at ec
-  simp only [ft, ec, Function.update_apply, Fin.reduceEq, ite_true, ite_false] at et
+  simp only [fb, ea, Fun.update_apply, Fin.reduceEq, ite_false] at eb
+  simp only [fc, eb, Fun.update_apply, Fin.reduceEq, ite_true, ite_false] at ec
+  simp only [ft, ec, Fun.update_apply, Fin.reduceEq, ite_true, ite_false] at et
   refine ⟨et, bt, (pa.lf (by decide)).trans ((pb.lf (by decide)).trans ((pc.lf (by decide)).trans (pt.lf (by decide)))), ?_, ?_⟩
   · rw [pt.fe (by decide), pc.fe (by decide), pb.fe (by decide), pa.fe (by decide)]
   · rw [pt.fe (by decide), pc.fe (by decide), pb.fe (by decide), pa.fe (by decide)]
@@ -740,7 +740,7 @@ theorem woven_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .
       let e := env s.mem base
       let DA := e 8 * e 5
       let CB := e 7 * e 6
-      env t.mem base = Function.update (Function.update (Function.update (Function.update e 13 CB) 12 DA) 4
+      env t.mem base = Fun.update (Fun.update (Fun.update (Fun.update e 13 CB) 12 DA) 4
         ((DA - CB) * (DA - CB))) 3 ((DA + CB) * (DA + CB)) ∧
       fe t.mem base (offset 3) < 2 ^ 255 + 2 ^ 135 ∧ BF base s t ∧ OutLt t.mem base 0 ∧ OutLt t.mem base 1 ∧
       toFe (outVal t.mem base 0) = e 5 * e 5 ∧ toFe (outVal t.mem base 1) = e 6 * e 6 := by
@@ -794,7 +794,7 @@ theorem back_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
   simp only [fc] at ec
   simp only [fd] at ed
   simp only [ft] at et
-  simp only [et, ed, ec, eb, ea, Function.update_apply, Fin.reduceEq, ite_true, ite_false]
+  simp only [et, ed, ec, eb, ea, Fun.update_apply, Fin.reduceEq, ite_true, ite_false]
   refine ⟨trivial, trivial, trivial, trivial, trivial, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [Sm, pt.fe (by decide), pd.fe (by decide)]; omega_using [bc]
   · rw [Sm, pt.fe (by decide)]; omega_using [bd]
