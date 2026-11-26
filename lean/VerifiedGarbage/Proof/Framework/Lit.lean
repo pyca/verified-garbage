@@ -61,23 +61,28 @@ meta def litNames (env : Environment) : Array Name := Id.run do
 
 /-- Replaces each body of a call in `e` (a literal `Code`) that is the literal of a
 materialized function by a free variable, returning the abstracted literal and the
-functions, in the order of the free variables. -/
-meta partial def abstractCalls (lits : Array (Name × Expr)) (e : Expr) :
-    StateT (Array Name) MetaM Expr := do
+functions, in the order of the free variables. Each distinct subterm is visited
+once (with the calls in it replaced, in the state). -/
+meta partial def abstractCalls (lits : Std.HashMap Expr Name) (e : Expr) :
+    StateT (Std.HashMap Expr Expr × Array Name) MetaM Expr := do
   -- A block contains instructions, with no callee positions to abstract.
   if e.isAppOfArity ``Code.block 3 then return e
-  if e.isAppOfArity ``Code.call 4 then
-    let body := e.appArg!
-    for (g, v) in lits do
-      if body == v then
-        let gs ← get
-        let i := (gs.findIdx? (· == g)).getD gs.size
-        if i == gs.size then set (gs.push g)
-        return mkApp (e.appFn!) (.bvar (1000000 + i))
   match e with
-  | .app f a => return .app (← abstractCalls lits f) (← abstractCalls lits a)
+  | .app f a =>
+    if let some e' := (← get).1[e]? then return e'
+    let e' ← match (if e.isAppOfArity ``Code.call 4 then lits[a]? else none) with
+      | some g => do
+        let gs := (← get).2
+        let i := (gs.findIdx? (· == g)).getD gs.size
+        if i == gs.size then modify fun (m, gs) => (m, gs.push g)
+        pure (mkApp f (.bvar (1000000 + i)))
+      | none => do
+        let f' ← abstractCalls lits f
+        let a' ← abstractCalls lits a
+        pure (.app f' a')
+    modify fun (m, gs) => (m.insert e e', gs)
+    return e'
   | _ => return e
-
 
 /-- The literal `g.lit` written out in full: with the literal of each
 materialized function it calls (`h.lit`) replaced by its own, in turn. This is
@@ -307,15 +312,29 @@ meta def unfoldToLits (N : Name) (x : Expr) (names? : Option (Array Name) := non
     (e.getUsedConstants.filter targets.contains).map fun c => (mkConst c, c)
   for (M, lhs) in atoms do
     if (e.find? (· == lhs)).isSome then items := items.push (lhs, M)
+  let mut argEq : Std.HashMap (Expr × Expr) Bool := {}
   for (M, lhs) in tpls do
     let found ← IO.mkRef (#[] : Array Expr)
     e.forEach fun t => do
       if isTplApp lhs t && t != lhs && !t.hasLooseBVars then found.modify (·.push t)
     for t in ← found.get do
+      if items.any (·.1 == t) then continue
       -- By the kernel's check (as the proof will be), which decides closed terms
-      -- (moduli, offsets) by evaluation, faster than `isDefEq`.
-      if !items.any (·.1 == t) && Kernel.isDefEqGuarded (← getEnv) {} t lhs then
-        items := items.push (t, M)
+      -- (moduli, offsets) by evaluation, faster than `isDefEq`; of the arguments,
+      -- since the kernel unfolds the two applications where an argument differs
+      -- and compares the code they build (0.4 s for a product of another modulus).
+      let mut same := true
+      for a in t.getAppArgs, b in lhs.getAppArgs do
+        let eq ← match argEq[(a, b)]? with
+          | some eq => pure eq
+          | none => do
+            let eq := a == b || Kernel.isDefEqGuarded (← getEnv) {} a b
+            argEq := argEq.insert (a, b) eq
+            pure eq
+        unless eq do
+          same := false
+          break
+      if same then items := items.push (t, M)
   if items.isEmpty then return none
   let ty ← inferType x
   let u ← getLevel ty
@@ -629,6 +648,85 @@ meta def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
   if s.leftDepth < flatMinDepth then return none
   return some (c', prf)
 
+/-- What `codeToExprUnsafe` has converted: code, instructions and conditions
+(apart: one without arguments is a number, the same in both types), by the
+address of the value, which `c` keeps alive. -/
+meta structure CodeExprs where
+  code : Std.HashMap USize Expr := {}
+  instrs : Std.HashMap USize Expr := {}
+  conds : Std.HashMap USize Expr := {}
+
+/-- `toExpr c`, for `c : Code I C` evaluated, each part of `c` converted once
+however often it occurs (`c` keeps as one object what it evaluated once, and
+`ShareCommon` makes one of equal parts): written out, code has up to millions
+of instructions, a few thousand of them distinct, since each call holds the
+body of its callee. `toI` and `toC` are the `toExpr` of `I` and `C`, whose
+values the types here do not say. -/
+meta unsafe def codeToExprUnsafe (I C : Expr) (toI toC : NonScalar → Expr)
+    (c : Code NonScalar NonScalar) : Expr :=
+  go (ShareCommon.shareCommon' c) |>.run' {}
+where
+  instr (x : NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe x
+    if let some e := (← get).instrs[k]? then return e
+    let e := toI x
+    modify fun s => { s with instrs := s.instrs.insert k e }
+    return e
+  cond (x : NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe x
+    if let some e := (← get).conds[k]? then return e
+    let e := toC x
+    modify fun s => { s with conds := s.conds.insert k e }
+    return e
+  block (is : List NonScalar) : StateM CodeExprs Expr := do
+    let mut e := mkApp (mkConst ``List.nil [.zero]) I
+    let cons := mkApp (mkConst ``List.cons [.zero]) I
+    for i in is.reverse do
+      e := mkApp2 cons (← instr i) e
+    return mkApp3 (mkConst ``Code.block) I C e
+  go (c : Code NonScalar NonScalar) : StateM CodeExprs Expr := do
+    let k := ptrAddrUnsafe c
+    if let some e := (← get).code[k]? then return e
+    let e ← match c with
+      | .block is => block is
+      | .seq a b => pure <| mkApp4 (mkConst ``Code.seq) I C (← go a) (← go b)
+      | .ite b t e =>
+        pure <| mkApp5 (mkConst ``Code.ite) I C (← cond b) (← go t) (← go e)
+      | .loop b c => pure <| mkApp4 (mkConst ``Code.loop) I C (← go b) (← cond c)
+      | .call n b => pure <| mkApp4 (mkConst ``Code.call) I C (mkStrLit n) (← go b)
+      | .frame p b q =>
+        pure <| mkApp5 (mkConst ``Code.frame) I C (← instr p) (← go b) (← instr q)
+      | .icall i n b next =>
+        pure <| mkApp6 (mkConst ``Code.icall) I C (← instr i) (mkStrLit n) (← go b) (← go next)
+    modify fun s => { s with code := s.code.insert k e }
+    return e
+
+/-- The value of the closed code `code : Code I C`, evaluated in compiled code,
+as a literal (`codeToExprUnsafe`). -/
+meta def evalCode (I C code : Expr) : MetaM Expr := do
+  let toE (T : Expr) : MetaM (NonScalar → Expr) := do
+    let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) T)
+    unsafe evalExpr (NonScalar → Expr) (← mkArrow T (mkConst ``Expr))
+      (mkApp2 (mkConst ``ToExpr.toExpr [0]) T inst)
+  let toI ← toE I
+  let toC ← toE C
+  let c ← unsafe evalExpr (Code NonScalar NonScalar) (mkApp2 (mkConst ``Code) I C) code
+  return unsafe codeToExprUnsafe I C toI toC c
+
+/-- `abstractCalls` of `v`, a literal of type `ty`, for the functions
+materialized so far. -/
+meta def abstractToLits (ty v : Expr) : MetaM (Expr × Array Name) := do
+  -- The code materialized so far, written out in full.
+  let mut lits : Std.HashMap Expr Name := {}
+  let mut expanded : Std.HashMap Name Expr := {}
+  for g in litNames (← getEnv) do
+    if (← isDefEq (← inferType (← lhsOf g)) ty) then
+      let (e, m) ← (expandLit g).run expanded
+      expanded := m
+      lits := lits.insertIfNew e g
+  let (abs, (_, gs)) ← (abstractCalls lits v).run ({}, #[])
+  return (abs, gs)
+
 /-- Defines `N.lit`, the value of the closed code term `code` as a literal
 (calling the literals of the code materialized so far), and
 `N.lit_eq : code = N.lit`. -/
@@ -638,20 +736,8 @@ meta def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Uni
   unless codeTy.isAppOfArity ``Code 2 do
     throwError "materialize_code: {code} is not code: {ty}"
   let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) codeTy)
-  let eval (e : Expr) : MetaM Expr := unsafe evalExpr Expr (mkConst ``Expr)
-    (mkApp3 (mkConst ``ToExpr.toExpr [0]) codeTy inst e)
-  let v ← eval code
-  -- The code materialized so far, written out in full.
-  let mut lits : Array (Name × Expr) := #[]
-  let mut expanded : Std.HashMap Name Expr := {}
-  for g in litNames (← getEnv) do
-    let lhs ← lhsOf g
-    if (← isDefEq (← inferType lhs) ty) then
-      let (e, m) ← (expandLit g).run expanded
-      expanded := m
-      lits := lits.push (g, e)
-  let (abs, gs) ← (abstractCalls lits v).run #[]
+  let v ← evalCode codeTy.appFn!.appArg! codeTy.appArg! code
+  let (abs, gs) ← abstractToLits ty v
   let lhss ← gs.mapM lhsOf
   -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
   let inst (f : Nat → Expr) : Expr :=
