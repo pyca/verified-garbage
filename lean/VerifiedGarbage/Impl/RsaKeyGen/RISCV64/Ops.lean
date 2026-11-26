@@ -52,12 +52,19 @@ def setLow (j : Nat) (x : Int) : List Instr := ptr .t0 j ++ [.li .t5 x, .store .
 /-- `[o] := [a] [b]` modulo `2^(64 w)`. -/
 def mulTo (o a b : Nat) : Prog isa := .seq (copy o aZero) (VG.Impl.Rsa.RISCV64.RecoverDet.mulLow o a b)
 
+/-- Call the common inverse after keeping the caller's link in the unused
+header word at byte 96. The inverse leaves the header unchanged. -/
+def inverseCall : Prog isa :=
+  .seq (.block [.store .d .ra .s11 96])
+    (.seq (.call "vg_rsa_keygen_inverse" VG.Impl.Rsa.RISCV64.InvBatch.inverse)
+      (.block [.load .d .ra .s11 96]))
+
 /-- `[a]` modulo the odd `[m]` by the batched divsteps
 (`Impl/Rsa/RISCV64/InvBatch.lean`): `x = [a]` in array 0, `m = [m]` in array
 8, `n` the instructions setting the digit count in `s8`; `gcd([a], [m])` in
 array 1 and the inverse in array 3. -/
 def invOf (a m : Nat) (n : List Instr) : Prog isa := seqs [
   copy VG.Impl.Rsa.RISCV64.InvBatch.aX a, copy VG.Impl.Rsa.RISCV64.InvBatch.aMin m, .block n,
-  VG.Impl.Rsa.RISCV64.InvBatch.inverse]
+  inverseCall]
 
 end VG.Impl.RsaKeyGen.RISCV64.Key
