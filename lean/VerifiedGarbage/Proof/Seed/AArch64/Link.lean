@@ -344,15 +344,11 @@ theorem serialCipher_eq (d : Direction) (k : Spec.Seed.Schedule) (b : Spec.Seed.
     Spec.Seed.crypt (fun j => Spec.Seed.roundKey k (Serial.keyIdx d j)) b = cipher d k b := by
   cases d <;> rfl
 
-theorem serialDirCore_crypt (d : Direction) :
-    (serialDirCore d).crypt = .block (Serial.crypt d (8 * bufSlot) (8 * schedSlot)) := by
-  cases d <;> rfl
-
 /-- The one-block core enciphers or deciphers the buffer's block under the
 schedule's copy (`Serial.crypt_wp`). -/
-theorem serialCrypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
+theorem serialArithmetic_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B (serialDirCore d).total) (hr : ReadyAt s.mem B k) :
-    WP isa (serialDirCore d).crypt s fun s' => s'.gpr sb = B ∧
+    WP isa (.block (Serial.crypt d (8 * bufSlot) (8 * schedSlot))) s fun s' => s'.gpr sb = B ∧
       s'.gpr (serialDirCore d).dataReg = s.gpr (serialDirCore d).dataReg ∧
       s'.gpr (serialDirCore d).leftReg = s.gpr (serialDirCore d).leftReg ∧ ReadyAt s'.mem B k ∧
       Frame [coreRegion (serialDirCore d) B] s.mem s'.mem ∧
@@ -366,7 +362,6 @@ theorem serialCrypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Sch
       rw [hB5]; exact Offset.contains_base B (by omega_using [hi]) (by omega_using [hi])⟩
   obtain hwb : ∀ i < 4, InRegions s.wr (s.gpr .x5 + BitVec.ofNat 64 (976 + 4 * i)) 4 := fun i hi =>
     ⟨_, hwr, by rw [hB5]; exact Offset.contains_base B (by omega_using [hi]) (by omega_using [hi])⟩
-  rw [serialDirCore_crypt]
   refine WP.mono (Serial.crypt_wp d (s := s) (bufOff := 976) (keyOff := 1232) (by decide) (by decide) hrk hwb)
     fun t ⟨tg, tf, tb, trd, twr, _⟩ => ?_
   rw [hB5] at tf tb
@@ -388,6 +383,54 @@ theorem serialCrypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Sch
     rw [tb, dirCipher_bytes]
     have hk : Spec.Seed.scheduleAt s.mem (B + BitVec.ofNat 64 1232) = k := hr
     rw [hk, serialCipher_eq]
+
+/-- The serial caller meets the same block interface as the inline arithmetic. -/
+theorem serialCrypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (serialDirCore d).total) (hr : ReadyAt s.mem B k) :
+    WP isa (serialDirCore d).crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr (serialDirCore d).dataReg = s.gpr (serialDirCore d).dataReg ∧
+      s'.gpr (serialDirCore d).leftReg = s.gpr (serialDirCore d).leftReg ∧ ReadyAt s'.mem B k ∧
+      Frame [coreRegion (serialDirCore d) B] s.mem s'.mem ∧
+      (∀ j < (serialDirCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (serialDirCore d) B j) (8 * (serialDirCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (serialDirCore d) B j) (8 * (serialDirCore d).bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  cases d with
+  | decrypt => exact serialArithmetic_wp .decrypt hB hs hr
+  | encrypt =>
+    obtain ⟨a, ea, a19, ag, am, ard, awr⟩ := Modes.AArch64.movR_ok s .x19 .x30
+    change WP isa (.seq (.block [movR .x19 .x30])
+      (.seq (.call "vg_seed_serial_encrypt" serialCryptRaw) (.block [movR .x30 .x19]))) s _
+    refine WP.seq (WP.of_runBlock ⟨a, ea, ?_⟩)
+    let b := a.callEntry
+    have bB : b.gpr sb = B :=
+      (State.callEntry_gpr a (by decide)).trans ((ag sb (by decide)).trans hB)
+    have bs : ScrIn b B (serialDirCore .encrypt).total :=
+      ⟨by rw [show b.wr = a.wr from rfl, awr]; exact hs.wr, hs.fit⟩
+    have br : ReadyAt b.mem B k := by rw [show b.mem = a.mem from rfl, am]; exact hr
+    obtain ⟨tr, u, eu, pu, gu⟩ := WP.gprs (serialArithmetic_wp .encrypt bB bs br)
+      (rs := [.x19, .x30]) (by lit_decide) rfl
+    have ret : isa.ret b u = some u := by
+      simp only [isa, VG.AArch64.ret, gu .x30 (by decide), ↓reduceIte]
+    have call : WP isa (.call "vg_seed_serial_encrypt" serialCryptRaw) a
+        (fun t => t = u) := ⟨_, u, Exec.call (call_callEntry a) eu ret, rfl⟩
+    refine WP.seq (WP.mono call fun t ht => ?_)
+    subst t
+    obtain ⟨v, ev, v30, vg, vm, vrd, vwr⟩ := Modes.AArch64.movR_ok u .x30 .x19
+    refine WP.of_runBlock ⟨v, ev, ?_⟩
+    obtain ⟨ub, ud, ul, ur, uf, out, urd, uwr⟩ := pu
+    refine ⟨(vg sb (by decide)).trans ub, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [vg _ (by decide), ud, State.callEntry_gpr a (by decide), ag _ (by decide)]
+    · rw [vg _ (by decide), ul, State.callEntry_gpr a (by decide), ag _ (by decide)]
+    · rw [vm]; exact ur
+    · rw [vm]
+      simpa only [b, State.callEntry_mem, am] using uf
+    · intro j hj
+      rw [vm]
+      have h := out j hj
+      rw [show b.mem = a.mem from rfl, am] at h
+      exact h
+    · rw [vrd, urd, show b.rd = a.rd from rfl, ard]
+    · rw [vwr, uwr, show b.wr = a.wr from rfl, awr]
 
 /-- SEED's one-block core for the direction `d` meets what the modes need. -/
 def serialDirCoreSpec (d : Direction) : BlockSpec (serialDirCore d) where
@@ -423,8 +466,8 @@ end
 
 The core's `crypt` calls the ECB code, which overwrites the return address
 (`x30`): `crypt` keeps it in `v28`, which no instruction of the callee
-writes, and moves it back (`crypt_keeps_x30`). The one-block core calls
-nothing and does not write `x30` (`serialCrypt_keeps_x30`). `keeps_x30`
+writes, and moves it back (`crypt_keeps_x30`). The one-block encryption core keeps its link in `x19` around its shared
+call; the decryption core remains inline (`serialCrypt_keeps_x30`). `keeps_x30`
 proves that a mode's code keeps `x30`, `crypt` being the only code with a
 call.
 -/
@@ -474,11 +517,29 @@ theorem crypt_keeps_x30 (d : Direction) : KeepsReg .x30 (dirCore d).crypt := by
     cases hR with
     | seq hC hB => exact crypt_keeps_x30_aux d hA hC hB
 
-/-- The one-block core does not write `x30`. -/
+theorem movR_value {s t : State} {tr : List Leak} {d n : Reg}
+    (h : Exec isa (.block [movR d n]) s tr t) : t.gpr d = s.gpr n := by
+  obtain ⟨u, eu, hu, -⟩ := Modes.AArch64.movR_ok s d n
+  rw [block_det h eu, hu]
+
+/-- The serial caller keeps its link in `x19`, which the arithmetic does
+not write. The surrounding mode restores its caller's `x19` from its frame. -/
 theorem serialCrypt_keeps_x30 (d : Direction) : KeepsReg .x30 (serialDirCore d).crypt := by
-  cases d
-  · exact Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
-  · exact Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+  cases d with
+  | decrypt => exact Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+  | encrypt =>
+    intro s tr t h
+    change Exec isa (.seq (.block [movR .x19 .x30])
+      (.seq (.call "vg_seed_serial_encrypt" serialCryptRaw) (.block [movR .x30 .x19]))) s tr t at h
+    cases h with
+    | seq hA hR =>
+      cases hR with
+      | seq hC hB =>
+        have hc : serialCryptRaw.allInstrs (fun i => !clobbers i .x19) = true := by lit_decide
+        rw [Code.allInstrs_eq] at hc
+        have g := Exec.gpr (fun i hi => by simpa using List.all_eq_true.mp hc i hi) hC
+          (.inr (by decide : Reg.x19 ∉ linkRegs))
+        exact (movR_value hB).trans (g.trans (movR_value hA))
 
 /-- `WP.gprs` for `x30`, from `KeepsReg` rather than the absence of calls. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg .x30 c) (h : WP isa c s Q) :
