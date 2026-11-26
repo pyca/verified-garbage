@@ -19,6 +19,8 @@ import VerifiedGarbage.Proof.Seed.CbcScratch
 import VerifiedGarbage.Proof.Seed.FbScratch
 import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Seed.PPC64LE.Lit
+import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 
 /-!
 # SEED on PPC64LE, without secret residue

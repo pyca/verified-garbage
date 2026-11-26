@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
 import VerifiedGarbage.Proof.Ed448.WholeLocal
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
+import VerifiedGarbage.Proof.X448.PPC64LE.Lit
 
 /-!
 # Ed448 on PPC64LE, without secret residue

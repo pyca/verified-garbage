@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Sha3.PPC64LE.Instances
 public import VerifiedGarbage.Proof.Sha3.Instances
 public import VerifiedGarbage.Proof.Sha3.PostOut
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
 
 /-!
 # SHA-3 and SHAKE on PPC64LE, without secret residue

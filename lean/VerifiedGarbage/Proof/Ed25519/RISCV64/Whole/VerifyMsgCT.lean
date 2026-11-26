@@ -54,6 +54,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Spec.Ed25519.Contract
 meta import VerifiedGarbage.Proof.X25519.RISCV64.Invert
+import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
+meta import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
 
 /-! ### `Ed25519.RISCV64.VerifyCT`, which this module and modules that import it used -/
 
