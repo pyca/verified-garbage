@@ -71,6 +71,14 @@ theorem verifyOut :
 
 /-! ## The functions as emitted -/
 
+/-- What the cleanups need of the code, in one declaration, so that the kernel walks what the functions
+share once. -/
+theorem sides :
+    scrubSide (Impl.Ed448.PPC64LE.Whole.publicKeyCode) 240 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩ = true ∧
+    scrubSide (Impl.Ed448.PPC64LE.Whole.signCachedCode) 624 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩ = true ∧
+    scrubSide (Impl.Ed448.PPC64LE.Whole.verifyCode) 352 32 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩ = true := by
+  lit_decide
+
 /-- `vg_ed448_public_key` as emitted (`Impl.Ed448.PPC64LE.Fn.publicKey`) meets its
 contract in constant time and returns without secret residue. -/
 theorem publicKey_scrubbed :
@@ -81,7 +89,7 @@ theorem publicKey_scrubbed :
       verified := Proof.Ed448.PPC64LE.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (publicKeyOut [] _)
-    (by dsimp only; lit_decide)
+    (by exact sides.1)
 
 /-- `vg_ed448_sign_cached` as emitted (`Impl.Ed448.PPC64LE.Fn.signCached`) meets
 its contract in constant time and returns without secret residue. -/
@@ -93,7 +101,7 @@ theorem signCached_scrubbed :
       verified := Proof.Ed448.PPC64LE.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }
     624 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (signCachedOut [] _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.1)
 
 /-- `vg_ed448_verify` as emitted (`Impl.Ed448.PPC64LE.Fn.verify`) meets its
 contract in constant time and returns without secret residue. -/
@@ -105,6 +113,6 @@ theorem verify_scrubbed :
       verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }
     352 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (verifyOut [] _)
-    (by dsimp only; lit_decide)
+    (by exact sides.2.2)
 
 end VG.Proof.Ed448.PPC64LE.Scrub

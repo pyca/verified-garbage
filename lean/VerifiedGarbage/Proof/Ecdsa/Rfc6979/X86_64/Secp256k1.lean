@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -47,6 +48,11 @@ theorem coreK_secp256k1 : coreK Impl.Ecdsa.X86_64.secp256k1 = Proof.Ecdsa.X86_64
 theorem secp256k1_blk : RfcT (cfgC Impl.Ecdsa.X86_64.secp256k1 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signSecp256k1`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem secp256k1_bits : Impl.Ecdsa.X86_64.signSecp256k1.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- secp256k1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
@@ -63,9 +69,9 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve)
   coreC := Impl.Ecdsa.X86_64.signSecp256k1
   coreX := by rw [coreK_secp256k1]; exact fun s h hc => Proof.Ecdsa.X86_64.Secp256k1.sign_call_x86 hL hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_secp256k1]; exact Proof.Ecdsa.X86_64.Secp256k1.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl secp256k1_bits
+  coreSp := Code.sp_of_bits rfl secp256k1_bits
+  coreMx := Code.noMx_of_bits rfl secp256k1_bits
   coreD := by lit_decide
   blk := secp256k1_blk
 

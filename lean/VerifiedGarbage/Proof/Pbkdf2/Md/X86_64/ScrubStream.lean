@@ -198,4 +198,18 @@ def MdHash.initSel (v : MdHash) (lv : VecLevel) (extra : List String) (hS : v.I.
   scrubbed := initFn_scrubbed v lv hS hn h₁ h₂
   spSafe := initFn_spSafe v lv
 
+/-- What `MdHash.initSel` needs of the code of both branches. -/
+noncomputable def MdHash.initSides (v : MdHash) (lv : VecLevel) : Bool :=
+  scrubSideG v.shortPlain.code (16 + initFrame v.H) ((Spec.Hmac.initSig v.I.S).retBits 64) lv true
+      (wipeKs (chunksA (16 + initFrame v.H))) (chunksA (16 + initFrame v.H))
+      (gsAll (wipeKs (chunksA (16 + initFrame v.H)))) [] &&
+    scrubSideG v.anyPlain.code (24 + anyFrame v.H) ((Spec.Hmac.initSig v.I.S).retBits 64) lv true
+      (wipeKs (chunksA (24 + anyFrame v.H))) (chunksA (24 + anyFrame v.H))
+      (gsAll (wipeKs (chunksA (24 + anyFrame v.H)))) []
+
+/-- `MdHash.initSel` from `initSides`. -/
+def MdHash.initSelB (v : MdHash) (lv : VecLevel) (hS : v.I.S.stateBytes < 2 ^ 64)
+    (hn : 16 + initFrame v.H ≤ 24 + anyFrame v.H) (h : v.initSides lv = true) : InitImpl v.I :=
+  v.initSel lv [] hS hn ((Bool.and_eq_true _ _).mp h).1 ((Bool.and_eq_true _ _).mp h).2
+
 end VG.Proof.Pbkdf2.Md.X86_64

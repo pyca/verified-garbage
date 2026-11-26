@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
@@ -60,6 +61,11 @@ theorem coreK_p521 : coreK Impl.Ecdsa.X86_64.p521 = Proof.Ecdsa.X86_64.P521.sign
 theorem p521_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p521 true 7) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP521`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p521_bits : Impl.Ecdsa.X86_64.signP521.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-521, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve)
@@ -77,9 +83,9 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   coreC := Impl.Ecdsa.X86_64.signP521
   coreX := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_call_x86 hL hT hI
   coreCT := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p521_bits
+  coreSp := Code.sp_of_bits rfl p521_bits
+  coreMx := Code.noMx_of_bits rfl p521_bits
   coreD := by lit_decide
   blk := p521_blk
 
@@ -111,6 +117,11 @@ theorem coreK_p521x : coreK Impl.Ecdsa.X86_64.p521x = Proof.Ecdsa.X86_64.P521.si
     implies_true, and_true, Proof.Ecdsa.X86_64.P521.signX86_64, Proof.Ecdsa.X86_64.P521.TblHeld]
   rfl
 
+/-- The tests of the instructions of `signP521Adx`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p521x_bits : Impl.Ecdsa.X86_64.signP521Adx.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-521 with BMI2 and ADX, with the group law `hL`, the comb's tables `hT`
 and the inversions' soundness `hI`. -/
 def p521x (hL : Weierstrass.Law Spec.P521.curve)
@@ -128,9 +139,9 @@ def p521x (hL : Weierstrass.Law Spec.P521.curve)
   coreC := Impl.Ecdsa.X86_64.signP521Adx
   coreX := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_call_x86_adx hL hT hI
   coreCT := by rw [coreK_p521x]; exact Proof.Ecdsa.X86_64.P521.sign_ct_adx
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p521x_bits
+  coreSp := Code.sp_of_bits rfl p521x_bits
+  coreMx := Code.noMx_of_bits rfl p521x_bits
   coreD := by lit_decide
   blk := by exact p521_blk
 

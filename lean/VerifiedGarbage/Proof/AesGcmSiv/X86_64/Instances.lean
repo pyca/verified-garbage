@@ -1078,6 +1078,47 @@ theorem softLevel_wide (v : GcmImpl) (lp : Option Loops) :
 /-- The level of the cleanup of `seal` and `open` in registers. -/
 def regLevel (lp : Option Loops) : VecLevel := if lp.isSome then .avx else .sse
 
+/-- What the cleanups need of the code in registers over the loops `lp`. -/
+noncomputable def regStubs (lp : Option Loops) : Bool :=
+  stubSide (withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regSealCode lp)) (regLevel lp).level (fun _ => 0) 784 [] &&
+  stubSide (withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regOpenCode lp)) (regLevel lp).level (fun _ => 0) 784 []
+
+/-- What they need of the code with a stub of each callee over the loops `lp`, for each `wide`. -/
+noncomputable def softStubs (wide : Bool) (lp : Option Loops) : Bool :=
+  (stubSide (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.sealCode stubCallees stubEcb wide lp)) (ownLevel wide lp).level
+      (fun _ => 0) 3856 [] &&
+    stubSide (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.openCode stubCallees stubEcb wide lp)) (ownLevel wide lp).level
+      (fun _ => 0) 3856 []) &&
+  (stubSide (Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code stubCallees stubEcb wide lp) (ownLevel true lp).level (fun _ => 0) 3856 [] &&
+    stubSide (Impl.AesGcmSiv.X86_64.Fn.openAvx2Code stubCallees stubEcb wide lp) (ownLevel true lp).level (fun _ => 0) 3856 [])
+
+/-- All of them, in one evaluation: the functions share most of their code. -/
+theorem stubs_all :
+    (∀ lp ∈ [none, some Impl.AesGcmSiv.X86_64Stitch.vaesLoops, some Impl.AesGcmSiv.X86_64StitchAvx.loops],
+      (regStubs lp && (softStubs false lp && softStubs true lp)) = true) := by
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+  unfold regStubs softStubs
+  lit_decide
+
+theorem stubs_ok (v : GcmImpl) (wide : Bool) :
+    (stubSide (withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regSealCode (loopsOf v))) (regLevel (loopsOf v)).level (fun _ => 0)
+        784 [] = true ∧
+      stubSide (withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regOpenCode (loopsOf v))) (regLevel (loopsOf v)).level (fun _ => 0)
+        784 [] = true) ∧
+    (stubSide (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.sealCode stubCallees stubEcb wide (loopsOf v)))
+        (ownLevel wide (loopsOf v)).level (fun _ => 0) 3856 [] = true ∧
+      stubSide (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.openCode stubCallees stubEcb wide (loopsOf v)))
+        (ownLevel wide (loopsOf v)).level (fun _ => 0) 3856 [] = true) ∧
+    (stubSide (Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code stubCallees stubEcb wide (loopsOf v)) (ownLevel true (loopsOf v)).level (fun _ => 0)
+        3856 [] = true ∧
+      stubSide (Impl.AesGcmSiv.X86_64.Fn.openAvx2Code stubCallees stubEcb wide (loopsOf v)) (ownLevel true (loopsOf v)).level (fun _ => 0)
+        3856 [] = true) := by
+  have h := stubs_all (loopsOf v) (by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> simp)
+  simp only [regStubs, softStubs, Bool.and_eq_true] at h
+  cases wide
+  · exact ⟨h.1, h.2.1⟩
+  · exact ⟨h.1, h.2.2⟩
+
 /-! ## In registers -/
 
 /-- `Spec.GcmSiv.sealApi`'s function in registers, as emitted, over `v`'s
@@ -1095,7 +1136,7 @@ theorem sealReg_scrubbed (v : GcmImpl) :
       verified := Proof.AesGcmSiv.seal_keyed (regSeal_framed v)
       spSafe := regSeal_sp v }
     _ (sealOut _) (Fill.refl _) (Nat.le_refl _) (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> lit_decide)
+    (ha := (stubs_ok v false).1.1)
 
 theorem sealReg_spSafeFn (v : GcmImpl) :
     (Impl.AesGcmSiv.X86_64.Fn.sealReg (regLevel (loopsOf v)) (loopsOf v)).all
@@ -1115,7 +1156,7 @@ theorem openReg_scrubbed (v : GcmImpl) :
       verified := Proof.AesGcmSiv.open_keyed (regOpen_framed v)
       spSafe := regOpen_sp v }
     _ (@openOut _) (Fill.refl _) (Nat.le_refl _) (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> lit_decide)
+    (ha := (stubs_ok v false).1.2)
 
 theorem openReg_spSafeFn (v : GcmImpl) :
     (Impl.AesGcmSiv.X86_64.Fn.openReg (regLevel (loopsOf v)) (loopsOf v)).all
@@ -1169,7 +1210,7 @@ theorem sealSoft_scrubbed (v : GcmImpl) (wide : Bool) :
       verified := Proof.AesGcmSiv.seal_keyed (sealWith_framed v wide)
       spSafe := X86_64.withStackArgScratch_spSafe (sealWith_spSafe v wide) }
     _ (sealOut _) (seal_fill v wide) (softLevel_le v wide (loopsOf v)).2.2.2.2 (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases wide <;> lit_decide)
+    (ha := (stubs_ok v wide).2.1.1)
 
 theorem sealSoft_spSafeFn (v : GcmImpl) (wide : Bool) :
     (Impl.AesGcmSiv.X86_64.Fn.sealSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v)).all
@@ -1190,7 +1231,7 @@ theorem openSoft_scrubbed (v : GcmImpl) (wide : Bool) :
       verified := Proof.AesGcmSiv.open_keyed (openWith_framed v wide)
       spSafe := X86_64.withStackArgScratch_spSafe (openWith_spSafe v wide) }
     _ (@openOut _) (open_fill v wide) (softLevel_le v wide (loopsOf v)).2.2.2.2 (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases wide <;> lit_decide)
+    (ha := (stubs_ok v wide).2.1.2)
 
 theorem openSoft_spSafeFn (v : GcmImpl) (wide : Bool) :
     (Impl.AesGcmSiv.X86_64.Fn.openSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v)).all
@@ -1233,7 +1274,7 @@ theorem sealAvx2_scrubbed (v : GcmImpl) :
       verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
       spSafe := avx2Seal_spSafe v }
     _ (sealOut _) (sealAvx2_fill v) (softLevel_le v true (loopsOf v)).2.2.2.2 (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases sivWide v <;> lit_decide)
+    (ha := (stubs_ok v (sivWide v)).2.2.1)
 
 theorem sealAvx2_spSafeFn (v : GcmImpl) :
     (Impl.AesGcmSiv.X86_64.Fn.sealAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)).all
@@ -1254,7 +1295,7 @@ theorem openAvx2_scrubbed (v : GcmImpl) :
       verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
       spSafe := avx2Open_spSafe v }
     _ (@openOut _) (openAvx2_fill v) (softLevel_le v true (loopsOf v)).2.2.2.2 (Nat.le_refl _)
-    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases sivWide v <;> lit_decide)
+    (ha := (stubs_ok v (sivWide v)).2.2.2)
 
 theorem openAvx2_spSafeFn (v : GcmImpl) :
     (Impl.AesGcmSiv.X86_64.Fn.openAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)).all

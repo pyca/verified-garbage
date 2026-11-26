@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -73,6 +74,11 @@ theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.sign
 theorem p384_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p384 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP384`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p384_bits : Impl.Ecdsa.X86_64.signP384.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-384, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve)
@@ -90,9 +96,9 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   coreC := Impl.Ecdsa.X86_64.signP384
   coreX := by rw [coreK_p384]; exact fun s h hc => Proof.Ecdsa.X86_64.P384.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p384_bits
+  coreSp := Code.sp_of_bits rfl p384_bits
+  coreMx := Code.noMx_of_bits rfl p384_bits
   coreD := by lit_decide
   blk := p384_blk
 
@@ -124,6 +130,11 @@ theorem coreK_p384x : coreK Impl.Ecdsa.X86_64.p384x = Proof.Ecdsa.X86_64.P384.si
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 
+/-- The tests of the instructions of `signP384Adx`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p384x_bits : Impl.Ecdsa.X86_64.signP384Adx.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-384 with BMI2 and ADX, with the group law `hL`, the comb's tables `hT`
 and the inversions' soundness `hI`. -/
 def p384x (hL : Weierstrass.Law Spec.P384.curve)
@@ -141,9 +152,9 @@ def p384x (hL : Weierstrass.Law Spec.P384.curve)
   coreC := Impl.Ecdsa.X86_64.signP384Adx
   coreX := by rw [coreK_p384x]; exact fun s h hc => Proof.Ecdsa.X86_64.P384.sign_call_x86_adx hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p384x]; exact Proof.Ecdsa.X86_64.P384.sign_ct_adx
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p384x_bits
+  coreSp := Code.sp_of_bits rfl p384x_bits
+  coreMx := Code.noMx_of_bits rfl p384x_bits
   coreD := by lit_decide
   blk := by exact p384_blk
 

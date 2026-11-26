@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
@@ -52,6 +53,11 @@ theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.sign
 theorem p224_blk : RfcT (cfgC Impl.Ecdsa.X86_64.p224 false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `signP224`: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem p224_bits : Impl.Ecdsa.X86_64.signP224.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- P-224, with the group law `hL`, the comb's tables `hT` and the inversions'
 soundness `hI`. -/
 def p224 (hL : Weierstrass.Law Spec.P224.curve)
@@ -69,9 +75,9 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve)
   coreC := Impl.Ecdsa.X86_64.signP224
   coreX := by rw [coreK_p224]; exact fun s h hc => Proof.Ecdsa.X86_64.P224.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p224]; exact Proof.Ecdsa.X86_64.P224.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl p224_bits
+  coreSp := Code.sp_of_bits rfl p224_bits
+  coreMx := Code.noMx_of_bits rfl p224_bits
   coreD := by lit_decide
   blk := p224_blk
 

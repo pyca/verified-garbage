@@ -218,6 +218,19 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `lit_eq`, if every module that evaluates code using it imports the module
   with its literal (a literal module imports the literal modules of the
   code it contains). Materializing code checked only once does not pay.
+* **The same check of code that shares code:** what the kernel evaluated is
+  forgotten at the end of the declaration, so a check that every function of
+  a family is proven by on its own (`lit_decide` of a cleanup's side
+  conditions, for each mode, parameter set or implementation of a callee)
+  generates and walks the code they share once for each. Where that code is
+  not a literal (an implementation or a name in it is a variable, or it is
+  behind a structure with proofs), state the checks of the family as one
+  Boolean or one conjunction, evaluated in one declaration, and take each
+  function's from it (`stream_sides`, `Proof/Variants/MdHash/X86_64/`;
+  `sd_all`, `Proof/MlDsa/AArch64/Scrub.lean`: the module's kernel time from
+  68 s to 10 s). Of literals it gains nothing, nor where the checks
+  share code but not the term asked of each instruction (a mask that
+  differs), and `taint_decide` of different taints does not share.
 * **Constant time of many callers of the same function:** prove the
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
@@ -632,18 +645,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   state the check of the code's literal first (the module then needs a
   `meta import` of what defines the code, and to import the literals of the
   functions it calls): the module of SHA-256
-  with AVX2, seven such checks, went from 30 s to 13 s, and the sides of its
-  cleanups to a quarter. It pays for long code (a compression
+  with AVX2, seven such checks, went from 30 s to 13 s. It pays for long code (a compression
   function unrolled) that calls functions with literals, and not for short
   (the SHA-NI variants) nor for code whose literal has to be built in full,
   and where `rw_lit` finds the literals it is `taint_decide`.
-* **Checks that share code, in one declaration:** what the kernel has
-  evaluated it remembers within a declaration, not across them, and each
-  `by lit_decide` in a term is a declaration of its own. Checks of functions
-  that call the same functions (the eight of ML-KEM over one backend, a
-  function over the stubs of three scratch spaces) are one
-  `(a && b && …) = true` by `lit_decide`, taken apart after
-  (`kemSidesB`, `stubsB`, `stubs3`): 52 million heartbeats to 13 for eight.
 * **Equations between code:** prove that two programs, or two lists of
   programs, are the same with `kernel_rfl`, not `decide +kernel`. `decide`
   evaluates both sides to their last operand and compares them with

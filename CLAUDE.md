@@ -452,8 +452,7 @@ lemmas and tactics to use; read it before writing a proof:
   that cost the build). A check of long code that `rw_lit` cannot
   see, behind a structure with proofs (a registration's `r.code`, a
   variant's functions), is `taint_decide_lit`'s or `lit_decide_lit`'s.
-  Checks of functions that share the code they call are one declaration,
-  taken apart after. Arithmetic it evaluates is in a closed term: with
+  Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
   environment is a list or a tree, not a function updated at every write. An equation
   between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
@@ -462,7 +461,9 @@ lemmas and tactics to use; read it before writing a proof:
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
   function evaluated at every instruction matches on the instruction once
   (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
-  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). An
+  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). A check
+  that a family of functions all need is one declaration for the family, where
+  they share code that is not a literal. An
   analysis's step gives a state that is evaluated, whose fields it does
   not change are the terms they were (`Taint.forceT`, `keepBases`), but a
   numeral wider than 64 bits it changed, left as a term (the kernel hashes
