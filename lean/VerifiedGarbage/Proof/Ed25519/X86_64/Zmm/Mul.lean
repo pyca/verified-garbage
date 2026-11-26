@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.FunUpdate
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -1898,9 +1899,8 @@ theorem half_lanes {s t : State} (b : Addr) (hz : ∀ r i, i < 4 → t.zlane r i
 theorem zConst_env (e : Env) : point (evalOps zConstOps e) 0 1 2 3 = combG ∧
     evalOps zConstOps e 12 = 1 ∧ evalOps zConstOps e 13 = 1 ∧
     evalOps zConstOps e 14 = Spec.Ed25519.d + Spec.Ed25519.d ∧ evalOps zConstOps e 15 = 2 := by
-  refine ⟨?_, rfl, rfl, rfl, rfl⟩
-  rw [← constPoint_eval combG e]
-  rfl
+  simp only [zConstOps, constPointOps, List.cons_append, List.nil_append, evalOps, List.foldl_cons,
+    List.foldl_nil, evalOp, point, Fun.update_apply, Fin.reduceEq, ↓reduceIte, and_self]
 
 /-- The constants, the rows of the `zmm` code, and `[G]B` in both halves. -/
 theorem zprep_ok {s : State} {base : Addr} (hs : Scratch s base) :

@@ -118,7 +118,7 @@ theorem jointDigit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL 
     obtain ⟨sct, kt, Ut, Mt, rlt, rJ, -, -⟩ := jacPost_frame hW Sv.scr Sv.mod (Or.inl rfl) ht
     exact ⟨Sv.next hW sct (kt.mono clob_nafClob) Ut, (kt.gpr _ (x19_not_clob _)).trans v19, rlt, rJ,
       CacheOk.unch hW hL.cache Ev.cache Ut hn⟩
-  · have hm0 : Naf5.magnitude k j = 0 := by simpa only [ne_eq, not_not] using of_decide_eq_false hz
+  · have hm0 : Naf5.magnitude k j = 0 := by simpa only [ne_eq, Classical.not_not] using of_decide_eq_false hz
     have he : Spec.Weierstrass.add A (Naf5.point C P k j)=A := by
       unfold Naf5.point
       rw [hm0,Spec.Weierstrass.mul]

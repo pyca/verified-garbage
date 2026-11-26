@@ -7,7 +7,6 @@ public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateABI
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.ToAdditive

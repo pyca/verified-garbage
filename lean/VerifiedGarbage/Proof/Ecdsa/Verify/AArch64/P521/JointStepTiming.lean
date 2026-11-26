@@ -271,6 +271,6 @@ theorem jointStep_relCT {C : Curve} {base T : Addr} {P G : Point C} {s₀ t₀ :
              exact a.2
             obtain ⟨hg,res⟩:=fixedDigit_relCT hL hC hp hone ev (by omega_using [hj]) mixed
              _ _ _ _ _ _ ⟨hpair,a.1,b.1⟩ gs gt
-            exact ⟨by simpa only [List.append_assoc] using congrArg₂ (·++·) he hg,res⟩
+            exact ⟨by simpa only [List.append_assoc] using congr (congrArg HAppend.hAppend he) hg,res⟩
  exact ⟨result.1,result.2,postS,postT,(Exec.syms es).trans sys,(Exec.syms et).trans syt⟩
 end VG.Proof.Ecdsa.Verify.AArch64.P521.Joint

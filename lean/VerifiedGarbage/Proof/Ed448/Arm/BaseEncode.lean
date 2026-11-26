@@ -126,13 +126,13 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   obtain hs₂ := k₂.scr hs₁
   obtain ex : E s₂.mem base 1 = E s.mem base 0 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
-    simp only [applyOps, encodeFields, FieldOp.apply, opMul, Function.update_self]
-    rw [Function.update_of_ne (show (21 : Index) ≠ 4 by decide),
-      Function.update_of_ne (show (0 : Index) ≠ 4 by decide), invEnv_x0, invEnv_eval]
+    simp only [applyOps, encodeFields, FieldOp.apply, opMul, Fun.update_self]
+    rw [Fun.update_of_ne (show (21 : Index) ≠ 4 by decide),
+      Fun.update_of_ne (show (0 : Index) ≠ 4 by decide), invEnv_x0, invEnv_eval]
   obtain ey : E s₂.mem base 4 = E s.mem base 1 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
     simp only [applyOps, encodeFields, FieldOp.apply, opMul]
-    rw [Function.update_of_ne (show (4 : Index) ≠ 1 by decide), Function.update_self, invEnv_x2,
+    rw [Fun.update_of_ne (show (4 : Index) ≠ 1 by decide), Fun.update_self, invEnv_x2,
       invEnv_eval]
   simp only [List.append_assoc]
   -- `x` fully reduced, and its bit.
@@ -147,10 +147,10 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
     rw [m₄, E_update (o := 1) m₃]
     funext i
     by_cases hi : i = 1
-    · subst hi; rw [Function.update_self]
+    · subst hi; rw [Fun.update_self]
       change Proof.X448.toFe (fe s₃.mem base X2) = Proof.X448.toFe (fe s₂.mem base X2)
       rw [vx₃]; exact Proof.X448.toFe_mod _
-    · rw [Function.update_of_ne hi]
+    · rw [Fun.update_of_ne hi]
   obtain b₄ : BoundedEnv s₄.mem base := m₄ ▸ bounded_update (o := 1) m₃ b₂ bx₃
   -- `y` into slot 1, fully reduced.
   refine VG.Proof.X25519.Arm.WP.append (copyE hs₄ b₄ 1 4) fun s₅ ⟨k₅, b₅, e₅⟩ => ?_
@@ -160,7 +160,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   obtain y₆ : fe s₆.mem base X2 = (E s.mem base 1 * Proof.X448.invert (E s.mem base 2)).val := by
     obtain hy : (E s₅.mem base 1).val = fe s₅.mem base X2 % Spec.X448.P := Proof.X448.toFe_val _
     obtain h5 : E s₅.mem base 1 = E s₄.mem base 4 := by
-      rw [e₅]; exact Function.update_self _ _ _
+      rw [e₅]; exact Fun.update_self _ _ _
     rw [vy₆, ← hy, h5, E₄, ey]
   -- The output.
   obtain r12₆ : s₆.gpr .r8 = s.gpr .r8 := by

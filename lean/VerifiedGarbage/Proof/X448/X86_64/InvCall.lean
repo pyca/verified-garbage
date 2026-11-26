@@ -62,7 +62,7 @@ theorem invertCall_post {keep : List Nat} (hk : ∀ d ∈ keep, d + 8 ≤ 832 �
   · intro x hx
     rw [k₃.out x (by omega_using [hx]), o₂ x (by omega_using [hx]), o₁ x (by simp only [slot]; omega_using [hx])]
   · rw [e₃, invert_c]
-    simp only [↓reduceIte, tailEnv, opMul, opSqn, Function.update_apply]
+    simp only [↓reduceIte, tailEnv, opMul, opSqn, Fun.update_apply]
     rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]
     rfl
 
@@ -89,7 +89,7 @@ theorem invertCallWith_post (name : String) {keep : List Nat} (hk : ∀ d ∈ ke
   · intro x hx
     rw [k₃.out x (by omega_using [hx]), o₂ x (by omega_using [hx]), o₁ x (by simp only [slot]; omega_using [hx])]
   · rw [e₃, invert_c]
-    simp only [↓reduceIte, tailEnv, opMul, opSqn, Function.update_apply]
+    simp only [↓reduceIte, tailEnv, opMul, opSqn, Fun.update_apply]
     rw [z₂, e₂, chainEnv_21, chainEnv_20, z₁]
     rfl
 

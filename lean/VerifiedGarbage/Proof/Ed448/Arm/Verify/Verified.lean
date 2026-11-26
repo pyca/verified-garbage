@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
@@ -241,7 +242,7 @@ def jacMixedTailN : List FOp := jacMixedTail ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13�
 
 /-- Copying to the two header temporaries, as the machine's copy blocks do. -/
 def jacMixedEnv {F : Type _} (e : Nat → F) : Nat → F :=
-  Function.update (Function.update e 2 (e 11)) 4 (e 12)
+  Fun.update (Fun.update e 2 (e 11)) 4 (e 12)
 
 theorem jacMixedN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps (jacMixedHeadN ++ jacMixedTailN) (jacMixedEnv e)
@@ -251,18 +252,18 @@ theorem jacMixedN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
 
 /-- The mixed header's two initial copies. -/
 def jacMixedInit {F : Type _} (S : RcbSlots) (p : Pt) (E : Nat → F) : Nat → F :=
-  let E1 := Function.update E S.t2 (E p.x)
-  Function.update E1 S.t4 (E1 p.y)
+  let E1 := Fun.update E S.t2 (E p.x)
+  Fun.update E1 S.t4 (E1 p.y)
 
 theorem update_rcbσ {F : Type _} {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (E : Nat → F) (v : F) {w : Nat} (hw : w < 9) :
-    (fun i => Function.update E (rcbσ S p q o w) v (rcbσ S p q o i)) =
-      Function.update (fun i => E (rcbσ S p q o i)) w v := by
+    (fun i => Fun.update E (rcbσ S p q o w) v (rcbσ S p q o i)) =
+      Fun.update (fun i => E (rcbσ S p q o i)) w v := by
   funext i
   by_cases hi : i = w
-  · subst hi; simp only [Function.update_self]
+  · subst hi; simp only [Fun.update_self]
   · have hn : rcbσ S p q o i ≠ rcbσ S p q o w := fun he => hi (hA.inj hw i he)
-    rw [Function.update_of_ne hn,Function.update_of_ne hi]
+    rw [Fun.update_of_ne hn,Fun.update_of_ne hi]
 
 theorem jacMixedInit_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (E : Nat → F) :
@@ -272,8 +273,8 @@ theorem jacMixedInit_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
     have hh := hA.inj (w := 2) (by decide) 12 he
     omega_using [hh]
   unfold jacMixedInit
-  rw [Function.update_of_ne hy]
-  change (fun i => Function.update (Function.update E (rcbσ S p q o 2) (E p.x))
+  rw [Fun.update_of_ne hy]
+  change (fun i => Fun.update (Fun.update E (rcbσ S p q o 2) (E p.x))
     (rcbσ S p q o 4) (E p.y) (rcbσ S p q o i)) = _
   rw [update_rcbσ hA _ _ (by decide),update_rcbσ hA _ _ (by decide)]
   rfl
@@ -300,7 +301,7 @@ theorem jacEndTail_eq (S : RcbSlots) (p q o : Pt) :
 
 /-- The mixed header's three initial copies, `Z1` to `o.z` too. -/
 def jacMixedEnvZ {F : Type _} (e : Nat → F) : Nat → F :=
-  Function.update (jacMixedEnv e) 8 (jacMixedEnv e 13)
+  Fun.update (jacMixedEnv e) 8 (jacMixedEnv e 13)
 
 theorem jacMixedZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     let r := runOps (jacMixedHeadN ++ jacEndTailN) (jacMixedEnvZ e)
@@ -314,13 +315,13 @@ theorem jacMixedHeadZN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) 
 
 /-- `jacMixedInit`, and `p.z` copied to `o.z`. -/
 def jacMixedInitZ {F : Type _} (S : RcbSlots) (p o : Pt) (E : Nat → F) : Nat → F :=
-  Function.update (jacMixedInit S p E) o.z (jacMixedInit S p E p.z)
+  Fun.update (jacMixedInit S p E) o.z (jacMixedInit S p E p.z)
 
 theorem jacMixedInitZ_rename {F : Type _} {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (E : Nat → F) :
     (fun i => jacMixedInitZ S p o E (rcbσ S p q o i)) = jacMixedEnvZ (fun i => E (rcbσ S p q o i)) := by
   unfold jacMixedInitZ jacMixedEnvZ
-  change (fun i => Function.update (jacMixedInit S p E) (rcbσ S p q o 8)
+  change (fun i => Fun.update (jacMixedInit S p E) (rcbσ S p q o 8)
     (jacMixedInit S p E (rcbσ S p q o 13)) (rcbσ S p q o i)) = _
   have h13 : jacMixedInit S p E (rcbσ S p q o 13) = jacMixedEnv (fun i => E (rcbσ S p q o i)) 13 :=
     congrFun (jacMixedInit_rename hA E) 13

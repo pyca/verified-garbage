@@ -29,11 +29,11 @@ theorem powSaved_lt : ∀ rd ∈ powSaved, 1472 ≤ rd.2 ∧ rd.2 + 8 ≤ 1520 :
 def powClob : List Reg := [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11]
 
 theorem chainEnv_20 (e : Env) : chainEnv 12 e 20 = c222 (e 12) := by
-  simp only [chainEnv, opMul, opSqn, Function.update_apply, c222]
+  simp only [chainEnv, opMul, opSqn, Fun.update_apply, c222]
   rfl
 
 theorem chainEnv_21 (e : Env) : chainEnv 12 e 21 = c223 (e 12) := by
-  simp only [↓reduceIte, chainEnv, opMul, opSqn, Function.update_apply, c223, c222]
+  simp only [↓reduceIte, chainEnv, opMul, opSqn, Fun.update_apply, c223, c222]
   rfl
 
 /-- `vg_gf448_r64_pow223`: what it keeps and computes. -/

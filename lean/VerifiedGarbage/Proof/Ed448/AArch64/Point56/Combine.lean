@@ -655,7 +655,7 @@ theorem subNeg_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     (hox : ox ≠ 10) (hx : Bnd Mb s.mem base (slot ox.val)) (h19 : Bnd Mb s.mem base (slot (19 : Index).val)) :
     WP isa (VG.Impl.X448.AArch64.Fast.ops [.sub (slot (10 : Index).val) (slot (19 : Index).val) (slot ox.val)]) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [10] s.mem t.mem ∧
-      EV t.mem base = Function.update (EV s.mem base) 10 (EV s.mem base 19 - EV s.mem base ox) :=
+      EV t.mem base = Fun.update (EV s.mem base) 10 (EV s.mem base 19 - EV s.mem base ox) :=
   subOp hs hb h19 hx (by decide) (Ne.symm hox) fun _ k b sm e => WP.block_nil ⟨k, b, sm, e⟩
 
 theorem negate_eq (ox : Index) (n : Nat) :
@@ -675,7 +675,7 @@ theorem negate_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     WP isa (.block (negate (slot ox.val) o (slot (10 : Index).val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base ([10] ++ [ox, 10]) s.mem t.mem ∧
       EV t.mem base = opSwap ox 10 (decide (nib k i < 8))
-        (Function.update (EV s.mem base) 10 (EV s.mem base 19 - EV s.mem base ox)) := by
+        (Fun.update (EV s.mem base) 10 (EV s.mem base 19 - EV s.mem base ox)) := by
   rw [negate_eq ox o, WP.block_append_iff]
   refine WP.mono (block_codeOf (subNeg_ok hs hb ox hox hx h19)) fun t1 ⟨k1, b1, s1, e1⟩ => ?_
   have hs1 := k1.scr hs
@@ -943,15 +943,15 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
     rw [Same.env s2 hi, e1]
   obtain z2v : EV t2.mem base 19 = 0 := (zero_env z2).1
   obtain t3o : ∀ i : Index, i ≠ 6 → i ≠ 10 → EV t3.mem base i = EV t2.mem base i := fun i h6 h10 => by
-    rw [e3]; simp only [opSwap, Function.update_apply, h6, h10, ite_false]
+    rw [e3]; simp only [opSwap, Fun.update_apply, h6, h10, ite_false]
   obtain t36 : EV t3.mem base 6 =
       if decide (nib k (2 * j + 1) < 8) then EV t2.mem base 19 - EV t2.mem base 6 else EV t2.mem base 6 := by
-    rw [e3]; simp only [opSwap, Function.update_apply, show (6 : Index) ≠ 10 by decide, ite_false, ite_true]
+    rw [e3]; simp only [opSwap, Fun.update_apply, show (6 : Index) ≠ 10 by decide, ite_false, ite_true]
   obtain t5o : ∀ i : Index, i ≠ 8 → i ≠ 10 → EV t5.mem base i = EV t4.mem base i := fun i h8 h10 => by
-    rw [e5]; simp only [opSwap, Function.update_apply, h8, h10, ite_false]
+    rw [e5]; simp only [opSwap, Fun.update_apply, h8, h10, ite_false]
   obtain t58 : EV t5.mem base 8 =
       if decide (nib k (2 * j) < 8) then EV t4.mem base 19 - EV t4.mem base 8 else EV t4.mem base 8 := by
-    rw [e5]; simp only [opSwap, Function.update_apply, show (8 : Index) ≠ 10 by decide, ite_false, ite_true]
+    rw [e5]; simp only [opSwap, Fun.update_apply, show (8 : Index) ≠ 10 by decide, ite_false, ite_true]
   obtain t4s : ∀ i : Index, i ∉ temps ++ [2, 0, 1] → i ∉ [10] ++ [6, 10] →
       EV t4.mem base i = EV t2.mem base i := fun i h4 h3 => by
     rw [Same.env s4 h4, Same.env s3 h3]

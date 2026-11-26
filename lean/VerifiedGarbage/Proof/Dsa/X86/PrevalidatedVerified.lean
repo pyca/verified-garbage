@@ -12,7 +12,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.Entry
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Proof.Weierstrass.PointContract
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Dsa.X86.SignLayout

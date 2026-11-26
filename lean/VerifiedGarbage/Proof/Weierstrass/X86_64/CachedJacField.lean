@@ -77,7 +77,7 @@ theorem head_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (h2 : E 17=E 16*E 16) (h3 : E 18=E 17*E 16) :
     runOps headZN E 3=E 14*(E 13*E 13)-E 11*(E 16*E 16) ∧
     runOps headZN E 5=E 15*E 13*(E 13*E 13)-E 12*E 16*(E 16*E 16) := by
-  simp only [headZN,headN,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+  simp only [headZN,headN,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h3,h2]
   constructor
   · rfl
@@ -88,7 +88,7 @@ theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (runOps (headZN++jacEndTailN) E 6,runOps (headZN++jacEndTailN) E 7,runOps (headZN++jacEndTailN) E 8)=
       jacAddF (E 11) (E 12) (E 13) (E 14) (E 15) (E 16) := by
   simp only [headZN,headN,jacEndTailN,jacEndTail,jacTail,List.take,List.cons_append,List.nil_append,
-    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h3,h2,jacAddF,Prod.mk.injEq]
   constructor
   · grind
@@ -118,8 +118,8 @@ theorem full_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {
   have he := runOps_rename (rename n S p q o dst) (headZN++jacEndTailN) E
     (fun op hop => rename_inj hA h2a h3a
       ((show ∀ op∈headZN++jacEndTailN,op.out<9 by decide) op hop))
-  exact (congrArg₂ Prod.mk (congrFun he 6)
-    (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun he 6))
+    (congr (congrArg Prod.mk (congrFun he 7)) (congrFun he 8))).trans
       (full_values (fun i => E (rename n S p q o dst i)) h2 h3)
 
 theorem head_readonly {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p q o : Pt}

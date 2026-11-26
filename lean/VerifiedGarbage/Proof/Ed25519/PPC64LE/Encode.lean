@@ -351,13 +351,13 @@ theorem sqnLoop_ok {b : Addr} {s : State} (hc : Ctx b s) (o : Slot) (ho : 14 ≤
     (hn' : n < 2 ^ 15) :
     WP isa (sqnLoop o n) s fun t =>
       Rest (.r12 :: clob) s t ∧ Frame [PR b] s.mem t.mem ∧
-      env t.mem b = Function.update (env s.mem b) o (sqn (env s.mem b o) n) := by
+      env t.mem b = Fun.update (env s.mem b) o (sqn (env s.mem b o) n) := by
   unfold sqnLoop
   refine WP.seq (wp_li (by omega_arith) fun s1 u1 => WP.block_nil ?_)
   refine sqLoop_ok hc o ho (env s.mem b o) n hn' n s1 hn (Nat.le_refl _) (u1.rest (by decide))
     (by rw [u1.mem]; exact Frame.refl _ _) u1.gpr ?_
   rw [u1.mem, Nat.sub_self]
-  exact (Function.update_eq_self _ _).symm
+  exact (Fun.update_eq_self _ _).symm
 
 theorem inv_exp : (2 ^ 250 - 1) * 2 ^ 5 + 11 = P - 2 := by decide
 
@@ -375,10 +375,10 @@ theorem invert_ok {b : Addr} {s : State} (hc : Ctx8 b s) :
   refine WP.mono (mulCall_ok hc2.ctx 15 15 14) fun t3 ⟨k3, e3⟩ => ⟨?_, ?_, fun i hi => ?_⟩
   · refine k1.trans (Keep.trans ⟨r2.mono (by decide), f2.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩⟩ k3)
     rw [List.mem_singleton.mp hr]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  · rw [e3, Function.update_self, e2, Function.update_self, Function.update_of_ne (by decide), e15, e14,
+  · rw [e3, Fun.update_self, e2, Fun.update_self, Fun.update_of_ne (by decide), e15, e14,
       Proof.X25519.sqn_pw, Proof.X25519.pw_mul, inv_exp, Proof.X25519.pow_pw]
   · have h15 : i ≠ 15 := fun h => by subst h; exact absurd hi (by decide)
-    rw [e3, Function.update_of_ne h15, e2, Function.update_of_ne h15, ek i hi]
+    rw [e3, Fun.update_of_ne h15, e2, Fun.update_of_ne h15, ek i hi]
 
 theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩

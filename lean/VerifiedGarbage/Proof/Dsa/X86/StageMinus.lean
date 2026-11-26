@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 public import VerifiedGarbage.Impl.Dsa.X86.Minus
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

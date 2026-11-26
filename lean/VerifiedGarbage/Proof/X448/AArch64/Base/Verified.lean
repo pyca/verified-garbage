@@ -68,7 +68,7 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 theorem squares_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) :
     WP isa (.block (Impl.X448.AArch64.Fast.codeOf [.mul X2 AY AY, .mul Z2 AX AX])) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧
-      EV t.mem base = Function.update (Function.update (EV s.mem base) 1 (EV s.mem base 1 * EV s.mem base 1)) 2
+      EV t.mem base = Fun.update (Fun.update (EV s.mem base) 1 (EV s.mem base 1 * EV s.mem base 1)) 2
         (EV s.mem base 0 * EV s.mem base 0) := by
   refine block_codeOf (mulOp hs hb 1 1 1 (Or.inl rfl) fun t1 k1 b1 _ _ e1 => ?_)
   refine mulOp (k1.scr hs) b1 2 0 0 (Or.inl rfl) fun t2 k2 b2 _ _ e2 => WP.block_nil ⟨k1.trans k2, b2, ?_⟩

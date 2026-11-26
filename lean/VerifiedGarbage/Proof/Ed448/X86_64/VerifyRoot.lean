@@ -58,7 +58,7 @@ theorem rootCallFor_ok (v : Impl.Ed448.X86_64.FieldVariant) : RootOk (rootCallFo
     (by revert hr; cases r <;> decide)]
 
 theorem rootEnv_eval (e : Env) : rootEnv e 21 = rootPow (e 12) := by
-  simp (config := {decide := true}) only [rootEnv, rootTailEnv, chainEnv, opMul, opSqn, Function.update_apply]
+  simp (config := {decide := true}) only [rootEnv, rootTailEnv, chainEnv, opMul, opSqn, Fun.update_apply]
   rfl
 
 theorem rootEnv_keep (e : Env) (i : Proof.X448.X86_64.Index) (hi : i.val < 14) : rootEnv e i = e i := by
@@ -70,8 +70,8 @@ theorem rootEnv_keep (e : Env) (i : Proof.X448.X86_64.Index) (hi : i.val < 14) :
   have h6 : i ≠ 19 := fun h => absurd hi (by rw [h]; decide)
   have h7 : i ≠ 20 := fun h => absurd hi (by rw [h]; decide)
   have h8 : i ≠ 21 := fun h => absurd hi (by rw [h]; decide)
-  simp only [rootEnv, rootTailEnv, chainEnv, opMul, opSqn, Function.update_of_ne h1, Function.update_of_ne h2,
-    Function.update_of_ne h3, Function.update_of_ne h4, Function.update_of_ne h5,
-    Function.update_of_ne h6, Function.update_of_ne h7, Function.update_of_ne h8]
+  simp only [rootEnv, rootTailEnv, chainEnv, opMul, opSqn, Fun.update_of_ne h1, Fun.update_of_ne h2,
+    Fun.update_of_ne h3, Fun.update_of_ne h4, Fun.update_of_ne h5,
+    Fun.update_of_ne h6, Fun.update_of_ne h7, Fun.update_of_ne h8]
 
 end VG.Proof.Ed448.X86_64

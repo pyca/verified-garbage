@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.MillerRabin.Word32

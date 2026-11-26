@@ -424,8 +424,8 @@ theorem signedEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat
         | iteT ct yt =>
           obtain ⟨he₂, pair₂⟩ := op _ _ _ _ _ _ pair₁ ys yt
           refine ⟨by rw [he₁, he₂], _, pair₂.sub (fun _ hx => List.mem_cons_of_mem _ hx), ?_, ?_⟩
-          · simp only [FOp.run, Function.update_apply, yy, Ne.symm eyz, ite_false]; exact e2
-          · simp only [FOp.run, Function.update_apply, zy, Ne.symm eyz, ite_false]; exact e3
+          · simp only [FOp.run, Fun.update_apply, yy, Ne.symm eyz, ite_false]; exact e2
+          · simp only [FOp.run, Fun.update_apply, zy, Ne.symm eyz, ite_false]; exact e3
         | iteF cf _ => cases ((hx3 vs).symm.trans cs).symm.trans ((hx3 vt).symm.trans cf)
       | iteF cs ns =>
         cases et₂ with

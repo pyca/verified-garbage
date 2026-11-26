@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import Batteries.Tactic.Init
 
 /-!
 # Co-Z formulas in Jacobian coordinates

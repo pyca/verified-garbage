@@ -800,7 +800,7 @@ theorem LInv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat 
     {L : Bounds} {E : Nat → Fin m} {s s' : State} (hI : LInv M base size m Sl L E s) {o k : Nat}
     (ho : Sl o) (hk : OpKeep M base o s s') (hr : Bd m k (wordsVal s'.mem base o M.n)) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    LInv M base size m Sl ((o, k) :: L) (Function.update E o v) s' := by
+    LInv M base size m Sl ((o, k) :: L) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   have hlo := hL.le o ho
   have hmo := hL.mo o ho
@@ -834,23 +834,23 @@ theorem LInv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat 
     · rw [heq x (hI.sl x k' h) hx]; exact hI.bd x k' h
   · intro x k' h
     rcases look x k' h with ⟨rfl, rfl⟩ | ⟨hx, h⟩
-    · rw [Function.update_self]; exact hv
-    · rw [Function.update_of_ne hx, heq x (hI.sl x k' h) hx]; exact hI.val x k' h
+    · rw [Fun.update_self]; exact hv
+    · rw [Fun.update_of_ne hx, heq x (hI.sl x k' h) hx]; exact hI.val x k' h
 
 /-- A half, modulo P-521's `p`. -/
 def halfF (m : Nat) [NeZero m] : Fin m := Fin.ofNat m (2 ^ 520)
 
 /-- An operation on what the slots stand for. -/
 def run {m : Nat} [NeZero m] (E : Nat → Fin m) : LOp → Nat → Fin m
-  | .mul _ o a b => Function.update E o (E a * E b)
-  | .add o a b => Function.update E o (E a + E b)
-  | .sub o a b => Function.update E o (E a - E b)
-  | .tri o a => Function.update E o (E a + E a + E a)
-  | .sub2 o a b => Function.update E o (E a - E b - E b)
-  | .subF o a b => Function.update E o (E a - E b)
-  | .half o a => Function.update E o (E a * halfF m)
-  | .cadd o a b => Function.update E o (E a + E b)
-  | .csub o a b => Function.update E o (E a - E b)
+  | .mul _ o a b => Fun.update E o (E a * E b)
+  | .add o a b => Fun.update E o (E a + E b)
+  | .sub o a b => Fun.update E o (E a - E b)
+  | .tri o a => Fun.update E o (E a + E a + E a)
+  | .sub2 o a b => Fun.update E o (E a - E b - E b)
+  | .subF o a b => Fun.update E o (E a - E b)
+  | .half o a => Fun.update E o (E a * halfF m)
+  | .cadd o a b => Fun.update E o (E a + E b)
+  | .csub o a b => Fun.update E o (E a - E b)
 
 def runs {m : Nat} [NeZero m] (ops : List LOp) (E : Nat → Fin m) : Nat → Fin m := ops.foldl run E
 
@@ -1123,7 +1123,7 @@ theorem dbl_run {m : Nat} [NeZero m] (S : RcbSlots) (p : Pt) (E : Nat → Fin m)
   have hd' : (List.reverse _).Nodup := List.pairwise_reverse.mpr (hd.imp Ne.symm)
   simp only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, List.nodup_cons, List.mem_cons,
     List.not_mem_nil, or_false, not_or] at hd hd'
-  simp only [dblOps, runs, List.foldl, run, Function.update_apply, dblJF, *, ite_true, ite_false]
+  simp only [dblOps, runs, List.foldl, run, Fun.update_apply, dblJF, *, ite_true, ite_false]
   clear hd hd'
   refine ⟨⟨?_, ?_⟩, ?_⟩ <;> grind
 
@@ -1266,10 +1266,10 @@ theorem quadLazy_ok (hz : WinCfg.lazyOk K = true) (hL : WinLay K size) (hp : Uni
     simp only [List.map_cons, List.map_nil, LOp.out, List.mem_singleton] at hx; subst hx; exact rW _ (by simp))
   have b₁ : s₁.gpr .rbx = BitVec.ofNat 64 i := by rw [kr₁.gpr _ (rbx_not_clob _), hb]
   have E₁ : ∀ x, x ≠ K.R.y → runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) x = tmv C K.M.n base s x := fun x hx => by
-    simp only [runs, List.foldl, run, Function.update_of_ne hx]
+    simp only [runs, List.foldl, run, Fun.update_of_ne hx]
   have E₁y : runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) K.R.y =
       tmv C K.M.n base s K.R.y + tmv C K.M.n base s K.R.y := by
-    simp only [runs, List.foldl, run, Function.update_self]
+    simp only [runs, List.foldl, run, Fun.update_self]
   generalize hE₁ : runs [.add K.R.y K.R.y K.R.y] (tmv C K.M.n base s) = F₁ at I₁ E₁ E₁y
   have J₁ : LInv K.M base size C.p (· ∈ winSlots K) (WinCfg.lazyBounds K) F₁ s₁ :=
     LInv.of_mem I₁.scr I₁.mod fun p hp' => by
@@ -1361,14 +1361,14 @@ theorem quadLazy_ok (hz : WinCfg.lazyOk K = true) (hL : WinLay K size) (hp : Uni
   have hx : tmv C K.M.n base s₇ K.R.x = E₅ K.R.x := by
     show toM _ _ _ = _
     rw [I₇.val _ _ lx₇]
-    simp only [runs, List.foldl, run, Function.update_apply, hxy, hxz, zy, ite_true, ite_false]
+    simp only [runs, List.foldl, run, Fun.update_apply, hxy, hxz, zy, ite_true, ite_false]
     rw [zv]
     have : tmv C K.M.n base s₅ K.R.x = E₅ K.R.x := I₅.val _ _ lx₅
     rw [this]; grind
   have hy : tmv C K.M.n base s₇ K.R.y = Y₅ := by
     show toM _ _ _ = _
     rw [I₇.val _ _ ly₇]
-    simp only [runs, List.foldl, run, Function.update_apply, hyz, zy, Ne.symm hxy, ite_true, ite_false]
+    simp only [runs, List.foldl, run, Fun.update_apply, hyz, zy, Ne.symm hxy, ite_true, ite_false]
     rw [zv]
     have h1 : tmv C K.M.n base s₅ K.R.y = E₅ K.R.y := I₅.val _ _ ly₅
     have h2 := halfF_two hp9
@@ -1377,7 +1377,7 @@ theorem quadLazy_ok (hz : WinCfg.lazyOk K = true) (hL : WinLay K size) (hp : Uni
   have hzz : tmv C K.M.n base s₇ K.R.z = E₅ K.R.z := by
     show toM _ _ _ = _
     rw [I₇.val _ _ lz₇]
-    simp only [runs, List.foldl, run, Function.update_apply, Ne.symm hxz, Ne.symm hyz, zx, zy, ite_true, ite_false]
+    simp only [runs, List.foldl, run, Fun.update_apply, Ne.symm hxz, Ne.symm hyz, zx, zy, ite_true, ite_false]
     rw [zv]
     have : tmv C K.M.n base s₅ K.R.z = E₅ K.R.z := I₅.val _ _ lz₅
     rw [this]; grind
@@ -1396,7 +1396,7 @@ theorem madd_run {m : Nat} [NeZero m] (S : RcbSlots) (p q o : Pt) (E : Nat → F
   have hd' : (List.reverse _).Nodup := List.pairwise_reverse.mpr (hd.imp Ne.symm)
   simp only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, List.nodup_cons, List.mem_cons,
     List.not_mem_nil, or_false, not_or] at hd hd'
-  simp only [maddOps, runs, List.foldl, run, Function.update_apply, maddJF, *, ite_true, ite_false, Prod.mk.injEq]
+  simp only [maddOps, runs, List.foldl, run, Fun.update_apply, maddJF, *, ite_true, ite_false, Prod.mk.injEq]
   clear hd hd'
   refine ⟨?_, ?_, ?_⟩ <;> grind only
 

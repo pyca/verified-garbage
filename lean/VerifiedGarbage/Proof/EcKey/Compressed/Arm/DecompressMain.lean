@@ -396,7 +396,7 @@ def rhsTail : List FOp :=
 
 theorem rhsTail_run {F : Type} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps rhsTail e W2 = e QXM * e QXM * e QXM + e AP * e QXM + e BP := by
-  simp only [rhsTail, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [rhsTail, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [W1, W2, W3, QXM, AP, BP, TT, SM, RM, XM, EM, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem rhsTail_reads : readsOk rhsTail [QXM, AP, BP] = true := by decide
@@ -1029,7 +1029,7 @@ theorem checkOps_eq (c : Cfg) : Impl.EcKey.Compressed.Arm.checkRootOps c =
 
 theorem checkN_run {F : Type} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps checkN e W3 = (e QY * e R2P) * (e QY * e R2P) - e W2 := by
-  simp only [checkN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [checkN, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [QYM, QY, R2P, W1, W2, X, RR, DM, TT, SM, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem checkN_reads : readsOk checkN [QY, R2P, W2] = true := by decide
@@ -1192,7 +1192,7 @@ theorem checkRoot_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   · rw [flag₅, mask₄]
     change s₄.mem.readW (off base (c.sl FLAG)) 32 &&& _ = _
     rw [m₄, m₃, ← flagW, flag₂]
-    simp only [not_not]
+    simp only [Classical.not_not]
     exact mask32_and _ _
 
 end VG.Proof.EcKey.Compressed.Arm

@@ -172,17 +172,17 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
       K.z2, K.z2 + 8 * K.M.n]) =>
     And.intro (show tmv C K.M.n base s₅ x = _ from I₅.val x hx) (I₅.lt x hx)
   obtain dx₅ := val₅ K.D.x (by simp)
-  rw [Function.update_of_ne dxEy, Function.update_of_ne dxEx, Function.update_of_ne dyx.symm,
-    Function.update_self] at dx₅
+  rw [Fun.update_of_ne dxEy, Fun.update_of_ne dxEx, Fun.update_of_ne dyx.symm,
+    Fun.update_self] at dx₅
   obtain dy₅ := val₅ K.D.y (by simp)
-  rw [Function.update_of_ne dyEy, Function.update_of_ne dyEx, Function.update_self,
-    Function.update_of_ne dxEy.symm] at dy₅
+  rw [Fun.update_of_ne dyEy, Fun.update_of_ne dyEx, Fun.update_self,
+    Fun.update_of_ne dxEy.symm] at dy₅
   obtain ex₅ := val₅ K.E.x (by simp)
-  rw [Function.update_of_ne ExEy, Function.update_self, Function.update_of_ne t3dy,
-    Function.update_of_ne t3dx] at ex₅
+  rw [Fun.update_of_ne ExEy, Fun.update_self, Fun.update_of_ne t3dy,
+    Fun.update_of_ne t3dx] at ex₅
   obtain ey₅ := val₅ K.E.y (by simp)
-  rw [Function.update_self, Function.update_of_ne t2Ex, Function.update_of_ne t2dy,
-    Function.update_of_ne t2dx] at ey₅
+  rw [Fun.update_self, Fun.update_of_ne t2Ex, Fun.update_of_ne t2dy,
+    Fun.update_of_ne t2dx] at ey₅
   obtain eT : ∀ c, 2 ≤ c → c < 5 → tmv C K.M.n base s₅ (TS K c) = tmv C K.M.n base s₁ (TS K c) ∧
       wordsVal s₅.mem base (TS K c) K.M.n < C.p := fun c h2 hc => by
     obtain hx : TS K c ∈ K.E.y :: K.E.x :: K.D.y :: K.D.x :: [K.S.t2, K.S.t3, K.E.x, K.E.y, K.E.z,
@@ -194,8 +194,8 @@ theorem jbuildDbluO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.
       · rw [t3]; simp
     obtain ⟨n1, n2, n3, n4⟩ := hT4 c h2 hc
     refine ⟨(show tmv C K.M.n base s₅ _ = _ from I₅.val _ hx).trans ?_, I₅.lt _ hx⟩
-    rw [Function.update_of_ne n4, Function.update_of_ne n3, Function.update_of_ne n2,
-      Function.update_of_ne n1]
+    rw [Fun.update_of_ne n4, Fun.update_of_ne n3, Fun.update_of_ne n2,
+      Fun.update_of_ne n1]
   obtain e2 := eT 2 (by decide) (by decide); have e3 := eT 3 (by decide) (by decide)
   obtain e4 := eT 4 (by decide) (by decide)
   rw [tz] at e2; rw [t2] at e3; rw [t3] at e4
@@ -732,7 +732,7 @@ theorem ip_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (runOps (headIPN ++ tailIPN) E 6, runOps (headIPN ++ tailIPN) E 7, runOps (headIPN ++ tailIPN) E 8) =
       jacAddF (E 6) (E 7) (E 8) (E 11) (E 12) (E 13) := by
   simp only [headIPN, tailIPN, jacTail, List.cons_append, List.nil_append,
-    runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
+    runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply]
   simp only [ite_true, h3, h2, jacAddF, Prod.mk.injEq]
   constructor
   · grind
@@ -759,7 +759,7 @@ theorem ip_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {p 
   rw [ip_eq]
   have he := runOps_rename (ipσ n S p q dst) (headIPN ++ tailIPN) E
     (fun op hop => ip_inj hA (ipN_out op hop))
-  exact (congrArg₂ Prod.mk (congrFun he 6) (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun he 6)) (congr (congrArg Prod.mk (congrFun he 7)) (congrFun he 8))).trans
     (ip_values (fun i => E (ipσ n S p q dst i)) h2 h3)
 
 theorem ipσ_mem (n : Nat) (S : RcbSlots) (p q : Pt) (dst i : Nat) :
@@ -1192,7 +1192,7 @@ theorem jfinO_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   obtain hyt : K.R.y ≠ K.S.t0 := hL.oth_ne (i := 1) (j := 7) (by decide) (by decide) (by decide)
   obtain hyz : K.R.y ≠ K.R.z := hL.oth_ne (i := 1) (j := 2) (by decide) (by decide) (by decide)
   simp only [TCombCfg.outOps, JacWinCfg.tc, runOps, List.foldl_cons, List.foldl_nil, FOp.run,
-    Function.update_apply, hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
+    Fun.update_apply, hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
   obtain hy : tmv C K.M.n base s₄ K.R.y = if tmv C K.M.n base s₃ K.R.z = 0 then 1
       else tmv C K.M.n base s₃ K.R.y := by
     show toM _ _ _ = _

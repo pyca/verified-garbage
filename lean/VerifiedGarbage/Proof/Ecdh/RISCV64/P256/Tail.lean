@@ -135,7 +135,7 @@ theorem sat_point (hL : VG.Proof.Weierstrass.Law W) : MC.PointOk 0x1000 satMem :
   have eG : MC.point 0x1000 satMem = Spec.Weierstrass.G W := by
     unfold Impl.Weierstrass.Mul.Curve.point
     rw [sat_x, sat_y, dq, dq]
-    exact congrArg₂ Point.affine (toM_mont unit) (toM_mont unit)
+    exact congr (congrArg Point.affine (toM_mont unit)) (toM_mont unit)
   rw [eG]
   exact VG.Proof.P256.onCurve_G
 

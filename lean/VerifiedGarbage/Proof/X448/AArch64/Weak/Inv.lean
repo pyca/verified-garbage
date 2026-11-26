@@ -87,12 +87,12 @@ theorem invert_spec (base : Addr) : ISpec base Impl.X448.AArch64.Weak.invert inv
 
 theorem invEnv_eval (e : Env) : invEnv e 21 = Proof.X448.invert (e 2) := by
   simp only [↓reduceIte, invEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
-    Function.update_apply]
+    Fun.update_apply]
   rfl
 
 theorem invEnv_x2 (e : Env) : invEnv e 1 = e 1 := by
   simp (config := {decide := true}) only [invEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
-    Function.update_apply, ite_true, ite_false]
+    Fun.update_apply, ite_true, ite_false]
 
 theorem invert_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
     WP isa Impl.X448.AArch64.Weak.invert s fun t =>

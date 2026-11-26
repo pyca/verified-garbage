@@ -140,7 +140,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
     rw [e₆, invEnv_x2, invEnv_eval, e₅]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
     rw [L.x2, L.x3, L.z2, L.z3, cswap_fst, cswap_fst]
 
 end VG.Proof.X448.AArch64.Fast

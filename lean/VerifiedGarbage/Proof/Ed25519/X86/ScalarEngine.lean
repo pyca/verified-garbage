@@ -136,7 +136,7 @@ theorem scalarPTerms_colv (m : Mem) (x : BitVec 32) {k : Nat} (hk : k < 8) :
         (decide (k - i < 4) || k - i == 7)).map fun i =>
         wv m x (scalarQ + 36 + 4 * i) * (scalarL (k - i)).toNat).sum := by
     simp only [colv, scalarPTerms, List.map_map]
-    refine congrArg List.sum (congrArg₂ List.map rfl (List.filter_congr fun i hi => ?_))
+    refine congrArg List.sum (congr (congrArg List.map rfl) (List.filter_congr fun i hi => ?_))
     have hi' := List.mem_range.mp hi
     have : decide (k - i < 8) = true := decide_eq_true (by omega_using [hk])
     rw [this, Bool.and_true]

@@ -15,8 +15,8 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 open VG.Impl.X25519.X86 (mul)
 open VG.Proof.X25519 (sqn)
 
-def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
-def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opMul (o a b : Slot) (e : Env) : Env := Fun.update e o (e a * e b)
+def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 structure IKeep (x : BitVec 32) (s t : State) : Prop where
   edi : t.gpr .edi = s.gpr .edi
@@ -61,20 +61,20 @@ theorem mulI (x : BitVec 32) (o a b : Slot) (_ho : ISlot o) :
   WP.mono (fieldOp_ok hc (.mul o a b)) fun _ ⟨hk, he⟩ => ⟨IKeep.of_field hk, he⟩
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
     (v : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 32) :
     ∀ m s, 1 ≤ m → m ≤ n → IKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
-      env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m)) →
+      env s.mem x = Fun.update (env s₀.mem x) o (sqn v (n - m)) →
       WP isa (.loop (.block (mul (offset o) (offset o) (offset o) ++
         ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
-        IKeep x s₀ t ∧ env t.mem x = Function.update (env s₀.mem x) o (sqn v n) := by
+        IKeep x s₀ t ∧ env t.mem x = Fun.update (env s₀.mem x) o (sqn v n) := by
   intro m s h1 h2 hk hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep x s₀ s ∧
     s.gpr .esi = BitVec.ofNat 32 m ∧
-    env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
+    env s.mem x = Fun.update (env s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
   rw [WP.block_append_iff]
   refine WP.mono (fieldOp_ok (hk.ctx hc₀) (.mul o o o)) fun t ⟨ht, et⟩ => ?_
@@ -82,9 +82,9 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
   have ku := hk.trans ((IKeep.of_field ht).trans (IKeep.of_counter hu))
   have bu : u.gpr .esi = BitVec.ofNat 32 (m - 1) := by
     rw [hu.gpr, ht.keep.esi, hb]; exact Wp.ofNat_pred h1
-  have eu : env u.mem x = Function.update (env s₀.mem x) o (sqn v (n - (m - 1))) := by
+  have eu : env u.mem x = Fun.update (env s₀.mem x) o (sqn v (n - (m - 1))) := by
     rw [hu.mem, et, he]
-    change opMul o o o (Function.update _ o _) = _
+    change opMul o o o (Fun.update _ o _) = _
     rw [opMul_update, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
     rfl
   have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
@@ -107,6 +107,6 @@ theorem sqnI (x : BitVec 32) (o : Slot) (_ho : ISlot o) (n : Nat) (hn : 1 ≤ n)
   refine Wp.wp_movi fun u hu => WP.block_nil ?_
   refine sqLoop_ok hc o (env s.mem x o) n hn' n u hn (Nat.le_refl _) (IKeep.of_counter hu) hu.gpr ?_
   rw [hu.mem, Nat.sub_self]
-  exact (Function.update_eq_self o _).symm
+  exact (Fun.update_eq_self o _).symm
 
 end VG.Proof.Ed25519.X86

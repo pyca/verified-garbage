@@ -95,7 +95,7 @@ variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 /-- Slot `j` copied into slot `i`. -/
 theorem copySlot_ok {s : State} {base : Addr} (hs : Scr s base) (i j : Index) :
     WP isa (.block (copyOut (slot i.val) (slot j.val))) s fun t =>
-      Keep base s t ∧ E t.mem base = Function.update (E s.mem base) i (E s.mem base j) := by
+      Keep base s t ∧ E t.mem base = Fun.update (E s.mem base) i (E s.mem base j) := by
   have hW : ∀ x ∈ W, x ∈ clob := by decide
   have hi := Proof.X448.X86_64.slot_lt i
   have hj := Proof.X448.X86_64.slot_lt j
@@ -107,18 +107,18 @@ theorem copySlot_ok {s : State} {base : Addr} (hs : Scr s base) (i j : Index) :
   funext k
   by_cases hk : k = i
   · subst hk
-    rw [Function.update_self]
+    rw [Fun.update_self]
     show VG.Proof.X448.toFe (Proof.X448.X86_64.fe t.mem base (slot k.val)) =
       VG.Proof.X448.toFe (Proof.X448.X86_64.fe s.mem base (slot j.val))
     rw [ft]
-  · rw [Function.update_of_ne hk]
+  · rw [Fun.update_of_ne hk]
     exact E_outside ot k (Proof.X448.X86_64.slot_sep hk)
 
 /-- A constant into slot `i`. -/
 theorem constE_ok {s : State} {base : Addr} (hs : Scr s base) (i : Index) (v : Spec.X448.Fe)
     (hv : VG.Proof.X448.toFe (Proof.X448.X86_64.wv (words7 v.val)) = v) :
     WP isa (.block (constSlot i.val v)) s fun t =>
-      Keep base s t ∧ E t.mem base = Function.update (E s.mem base) i v := by
+      Keep base s t ∧ E t.mem base = Fun.update (E s.mem base) i v := by
   have hW : ∀ x ∈ W, x ∈ clob := by decide
   have hi := Proof.X448.X86_64.slot_lt i
   have gi := Proof.X448.X86_64.slot_ge i

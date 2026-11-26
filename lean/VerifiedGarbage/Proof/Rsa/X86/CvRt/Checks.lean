@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Rsa.X86.WordRt.Eq
 import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.ToAdditive

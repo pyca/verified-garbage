@@ -82,7 +82,7 @@ theorem ofN_ok {M : Impl.Mont.Mod} {base : Addr} {S' : Impl.Weierstrass.Mont.Mod
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6)) (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 /-- `2 P`. -/
 abbrev d2 {C : Spec.Weierstrass.Curve} (P : Point C) : Point C := Spec.Weierstrass.add P P

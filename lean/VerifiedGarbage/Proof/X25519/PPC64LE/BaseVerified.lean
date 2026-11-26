@@ -209,7 +209,7 @@ theorem clampCopy_ok {s : State} {b : Addr} (hc : Ctx8 b s) :
 
 theorem uOps_eval (e : Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
-  simp [uOps, evalOps, evalOp, Function.update]
+  simp [uOps, evalOps, evalOp, Fun.update]
 
 theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519.basePoint) := by
   intro b s p T hc h14 hin hpd hT hsym apart

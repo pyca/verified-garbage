@@ -31,7 +31,7 @@ theorem selectField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (c : Bool) (hc : s.gpr .x3 = bmask c) :
     WP isa (.block (sel M.n o a b)) s fun t =>
       OpKeep M base o s t ∧ Inv M base size m Sl (o::V)
-        (Function.update E o (if c then E b else E a)) t := by
+        (Fun.update E o (if c then E b else E a)) t := by
   have hap (x : Nat) (hx : Sl x) : o ≤ x ∨ x+8*M.n ≤ o := by
     by_cases h : o=x
     · omega_using [h]
@@ -68,7 +68,7 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     WP isa (.block (negYW M w neg z y bits)) s fun t =>
       ProgKeep M base [neg,y] s t ∧
       Inv M base size m Sl (y::neg::V)
-        (Function.update (Function.update E neg (-E y)) y
+        (Fun.update (Fun.update E neg (-E y)) y
           (if decide (combWin w k j < 2^(w-1)) then -E y else E y)) t := by
   have hn := hI.scr.nowrap
   rw [negYW,List.append_assoc,WP.block_append_iff]
@@ -102,6 +102,6 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     rcases hh with rfl | rfl <;> simp [clob]
   refine ⟨(progKeep_of_op ka (by simp)).trans (kpb.trans (progKeep_of_op kt (by simp))),?_⟩
   simpa only [FOp.out,FOp.run,hzero,show (0 : Fin m)-E y = -E y by grind,
-    Function.update_self,Function.update_of_ne (Ne.symm hny)] using it
+    Fun.update_self,Fun.update_of_ne (Ne.symm hny)] using it
 
 end VG.Proof.Weierstrass.AArch64

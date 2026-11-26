@@ -82,7 +82,7 @@ theorem neg_fields_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk v j : N
   · intro x hx
     exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ hx))
   all_goals
-    simp only [FOp.run,Function.update_apply,ez]
+    simp only [FOp.run,Fun.update_apply,ez]
     simp (disch := nd_find hn) only [ite_eq_right,ite_true]
   · have esub : 0-tmv C K.M.n base s K.E.y = -tmv C K.M.n base s K.E.y := by grind
     by_cases hsign : Window5.nib v j<16
@@ -170,7 +170,7 @@ theorem full_values {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F)
     (runOps (headN++jacTailN) E 6,runOps (headN++jacTailN) E 7,runOps (headN++jacTailN) E 8)=
       jacAddF (E 11) (E 12) (E 13) (E 14) (E 15) (E 16) := by
   simp only [headN,jacTailN,jacTail,List.cons_append,List.nil_append,
-    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply,↓reduceIte,Nat.reduceEqDiff]
+    runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply,↓reduceIte,Nat.reduceEqDiff]
   simp only [h3,h2,jacAddF,Prod.mk.injEq]
   constructor
   · grind
@@ -187,8 +187,8 @@ theorem full_run {F : Type _} [Lean.Grind.CommRing F] {n : Nat} {S : RcbSlots} {
   obtain he := runOps_rename (rename n S p q o dst) (headN++jacTailN) E
     (fun op hop => rename_inj hA h2a h3a
       ((show ∀ op∈headN++jacTailN,op.out<9 by decide) op hop))
-  exact (congrArg₂ Prod.mk (congrFun he 6)
-    (congrArg₂ Prod.mk (congrFun he 7) (congrFun he 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun he 6))
+    (congr (congrArg Prod.mk (congrFun he 7)) (congrFun he 8))).trans
       (full_values (fun i => E (rename n S p q o dst i)) h2 h3)
 
 end VG.Proof.Weierstrass.X86.CachedJac
@@ -514,7 +514,7 @@ theorem finish_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k e : Nat}
     · have hz' : tmv C K.M.n base s K.R.z≠0 := fun he =>
         hz ((toM_eq_zero_iff hm (lt _ (by simp [jacCoords]))).mp he)
       simp only [hz,hz',↓reduceIte]
-  let E := Function.update (tmv C K.M.n base s) K.R.y
+  let E := Fun.update (tmv C K.M.n base s) K.R.y
     (if tmv C K.M.n base s K.R.z=0 then 1 else tmv C K.M.n base s K.R.y)
   obtain ia : Inv K.M base size C.p (·∈slots K) (jacCoords K.R) E a :=
     (hi.update hL.lay hAcc (sl _ (by simp [jacCoords])) pa la ey).sub
@@ -543,9 +543,9 @@ theorem finish_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k e : Nat}
   obtain hzt : K.R.z≠K.S.t0 := by grind
   obtain hxz : K.R.x≠K.R.z := by grind
   obtain hyt : K.R.y≠K.S.t0 := by grind
-  simp only [TCombCfg.outOps,JacWinCfg.tc,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply,
+  simp only [TCombCfg.outOps,JacWinCfg.tc,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply,
     hxt,hzt,hxz,hyt,hzy.symm,hxz.symm,hxt.symm,hxy.symm,ite_true,ite_false]
-  simp only [E,Function.update_of_ne hxy,Function.update_of_ne hzy,Function.update_self]
+  simp only [E,Fun.update_of_ne hxy,Fun.update_of_ne hzy,Fun.update_self]
   exact InvJ.out hC (h.point hk)
 
 end VG.Proof.Weierstrass.X86.JWin

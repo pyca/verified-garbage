@@ -114,7 +114,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : OpKeep M base o s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    Inv M base size m Sl (o :: V) (Function.update E o v) s' := by
+    Inv M base size m Sl (o :: V) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   have hlo := hL.le o ho
   have hmo := hL.mo o ho
@@ -143,9 +143,9 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       exact hI.lt x (List.mem_of_ne_of_mem hxo hx)
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x (hI.sl x hx') hxo, Function.update_of_ne hxo]
+      rw [heq x (hI.sl x hx') hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 /-- One operation. -/
@@ -452,7 +452,8 @@ theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (ofN_out_mem hN hx)
     · exact Or.inl hx
-  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+  · exact congr (congrArg Prod.mk (ofN_run hN hA E 6))
+      (congr (congrArg Prod.mk (ofN_run hN hA E 7)) (ofN_run hN hA E 8))
 
 /-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
 theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)

@@ -44,7 +44,7 @@ theorem head_values (E : Nat → F)
     runOps head E 896=E 704*(E 576*E 576)-E 512*(E 768*E 768) ∧
     runOps head E 960=E 736*E 576*(E 576*E 576)-E 544*E 768*(E 768*E 768) := by
   rw [head_lit]
-  simp only [runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+  simp only [runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h2,h3]
   constructor <;> grind
 
@@ -53,7 +53,7 @@ theorem full_values (E : Nat → F)
     (runOps (head++tail) E 608,runOps (head++tail) E 640,runOps (head++tail) E 672)=
       jacAddF (E 512) (E 544) (E 576) (E 704) (E 736) (E 768) := by
   rw [head_lit,tail_lit]
-  simp only [List.cons_append,List.nil_append,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_apply]
+  simp only [List.cons_append,List.nil_append,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_apply]
   simp only [ite_true,h2,h3,jacAddF,Prod.mk.injEq]
   constructor
   · grind

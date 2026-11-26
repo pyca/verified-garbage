@@ -29,12 +29,12 @@ theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (copySlot_ok (k1.scr hs) 1 4) fun s2 ⟨k2, e2⟩ => ?_
   refine WP.mono (copySlot_ok (k2.scr (k1.scr hs)) 2 5) fun u ⟨ku, eu⟩ => ?_
   refine ⟨(k1.trans k2).trans ku, ?_, ?_⟩
-  · rw [eu, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
+  · rw [eu, e2, e1]; simp (disch := decide) only [pt, Fun.update_self, Fun.update_of_ne]
   · intro j hj
     have h0 : j ≠ 0 := by intro h; subst j; contradiction
     have h1 : j ≠ 1 := by intro h; subst j; contradiction
     have h2 : j ≠ 2 := by intro h; subst j; contradiction
-    rw [eu, e2, e1, Function.update_of_ne h2, Function.update_of_ne h1, Function.update_of_ne h0]
+    rw [eu, e2, e1, Fun.update_of_ne h2, Fun.update_of_ne h1, Fun.update_of_ne h0]
 
 /-- The exact slot transformation of the shared projective addition. -/
 def addEnv (e : VG.Proof.X448.X86_64.Env) :=

@@ -107,7 +107,7 @@ theorem double4_inv_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : N
     {s : State} (hI : Inv M base size m Sl V E s) {o a : Nat}
     (ho : Sl o) (ha : a∈V) :
     WP isa (.block (double4 M o a)) s fun t =>
-      OpKeep M base o s t ∧ Inv M base size m Sl (o::V) (Function.update E o (E a+E a)) t := by
+      OpKeep M base o s t ∧ Inv M base size m Sl (o::V) (Fun.update E o (E a+E a)) t := by
   have hao := hL.le a (hI.sl a ha)
   have hoo := hL.le o ho
   have hlt := hI.lt a ha

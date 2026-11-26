@@ -110,8 +110,8 @@ theorem jacMixedTailB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     have hren := runOps_rename (rcbσ S p q o) N (jacMixedInit S p E)
       (fun op hop => hA.inj (hN op hop))
     rw [jacMixedInit_rename hA] at hren
-    exact (congrArg₂ Prod.mk (congrFun hren 6)
-      (congrArg₂ Prod.mk (congrFun hren 7) (congrFun hren 8))).trans
+    exact (congr (congrArg Prod.mk (congrFun hren 6))
+      (congr (congrArg Prod.mk (congrFun hren 7)) (congrFun hren 8))).trans
       (jacMixedN_run (fun i => E (rcbσ S p q o i)))
 
 theorem jacMixedAddB_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}

@@ -195,8 +195,8 @@ theorem jacMixedHeadZ_readonly {F : Type _} [Lean.Grind.CommRing F]
   have hn4 : x≠S.t4 := fun he => hA.apart x hx (by rw [he]; simp [rcbW])
   have hnz : x≠o.z := fun he => hA.apart x hx (by rw [he]; simp [rcbW])
   rw [runOps_of_not_out]
-  · simp only [jacMixedInitZ,jacMixedInit,Function.update_of_ne hnz,Function.update_of_ne hn2,
-      Function.update_of_ne hn4]
+  · simp only [jacMixedInitZ,jacMixedInit,Fun.update_of_ne hnz,Fun.update_of_ne hn2,
+      Fun.update_of_ne hn4]
   · intro op hop he
     have ho : op.out ∈ rcbW S o := by
       rw [jacMixedHead_eq S p q o] at hop
@@ -218,8 +218,8 @@ theorem jacMixedZ_run {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q o
   have hren := runOps_rename (rcbσ S p q o) (jacMixedHeadN ++ jacEndTailN) (jacMixedInitZ S p o E)
     (fun op hop => hA.inj ((show ∀ n ∈ jacMixedHeadN ++ jacEndTailN, n.out<9 by decide) op hop))
   rw [jacMixedInitZ_rename hA] at hren
-  exact (congrArg₂ Prod.mk (congrFun hren 6)
-    (congrArg₂ Prod.mk (congrFun hren 7) (congrFun hren 8))).trans
+  exact (congr (congrArg Prod.mk (congrFun hren 6))
+    (congr (congrArg Prod.mk (congrFun hren 7)) (congrFun hren 8))).trans
     (jacMixedZN_run (fun i => E (rcbσ S p q o i)))
 
 theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}

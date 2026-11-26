@@ -136,7 +136,7 @@ theorem invEnv_eval (e : Env) : invEnv e 21 = Proof.X448.invert (e 2) := by
   have h21 : rootEnv (opCopy 12 2 e) 21 = Proof.Ed448.rootPow (e 2) := by
     rw [rootEnv_eval]; rfl
   rw [invEnv_eq]
-  simp only [opMul, opSqn, Function.update_self, Function.update_of_ne (show (2 : Index) ≠ 21 by decide),
+  simp only [opMul, opSqn, Fun.update_self, Fun.update_of_ne (show (2 : Index) ≠ 21 by decide),
     h2, h21]
   exact invert_rootPow (e 2)
 
@@ -144,8 +144,8 @@ theorem invEnv_keep (e : Env) (i : Index) (hi : i.val < 12) : invEnv e i = e i :
   have h12 : i ≠ 12 := fun h => absurd hi (by rw [h]; decide)
   have h21 : i ≠ 21 := fun h => absurd hi (by rw [h]; decide)
   rw [invEnv_eq]
-  simp only [opMul, opSqn, opCopy, Function.update_of_ne h21, rootEnv_keep _ i (by omega_using [hi]),
-    Function.update_of_ne h12]
+  simp only [opMul, opSqn, opCopy, Fun.update_of_ne h21, rootEnv_keep _ i (by omega_using [hi]),
+    Fun.update_of_ne h12]
 
 theorem invEnv_x2 (e : Env) : invEnv e 1 = e 1 := invEnv_keep e 1 (by decide)
 

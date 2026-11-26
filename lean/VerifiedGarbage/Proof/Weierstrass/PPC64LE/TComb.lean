@@ -498,7 +498,7 @@ theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {a : Nat}
       rw [eval_nonzero, z, sub_ne_zero_dec (by omega_using [hH]) (by omega_using [hH])]
     by_cases je : j = 1
     · have me : K.H + 1 - j + 1 = K.H + 1 := by omega_using [je]
-      refine .inl ⟨by rw [ev, decide_eq_false (not_not.mpr me)], me ▸ I'⟩
+      refine .inl ⟨by rw [ev, decide_eq_false (Classical.not_not.mpr me)], me ▸ I'⟩
     · have me : ¬K.H + 1 - j + 1 = K.H + 1 := by omega_using [hHp, je]
       refine .inr ⟨by rw [ev, decide_eq_true me], j - 1, by omega_using [j1], by omega_using [j1, je], by omega_using [jH], ?_⟩
       obtain e : K.H + 1 - (j - 1) = K.H + 1 - j + 1 := by omega_using [j1, jH]

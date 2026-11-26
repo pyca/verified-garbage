@@ -58,9 +58,9 @@ theorem lastSwap_ok {s : State} {base : Addr} (hs : Scr s base) {st : Spec.X448.
   refine WP.mono (cswapE (K₂.scr hs₁) 2 4 (by decide) (c₂.trans m₁)) fun s₃ ⟨K₃, _, e₃⟩ => ?_
   refine ⟨(K₁.trans K₂).trans K₃, ?_, ?_⟩
   · rw [e₃, e₂, cswap_fst, ← h1, ← h3, ← k₁.2.1]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
   · rw [e₃, e₂, cswap_fst, ← h2, ← h4, ← k₁.2.1]
-    simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [opSwap, Fun.update_apply, ite_true, ite_false]
 
 /-! ## The result -/
 

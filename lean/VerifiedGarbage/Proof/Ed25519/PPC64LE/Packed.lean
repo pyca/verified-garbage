@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Power
 public import VerifiedGarbage.Proof.X25519.Chain250
 public import VerifiedGarbage.Spec.Ed25519
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
@@ -518,11 +518,11 @@ def env (m : Mem) (b : Addr) : Env := fun i => FS m b (offset i)
 
 def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
-  | .copy o a => Function.update e o (e a)
-  | .const o v => Function.update e o v
-  | .mul o a b | .mulc o a b => Function.update e o (e a * e b)
-  | .add o a b => Function.update e o (e a + e b)
-  | .sub o a b => Function.update e o (e a - e b)
+  | .copy o a => Fun.update e o (e a)
+  | .const o v => Fun.update e o v
+  | .mul o a b | .mulc o a b => Fun.update e o (e a * e b)
+  | .add o a b => Fun.update e o (e a + e b)
+  | .sub o a b => Fun.update e o (e a - e b)
 
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
@@ -562,11 +562,11 @@ theorem slot_frame {b : Addr} {m m' : Mem} {o i : Slot} (hne : i ≠ o)
   · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
 
 theorem field_update {b : Addr} {m m' : Mem} (o : Slot) (hf : Frame (opFrame b (offset o)) m m') :
-    env m' b = Function.update (env m b) o (FS m' b (offset o)) := by
+    env m' b = Fun.update (env m b) o (FS m' b (offset o)) := by
   funext i
   by_cases hi : i = o
-  · subst hi; simp only [Function.update_self, env]
-  · rw [Function.update_of_ne hi]
+  · subst hi; simp only [Fun.update_self, env]
+  · rw [Fun.update_of_ne hi]
     exact slot_frame hi hf
 
 theorem frame_FA {b : Addr} {o : Slot} {m m' : Mem} (hf : Frame (opFrame b (offset o)) m m') :
@@ -586,7 +586,7 @@ theorem frame_o {b : Addr} {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofN
 theorem field_finish {b : Addr} {s t : State} (o : Slot) (hr : Rest fclob s t)
     (hf : Frame (opFrame b (offset o)) s.mem t.mem) {v : Spec.X25519.Fe}
     (hv : FS t.mem b (offset o) = v) :
-    Keep b s t ∧ env t.mem b = Function.update (env s.mem b) o v := by
+    Keep b s t ∧ env t.mem b = Fun.update (env s.mem b) o v := by
   rw [← hv]
   exact ⟨⟨hr, frame_FA hf⟩, field_update o hf⟩
 
@@ -598,7 +598,7 @@ def mulK (b : Addr) (o a c : Slot) : Contract isa where
   pre t := t.rd = [] ∧ t.wr = [⟨b, 4096⟩] ∧ Ctx3 b t ∧ (t.gpr .r4).toNat % 2 ^ 32 = offset o ∧
     (t.gpr .r5).toNat % 2 ^ 32 = offset a ∧ (t.gpr .r6).toNat % 2 ^ 32 = offset c
   post t t' := Rest mulFnClob t t' ∧ Frame [FA b] t.mem t'.mem ∧
-    env t'.mem b = Function.update (env t.mem b) o (env t.mem b a * env t.mem b c)
+    env t'.mem b = Fun.update (env t.mem b) o (env t.mem b a * env t.mem b c)
   pub _ _ := True
 
 /-- `mulFn` keeps the ABI's registers and the link register. -/
@@ -621,7 +621,7 @@ theorem offset_word (o : Slot) : (BitVec.ofNat 64 (offset o)).toNat % 2 ^ 32 = o
 /-- **A call of `vg_gf25519_r32_mul`**, as the inlined product. -/
 theorem mulCall_ok {b : Addr} {s : State} (hc : Ctx b s) (o a c : Slot) :
     WP isa (mulCall (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧
-      env t.mem b = Function.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
+      env t.mem b = Fun.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
   have ho := slot_range o
   have ha := slot_range a
   have hc' := slot_range c
@@ -826,13 +826,13 @@ namespace VG.Proof.Ed25519.PPC64LE
 open VG VG.PPC64LE VG.Impl.Ed25519.PPC64LE VG.Proof.X25519.PPC64LE
 open VG.Proof.X25519 (sqn)
 
-def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
+def opMul (o a b : Slot) (e : Env) : Env := Fun.update e o (e a * e b)
 
-def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Function.update e o (sqn (e a) n)
+def opSqn (o a : Slot) (n : Nat) (e : Env) : Env := Fun.update e o (sqn (e a) n)
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
-    opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
-  simp only [opMul, Function.update_self, Function.update_idem]
+    opMul o o o (Fun.update e o v) = Fun.update e o (v * v) := by
+  simp only [opMul, Fun.update_self, Fun.update_idem]
 
 /-- What the chain writes: bytes 512 to 1023 of the working space. -/
 abbrev PR (b : Addr) : Region := ⟨b + BitVec.ofNat 64 512, 512⟩
@@ -881,15 +881,15 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
     (x : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 15) :
     ∀ m s, 1 ≤ m → m ≤ n → Rest (.r12 :: clob) s₀ s → Frame [PR b] s₀.mem s.mem →
       s.gpr .r12 = BitVec.ofNat 64 m →
-      env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m)) →
+      env s.mem b = Fun.update (env s₀.mem b) o (sqn x (n - m)) →
       WP isa (.loop (.seq (mulP o o o) (.block [.subi .r12 .r12 1])) (.nonzero .d .r12)) s fun t =>
         Rest (.r12 :: clob) s₀ t ∧ Frame [PR b] s₀.mem t.mem ∧
-        env t.mem b = Function.update (env s₀.mem b) o (sqn x n) := by
+        env t.mem b = Fun.update (env s₀.mem b) o (sqn x n) := by
   intro m s h1 h2 hr hf hb he
   refine WP.loop (M := isa) (fun m (s : State) =>
     1 ≤ m ∧ m ≤ n ∧ Rest (.r12 :: clob) s₀ s ∧ Frame [PR b] s₀.mem s.mem ∧
     s.gpr .r12 = BitVec.ofNat 64 m ∧
-    env s.mem b = Function.update (env s₀.mem b) o (sqn x (n - m))) ?_
+    env s.mem b = Fun.update (env s₀.mem b) o (sqn x (n - m))) ?_
     m s ⟨h1, h2, hr, hf, hb, he⟩
   intro m s ⟨h1, h2, hr, hf, hb, he⟩
   have hcs : Ctx b s := hc.of_rest hr (by decide)
@@ -899,9 +899,9 @@ theorem sqLoop_ok {s₀ : State} {b : Addr} (hc : Ctx b s₀) (o : Slot) (ho : 1
     rw [u2.gpr, r1.gpr _ (by decide), hb, ofNat_sub_one h1 (by omega_arith)]
   have k2 : Rest (.r12 :: clob) s₀ s2 := hr.trans ((r1.mono (by decide)).trans (u2.rest (by decide)))
   have f2 : Frame [PR b] s₀.mem s2.mem := by rw [u2.mem]; exact hf.trans f1
-  have e2 : env s2.mem b = Function.update (env s₀.mem b) o (sqn x (n - (m - 1))) := by
+  have e2 : env s2.mem b = Fun.update (env s₀.mem b) o (sqn x (n - (m - 1))) := by
     rw [u2.mem, e1, he, opMul_update]
-    apply congrArg (Function.update (env s₀.mem b) o)
+    apply congrArg (Fun.update (env s₀.mem b) o)
     rw [show n - (m - 1) = (n - m) + 1 by omega_arith]
     rfl
   have hz : (s2.gpr .r12 != 0) = decide (m - 1 ≠ 0) := by rw [b2, ofNat_ne_zero (by omega_arith)]
@@ -953,7 +953,7 @@ theorem chain250S (b : Addr) : PSpec b chain250 power250Env :=
 
 theorem power250Env_eval (e : Env) :
     power250Env e 15 = (Proof.X25519.chainF (e 2)).1 ∧ power250Env e 14 = (Proof.X25519.chainF (e 2)).2 := by
-  simp only [power250Env, opMul, opSqn, Function.update_apply]
+  simp only [power250Env, opMul, opSqn, Fun.update_apply]
   simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
   exact ⟨rfl, rfl⟩
 

@@ -53,7 +53,7 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   have uv : VG.Proof.X448.AArch64.F u'.mem base X2 = EV s.mem base 1 * EV s.mem base 21 := by
     rw [cv]
     change EV u.mem base 1 = _
-    rw [ue]; simp only [VG.Proof.X448.AArch64.opMul, Function.update_self]
+    rw [ue]; simp only [VG.Proof.X448.AArch64.opMul, Fun.update_self]
   have us := us₀.of_keeps ck.1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok us cb) fun v ⟨vb, vv, vm, vk⟩ => ?_

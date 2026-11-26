@@ -127,7 +127,7 @@ theorem storeSwap_ok {s : State} {base : Addr} (hs : Scr s base) :
 theorem stores_E {s : State} {base : Addr} (hs : Scr s base) (i : Index) (rs : List Reg)
     (hl : rs.length = 7) :
     WP isa (.block (stores (slot i.val) rs)) s fun s' =>
-      E s'.mem base = Function.update (E s.mem base) i (toFe (rv s rs)) ∧
+      E s'.mem base = Fun.update (E s.mem base) i (toFe (rv s rs)) ∧
       Outside base (slot i.val) 56 s.mem s'.mem ∧
       (∀ r, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hi := slot_lt i
@@ -136,7 +136,7 @@ theorem stores_E {s : State} {base : Addr} (hs : Scr s base) (i : Index) (rs : L
   rw [hl] at e o
   refine ⟨?_, o, g, rd, wr⟩
   rw [E_update (o.left ACC 112)]
-  refine congrArg (Function.update (E s.mem base) i) ?_
+  refine congrArg (Fun.update (E s.mem base) i) ?_
   simp only [F, fe, e]
 
 theorem ladderInit_eq : ladderInit = stores X1 W ++ (stores X3 W ++
@@ -203,7 +203,7 @@ theorem ladderInit_ok {s : State} {base : Addr} (hs : Scr s base) :
   · rw [rd', rd₉, rd₈, rd₇, k₆.2.2.1, rd₅, rd₄]
   · rw [wr', wr₉, wr₈, wr₇, k₆.2.2.2, wr₅, wr₄]
   · rw [e', e₉, e₈, e₇, k₆.2.1, e₅, e₄]
-    simp (config := {decide := true}) only [Function.update_apply, ite_true, ite_false]
+    simp (config := {decide := true}) only [Fun.update_apply, ite_true, ite_false]
     rw [one, zero, one', w₄]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
     any_goals first | exact True.intro | exact rfl

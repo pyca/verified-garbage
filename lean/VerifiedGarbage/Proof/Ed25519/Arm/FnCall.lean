@@ -97,7 +97,7 @@ theorem field_updateOn {b : BitVec 32} {m m' : Mem} (o : Slot) {S : List Slot} (
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
       ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m')
     (ho : Lim m' (State.addr b) (offset o)) :
-    LimOn m' b (o :: S) ∧ env m' b = Function.update (env m b) o (FS m' (State.addr b) (offset o)) := by
+    LimOn m' b (o :: S) ∧ env m' b = Fun.update (env m b) o (FS m' (State.addr b) (offset o)) := by
   constructor
   · intro i hi
     by_cases hio : i = o
@@ -107,8 +107,8 @@ theorem field_updateOn {b : BitVec 32} {m m' : Mem} (o : Slot) {S : List Slot} (
       exact hl i ((List.mem_cons.mp hi).resolve_left hio) k hk
   · funext i
     by_cases hi : i = o
-    · subst hi; simp only [Function.update_self, env]
-    · rw [Function.update_of_ne hi]
+    · subst hi; simp only [Fun.update_self, env]
+    · rw [Fun.update_of_ne hi]
       exact congrArg VG.Proof.X25519.toFe (val16_congr (limb_slot_frame hi hf))
 
 /-- An operation that reads only slots of `S`: it changes no register but

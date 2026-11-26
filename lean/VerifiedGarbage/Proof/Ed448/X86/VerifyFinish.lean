@@ -137,13 +137,13 @@ theorem vcmp_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base
     rw [k3.regs.1 _ (by decide), kw2.1 _ (by decide), k1.regs.1 _ (by decide), he]
   refine WP.mono (decCounter_ok (by omega_using [hk]) esi3) fun t ⟨et, gt, mt, rt, wt, zt⟩ => ?_
   have e30 : E s3.mem base 0 = E s2.mem base 6 := by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_of_ne (by decide : (0 : Index) ≠ 8),
-      Function.update_self]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_of_ne (by decide : (0 : Index) ≠ 8),
+      Fun.update_self]
   have e38 : E s3.mem base 8 = E s2.mem base 9 := by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_self,
-      Function.update_of_ne (by decide : (9 : Index) ≠ 0)]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_self,
+      Fun.update_of_ne (by decide : (9 : Index) ≠ 0)]
   have e3k : ∀ i : Index, i ≠ 0 → i ≠ 8 → E s3.mem base i = E s2.mem base i := fun i h0 h8 => by
-    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Function.update_of_ne h8, Function.update_of_ne h0]
+    rw [e3]; simp only [applyOps, FieldOp.apply, opCopy, Fun.update_of_ne h8, Fun.update_of_ne h0]
   obtain ⟨c, hcz, hcb⟩ := c2
   refine ⟨et, zt, ⟨fun r hr => ?_, rt.trans (k3.regs.2.1.trans (kw2.2.1.trans k1.regs.2.1)),
     wt.trans (k3.regs.2.2.trans (kw2.2.2.trans k1.regs.2.2))⟩, ?_, ?_, ?_,
@@ -209,7 +209,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s b
   refine wp_mov rfl fun t ht => WP.block_nil ⟨?_, fun p hp => ?_, ?_⟩
   · rw [ht.gpr]; change s6.gpr .ecx = _
     rw [k6.1 _ (by decide), v5, hbad]
-    refine if_congr ?_ rfl rfl
+    refine ite_congr (propext ?_) (fun _ => rfl) (fun _ => rfl)
     have hpe : ∀ e : Env, Spec.Ed448.pointEqual (pt e 0 6 2) (pt e 8 9 10) = true ↔
         (e 0 * e 10 = e 8 * e 2 ∧ e 6 * e 10 = e 9 * e 2) := fun e => by
       simp only [Spec.Ed448.pointEqual, pt, Bool.and_eq_true, beq_iff_eq]

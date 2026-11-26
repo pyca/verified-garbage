@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Proof.Weierstrass.Env
+import Batteries.Tactic.Init
 
 /-!
 # Doublings in Jacobian coordinates, for `a = -3`

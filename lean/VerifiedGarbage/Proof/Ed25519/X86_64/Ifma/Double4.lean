@@ -363,7 +363,7 @@ theorem vdbl_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : VG.Proo
         fe5_mul (fun i hi => by rw [(u₂ l hl i hi).1]; exact (u₁ _ (sel4_lt _ _) i hi).2)
           (fun i hi => by rw [(u₂ l hl i hi).2]; exact (u₁ _ (sel4_lt _ _) i hi).2),
         ← p₁ _ (sel4_lt _ _), ← p₁ _ (sel4_lt _ _)]
-      exact congrArg₂ (· * ·) (fe5_congr fun i hi => (u₂ l hl i hi).1)
+      exact congr (congrArg HMul.hMul (fe5_congr fun i hi => (u₂ l hl i hi).1))
         (fe5_congr fun i hi => (u₂ l hl i hi).2)
   obtain hs₄ : s₄.gpr .rdi = base := by rw [vm_gpr v₄]; exact hs₂
   obtain hc₄ : VG.Proof.X25519.X86_64.Ifma.Ctx s₄ := by intro d hd; rw [vm_gpr v₄, vm_wr v₄]; exact hc₂ d hd

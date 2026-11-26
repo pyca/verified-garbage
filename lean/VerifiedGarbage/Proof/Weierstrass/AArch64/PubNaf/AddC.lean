@@ -40,7 +40,7 @@ theorem jacHeadCN_run (e : Nat → F) (h7 : e 7 = e 16 * e 16) (h8 : e 8 = e 16 
     runOps jacHeadCN e 3 = e 14 * (e 13 * e 13) - e 11 * (e 16 * e 16) ∧
     runOps jacHeadCN e 5 = e 15 * e 13 * (e 13 * e 13) - e 12 * e 16 * (e 16 * e 16) := by
   simp only [jacHeadCN, CachedJac.headAt, runOps, List.foldl_cons, List.foldl_nil, FOp.run,
-    Function.update_apply]
+    Fun.update_apply]
   simp only [Nat.reduceEqDiff, ite_true, ite_false, h7, h8]
   constructor <;> grind
 
@@ -48,7 +48,7 @@ theorem jacAddCN_run (e : Nat → F) (h7 : e 7 = e 16 * e 16) (h8 : e 8 = e 16 *
     (runOps (jacHeadCN ++ jacTailN) e 6, runOps (jacHeadCN ++ jacTailN) e 7,
       runOps (jacHeadCN ++ jacTailN) e 8) = jacAddF (e 11) (e 12) (e 13) (e 14) (e 15) (e 16) := by
   simp only [jacHeadCN, jacTailN, CachedJac.headAt, jacTail, List.cons_append, List.nil_append, runOps,
-    List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply]
+    List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply]
   simp only [Nat.reduceEqDiff, ite_true, ite_false, h7, h8, jacAddF, Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
@@ -150,7 +150,7 @@ theorem jacTailCB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   · rw [he]
     have key := runOps_rename (rcbσ S p q o) (jacHeadCN ++ jacTailN) E
       fun op hop => hA.inj (jacAddCN_out op hop)
-    exact (congrArg₂ Prod.mk (congrFun key 6) (congrArg₂ Prod.mk (congrFun key 7) (congrFun key 8))).trans
+    exact (congr (congrArg Prod.mk (congrFun key 6)) (congr (congrArg Prod.mk (congrFun key 7)) (congrFun key 8))).trans
       (jacAddCN_run (fun i => E (rcbσ S p q o i)) h2 h3)
 
 /-- The cached addition, for products that may be calls: `q`'s `Z²` and `Z³` in `o.y` and `o.z`. -/

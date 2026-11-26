@@ -1026,7 +1026,7 @@ theorem outJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Add
     obtain hxy : K.A.x ≠ K.A.y := by nd_ne hnd
     obtain hyt : K.A.y ≠ K.S.t0 := by nd_ne hnd
     obtain hyz : K.A.y ≠ K.A.z := by nd_ne hnd
-    simp only [TCombCfg.outOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+    simp only [TCombCfg.outOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Fun.update_apply,
       hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
     obtain hy : tmv C K.M.n base s₃ K.A.y = if tmv C K.M.n base s₂ K.A.z = 0 then 1
         else tmv C K.M.n base s₂ K.A.y := by

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Rsa.KeyBits32
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Set

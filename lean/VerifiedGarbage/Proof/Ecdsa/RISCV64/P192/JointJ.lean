@@ -122,7 +122,7 @@ theorem quad2_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK 
     rw [← toM_eq_zero_iff unit ltz]
     show tmv W 4 base s₆ (c.sl TZ) = 0 ↔ _
     rw [vz', vz]
-    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
+    exact ⟨fun h => Classical.byContradiction fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
   obtain hrep := InvJ.out hL J₃
   refine ⟨KK.kp.trans ((Kp.of_rest r₇).trans (Kp.of_rest r₈)), (UK.trans O₈.unch).cover (by decide), ⟨?_, ?_, ?_, ?_⟩⟩
   · show Rep W (tmv W 4 base s₈ (c.sl TX)) (tmv W 4 base s₈ (c.sl TY)) (tmv W 4 base s₈ (c.sl TZ)) _

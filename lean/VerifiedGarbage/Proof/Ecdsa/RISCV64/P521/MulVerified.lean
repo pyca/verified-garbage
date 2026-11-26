@@ -361,7 +361,7 @@ theorem quad_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK :
     rw [vz', vz]
     -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
     -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
-    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind -lia⟩
+    exact ⟨fun h => Classical.byContradiction fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind -lia⟩
   obtain hrep := InvJ.out hL J₅
   refine ⟨KK.kp.trans ((Kp.of_rest r₈).trans (Kp.of_rest r₉)), (UK.trans O₉.unch).cover (by decide),
     ⟨?_, ?_, ?_, ?_⟩⟩
@@ -1240,7 +1240,7 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
   obtain eQ : Window.qOf base q₅ = .affine (toM W.p (2 ^ 576) (sv base s₄ RX)) (toM W.p (2 ^ 576) (sv base s₄ RY)) := by
     show Point.affine (P521Unsat.uf _) (P521Unsat.uf _) = _
     rw [vx₅, vy₅]
-    exact congrArg₂ Point.affine (ofNat_in_toM (show sv base s₄ RX < W.p from qx ▸ hx))
+    exact congr (congrArg Point.affine (ofNat_in_toM (show sv base s₄ RX < W.p from qx ▸ hx)))
       (ofNat_in_toM (show sv base s₄ RY < W.p from qy ▸ hy))
   -- The body.
   obtain hpre : Window.WPre base q₅ := by

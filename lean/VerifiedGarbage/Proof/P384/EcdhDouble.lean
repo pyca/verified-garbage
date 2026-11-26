@@ -466,7 +466,7 @@ theorem cms_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} (h
     {V : List Nat} {E : Nat → Fin m} {s t : State} (hI : Inv M base size m Sl V E s) {o a b c d : Nat} (ho : Sl o)
     (ha : a ∈ V) (hb : b ∈ V) (hk : OpKeepX base o s t)
     (he : wordsVal t.mem base o 6 = (c * wordsVal s.mem base a 6 + d * (p384 - wordsVal s.mem base b 6)) % p384) :
-    Inv M base size m Sl (o :: V) (Function.update E o (smulN c (E a) - smulN d (E b))) t := by
+    Inv M base size m Sl (o :: V) (Fun.update E o (smulN c (E a) - smulN d (E b))) t := by
   rw [← hmp] at he
   have hb' := hI.lt b hb
   have hm : 0 < m := Nat.pos_of_ne_zero (NeZero.ne m)
@@ -502,9 +502,9 @@ def ins : Step → List Nat
 /-- What it computes. -/
 def run {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F) : Step → Nat → F
   | .op f => f.run E
-  | .lin98 o a b => Function.update E o (smulN 9 (E a) - smulN 8 (E b))
-  | .lin41 o a b => Function.update E o (smulN 4 (E a) - smulN 1 (E b))
-  | .lin38 o a b => Function.update E o (smulN 3 (E a) - smulN 8 (E b))
+  | .lin98 o a b => Fun.update E o (smulN 9 (E a) - smulN 8 (E b))
+  | .lin41 o a b => Fun.update E o (smulN 4 (E a) - smulN 1 (E b))
+  | .lin38 o a b => Fun.update E o (smulN 3 (E a) - smulN 8 (E b))
 
 /-- What steps compute. -/
 def runSteps {F : Type _} [Lean.Grind.CommRing F] (l : List Step) (E : Nat → F) : Nat → F := l.foldl run E
@@ -542,7 +542,7 @@ theorem run_rename {F : Type _} [Lean.Grind.CommRing F] (σ : Nat → Nat) (st :
   | op f => exact congrFun (FOp.run_rename σ f E h) y
   | lin98 o a b | lin41 o a b | lin38 o a b =>
     simp only [out] at hy
-    simp only [rename, run, Function.update_apply, hy]
+    simp only [rename, run, Fun.update_apply, hy]
 
 theorem runSteps_rename {F : Type _} [Lean.Grind.CommRing F] (σ : Nat → Nat) : ∀ (l : List Step) (E : Nat → F),
     (∀ st ∈ l, ∀ y, σ y = σ (out st) → y = out st) →
@@ -604,7 +604,7 @@ def numbered : List Step := steps ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩
 theorem numbered_run {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F) :
     (runSteps numbered E 6, runSteps numbered E 7, runSteps numbered E 8) =
       dblJF (E 11) (E 12) (E 13) := by
-  simp only [numbered, steps, runSteps, List.foldl, run, FOp.run, Function.update_apply, dblJF, smulN, Prod.mk.injEq, Nat.reduceEqDiff, ite_true,
+  simp only [numbered, steps, runSteps, List.foldl, run, FOp.run, Fun.update_apply, dblJF, smulN, Prod.mk.injEq, Nat.reduceEqDiff, ite_true,
     ite_false]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 

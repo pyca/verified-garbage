@@ -984,7 +984,7 @@ theorem fmulE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
       Nat.lt_of_lt_of_le (bo i hi) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib), bo, fieldMem_same tm, ?_⟩
     rw [VG.Proof.X448.AArch64.Weak.E_update tm]
     simp only [opMul]
-    refine congrArg (Function.update _ o) ?_
+    refine congrArg (Fun.update _ o) ?_
     change toFe _ = toFe _ * toFe _
     rw [show VG.Proof.X448.Wide.valN (limbs t.mem base (slot o.val)) 8 =
       VG.Proof.X448.Wide.valN (VG.Proof.Curve448.AArch64.Fast.prodOut (limbs s.mem base (slot a.val))
@@ -1050,7 +1050,7 @@ theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) 
     rw [tl i hi]; exact VG.Proof.Curve448.AArch64.Fast.diff_bound ha i hi), fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
   simp only [opSub]
-  refine congrArg (Function.update _ o) ?_
+  refine congrArg (Fun.update _ o) ?_
   change toFe _ = toFe _ - toFe _
   rw [VG.Proof.X448.Wide.valN_congr tl]
   exact VG.Proof.Curve448.AArch64.Fast.diff_val hb'
@@ -1070,7 +1070,7 @@ theorem addSubE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
     WP isa (.block (Impl.Curve448.AArch64.Fast.addSub (slot o₁.val) (slot o₂.val) (slot a.val)
         (slot b.val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [o₁, o₂] s.mem t.mem ∧
-      EV t.mem base = Function.update (Function.update (EV s.mem base) o₁ (EV s.mem base a + EV s.mem base b))
+      EV t.mem base = Fun.update (Fun.update (EV s.mem base) o₁ (EV s.mem base a + EV s.mem base b))
         o₂ (EV s.mem base a - EV s.mem base b) := by
   refine WP.mono (VG.Proof.Curve448.AArch64.Fast.addSub_ok hs (by have := slot_mem o₁; omega_using [this])
     (by have := slot_mem o₂; omega_using [this]) (by have := slot_mem a; omega_using [this]) (by have := slot_mem b; omega_using [this])
@@ -1093,7 +1093,7 @@ theorem addSubE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
       · subst e2; exact bnd_of_limbs l2 (VG.Proof.Curve448.AArch64.Fast.diff_bound ha)
       · exact sm.bnd (by simp [e1, e2]) (hb i)
   · funext i
-    simp only [Function.update_apply]
+    simp only [Fun.update_apply]
     by_cases e2 : i = o₂
     · subst e2
       rw [ite_eq_left rfl]
@@ -1113,7 +1113,7 @@ theorem smallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
     (ha : Bnd Mb s.mem base (slot a.val)) :
     WP isa (.block (Impl.Curve448.AArch64.Fast.small (slot o.val) (slot a.val) (slot e.val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base [o] s.mem t.mem ∧
-      EV t.mem base = Function.update (EV s.mem base) o (EV s.mem base a + Spec.X448.a24 * EV s.mem base e) := by
+      EV t.mem base = Fun.update (EV s.mem base) o (EV s.mem base a + Spec.X448.a24 * EV s.mem base e) := by
   refine WP.mono (VG.Proof.Curve448.AArch64.Fast.small_ok hs (by have := slot_mem o; omega_using [this])
     (by have := slot_mem a; omega_using [this]) (by have := slot_mem e; omega_using [this]) (slot_aligned o) (slot_aligned a)
     (slot_aligned e) ha (hb e)) fun t ⟨tv, tm, tk⟩ => ?_
@@ -1121,7 +1121,7 @@ theorem smallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
   refine ⟨⟨tk.mono (by decide), fieldMem_outside2 fm⟩, env_update hb fm
     (bnd_of_limbs tv (VG.Proof.Curve448.AArch64.Fast.small_bound ha (hb e))), fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
-  refine congrArg (Function.update _ o) ?_
+  refine congrArg (Fun.update _ o) ?_
   change VG.Proof.X448.AArch64.Weak.F t.mem base (slot o.val) = _
   rw [fe_of_limbs tv]
   exact VG.Proof.Curve448.AArch64.Fast.smallF _ _
@@ -1262,7 +1262,7 @@ theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
   refine ⟨⟨tk.mono (by decide), fieldMem_outside2 fm⟩, env_update hb fm (fun i hi => by
     rw [tf i hi]; exact hb a i hi), tf, fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm, opCopy]
-  refine congrArg (Function.update _ o) ?_
+  refine congrArg (Fun.update _ o) ?_
   exact congrArg toFe (VG.Proof.X448.Wide.valN_congr tf)
 
 end VG.Proof.X448.AArch64.Fast

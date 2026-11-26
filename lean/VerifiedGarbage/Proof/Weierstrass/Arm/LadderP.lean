@@ -266,7 +266,7 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
     (hI : InvR k N σ base m V E s) {o : Nat} (hoW : o ∈ W) (hoN : o < N) (hk : KeepR k σ base [o] s s')
     (hr : wordsVal s'.mem base (σ o) k < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * k)) (wordsVal s'.mem base (σ o) k) = v) :
-    InvR k N σ base m (o :: V) (Function.update E o v) s' := by
+    InvR k N σ base m (o :: V) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   obtain hown : own k ≤ 4096 := Nat.sub_le _ _
   obtain heq : ∀ x ∈ V, x ≠ o → wordsVal s'.mem base (σ x) k = wordsVal s.mem base (σ x) k := by
@@ -293,9 +293,9 @@ theorem InvR.update {k N : Nat} {σ : Nat → Nat} {base : Addr} {m : Nat} [NeZe
       rw [heq x hx' hxo]; exact hI.lt x hx'
   · intro x hx
     by_cases hxo : x = o
-    · subst hxo; rw [Function.update_self]; exact hv
+    · subst hxo; rw [Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x hx' hxo, Function.update_of_ne hxo]
+      rw [heq x hx' hxo, Fun.update_of_ne hxo]
       exact hI.val x hx'
 
 /-- One operation. -/

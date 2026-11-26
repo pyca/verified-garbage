@@ -26,7 +26,7 @@ def nafMagnitudeW (d : BitVec 16) : Nat := if d.toNat<256 then d.toNat else 6553
 def fixedEntryEnvW (K : WinCfg) (m : Nat) [NeZero m] (E : Nat → Fin m) (d : BitVec 16) (x y : Nat) :
     Nat → Fin m :=
   let e := fixedLoadEnv K m E x y
-  if d.toNat<256 then e else Function.update e K.E.y (-e K.E.y)
+  if d.toNat<256 then e else Fun.update e K.E.y (-e K.E.y)
 
 theorem nafSignW_ok (s : State) {d : BitVec 16} (hb : s.gpr .r8=d.setWidth 64) :
     WP isa (.block [.alu .cmp .r8 (.imm 256)]) s fun t =>
@@ -142,7 +142,7 @@ theorem fixedEntryEnvW_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : 
   unfold fixedEntryEnvW
   split
   · exact h
-  · simp only [Function.update_self,Function.update_of_ne hxy,Function.update_of_ne hzy]
+  · simp only [Fun.update_self,Fun.update_of_ne hxy,Fun.update_of_ne hzy]
     exact ⟨h.1.negY,h.2⟩
 
 theorem word_magnitudeW (u j : Nat) : nafMagnitudeW (FastNaf.word u j)=FastNaf.magnitude 9 u j := by

@@ -65,7 +65,7 @@ theorem jointSquare_ok {c : Cfg} (hc : BaseCfgOk c)
     (sv_unch un hc.n10 h.scr.nowrap (by decide) (apart_slW (by decide))).trans h.k,
     flag.trans h.flag,rx ▸ h.rx_lt,rzlt⟩,?_,?_⟩
   · exact congrArg (fun x => toM c.C.p (2^(64*c.n)) x) rx
-  · simpa only [MP'_n,tmv,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self] using rzv
+  · simpa only [MP'_n,tmv,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Fun.update_self] using rzv
 
 end VG.Proof.Ecdsa.Verify.X86_64
 end

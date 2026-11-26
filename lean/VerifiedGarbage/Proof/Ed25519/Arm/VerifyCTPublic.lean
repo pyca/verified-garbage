@@ -1006,7 +1006,7 @@ theorem doubleT_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
   · rw [te, ← dblXYZ_t p, ← hp, ← ht]
     rfl
   · rw [te]
-    exact Function.update_of_ne hi _ _
+    exact Fun.update_of_ne hi _ _
 
 /-- Before entry `m` of the table: the entries below it, the entry before it in slots 0–3 and
 `[2]A` in slots 4–7. -/

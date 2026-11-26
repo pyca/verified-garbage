@@ -365,7 +365,7 @@ theorem tonLay : Lay p224.MP' (own 4) (· ∈ tonSlots) :=
 theorem ton_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps tonOps e (p224.sl TR) = e (p224.sl ACC) * e (p224.sl RHS) ∧
     runOps tonOps e (p224.sl (SS 0)) = e (p224.sl ACC) * (e (p224.sl ACC) * e (p224.sl RHS)) := by
-  simp only [tonOps, runOps_cons, runOps_nil, FOp.run, Function.update_apply, sl_eq]
+  simp only [tonOps, runOps_cons, runOps_nil, FOp.run, Fun.update_apply, sl_eq]
   simp only [TR, SS, ACC, RHS, T0, Nat.reduceMul, Nat.reduceAdd, Nat.reduceEqDiff, ↓reduceIte]
   exact ⟨trivial, trivial⟩
 

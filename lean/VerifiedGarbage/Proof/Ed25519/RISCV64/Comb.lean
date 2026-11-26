@@ -769,7 +769,7 @@ theorem combStep_ok {s₀ s : State} {b T : Addr} {S j : Nat} (E : CombEnv s₀ 
   obtain w6 : env w.mem b 6 = env v.mem b 6 := by rw [ew]; rfl
   obtain w7 : env w.mem b 7 = env v.mem b 21 - env v.mem b 6 := by rw [ew]; rfl
   obtain wlow : ∀ i : Slot, i ≠ 7 → env w.mem b i = env v.mem b i := fun i hi => by
-    rw [ew]; exact Function.update_of_ne hi _ _
+    rw [ew]; exact Fun.update_of_ne hi _ _
   obtain ex₀ : env x₀.mem b = env w.mem b := by rw [ux.mem]
   obtain x4 : env x.mem b 4 = sel sw (env w.mem b 4) (env w.mem b 5) := by
     rw [k₂ 4 (by decide) (by decide), a₁, ex₀]

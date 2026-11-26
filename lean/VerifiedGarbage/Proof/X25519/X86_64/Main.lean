@@ -230,7 +230,7 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
       ← toFe_val]
     change (E s₇.mem base 3).val = _
     rw [e₇]
-    simp only [opMul, Function.update_self]
+    simp only [opMul, Fun.update_self]
     rw [E_outside o₆ 3 (by decide), e3₅, e₆, e4₅, invert_eq]
 
 include hf in

@@ -11,7 +11,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ### `Weierstrass.X86_64.WinJacLay`, which this module and modules that import it used -/

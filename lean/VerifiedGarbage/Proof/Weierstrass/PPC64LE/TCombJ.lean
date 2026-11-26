@@ -1102,7 +1102,7 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     obtain ex := val K.L.R.x (by simp)
     obtain ey := val K.L.R.y (by simp)
     obtain ez := val K.L.R.z (by simp)
-    simp only [fromJ, runOps_cons, runOps_nil, FOp.run, Function.update_apply, n₁, n₂, n₃, n₇, n₉, n₁₀,
+    simp only [fromJ, runOps_cons, runOps_nil, FOp.run, Fun.update_apply, n₁, n₂, n₃, n₇, n₉, n₁₀,
       Ne.symm n₁, Ne.symm n₂, Ne.symm n₃, Ne.symm n₄, Ne.symm n₅, Ne.symm n₆, ↓reduceIte] at ex ey ez
     rw [ex, ey, ez]
     obtain z₃ : tmv C K.L.M.n base s₃ K.zero = 0 := by

@@ -851,7 +851,7 @@ theorem curve_run (c : Cfg) (h1 : 1 ≤ c.n) {F : Type _} [Lean.Grind.CommRing F
   have h := congrFun (runOps_rename c.sl curveOpsI e fun _ _ _ hy => sl_inj c h1 hy) W1
   rw [curveOps_eq]
   refine h.trans ?_
-  simp only [curveOpsI, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [curveOpsI, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [W0, W1, W2, CYM, CXM, AP, BP, CPX, Nat.reduceEqDiff, ↓reduceIte]
 
 /-- `y² - (x³ + a x + b)` to `W1`. -/

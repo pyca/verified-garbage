@@ -211,7 +211,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   rw [x8] at hc3 lo9
   obtain n12 : E s9.mem base 12 = 0 - x := by
     obtain h0 : E s6.mem base 13 = 0 := VG.Proof.X448.AArch64.Base.F_of_words w6
-    rw [k9.mem.E (by decide), m8, e7, Function.update_self, h0, E56 xo hxo13, k5.mem.E hxo1, x4]
+    rw [k9.mem.E (by decide), m8, e7, Fun.update_self, h0, E56 xo hxo13, k5.mem.E hxo1, x4]
   obtain hD := Proof.Ed448.decodePoint_impl hR (Spec.Ed448.bytesAt s.mem p 57) (bytesAt57_len _ _)
     (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56)) ((s.mem (p + BitVec.ofNat 64 56)).toNat)
     (by rw [bytesAt57_take]) (by rw [bytesAt57_getD]) Y u v tt x hY hu hv ht hx
@@ -219,7 +219,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   -- The final `x`.
   obtain xt : E t.mem base xo =
       if (x.val % 2 == 1) == ((s.mem (p + BitVec.ofNat 64 56)).toNat / 128 == 1) then x else (x - x) - x := by
-    rw [et, VG.Proof.X448.AArch64.opSwap, Function.update_of_ne hxo12, Function.update_self, s11x, n12,
+    rw [et, VG.Proof.X448.AArch64.opSwap, Fun.update_of_ne hxo12, Fun.update_self, s11x, n12,
       E79 xo hxo1 hxo12 hxo13, x4, sub_self]
     have hlo : VG.Proof.X448.AArch64.limbs s9.mem base X2 0 % 2 = x.val % 2 := lo9
     rw [hlo]
@@ -231,7 +231,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   -- What the rest keeps.
   obtain keepE : ∀ i : Fin 22, i ≠ 1 → i ≠ xo → i ≠ 12 → i ≠ 13 → E t.mem base i = E s4.mem base i := by
     intro i h1 hx h12 h13
-    rw [et, VG.Proof.X448.AArch64.opSwap, Function.update_of_ne h12, Function.update_of_ne hx, s11x, E79 i h1 h12 h13]
+    rw [et, VG.Proof.X448.AArch64.opSwap, Fun.update_of_ne h12, Fun.update_of_ne hx, s11x, E79 i h1 h12 h13]
   obtain kY : E t.mem base yo = Y := by
     obtain hy1 : yo ≠ 1 := by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide
     obtain hy12 : yo ≠ 12 := by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide
@@ -400,13 +400,13 @@ theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
   obtain Et : ∀ i, E t.mem base i = E s5.mem base i := fun i => by rw [mt]
   obtain keep : ∀ i : Fin 22, i ≠ 6 → i ≠ 7 → i ≠ 12 → i ≠ 13 → E t.mem base i = E s.mem base i :=
     fun i h6 h7 h12 h13 => by
-      rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Function.update_of_ne h6, e4, Function.update_of_ne h12, E23 i h13, e2b, VG.Proof.X448.AArch64.opCopy,
-        Function.update_of_ne h7, e2, Function.update_of_ne h6]
+      rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Fun.update_of_ne h6, e4, Fun.update_of_ne h12, E23 i h13, e2b, VG.Proof.X448.AArch64.opCopy,
+        Fun.update_of_ne h7, e2, Fun.update_of_ne h6]
   refine ⟨?_, ?_, keep, ?_, ?_, hs5.of_keeps kt (by decide), by rw [mt]; exact b5, ?_, ?_⟩
-  · rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Function.update_self, e4, Function.update_self, h0, E23 6 (by decide), e2b, VG.Proof.X448.AArch64.opCopy,
-      Function.update_of_ne (by decide), e2, Function.update_self, h10, Fin.mul_one]
-  · rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Function.update_of_ne (by decide), e4, Function.update_of_ne (by decide),
-      E23 7 (by decide), e2b, VG.Proof.X448.AArch64.opCopy, Function.update_self, e2, Function.update_of_ne (by decide)]
+  · rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Fun.update_self, e4, Fun.update_self, h0, E23 6 (by decide), e2b, VG.Proof.X448.AArch64.opCopy,
+      Fun.update_of_ne (by decide), e2, Fun.update_self, h10, Fin.mul_one]
+  · rw [Et, e5, VG.Proof.X448.AArch64.opCopy, Fun.update_of_ne (by decide), e4, Fun.update_of_ne (by decide),
+      E23 7 (by decide), e2b, VG.Proof.X448.AArch64.opCopy, Fun.update_self, e2, Fun.update_of_ne (by decide)]
   · rw [x0t, k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), k3.1 _ (by decide), k2b.regs.1 _ (by decide),
       k2.regs.1 _ (by decide)]
   · rw [x1t, k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), k3.1 _ (by decide), k2b.regs.1 _ (by decide),

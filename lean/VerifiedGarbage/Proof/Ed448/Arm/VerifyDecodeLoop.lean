@@ -230,7 +230,7 @@ theorem copyFrom_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv
     {a : Nat} (ha1 : 2880 ≤ a) (ha2 : a + 112 ≤ 3584) (hba : Bounded s.mem base a) :
     WP isa (.block (copy (slot o.val) a)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧
-      E t.mem base = Function.update (E s.mem base) o (F s.mem base a) := by
+      E t.mem base = Fun.update (E s.mem base) o (F s.mem base a) := by
   have sep : slot o.val + 112 ≤ a := by have := o.isLt; simp only [slot]; omega_using [ha1]
   refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide)) (by omega_using [ha2]) (Or.inr (Or.inl sep)))
     fun t ⟨tf, tm, tk⟩ => ?_
@@ -255,8 +255,8 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem
     fun i hi => limbs_mid ku.mem (by decide) (by decide) hi
   refine WP.mono (copyFrom_ok (ku.scr hs) bu 9 (by decide) (by decide) (fun i hi => by rw [ly i hi]; exact hy i hi))
     fun t ⟨kt, bt, et⟩ => ⟨ku.trans kt, bt, ?_, ?_, fun i h8 h9 => ?_⟩
-  · rw [et, Function.update_of_ne (by decide), eu, Function.update_self]
-  · rw [et, Function.update_self]; exact congrArg Proof.X448.toFe (valN_congr ly)
-  · rw [et, Function.update_of_ne h9, eu, Function.update_of_ne h8]
+  · rw [et, Fun.update_of_ne (by decide), eu, Fun.update_self]
+  · rw [et, Fun.update_self]; exact congrArg Proof.X448.toFe (valN_congr ly)
+  · rw [et, Fun.update_of_ne h9, eu, Fun.update_of_ne h8]
 
 end VG.Proof.Ed448.Arm

@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -40,7 +39,6 @@ meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 meta import VerifiedGarbage.Proof.X25519.X86_64.Sqr
-meta import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ### `Ed25519.X86_64.CTSupport`, which this module and modules that import it used -/

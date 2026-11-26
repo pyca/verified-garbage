@@ -74,7 +74,7 @@ theorem Inv.updateX {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} 
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : OpKeepX base o s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
-    Inv M base size m Sl (o :: V) (Function.update E o v) s' := by
+    Inv M base size m Sl (o :: V) (Fun.update E o v) s' := by
   have hn := hI.scr.nowrap
   have hmo := hL.mo o ho
   have hM := hI.mod
@@ -97,9 +97,9 @@ theorem Inv.updateX {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} 
     · have hx' := List.mem_of_ne_of_mem hxo hx
       rw [heq x hx' hxo]; exact hI.lt x hx'
   · by_cases hxo : x = o
-    · rw [hxo, Function.update_self]; exact hv
+    · rw [hxo, Fun.update_self]; exact hv
     · have hx' := List.mem_of_ne_of_mem hxo hx
-      rw [heq x hx' hxo, Function.update_of_ne hxo]; exact hI.val x hx'
+      rw [heq x hx' hxo, Fun.update_of_ne hxo]; exact hI.val x hx'
 
 /-- What a program writing the slots `W` keeps. -/
 structure ProgKeepX (base : Addr) (W : List Nat) (s s' : State) : Prop where
@@ -230,7 +230,7 @@ theorem fop_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} (h
       · exact mul_ok hI.scr (hmp ▸ hI.mod) hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2) (hAl.sl o hS.1)
           (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hlt
     refine WP.mono h fun t ⟨k, lt, e⟩ => ⟨k, Inv.updateX hL hI hS.1 k (hmp ▸ lt) ?_⟩
-    exact (toM_mul hm (hmp ▸ e)).trans (congrArg₂ (· * ·) (hI.val a hR.1) (hI.val b hR.2))
+    exact (toM_mul hm (hmp ▸ e)).trans (congr (congrArg HMul.hMul (hI.val a hR.1)) (hI.val b hR.2))
   | add o a b =>
     exact WP.mono (VG.Proof.Weierstrass.AArch64.fop_ok hL hAl hm hI hS hR) fun t ⟨k, I⟩ => ⟨OpKeep.toX k, I⟩
   | sub o a b =>

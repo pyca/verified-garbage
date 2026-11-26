@@ -341,11 +341,11 @@ theorem copyPointFields_ok {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base :
   · intro x hx
     simp only [jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  · simp only [Function.update_self,Function.update_of_ne hn.1.1,
-      Function.update_of_ne hn.1.2,Function.update_of_ne hn.2.1,
-      Function.update_of_ne (hqa q.y (by simp [jacCoords]) o.x (by simp [jacCoords])),
-      Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.x (by simp [jacCoords])),
-      Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.y (by simp [jacCoords]))]
+  · simp only [Fun.update_self,Fun.update_of_ne hn.1.1,
+      Fun.update_of_ne hn.1.2,Fun.update_of_ne hn.2.1,
+      Fun.update_of_ne (hqa q.y (by simp [jacCoords]) o.x (by simp [jacCoords])),
+      Fun.update_of_ne (hqa q.z (by simp [jacCoords]) o.x (by simp [jacCoords])),
+      Fun.update_of_ne (hqa q.z (by simp [jacCoords]) o.y (by simp [jacCoords]))]
 
 theorem ProgKeep.invJ {F : Impl.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size wk : Nat} {C : Curve}
     {Sl : Nat → Prop} {s t : State} {W : List Nat} (hL : Lay M size Sl) (hAcc : WkOk F M C.p size wk Sl) (hs : Scr s base size)

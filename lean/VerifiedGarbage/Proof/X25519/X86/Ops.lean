@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Arith
-public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.FunUpdate
 public import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -264,7 +264,7 @@ def opVal (op : Op) (E : Nat → Fe) : Fe :=
 /-- The values of the slots after a sequence of operations. -/
 def run : List Op → (Nat → Fe) → Nat → Fe
   | [], E => E
-  | op :: l, E => run l (Function.update E (opOut op) (opVal op E))
+  | op :: l, E => run l (Fun.update E (opOut op) (opVal op E))
 
 theorem opVal_congr {E E' : Nat → Fe} (op : Op) (h : ∀ q ∈ opIns op, E q = E' q) : opVal op E = opVal op E' := by
   cases op <;> simp only [opIns, List.mem_cons, List.not_mem_nil, or_false,
@@ -280,9 +280,9 @@ theorem run_congr (l : List Op) (hv : ∀ op ∈ l, opValid lo op = true) :
     simp only [opValid, Bool.and_eq_true, List.all_eq_true] at hvo
     refine ih (fun o ho => hv o (List.mem_cons_of_mem _ ho)) (fun r hr => ?_) q hq
     by_cases e : r = opOut op
-    · subst e; simp only [Function.update_self]
+    · subst e; simp only [Fun.update_self]
       exact opVal_congr op fun q hq => h q (hvo.2 q hq)
-    · simp only [Function.update_of_ne e]; exact h r hr
+    · simp only [Fun.update_of_ne e]; exact h r hr
 
 /-- A frame of a slot and of words at `T` is one of the slots and `T`. -/
 theorem frame_wide {m m' : Mem} {x : BitVec 32} {o n : Nat} (hx : x.toNat + 4096 ≤ 2 ^ 32)
@@ -299,7 +299,7 @@ theorem frame_wide {m m' : Mem} {x : BitVec 32} {o n : Nat} (hx : x.toNat + 4096
 
 theorem op_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (op : Op) (hv : opValid lo op = true) :
     WP isa (.block op.code) s fun s' => Keep s s' ∧ Frame [sub x lo (T + 64 - lo)] s.mem s'.mem ∧
-      ∀ q, isSlot lo q = true → F s'.mem x q = Function.update (F s.mem x) (opOut op) (opVal op (F s.mem x)) q := by
+      ∀ q, isSlot lo q = true → F s'.mem x q = Fun.update (F s.mem x) (opOut op) (opVal op (F s.mem x)) q := by
   have hfit := hc.fit4
   simp only [opValid, Bool.and_eq_true, List.all_eq_true] at hv
   obtain ⟨ho, hi⟩ := hv
@@ -322,11 +322,11 @@ theorem op_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (op : Op) (hv : opV
   obtain fin : ∀ s', Keep s s' → Frame [sub x (opOut op) 32, sub x T 64] s.mem s'.mem →
       F s'.mem x (opOut op) = opVal op (F s.mem x) →
       Keep s s' ∧ Frame [sub x lo (T + 64 - lo)] s.mem s'.mem ∧
-        ∀ q, isSlot lo q = true → F s'.mem x q = Function.update (F s.mem x) (opOut op) (opVal op (F s.mem x)) q :=
+        ∀ q, isSlot lo q = true → F s'.mem x q = Fun.update (F s.mem x) (opOut op) (opVal op (F s.mem x)) q :=
     fun s' k f e => ⟨k, frame_wide hfit ho (Nat.le_refl _) f, fun q hq => by
       by_cases hq' : q = (opOut op)
-      · subst hq'; rw [Function.update_self]; exact e
-      · rw [Function.update_of_ne hq']; exact other f q hq hq'⟩
+      · subst hq'; rw [Fun.update_self]; exact e
+      · rw [Fun.update_of_ne hq']; exact other f q hq hq'⟩
   cases op with
   | mul o a b =>
     simp only [opIns, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,

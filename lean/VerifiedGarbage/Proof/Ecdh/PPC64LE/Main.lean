@@ -392,7 +392,7 @@ theorem curveOps_eq (c : Cfg) : fprog c.SP (Impl.Ecdh.PPC64LE.Cfg.curveOps c) = 
 
 theorem curveN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     runOps curveN e W1 = e QYM * e QYM - ((e QXM * e QXM * e QXM + e AP * e QXM) + e BP) := by
-  simp only [curveN, runOps_cons, runOps_nil, FOp.run, Function.update_apply]
+  simp only [curveN, runOps_cons, runOps_nil, FOp.run, Fun.update_apply]
   simp only [W0, W1, W2, W3, QYM, QXM, AP, BP, KM, TT, SM, RM, XM, X, EM, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem curveN_reads : readsOk curveN [QXM, QYM, AP, BP] = true := by decide

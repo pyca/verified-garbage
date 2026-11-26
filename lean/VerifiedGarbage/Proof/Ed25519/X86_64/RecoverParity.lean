@@ -257,8 +257,8 @@ theorem fieldEqual_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
     simp only [e]
   · intro i hi
     rw [tm, vu]
-    change Function.update (env s.mem base) 21 (env s.mem base a - env s.mem base b) i = _
-    exact Function.update_of_ne hi _ _
+    change Fun.update (env s.mem base) 21 (env s.mem base a - env s.mem base b) i = _
+    exact Fun.update_of_ne hi _ _
 
 end VG.Proof.Ed25519.X86_64
 end

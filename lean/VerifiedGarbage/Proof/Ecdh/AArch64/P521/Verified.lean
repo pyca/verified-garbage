@@ -135,8 +135,8 @@ theorem madd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   refine ⟨⟨fun r hr => k.gpr r fun h => hr (List.mem_append_left _ h), k.rd, k.wr, k.sp⟩,
     unch_of_keep (k.mono fun w hw' => ?_) hw.2.1, _, I.sub fun x hx => ?_,
     fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out maddJN_ok op hop),
-    (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 6)
-      (congrArg₂ Prod.mk (ofN_run maddJN_ok hAp E 7) (ofN_run maddJN_ok hAp E 8))).trans (maddJN_run _)⟩
+    (congr (congrArg Prod.mk (ofN_run maddJN_ok hAp E 6))
+      (congr (congrArg Prod.mk (ofN_run maddJN_ok hAp E 7)) (ofN_run maddJN_ok hAp E 8))).trans (maddJN_run _)⟩
   · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw'
     exact ofN_out maddJN_ok op hop
   · rw [mem_validAfter]

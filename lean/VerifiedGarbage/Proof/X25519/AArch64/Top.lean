@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.X25519.AArch64
 public import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import VerifiedGarbage.Proof.X25519.Invert
-public import Mathlib.Logic.Function.Basic
 
 /-! ### `X25519.AArch64.Setup`, which this module and modules that import it used -/
 

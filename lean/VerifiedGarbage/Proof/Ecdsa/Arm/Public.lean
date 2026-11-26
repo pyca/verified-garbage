@@ -211,7 +211,7 @@ theorem rep_fromJ_fix (hc : CfgOk c) (hC : Law c.C) {X Y Z : Fe c.C} {Q : Point 
   have hout := J.out hC
   rw [ex, ez]
   by_cases h : Z = 0
-  · have hz' : ¬z ≠ 0 := by rw [ne_eq, not_not]; exact hz0.mpr h
+  · have hz' : ¬z ≠ 0 := by rw [ne_eq, Classical.not_not]; exact hz0.mpr h
     rw [ite_eq_right hz', e1]
     rw [ite_eq_left h] at hout
     exact hout

@@ -36,7 +36,7 @@ theorem baseCoords_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
   · rw [eu, ea]; rfl
   · intro j _ _ h8 h9
     rw [eu, ea]
-    simp only [Function.update_of_ne h8, Function.update_of_ne h9]
+    simp only [Fun.update_of_ne h8, Fun.update_of_ne h9]
 
 theorem keyCoords_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
     (hd : d < 17) (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
@@ -59,6 +59,6 @@ theorem keyCoords_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat}
     rfl
   · intro j _ _ _ h8 h9 h10
     rw [eu, ex, ew, kv.2.1]
-    simp only [Function.update_apply]; split_ifs <;> simp_all
+    simp only [Fun.update_apply]; split_ifs <;> simp_all
 
 end VG.Proof.Ed448.X86_64.Wnaf

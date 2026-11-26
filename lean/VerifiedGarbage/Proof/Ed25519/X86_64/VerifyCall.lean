@@ -1163,7 +1163,7 @@ theorem verifyDecodeR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List
     refine WP.mono (powerRestore_ok h.1.1.context.scratch) fun t ⟨kt, vt⟩ => ?_
     refine ⟨⟨h.1.1.of_keep (PowersKeep.of_keep kt),
       (workspace_tablePoint kt.mem (by decide) (by decide)).trans h.1.2⟩, ?_⟩
-    rw [vt, Function.update_self]
+    rw [vt, Fun.update_self]
     exact h.2
   obtain hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   rw [verifyDecodeR]
@@ -1411,7 +1411,7 @@ theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
   obtain ra : tablePoint r.mem base 7424 = tablePoint s.mem base 7424 :=
     workspace_tablePoint kr.mem (by decide) (by decide)
   refine WP.mono (decodeRThen_ok (h.of_keep krp) (by rw [ra]; exact hA)
-    (by rw [vr, Function.update_self, verifyKeep_bytes krp h.rFar]; exact hR)) fun t ⟨kt, tv⟩ => ?_
+    (by rw [vr, Fun.update_self, verifyKeep_bytes krp h.rFar]; exact hR)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨krp.trans kt, ?_⟩
   rw [tv, ra, verifyKeep_bytes krp h.rFar, verifyKeep_bytes krp h.scalarFar,
     verifyKeep_bytes krp h.challengeFar]

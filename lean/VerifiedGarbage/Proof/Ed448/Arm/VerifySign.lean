@@ -213,11 +213,11 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
     rw [kt.regs.1 _ (by decide), ← r10]
     exact b4
   · rw [et]
-    simp only [opSwap, Function.update_of_ne hx12, Function.update_self]
+    simp only [opSwap, Fun.update_of_ne hx12, Fun.update_self]
     rw [e4 xo hx1, e4 12 (by decide), hneg, l0, sel_sign _ (Nat.mod_lt _ (by decide)) sb hsb]
     cases ((E s.mem base xo).val % 2 == 1) == (sb == 1) <;> rfl
   · rw [et]
-    simp only [opSwap, Function.update_of_ne h12, Function.update_of_ne hx]
+    simp only [opSwap, Fun.update_of_ne h12, Fun.update_of_ne hx]
     exact e4 i h1
 
 end VG.Proof.Ed448.Arm

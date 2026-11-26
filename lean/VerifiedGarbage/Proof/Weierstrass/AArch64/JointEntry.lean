@@ -116,7 +116,7 @@ theorem jointSignEntryG_ok (c : Joint.Cfg) {s : State} {base : Addr} {size : Nat
   · refine WP.mono (nafNeg_ok hL hAl hm ia hV hxy hzy hzero hp) fun t ⟨kt,it,jt⟩ => ?_
     refine ⟨_,kp.trans kt,it,?_,?_⟩
     · simpa only [hn,ite_true] using jt
-    · rw [Function.update_of_ne hzy,hz]
+    · rw [Fun.update_of_ne hzy,hz]
   · apply WP.block_nil
     refine ⟨E,kp,ia,?_,hz⟩
     simpa only [hn,Bool.false_eq_true,ite_false] using hp

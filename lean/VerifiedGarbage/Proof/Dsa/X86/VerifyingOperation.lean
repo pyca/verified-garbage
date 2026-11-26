@@ -13,7 +13,6 @@ import VerifiedGarbage.Spec.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
 import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Dsa.X86.Installed
