@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
@@ -220,18 +220,19 @@ theorem combClob_sub {n : Nat} : ∀ r ∈ [Reg.x1, .x2, .x5, .x16, .x17, .x19],
 
 /-- `k + 8 Σ_{j<J} 16^j` and its bits, from the slot `ks`, then the window
 method on `P`: `[k]P`. -/
-theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+theorem winMulWith_ok {pa : Option (String × Nat)} (window : Prog isa)
+    (hwindow : WindowOk (winQ c) pa window) (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
     {rest : Prog isa} {R : State → Prop}
-    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) {pa : Option (String × Nat)}
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R)
     (hpa : AddOk (winQ c).M size (· ∈ winSlots (winQ c)) (winQ c).S (winQ c).R (winQ c).E (winQ c).D pa)
     (hr : AddReady base (winQ c).M s.mem (winQ c).S pa)
     (hfar : AddFar (winQ c).M (winQ c).S (winX c ++ winW (winQ c)) pa)
     (hksT : ks ≠ TMP := by decide) :
-    WP isa (.seq (c.winPrep (c.sl ks)) (.seq (WinCfg.window (winQ c) pa) rest)) s R := by
+    WP isa (.seq (c.winPrep (c.sl ks)) (.seq window rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -301,7 +302,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       rw [tv (by decide) (by decide), tv (by decide) (by decide), tv (by decide) (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega_arith)
-  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ hc) hpR hC hc.am3 hP hc.p_lt (hmont 1)
+  refine WP.seq (WP.mono (hwindow (winLayQ hc) (winAQ hc) hpR hC hc.am3 hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hpa
     (hr.unch hpa (by rw [winSlots_eq]; exact List.mem_map_of_mem (f := c.sl) (show BM ∈ roI ++ otherI ++ tblI by decide)) (by omega_arith) U₂
@@ -315,6 +316,19 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     by rw [K₃.rd, k₂.rd, k₁.rd], by rw [K₃.wr, k₂.wr, k₁.wr], U₂.trans U₃, M₃, L₃, R₃⟩
 
 /-- What the window method and the power leave: `R` represents `[k]P`. -/
+theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+    {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
+    (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) {pa : Option (String × Nat)}
+    (hpa : AddOk (winQ c).M size (· ∈ winSlots (winQ c)) (winQ c).S (winQ c).R (winQ c).E (winQ c).D pa)
+    (hr : AddReady base (winQ c).M s.mem (winQ c).S pa)
+    (hfar : AddFar (winQ c).M (winQ c).S (winX c ++ winW (winQ c)) pa)
+    (hksT : ks ≠ TMP := by decide) :
+    WP isa (.seq (c.winPrep (c.sl ks)) (.seq (WinCfg.window (winQ c) pa) rest)) s R := winMulWith_ok _ (windowCode_ok _ _) hc hC hs F hP hpx hpy hrep hks h hpa hr hfar hksT
+
 structure WinPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : State) : Prop where
   scr : Scr s' base size
   gpr : ∀ r, r ∉ combClob c.n → r ∉ powClob c.n → s'.gpr r = s.gpr r
@@ -328,14 +342,14 @@ structure WinPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Stat
   rz_lt : sv c base s' RZ < c.C.p
 
 /-- `[d]P` by windows, then `Z^(p-2)`. -/
-theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+theorem winPowWith_ok (window : Prog isa) (hwindow : WindowOk (winQ c) c.padd window) (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) (hbp : sv c base s EM = sv c base s BM)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinPost c base P (sv c base s K) s s' → WP isa rest s' R) :
-    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c) c.padd) (.seq c.pPow rest))) s R := by
+    WP isa (.seq (c.winPrep (c.sl K)) (.seq window (.seq c.pPow rest))) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -357,7 +371,7 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       rw [winW_eq] at hw
       exact ⟨apart_append (apart_winX (i := EM) (by decide)) (apart_slW (i := EM) (by decide)) w hw,
         apart_append (apart_winX (i := BM) (by decide)) (apart_slW (i := BM) (by decide)) w hw⟩
-  refine winMul_ok hc hC hs F hP hpx hpy hrep (ks := K) (by decide) (hpa := winAddOk hc) (hr := hr)
+  refine winMulWith_ok window hwindow hc hC hs F hP hpx hpy hrep (ks := K) (by decide) (hpa := winAddOk hc) (hr := hr)
     (hfar := hfar) fun s₃ W => ?_
   obtain F₃ := F.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   obtain rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
@@ -376,5 +390,14 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     rw [r₄ (i := RZ) (by decide) (by decide)]
     exact v₄
   · rw [r₄ (i := RZ) (by decide) (by decide)]; exact rz₃
+
+theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+    {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
+    (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hbp : sv c base s EM = sv c base s BM)
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', WinPost c base P (sv c base s K) s s' → WP isa rest s' R) :
+    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c) c.padd) (.seq c.pPow rest))) s R  := winPowWith_ok _ (windowCode_ok _ _) hc hC hs F hP hpx hpy hrep hbp h
 
 end VG.Proof.Ecdh.AArch64

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 public import VerifiedGarbage.Spec.Ecdh
@@ -285,17 +287,24 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.AArch64.Cfg.exchange c =
     (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c) c.padd) (.seq c.pPow
       (Impl.Ecdh.AArch64.Cfg.middle c))))))) := rfl
 
+theorem exchangeWithWindow_eq (c : Cfg) (window : Prog isa) : Impl.Ecdh.AArch64.Cfg.exchangeWithWindow c window =
+    .seq (.block Impl.Ecdh.AArch64.Cfg.args) (.seq (.seq (.block c.setup)
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
+    (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) (.seq (Impl.Ecdh.AArch64.Cfg.validate c)
+    (.seq (c.winPrep (c.sl K)) (.seq window (.seq c.pPow
+      (Impl.Ecdh.AArch64.Cfg.middle c))))))) := rfl
+
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.AArch64.Cfg.exchange c) s₀ fun s' =>
+theorem exchangeWithWindow_ok (window : Prog isa) (hwindow : WindowOk (winQ c) c.padd window) (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+    WP isa (Impl.Ecdh.AArch64.Cfg.exchangeWithWindow c window) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hsz : size = 8192 := rfl
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  rw [exchange_eq']
+  rw [exchangeWithWindow_eq]
   refine WP.seq (WP.mono (args_ok s₀) fun s₁ ⟨x4₁, x6₁, x3₁, x2₁, k₁⟩ => ?_)
   obtain x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   obtain x0₁ : s₁.gpr .x0 = s₀.gpr .x0 := k₁.gpr _ (by decide)
@@ -348,7 +357,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   obtain hk₄ : sv c (s₀.gpr .x3) s₄ K = dk c s₀ := by
     rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k]
     simp only [kv, dk, k₁.mem, x3₁]
-  refine winPow_ok hc hC hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt
+  refine winPowWith_ok window hwindow hc hC hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt
     (peerPt_rep hC _ _ _ px py |> fun h => by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x3) s₄ PX))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x3) s₄ PY))
@@ -426,5 +435,9 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       · rw [← hD₅]; exact h.1.2.2
     rw [ite_eq_right hcond]
     exact ⟨by rw [ret, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+    WP isa (Impl.Ecdh.AArch64.Cfg.exchange c) s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s'  := exchangeWithWindow_ok _ (windowCode_ok _ _) hc hC hp
 
 end VG.Proof.Ecdh.AArch64

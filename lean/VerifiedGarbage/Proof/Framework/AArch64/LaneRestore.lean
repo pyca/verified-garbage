@@ -125,6 +125,33 @@ theorem keepsLane_ok {v : VReg} {l : Nat} (hl : l < 2) {i : Instr} (h : keepsLan
     have : vdstOf i ≠ some v := fun hd => by simp [hd] at h
     simp only [laneOf, exec_vec this he]
 
+/-- Instructions preserving a lane preserve it through calls, loops and frames. -/
+theorem Exec.lane {c : Prog isa} {v : VReg} {l : Nat} (hl : l < 2)
+    (hc : ∀ i ∈ instrs c, keepsLane v l i = true)
+    {s s' : State} {t : List Leak} (h : Exec isa c s t s') : laneOf s' v l = laneOf s v l := by
+  induction h with
+  | icall _ hc₁ _ hr ih =>
+    rw [ret_eq hr, ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi)))]
+    simp only [laneOf, call_vec hc₁]
+  | icallNext _ _ _ ih => exact ih (fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi)))
+  | block h =>
+    exact execBlock_keep (M := isa) (fun s : State => laneOf s v l)
+      (ok := fun i => keepsLane v l i = true) (fun hi he => keepsLane_ok hl hi he) hc h
+  | seq _ _ ih₁ ih₂ =>
+    rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),
+      ih₁ (fun i hi => hc i (List.mem_append_left _ hi))]
+  | iteT _ _ ih => exact ih (fun i hi => hc i (List.mem_append_left _ hi))
+  | iteF _ _ ih => exact ih (fun i hi => hc i (List.mem_append_right _ hi))
+  | loopExit _ _ ih => exact ih hc
+  | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc, ih₁ hc]
+  | call hc₁ _ hr ih =>
+    rw [ret_eq hr, ih hc]
+    simp only [laneOf, call_vec hc₁]
+  | frame hp _ hq ih =>
+    have ep : laneOf _ v l = laneOf _ v l := congrArg (fun vs => (vs v).extractLsb' (64 * l) 64) (pop_vec hq)
+    rw [ep, ih (fun i hi => hc i (by simp [instrs, hi]))]
+    simp only [laneOf, push_vec hp]
+
 theorem restoresMid_ok {r : Reg} {v : VReg} {l : Nat} (hl : l < 2) :
     ∀ {is : List Instr}, restoresMid r v l is = true →
     ∀ {s s' : State} {t : List Leak}, execBlock isa is s = some (s', t) → s'.gpr r = laneOf s v l

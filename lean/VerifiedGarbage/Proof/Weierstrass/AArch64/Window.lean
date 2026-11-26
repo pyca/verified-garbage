@@ -115,6 +115,21 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
   obtain hx₇ : s₇.gpr .x19 = BitVec.ofNat 64 (j - 1) := by rw [x₇, E₆.x19, hx₅]
   exact ⟨⟨S₇, hx₇, l₇, r₇⟩, hx₇⟩
 
+/-- A window implementation satisfying the usual window pre- and postconditions. -/
+def WindowOk (K : WinCfg) (pa : Option (String × Nat)) (code : Prog isa) : Prop :=
+  ∀ {C : Curve} {base : Addr} {size k : Nat}, WinLay K size → WinA K →
+    UnitMod C.p (2 ^ (64 * K.M.n)) → Law C → AM3 C → ∀ {P : Point C},
+    onCurve C P = true → C.p < 2 ^ (64 * K.M.n) → K.one < C.p →
+    toM C.p (2 ^ (64 * K.M.n)) K.one = 1 → ∀ {s : State}, Scr s base size →
+    ModOkA K.M size C.p s.mem base → WinFixed K C base s P k → k < 16 ^ K.J →
+    8 * geom K.J ≤ k → AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa →
+    AddReady base K.M s.mem K.S pa → AddFar K.M K.S (winW K) pa →
+    WP isa code s fun t => KeepRegs (combClob K.M.n) s t ∧
+      Unch base (winW K) s.mem t.mem ∧ ModOkA K.M size C.p t.mem base ∧
+      (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n < C.p) ∧
+      Rep C (tmv C K.M.n base t K.R.x) (tmv C K.M.n base t K.R.y) (tmv C K.M.n base t K.R.z)
+        (mul (k - 8 * geom K.J) P)
+
 /-- `[k - 8 Σ_{i<J} 16^i]P` into `R`, for `8 Σ_{i<J} 16^i ≤ k < 16^J` whose bits
 are the table at `K.bits`; only `combClob` and `winW` change. -/
 theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
@@ -207,5 +222,10 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
     (fun j s' h1 h2 hi => winStep_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 h1 h2 hi hpa hr hfar)
     (fun s' hi => ⟨hi.st.keep, hi.st.unch, hi.st.mod, hi.lt, by rw [← winE_zero]; exact hi.rep⟩)
     hJ.1 I₅
+
+/-- The original inline window satisfies the interface. -/
+theorem windowCode_ok (K : WinCfg) (pa : Option (String × Nat)) : WindowOk K pa (WinCfg.window K pa) := by
+  intro C base size k hL hA hp hC hM3 P hP hpn hone_lt hone s hs hM hF hk hk8 hpa hr hfar
+  exact window_ok hL hA hp hC hM3 hP hpn hone_lt hone hs hM hF hk hk8 hpa hr hfar
 
 end VG.Proof.Weierstrass.AArch64

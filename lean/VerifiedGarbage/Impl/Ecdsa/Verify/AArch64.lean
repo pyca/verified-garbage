@@ -132,11 +132,14 @@ def final : Prog isa :=
 `u`, `[v]Q` by ECDH's window method. `u` is public (from the digest and
 the signature), so the comb reads its entries directly, without the table
 scan of signing. -/
-def points : Prog isa :=
+def pointsWithWindow (window : Prog isa) : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg true) <|
   .seq (.block (save c)) <|
   .seq c.preparePadd <| .seq (c.winPrep (c.sl V)) <|
-    .seq (WinCfg.window (c.winCfg PX PY) c.padd) (sum c)
+    .seq window (sum c)
+
+/-- The default window implementation. -/
+def points : Prog isa := pointsWithWindow c (WinCfg.window (c.winCfg PX PY) c.padd)
 
 /-- The conversion factor, the order in field Montgomery form, and the
 upper bound on the signature scalar for its second possible lift. -/
@@ -182,13 +185,18 @@ def tail : Prog isa :=
   else .seq c.pPow (final c)
 
 /-- Everything after the checks of the key. -/
-def back : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) (tail c)
+def backWithWindow (window : Prog isa) : Prog isa :=
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (pointsWithWindow c window) (tail c)
+
+def back : Prog isa := backWithWindow c (WinCfg.window (c.winCfg PX PY) c.padd)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
-def verify : Prog isa :=
+def verifyWithWindow (window : Prog isa) : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.AArch64.Cfg.prefixWith c (some D)) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) <| .seq (Impl.Ecdh.AArch64.Cfg.validate c) (back c)
+  .seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) <| .seq (Impl.Ecdh.AArch64.Cfg.validate c) (backWithWindow c window)
+
+/-- Verification with the default window implementation. -/
+def verify : Prog isa := verifyWithWindow c (WinCfg.window (c.winCfg PX PY) c.padd)
 
 end Cfg
 

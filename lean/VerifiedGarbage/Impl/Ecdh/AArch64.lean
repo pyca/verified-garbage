@@ -183,9 +183,12 @@ def middle : Prog isa :=
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)
 
 /-- `vg_ecdh_<curve>`. -/
-def exchange : Prog isa :=
+def exchangeWithWindow (window : Prog isa) : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.winPrep (c.sl K)) <| .seq (WinCfg.window (c.winCfg PX PY) c.padd) <| .seq c.pPow (middle c)
+  .seq (c.winPrep (c.sl K)) <| .seq window <| .seq c.pPow (middle c)
+
+/-- The default window implementation. -/
+def exchange : Prog isa := exchangeWithWindow c (WinCfg.window (c.winCfg PX PY) c.padd)
 
 end Cfg
 

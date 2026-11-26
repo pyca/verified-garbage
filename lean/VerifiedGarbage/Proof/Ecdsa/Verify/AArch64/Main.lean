@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+
 public import VerifiedGarbage.Spec.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdsa.Projective
 import VerifiedGarbage.Proof.Ecdsa.Verify
@@ -725,6 +727,14 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
       (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
 
+theorem verifyWithWindow_eq (c : Cfg) (window : Prog isa) : Impl.Ecdsa.Verify.AArch64.Cfg.verifyWithWindow c window =
+    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
+      (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
+      (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
+      (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pointsWithWindow c window) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
+
 /-- What the slot of Montgomery's one stands for. -/
 theorem onep_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
     (F : Fixed c base g s.mem) : tmv c.C c.n base s (c.sl ONEP) = 1 := by
@@ -733,12 +743,12 @@ theorem onep_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : S
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+theorem verifyWithWindow_ok (window : Prog isa) (hwindow : WindowOk (winQ c) c.padd window) (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     {s₀ : State} (hp : VPre c s₀) :
-    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s₀ fun s' =>
+    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.verifyWithWindow c window) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  rw [verify_eq'']
+  rw [verifyWithWindow_eq]
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   have h1 := onep_tmv hc F₂
@@ -758,7 +768,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg
     exact peerPt_rep hC _ _ _ hM.px hM.py
   have hu : sv c (s₀.gpr .x3) s₂ U < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   have hv : sv c (s₀.gpr .x3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  refine points_ok hc hM
+  refine pointsWithWindow_ok window hwindow hc hM
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
     hC hT hp.tbl (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
@@ -810,6 +820,11 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg
       sv c (s₀.gpr .x3) s₃ RZ ≠ 0 ∧ Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀)
   · rw [ite_eq_left (decide_eq_true (hiff.mpr h)), ite_eq_left h]
   · rw [ite_eq_right (fun h' => h (hiff.mp (of_decide_eq_true h'))), ite_eq_right h]
+
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} (hp : VPre c s₀) :
+    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s'  := verifyWithWindow_ok _ (windowCode_ok _ _) hc hC hT hp
 
 end VG.Proof.Ecdsa.Verify.AArch64
 

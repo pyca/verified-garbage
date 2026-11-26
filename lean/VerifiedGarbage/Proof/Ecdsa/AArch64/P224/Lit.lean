@@ -22,6 +22,7 @@ every instruction): the literal of the code (`materialize_code`,
 
 namespace VG
 
+materialize_code Impl.Ecdsa.AArch64.windowP224
 materialize_code Impl.Ecdsa.AArch64.projAddP224
 materialize_code Impl.Ecdsa.AArch64.combP224
 materialize_code Impl.Ecdsa.AArch64.signP224

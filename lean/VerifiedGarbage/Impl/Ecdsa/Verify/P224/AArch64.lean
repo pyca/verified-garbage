@@ -15,7 +15,7 @@ namespace VG.Impl.Ecdsa.Verify.AArch64
 open VG.AArch64
 
 /-- `vg_ecdsa_p224_verify`. -/
-def verifyP224 : Prog isa := Cfg.verify Impl.Ecdsa.AArch64.p224
+def verifyP224 : Prog isa := Cfg.verifyWithWindow Impl.Ecdsa.AArch64.p224 Impl.Ecdsa.AArch64.windowCallP224
 
 namespace Fn
 
