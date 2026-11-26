@@ -134,7 +134,7 @@ pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
 
 -- The emitter writes the static from the instruction's words, byte for byte,
 -- and the code may name it without `Artifact.consts`.
-#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
+#guard (Rust.checkConsts (.of artifact.toArtifact)).isOk && (Rust.checkTables "" [("", Rust.tablesOf artifact)]).isOk
 #guard Rust.tables [artifact] == [(name, tbl 42)]
 #guard Rust.tableFile "aarch64" name (tbl 42) ==
   Rust.header ++ "//! The table of constants `VG_TEST_LDRQTBL` of the verified functions for `aarch64` (`Artifact.consts`).
@@ -155,10 +155,12 @@ pub static VG_TEST_LDRQTBL: Table<32> = Table(*b\"\\
 -- words: refused.
 def same : EmitArtifact := artifactOf "vg_test_ldrqtbl_same" 42
 def other : EmitArtifact := artifactOf "vg_test_ldrqtbl_other" 41
-#guard (Rust.checkConsts [.of (.of artifact), .of (.of same)] (.of (.of artifact))).isOk
+#guard (Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf same)]).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of artifact))).isOk
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of other))).isOk
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf other)]).isOk
+#guard !(Rust.checkTables "" [("b", Rust.tablesOf other), ("a", Rust.tablesOf artifact)]).isOk
+-- Nor may one artifact give it two lists of words.
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact ++ Rust.tablesOf other)]).isOk
 
 /-! ## The semantics -/
 
