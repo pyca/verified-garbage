@@ -35,8 +35,10 @@ def recognizeList : List Group → Nat → List Byte → Nat
 def wordBytes (n : Nat) : List Byte := (List.range 4).map fun i => BitVec.ofNat 8 (n / 2^(8*i))
 def Group.bytes (g : Group) : List Byte := wordBytes g.len ++ wordBytes g.bits ++ g.domain
 def tableBytes : List Byte := groups.flatMap Group.bytes
+/-- `tableBytes`, as an array: each byte is read of it in constant time. -/
+def tableArray : Array Byte := tableBytes.toArray
 def tableWord (i : Nat) : BitVec 64 :=
- (show Mem from fun a : Addr => tableBytes.getD a.toNat 0).readW (BitVec.ofNat 64 (8*i)) 64
+ (show Mem from fun a : Addr => tableArray.getD a.toNat 0).readW (BitVec.ofNat 64 (8*i)) 64
 def tableWords : List (BitVec 64) := (List.range (tableBytes.length/8)).map tableWord
 
 end VG.Impl.Ffdh.VettedGroups

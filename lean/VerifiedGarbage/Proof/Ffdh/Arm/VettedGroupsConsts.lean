@@ -34,6 +34,8 @@ theorem tableWords_getD {i : Nat} (hi : i < tableWords.length) :
 theorem tableWord_byte {i : Nat} (hi : i < tableBytes.length) :
     (tableWord (i / 8)).extractLsb' (8 * (i % 8)) 8 = tableBytes.getD i 0 := by
   unfold tableWord
+  simp only [VG.Impl.Ffdh.VettedGroups.tableArray, Array.getD_eq_getD_getElem?, List.getElem?_toArray,
+    ← List.getD_eq_getElem?_getD]
   change ((show Mem from fun a : Addr => tableBytes.getD a.toNat 0).read  (BitVec.ofNat 64 (8 * (i / 8))) 8).extractLsb' (8 * (i % 8)) 8 = _
   rw [Mem.extractLsb'_read _ _ (by omega_using [])]
   simp only [BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.toNat_ofNat]
