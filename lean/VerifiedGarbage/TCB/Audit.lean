@@ -42,7 +42,8 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   declaration that its file takes for `Spec.<Alg>.fooApi` (one in a namespace
   that shadows `VG`'s), or a value that a proof builds artifacts with. An `Api`
   that needs anything else, such as a string, is not `Spec/`'s: `Spec/` must
-  give it a name.
+  give it a name. A registration file may prove it itself, as a theorem whose
+  statement, which the kernel checks, and whose axioms this reads (`declaredApis`).
 
 The first two walk the constants of the file they run in, and take what an imported
 constant or module holds from the audit records its module wrote when it was
@@ -222,10 +223,40 @@ partial def forallProof (α P : Expr) (leaf : Expr → MetaM Expr) (e : Expr) : 
 
 /-! ### The check -/
 
+/-- The elements of the list literal `e`. -/
+partial def literalElems (e : Expr) (acc : Array Expr := #[]) : MetaM (Array Expr) :=
+  match e.getAppFnArgs with
+  | (``List.cons, #[_, a, as]) => literalElems as (acc.push a)
+  | (``List.nil, _) => return acc
+  | _ => throwError "not a literal list:{indentExpr e}"
+
+/-- The theorem `thm`, which depends on no axiom but the standard ones (so that the kernel
+has checked its proof: a module that imports it does not see it, nor whether it is
+a theorem), is `∀ a ∈ e, apiOf a ∈ specs`, for a literal list `specs`: the elements of it
+that are not `isSpecApi`. Where `specs` is found, in the statement of `thm`, is not trusted:
+the kernel checks that `thm` proves the statement made here with it. `e` is a list of
+elements of type `α`. -/
+def declaredApis (e α : Expr) (apiOf : Expr → Expr) (thm : Name) : MetaM (Array Expr) := do
+  let env ← getEnv
+  let axs := (AuditRecords.axiomsIn env thm).filter (!AuditRecords.standardAxioms.contains ·)
+  unless axs.isEmpty do throwError "{thm} depends on non-standard axioms: {axs.toList}"
+  let .forallE _ _ (.forallE _ _ c _) _ ← Meta.inferType (mkConst thm)
+    | throwError "{thm} does not state the `Api`s of {e}"
+  let (``Membership.mem, #[_, _, _, specs, _]) := c.getAppFnArgs
+    | throwError "{thm} does not state the `Api`s of {e}"
+  if specs.hasLooseBVars then throwError "{thm} does not state the `Api`s of {e}"
+  let type ← Meta.withLocalDeclD `a α fun a => do
+    Meta.mkForallFVars #[a] (← mkArrow (← Meta.mkAppM ``Membership.mem #[e, a])
+      (← Meta.mkAppM ``Membership.mem #[specs, apiOf a]))
+  addDecl <| .thmDecl { name := ← mkAuxDeclName `specApis, levelParams := [], type, value := mkConst thm }
+  return (← literalElems specs).filter (!isSpecApi env ·)
+
 /-- `#assert_spec_apis as …`, where each `as` is a registration file's list of artifacts
-(`List (Artifact T)`), or a list of `Api`s. For each, it proves `∀ a ∈ as, a.api ∈ specs`,
-for a list `specs` of `Api`s each of which is `isSpecApi`, or fails. Each has the limits
-of a command to itself. -/
+(`List (Artifact T)`), or a list of `Api`s. For each, it has the kernel check
+`∀ a ∈ as, a.api ∈ specs`, for a list `specs` of `Api`s each of which is `isSpecApi`, or
+fails: by the theorem `as_specApis`, if `as` is a constant that has one (`declaredApis`), or
+by one it finds. So a registration file that proves it need not expose its list, nor
+what that is of. Each has the limits of a command to itself. -/
 elab "#assert_spec_apis " ts:(ppSpace colGt term:max)* : command => liftTermElabM do
   let api := mkConst `VG.Api
   let env ← getEnv
@@ -241,6 +272,9 @@ elab "#assert_spec_apis " ts:(ppSpace colGt term:max)* : command => liftTermElab
         | (`VG.Api, #[]) => pure id
         | (`VG.Artifact, #[T]) => pure fun a => mkApp2 (mkConst `VG.Artifact.api) T a
         | _ => throwErrorAt t "not a list of artifacts or of `Api`s"
+      if let some n := e.constName? then
+        let thm := n.appendAfter "_specApis"
+        if env.contains thm then return ← declaredApis e α apiOf thm
       -- The `Api`s its elements have (`specs`), found as it is proven that each is one of them
       -- (`hs`): both to be filled in once all are.
       let specs ← Meta.mkFreshExprSyntheticOpaqueMVar (mkApp (mkConst ``List [1]) api)
