@@ -233,6 +233,10 @@ theorem verified :
 def artifacts : List (Artifact VG.AArch64.target) :=
   [Spec.Selftest.addApi.artifact VG.AArch64.target { code := code, verified := verified }]
 
+/-- Which `Api`s it is of, as the kernel accepts it. -/
+theorem artifacts_specApis : ∀ a ∈ artifacts, a.api ∈ [Spec.Selftest.addApi] := by
+  simp [artifacts, Api.artifact]
+
 end VG.Artifacts.TestApi.AArch64
 
 namespace VG.Test.Emit
@@ -314,31 +318,12 @@ structure Variant where
 
 def variants : List Variant := [⟨VG.Spec.Hmac.sha256I⟩, ⟨VG.Spec.Hmac.sha512I⟩]
 
--- Constants of `Spec/`, and functions of `Spec/` of one, however they are reached.
-/-- info: every artifact's `Api` is one `Spec/` declares -/
-#guard_msgs in
-#assert_spec_apis [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api]
-  (variants.map fun v => v.I.pbkdf2Api)
-
--- Both branches of a decision that need not be made.
-#guard_msgs (drop info) in
-#assert_spec_apis (if 2 ^ 400 % 7 = 2 then [VG.Spec.Selftest.addApi] else
-  variants.flatMap fun v => [v.I.pbkdf2Api] ++ if v.I.scratch = 0 then [] else [v.I.finalizeApi])
+-- A list that has no theorem.
+def undeclared : List VG.Api := [VG.Spec.Selftest.addApi]
 run_cmd do
-  fails (← errorsOf "#assert_spec_apis (if 0 = 1 then [VG.Test.Emit.fakeInstance.pbkdf2Api] else [])")
-    "not ones `Spec/` declares"
-
--- A function of `Spec/` of something that is not `Spec/`'s.
+  fails (← errorsOf "#assert_spec_apis VG.Test.Emit.undeclared") "there is no"
 run_cmd do
-  fails (← errorsOf "#assert_spec_apis [VG.Spec.Selftest.addApi] [VG.Test.Emit.fakeInstance.pbkdf2Api]")
-    "not ones `Spec/` declares"
-
--- A function of `Spec/` given a name: that of another parameter set.
-run_cmd do
-  fails (← errorsOf "#assert_spec_apis [VG.Spec.MlDsa.keyGenApi VG.Spec.MlDsa.mlDsa44 \"mldsa87\" \"ML-DSA-87\"]")
-    "not ones `Spec/` declares"
-#guard_msgs (drop info) in
-#assert_spec_apis [VG.Spec.MlDsa.keyGen44Api]
+  fails (← errorsOf "#assert_spec_apis [VG.Spec.Selftest.addApi]") "not a constant"
 
 /-! ## A registration that proves which `Api`s it is of (`declaredApis`) -/
 
@@ -393,7 +378,8 @@ run_cmd do
 def list₁ : List VG.Api := [VG.Spec.Selftest.addApi, VG.Spec.Hmac.sha256I.pbkdf2Api] ++
   variants.map fun v => v.I.pbkdf2Api
 spec_apis list₁
-#guard_msgs (drop info) in
+/-- info: every artifact's `Api` is one `Spec/` declares -/
+#guard_msgs in
 #assert_spec_apis list₁
 
 -- Both branches of a decision that need not be made.
