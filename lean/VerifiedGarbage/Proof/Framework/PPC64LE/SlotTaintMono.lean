@@ -33,7 +33,7 @@ private theorem ite_t {α : Type} {c : Prop} [Decidable c] (h : c) {a b : α} :
 /-- `τ` and `σ` know the same about memory, and `σ` has at least the public
 registers and slots of `τ`. -/
 def leR (τ σ : T) : Bool :=
-  τ.regs.subset σ.regs && τ.slots.all (σ.slots.contains ·) && τ.lens == σ.lens &&
+  τ.regs.subset σ.regs && slotsLe τ.slots σ.slots && τ.lens == σ.lens &&
     decide (τ.bases = σ.bases)
 
 /-- `τ` with the registers `r` and slots `sl`. -/
@@ -50,7 +50,7 @@ structure LeR (τ σ : T) : Prop where
   shape : σ = upd τ σ.regs σ.slots
 
 theorem leR_iff {τ σ : T} : leR τ σ = true ↔ LeR τ σ := by
-  simp only [leR, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem, beq_iff_eq,
+  simp only [leR, slotsLe_eq, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem, beq_iff_eq,
     decide_eq_true_eq]
   constructor
   · rintro ⟨⟨⟨hr, hs⟩, hl⟩, hb⟩
@@ -70,7 +70,7 @@ theorem LeR.trans {a b c : T} (h₁ : LeR a b) (h₂ : LeR b c) : LeR a c where
 
 theorem le_of_le_leR {m τ σ : T} (hm : le m τ = true) (h : LeR τ σ) : le m σ = true := by
   rw [h.shape]
-  simp only [le, upd, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.contains_iff_mem] at hm ⊢
+  simp only [le, slotsLe_eq, upd, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.contains_iff_mem] at hm ⊢
   obtain ⟨⟨⟨hr, hl⟩, hb⟩, hs⟩ := hm
   exact ⟨⟨⟨RegSet.subset_trans hr h.regs, hl⟩, hb⟩, fun x hx => h.slots x (hs x hx)⟩
 
