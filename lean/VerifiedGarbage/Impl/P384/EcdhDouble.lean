@@ -57,4 +57,16 @@ def regs : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11,
 def doubleRD : List Instr := raw K.R K.D
 def doubleDR : List Instr := raw K.D K.R
 
+/-- The shared straight-line bodies, also used by ECDSA verification. -/
+def doubleRDBody : Prog isa := .block doubleRD
+def doubleDRBody : Prog isa := .block doubleDR
+
+/-- Keep the outer link register in a lane the scalar doubling does not write. -/
+def callDouble (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)])
+    (.seq (.call name body) (.block [.umov .x .x30 .v31 1]))
+
+def callRD : Prog isa := callDouble "vg_p384_window_double_rd" doubleRDBody
+def callDR : Prog isa := callDouble "vg_p384_window_double_dr" doubleDRBody
+
 end VG.Impl.P384.EcdhDouble
