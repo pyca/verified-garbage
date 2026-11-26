@@ -1,16 +1,20 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Fn
-public import VerifiedGarbage.Proof.MlDsa.X86_64.FnScrub
-public import VerifiedGarbage.Proof.MlDsa.X86_64.SignScrub
-public import VerifiedGarbage.Proof.MlDsa.X86_64.VerifyScrub
-public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Scrub
-public import VerifiedGarbage.Proof.Variants.MlDsaArith.X86_64
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Impl.MlDsa.X86_64.Fn
+import VerifiedGarbage.Proof.MlDsa.X86_64.FnScrub
+import VerifiedGarbage.Proof.MlDsa.X86_64.SignScrub
+import VerifiedGarbage.Proof.MlDsa.X86_64.VerifyScrub
+import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Scrub
+import VerifiedGarbage.Proof.Variants.MlDsaArith.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on x86-64 -/
-
-@[expose] public section
 
 -- ML-DSA (FIPS 204) on x86-64: key generation
 namespace VG.Artifacts.MlDsa.X86_64.KeyGen
@@ -258,7 +262,7 @@ end VG.Artifacts.MlDsa.X86_64.VerifyMessageCached
 
 namespace VG.Artifacts.MlDsa.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   KeyGen.artifacts ++
   [
     Spec.MlDsa.pkTr44Api.artifact X86_64.target { code := Impl.MlDsa.X86_64.Fn.pkTr Spec.MlDsa.mlDsa44, verified := Proof.MlDsa.X86_64.FnScrub.pkTr44_scrubbed, spSafe := Proof.MlDsa.X86_64.FnScrub.pkTr44_spSafe },
@@ -269,5 +273,7 @@ def artifacts : List (Artifact X86_64.target) :=
   SignMessage.artifacts ++
   Verify.artifacts ++
   VerifyMessageCached.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.X86_64

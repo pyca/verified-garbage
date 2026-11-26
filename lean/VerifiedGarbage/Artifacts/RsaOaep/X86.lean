@@ -1,19 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaOaep.X86.Scrub
-public import VerifiedGarbage.Impl.RsaOaep.X86.Fn
-public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
-public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
-public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaOaep.X86.Scrub
+import VerifiedGarbage.Impl.RsaOaep.X86.Fn
+import VerifiedGarbage.Proof.RsaOaep.X86.Inst
+import VerifiedGarbage.Proof.Variants.Sha1.X86
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSAES-OAEP (RFC 8017) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 
@@ -56,8 +56,10 @@ end VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256
 
 namespace VG.Artifacts.RsaOaep.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   AllSha1AllSha256.artifacts ++
   (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v)
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaOaep.X86

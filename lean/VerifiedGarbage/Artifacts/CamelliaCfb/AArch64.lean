@@ -1,21 +1,23 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
-public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
-public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Cfb
+public import VerifiedGarbage.Spec.Camellia.CfbFinal
+import VerifiedGarbage.Impl.Camellia.AArch64.Fn
+import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
+import VerifiedGarbage.Proof.Camellia.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Camellia.AArch64.FbLit
 import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CFB128 on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCfb.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbEncrypt
     verified := Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
@@ -28,5 +30,7 @@ def artifacts : List (Artifact AArch64.target) := [
   Spec.Camellia.cfbDecryptFinalApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbDecryptFinal
     verified := Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCfb.AArch64

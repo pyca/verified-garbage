@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.Arm.Absorb
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha3.Instances
+import VerifiedGarbage.Proof.Sha3.Arm.Absorb
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-3 and SHAKE (FIPS 202) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha3.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sha3.updateSha3_224Api.artifact Arm.target {
     code := Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_224.rate
     verified := Proof.Sha3.Arm.Fn.update_sha3_224 },
@@ -50,5 +51,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Sha3.squeezeShake256Api.artifact Arm.target {
     code := Impl.Sha3.Arm.Fn.xofSqueeze Spec.Sha3.xofShake256.rate
     verified := Proof.Sha3.Arm.Fn.squeeze_shake256 }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha3.Arm

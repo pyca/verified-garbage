@@ -57,7 +57,12 @@ instructions in an ISA model) go in their own PR before either.
    target, `TCB/<Target>/Target.lean` (`public import
    VerifiedGarbage.TCB.X86_64.Target`). It imports no printer: the emitter's
    driver names the target's, and requires the list to be of the target its
-   directory names (`Emit.driver`):
+   directory names (`Emit.driver`). Only the list is public (`public def
+   artifacts`; no `public section`), and the file imports publicly only the
+   target, `TCB/Registration.lean` and the `Spec/` modules of its `Api`s, so
+   that the emitter loads none of the proofs. It ends with `spec_apis
+   artifacts` (`Proof/Framework/SpecApis.lean`), which proves which `Api`s its
+   artifacts are of, for the emitter's audit (`#assert_spec_apis`):
 
    ```lean
      Spec.<Alg>.fooApi.artifact X86_64.target {

@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
-public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Aes.X86_64.Blocks
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
-public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Variants.AesGcm.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-GCM-SIV (RFC 8452) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesGcmSiv.X86_64
 
@@ -74,7 +75,9 @@ then those without them, where they may run where the others cannot
 def artifactsFor (v : GcmImpl) : List (Artifact X86_64.target) :=
   (if hasWide v then wideArtifactsOf v else []) ++ if hasNarrow v then artifactsOf v else []
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   (sivImpls (VG.Proof.Variants.AesGcm.X86_64.variants.map (·.impl))).flatMap artifactsFor
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcmSiv.X86_64

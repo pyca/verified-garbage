@@ -1,23 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
-public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
+import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
-
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Sm4Gcm.PPC64LE
 
 open VG.Proof.Sm4Gcm.PPC64LE.Scrub
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.Sm4Gcm.PPC64LE.Fn.init
     verified := Proof.Sm4Gcm.PPC64LE.Scrub.init_scrubbed },
@@ -45,5 +46,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Sm4.Gcm.streamVerifyApi.artifact PPC64LE.target {
     code := Impl.Sm4Gcm.PPC64LE.Fn.streamVerify
     verified := Proof.Sm4Gcm.PPC64LE.Scrub.streamVerify_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Gcm.PPC64LE

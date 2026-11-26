@@ -1,22 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Verified
 public import VerifiedGarbage.TCB.PPC64LE.Target
-
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Scrub
+import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contiguous.Verified
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Blocks.Lit
 import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # AES-GCM (NIST SP 800-38D) on PPC64LE -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesGcm.PPC64LE
 
 open VG.Proof.AesGcm.PPC64LE.Scrub
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Gcm.initApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.Fn.init
     verified := Proof.AesGcm.PPC64LE.Scrub.init_scrubbed },
@@ -53,5 +56,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Gcm.openToApi.artifact PPC64LE.target {
     code := Impl.AesGcm.PPC64LE.Fn.openTo
     verified := Proof.AesGcm.PPC64LE.Scrub.openTo_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.PPC64LE

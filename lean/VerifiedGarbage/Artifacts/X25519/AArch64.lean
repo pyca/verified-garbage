@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.X25519.AArch64.Fn
-public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
-public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
-public import VerifiedGarbage.Proof.X25519.AArch64.Base.Residue
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.X25519.Contract
+import VerifiedGarbage.Impl.X25519.AArch64.Fn
+import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
+import VerifiedGarbage.Proof.X25519.AArch64.LadderVerified
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Residue
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -12,18 +15,16 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
-public import VerifiedGarbage.Proof.X25519.AArch64.Exchange
-public import VerifiedGarbage.Proof.X25519.AArch64.ExchangeResidue
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.X25519.AArch64.Exchange
+import VerifiedGarbage.Proof.X25519.AArch64.ExchangeResidue
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.X25519.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.X25519.exchangeApi.artifact AArch64.target {
     code := Impl.X25519.AArch64.Fn.exchange
     verified := Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed },
@@ -32,5 +33,7 @@ def artifacts : List (Artifact AArch64.target) := [
     code := Impl.X25519.AArch64.Fn.x25519Base
     verified := Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed
     writtenOk := Proof.X25519.AArch64.Base.x25519BaseCleared_written }]
+
+spec_apis artifacts
 
 end VG.Artifacts.X25519.AArch64

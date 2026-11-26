@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.Proof.Ed25519.AArch64.KeyPair
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ed25519.KeyPair
+public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
+import VerifiedGarbage.Proof.Ed25519.AArch64.KeyPair
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Nat.Totient
 import Mathlib.Data.Sym.Sym2.Init
@@ -10,16 +15,14 @@ import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Expanded
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Verified
+import VerifiedGarbage.Proof.Ed25519.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
+import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Expanded
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Verified
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Ed25519 (RFC 8032) on AArch64 -/
-
-@[expose] public section
 
 -- Ed25519 key-pair derivation from the seed on AArch64, for each SHA-512 implementation
 namespace VG.Artifacts.Ed25519.AArch64.KeyPair
@@ -70,9 +73,11 @@ end VG.Artifacts.Ed25519.AArch64.VerifyMessage
 
 namespace VG.Artifacts.Ed25519.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   KeyPair.artifacts ++
   SignExpanded.artifacts ++
   VerifyMessage.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.Ed25519.AArch64

@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.CfbFinal
+import VerifiedGarbage.Proof.TripleDes.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Triple DES-CFB64 on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.TripleDesCfb.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.TripleDes.cfbEncryptApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.cfbEncrypt
     verified := Proof.TripleDes.Arm.Fn.cfbEncrypt },
@@ -23,5 +25,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.TripleDes.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.cfbDecryptFinal
     verified := Proof.TripleDes.Arm.Fn.cfbDecryptFinal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.TripleDesCfb.Arm

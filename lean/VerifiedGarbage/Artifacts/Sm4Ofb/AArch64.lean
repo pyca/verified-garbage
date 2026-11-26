@@ -1,22 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
-public import VerifiedGarbage.Proof.Sm4.AArch64.FbVerified
-public import VerifiedGarbage.Proof.Sm4.AArch64.FbFinalVerified
-public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Chained
-public import VerifiedGarbage.Proof.Sm4.AArch64.ModesResidue
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Ofb
+public import VerifiedGarbage.Spec.Sm4.OfbFinal
+import VerifiedGarbage.Impl.Sm4.AArch64.Fn
+import VerifiedGarbage.Proof.Sm4.AArch64.FbVerified
+import VerifiedGarbage.Proof.Sm4.AArch64.FbFinalVerified
+import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Chained
+import VerifiedGarbage.Proof.Sm4.AArch64.ModesResidue
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
 import VerifiedGarbage.Proof.Sm4.AArch64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-OFB on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Ofb.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.ofbApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.ofbSm4
@@ -31,5 +33,7 @@ def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.ofbFinalApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Fn.ofbFinal
     verified := Proof.Sm4.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Ofb.AArch64

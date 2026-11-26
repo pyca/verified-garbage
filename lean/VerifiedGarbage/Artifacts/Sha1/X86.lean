@@ -1,21 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Sha1.X86.Scrub
-public import VerifiedGarbage.Impl.Sha1.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Variants.Sha1.X86
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Variants.Sha256.X86
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha1.Contract
+import VerifiedGarbage.Proof.Sha1.X86.Scrub
+import VerifiedGarbage.Impl.Sha1.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
+import VerifiedGarbage.Proof.Variants.Sha1.X86
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Variants.Sha256.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-1 (FIPS 180-4) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha1.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   (VG.Proof.Variants.Sha1.X86.variants.flatMap fun (v : Proof.Sha1.X86.Variants.Backend) => [
     Spec.Sha1.digestApi.artifact X86.target {
       suffix := v.suffix
@@ -36,5 +37,7 @@ def artifacts : List (Artifact X86.target) :=
       code := Impl.Sha1.X86.Fn.finalize v.stream.fin
       verified := Proof.Sha1.X86.Variants.Backend.finalize_scrubbed v
       spSafe := Proof.Sha1.X86.Variants.Backend.finalize_spSafe v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha1.X86

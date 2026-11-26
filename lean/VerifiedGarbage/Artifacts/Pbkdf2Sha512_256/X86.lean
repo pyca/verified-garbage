@@ -1,20 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
-public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
+import VerifiedGarbage.Impl.Pbkdf2.Whole.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # PBKDF2-HMAC-SHA-512/256 (RFC 8018) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Pbkdf2Sha512_256.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Hmac.sha512_256I.pbkdf2Api.artifact X86.target {
     code := Impl.Pbkdf2.Whole.X86.Fn.sha512 Proof.Pbkdf2.Whole.X86.sha512_256F
     verified := Proof.Pbkdf2.Whole.X86.Scrub.sha512_256_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Pbkdf2Sha512_256.X86

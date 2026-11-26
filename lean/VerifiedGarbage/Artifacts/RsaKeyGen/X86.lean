@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Scrub
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.Fn
-public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.MillerRabin.X86.Backend
-public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Verified
-public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaKeyGen.KeySearchContract
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Scrub
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MillerRabin.X86.Backend
+import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Verified
+import VerifiedGarbage.Proof.Variants.MillerRabin.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaKeyGen.X86
 
@@ -28,7 +28,7 @@ namespace VG.Artifacts.RsaKeyGen.X86
 
 open VG VG.X86 VG.Proof.MillerRabin.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   direct ++
   (VG.Proof.Variants.MillerRabin.X86.variants.flatMap fun (v : RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact target {
@@ -38,5 +38,7 @@ def artifacts : List (Artifact X86.target) :=
       verified := Proof.RsaKeyGen.X86.Scrub.generate_scrubbed v
       publicOutOk := Proof.RsaKeyGen.X86.Scrub.generate_public v
       spSafe := Proof.RsaKeyGen.X86.Scrub.generate_spSafe v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaKeyGen.X86

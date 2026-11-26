@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Verified
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Verified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-GCM-SIV (RFC 8452) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesGcmSiv.AArch64
 
@@ -26,7 +27,9 @@ def artifactsFor (g : GcmVariant) : List (Artifact AArch64.target) := [
     code := Impl.AesGcmSiv.AArch64.Fn.open g.calls
     verified := Proof.AesGcmSiv.AArch64.Stitch.open_scrubbed g }]
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcmSiv.AArch64

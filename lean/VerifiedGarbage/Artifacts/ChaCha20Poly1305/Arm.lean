@@ -1,20 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
-public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.Arm
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
+import VerifiedGarbage.Proof.Variants.Poly1305Blocks.Arm
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.ChaCha20Poly1305.Arm
 
-def artifacts : List (Artifact Arm.target) :=
+public def artifacts : List (Artifact Arm.target) :=
   Proof.Variants.Poly1305Blocks.Arm.variants.flatMap fun (v : Proof.Variants.Poly1305Blocks.Arm.Variant) => [
     Spec.ChaCha20Poly1305.sealApi.artifact Arm.target {
       suffix := v.suffix
@@ -32,5 +32,7 @@ def artifacts : List (Artifact Arm.target) :=
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.Arm.Fn.sealGather v.umaal
       verified := Proof.ChaCha20Poly1305.Arm.Fn.sealGather v.umaal }]
+
+spec_apis artifacts
 
 end VG.Artifacts.ChaCha20Poly1305.Arm

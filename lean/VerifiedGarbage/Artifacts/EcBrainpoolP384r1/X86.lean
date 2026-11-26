@@ -1,57 +1,58 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
+public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Framework.Registration
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.EcKey.X86.Finish
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-public import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
-public import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-public import VerifiedGarbage.Proof.Framework.BitByte
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Framework.NativeTaintCore
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Weierstrass.InvToM
-public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
-public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.X25519.X86.Arith
-public import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.Proof.BrainpoolP384r1.X86.Law
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1
-public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Scrub
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.EcKey.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.BrainpoolP384r1.X86.Law
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1
+import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Scrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.EcBrainpoolP384r1.X86
 
 open VG.Proof.BrainpoolP384r1.X86 (hasLaw)
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.publicKeyBrainpoolP384r1
     verified := Proof.EcKey.X86.BrainpoolP384r1.Scrub.publicKey_scrubbed hasLaw.law },
@@ -61,5 +62,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.decompressBrainpoolP384r1
     verified := Proof.EcKey.X86.BrainpoolP384r1.Scrub.decompress_scrubbed hasLaw.law }]
+
+spec_apis artifacts
 
 end VG.Artifacts.EcBrainpoolP384r1.X86

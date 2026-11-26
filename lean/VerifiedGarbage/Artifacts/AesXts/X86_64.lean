@@ -1,18 +1,20 @@
 module
 
-public import VerifiedGarbage.Impl.AesXts.X86_64Fn
-public import VerifiedGarbage.Proof.AesXts.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Variants.AesXts.X86_64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Spec.Xts.OutOfPlace
+import VerifiedGarbage.Impl.AesXts.X86_64Fn
+import VerifiedGarbage.Proof.AesXts.X86_64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesXts.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86-64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesXts.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   VG.Proof.Variants.AesXts.X86_64.variants.flatMap fun (v : Proof.AesXts.X86_64.XtsImpl) => [
     Spec.Xts.aesEncryptUnitApi.artifact X86_64.target {
       suffix := v.suffix
@@ -34,5 +36,7 @@ def artifacts : List (Artifact X86_64.target) :=
       code := Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts (Impl.AesXts.X86_64UnitTo.XtsTo.mk v.to.enc v.to.dec)
       verified := Proof.AesXts.X86_64.Scrub.decryptUnitTo_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.decryptUnitTo_spSafeFn v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesXts.X86_64

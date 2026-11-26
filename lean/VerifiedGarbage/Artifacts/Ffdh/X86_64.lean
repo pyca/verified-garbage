@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
-public import VerifiedGarbage.Proof.Ffdh.X86_64.InitScrub
-public import VerifiedGarbage.Proof.Ffdh.X86_64.RoundScrub
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainScrub
-public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
-public import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
+public import VerifiedGarbage.Spec.Ffdh.SievedContract
+import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
+import VerifiedGarbage.Proof.Ffdh.X86_64.InitScrub
+import VerifiedGarbage.Proof.Ffdh.X86_64.RoundScrub
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainScrub
+import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
+import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
@@ -56,7 +62,7 @@ end VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
 namespace VG.Artifacts.Ffdh.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
       suffix := v.suffix
@@ -78,5 +84,7 @@ def artifacts : List (Artifact X86_64.target) :=
       verified := Proof.Ffdh.X86_64.RoundScrub.search_scrubbed v
       publicOutOk := Proof.Ffdh.X86_64.RoundScrub.search_public v
       spSafe := Proof.Ffdh.X86_64.RoundScrub.search_spSafe v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Ffdh.X86_64

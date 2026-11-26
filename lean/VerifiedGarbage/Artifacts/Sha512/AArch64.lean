@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
-public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sha512.Contract
+import VerifiedGarbage.Proof.Sha512.AArch64.Shared
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
+import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sha512.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sha512.init384Api.artifact AArch64.target {
     code := Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_384
     verified := Proof.Sha512.AArch64.Stream.init384_scrubbed },
@@ -67,5 +68,7 @@ def artifacts : List (Artifact AArch64.target) := [
       suffix := v.suffix
       code := Impl.Sha512.AArch64.Stream.Fn.digest512_256 v.suffix v.code
       verified := Proof.Pbkdf2.Md.AArch64.Sha512.digest512_256_scrubbed v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.Sha512.AArch64

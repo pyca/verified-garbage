@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Scrub
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Scrub
+import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
+import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.ChaCha20Poly1305.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   VG.Proof.Variants.ChaCha20Xor.X86.variants.flatMap fun (v : Proof.ChaCha20.X86.XorImpl) => [
     Spec.ChaCha20Poly1305.sealApi.artifact X86.target {
       suffix := v.suffix
@@ -36,5 +37,7 @@ def artifacts : List (Artifact X86.target) :=
       code := Impl.ChaCha20Poly1305.X86.Fn.sealGather v.callee v.suffix
       verified := Proof.ChaCha20Poly1305.X86.Scrub.sealGather_scrubbed v
       spSafe := Proof.ChaCha20Poly1305.X86.Scrub.sealGather_spSafe v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.ChaCha20Poly1305.X86

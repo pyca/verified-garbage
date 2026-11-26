@@ -1,18 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.RISCV64.Fn
-public import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
-public import VerifiedGarbage.Proof.Divstep.TcSBounds
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
+import VerifiedGarbage.Proof.Rsa.RISCV64.Fn
+import VerifiedGarbage.Proof.Rsa.RISCV64.IbInverse
+import VerifiedGarbage.Proof.Divstep.TcSBounds
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA (RFC 8017) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Rsa.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact RISCV64.target {
     code := Impl.Rsa.RISCV64.Fn.publicPrecompute
     verified := Proof.Rsa.RISCV64.Fn.publicPrecompute },
@@ -28,5 +31,7 @@ def artifacts : List (Artifact RISCV64.target) := [
   Spec.Rsa.recoverPrimesDetApi.artifact RISCV64.target {
     code := Impl.Rsa.RISCV64.Fn.recoverPrimesDet
     verified := Proof.Rsa.RISCV64.Fn.recoverPrimesDet }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Rsa.RISCV64

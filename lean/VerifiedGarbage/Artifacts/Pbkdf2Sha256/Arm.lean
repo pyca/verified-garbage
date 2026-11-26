@@ -1,18 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Pbkdf2Sha256.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Hmac.sha256I.pbkdf2Api.artifact Arm.target {
     code := Impl.Pbkdf2.Whole.Arm.Fn.sha256
     verified := Proof.Pbkdf2.Whole.Arm.Fn.sha256 }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Pbkdf2Sha256.Arm

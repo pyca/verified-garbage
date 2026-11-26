@@ -1,17 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RISCV64.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+import VerifiedGarbage.Proof.Dsa.RISCV64.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on RISC-V -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Dsa.RISCV64
 
-def artifacts : List (Artifact RISCV64.target) := [
+public def artifacts : List (Artifact RISCV64.target) := [
   Spec.Dsa.deriveKeyApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Fn.deriveKey
     verified := Proof.Dsa.RISCV64.Fn.deriveKey },
@@ -40,5 +45,7 @@ def artifacts : List (Artifact RISCV64.target) := [
       code := Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code
       verified := Proof.Dsa.RISCV64.Fn.parameterSearch v
       publicOutOk := Proof.Dsa.RISCV64.Fn.parameterSearch_public v }
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.RISCV64

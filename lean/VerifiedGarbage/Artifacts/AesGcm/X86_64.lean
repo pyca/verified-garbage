@@ -1,40 +1,43 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
-public import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
-
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
-public import VerifiedGarbage.Proof.Aes.X86_64.Variant
-public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
-public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
-public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+public import VerifiedGarbage.Spec.Gcm.Prepared
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
+import VerifiedGarbage.Impl.AesGcm.X86_64.BoundedGather
+import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
+import VerifiedGarbage.Proof.Aes.X86_64.Variant
+import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
+import VerifiedGarbage.Proof.Variants.Ghash.X86_64
+import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
+import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
+import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
-public import VerifiedGarbage.Proof.Variants.AesGcm.X86_64
+import VerifiedGarbage.Proof.Variants.AesGcm.X86_64
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Lit
-public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
-public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
+import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
+import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # AES-GCM (NIST SP 800-38D) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesGcm.X86_64.AesCtr32Ghash
 
@@ -308,7 +311,7 @@ end VG.Artifacts.AesGcm.X86_64.Ghash
 
 namespace VG.Artifacts.AesGcm.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   ((Proof.AesGcm.X86_64.streamPairs VG.Proof.Variants.AesGcm.X86_64.variants).flatMap fun (c, n) =>
     AesCtr32Ghash.artifacts c n) ++
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => AesCtr32.artifacts v) ++
@@ -345,5 +348,7 @@ def artifacts : List (Artifact X86_64.target) :=
       code := Impl.Gcm.X86_64.Fn.wipe false
       verified := Proof.Gcm.X86_64.PrepareScrub.wipe_scrubbed false
       spSafe := Proof.Gcm.X86_64.PrepareScrub.wipe_spSafeFn false }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.X86_64

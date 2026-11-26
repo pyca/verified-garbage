@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+import VerifiedGarbage.Proof.RsaPkcs1Sig.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.RsaPkcs1Sig.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed
     verified := Proof.RsaPkcs1Sig.PPC64LE.Scrub.verifyPrecomputed_scrubbed },
@@ -20,5 +22,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Fn.signPrecomputed
     verified := Proof.RsaPkcs1Sig.PPC64LE.Scrub.signPrecomputed_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaPkcs1Sig.PPC64LE

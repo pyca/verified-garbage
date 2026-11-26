@@ -1,17 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Arm.Law
-public import VerifiedGarbage.Proof.AesGcm.Arm.Contiguous.Public
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Contiguous
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.Arm.Law
+import VerifiedGarbage.Proof.AesGcm.Arm.Contiguous.Public
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-GCM (NIST SP 800-38D) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.AesGcm.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Gcm.initApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.init
     verified := Proof.AesGcm.Arm.Fn.init },
@@ -48,5 +51,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Gcm.openToApi.artifact Arm.target {
     code := Impl.AesGcm.Arm.Fn.openTo
     verified := Proof.AesGcm.Arm.Fn.openTo }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesGcm.Arm

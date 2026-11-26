@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Fn
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Scrub
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Fn
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Scrub
+import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
+import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.RsaPkcs1Sig.X86_64
 
@@ -17,7 +19,7 @@ open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Proof.Rsa.X86_64 (CrtImpl)
 open VG.Proof.RsaPkcs1Sig.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun (v : CrtImpl) => [
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix
@@ -36,5 +38,7 @@ def artifacts : List (Artifact X86_64.target) :=
       code := Impl.RsaPkcs1Sig.X86_64.Fn.recoverPrecomputed v.level v.name v.code
       verified := Proof.RsaPkcs1Sig.X86_64.Scrub.recover_scrubbed v
       spSafe := Proof.RsaPkcs1Sig.X86_64.Scrub.recover_spSafe v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.RsaPkcs1Sig.X86_64

@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-KEM (FIPS 203) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.MlKem.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.MlKem.keyGenApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Fn.keyGen
     verified := Proof.MlKem.Arm.Fn.keyGen
@@ -49,5 +52,7 @@ def artifacts : List (Artifact Arm.target) := [
     code := Impl.MlKem.Arm.Fn.decaps1024
     verified := Proof.MlKem.Arm.Fn.decaps1024
     publicOutOk := Proof.MlKem.Arm.Fn.decaps1024_public }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlKem.Arm

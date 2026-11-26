@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.Keccak.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on AArch64 -/
-
-@[expose] public section
 
 -- ML-DSA (FIPS 204) key generation on AArch64
 namespace VG.Artifacts.MlDsa.AArch64.KeyGen
@@ -201,7 +205,7 @@ end VG.Artifacts.MlDsa.AArch64.VerifyMessageCached
 
 namespace VG.Artifacts.MlDsa.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   KeyGen.artifacts ++
   PkTr.artifacts ++
   [
@@ -227,5 +231,7 @@ def artifacts : List (Artifact AArch64.target) :=
   SignMessage.artifacts ++
   Verify.artifacts ++
   VerifyMessageCached.artifacts
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.AArch64

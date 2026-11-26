@@ -1,19 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Arm.Law
-public import VerifiedGarbage.Proof.Sm4Gcm.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Target
-
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+import VerifiedGarbage.Proof.Gcm.Arm.Law
+import VerifiedGarbage.Proof.Sm4Gcm.Arm.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Gcm.Arm.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
+
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on ARMv7 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Gcm.Arm
 
-def artifacts : List (Artifact Arm.target) := [
+public def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.Gcm.initApi.artifact Arm.target {
     code := Impl.Sm4Gcm.Arm.Fn.init
     verified := Proof.Sm4Gcm.Arm.Fn.init },
@@ -41,5 +42,7 @@ def artifacts : List (Artifact Arm.target) := [
   Spec.Sm4.Gcm.streamVerifyApi.artifact Arm.target {
     code := Impl.Sm4Gcm.Arm.Fn.streamVerify
     verified := Proof.Sm4Gcm.Arm.Fn.streamVerify }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Gcm.Arm

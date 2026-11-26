@@ -1,21 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4Gcm.X86.Scrub
-public import VerifiedGarbage.Proof.AesGcm.X86.Scrub
-public import VerifiedGarbage.Impl.Sm4Gcm.X86.Fn
-public import VerifiedGarbage.Impl.AesGcm.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
+import VerifiedGarbage.Proof.Sm4Gcm.X86.Scrub
+import VerifiedGarbage.Proof.AesGcm.X86.Scrub
+import VerifiedGarbage.Impl.Sm4Gcm.X86.Fn
+import VerifiedGarbage.Impl.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86.Lit
-public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
-public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-public import VerifiedGarbage.Proof.Variants.Ghash.X86
-public import VerifiedGarbage.Proof.Variants.Sm4Ctr32.X86
+import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Variants.Ghash.X86
+import VerifiedGarbage.Proof.Variants.Sm4Ctr32.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Sm4Gcm.X86
 
@@ -90,8 +91,10 @@ end VG.Artifacts.Sm4Gcm.X86.Ghash
 
 namespace VG.Artifacts.Sm4Gcm.X86
 
-def artifacts : List (Artifact X86.target) :=
+public def artifacts : List (Artifact X86.target) :=
   keyed ++
   (VG.Proof.Variants.Ghash.X86.variants.flatMap fun v => Ghash.artifacts v)
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Gcm.X86

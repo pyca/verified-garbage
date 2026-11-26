@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
+public import VerifiedGarbage.Spec.Rsa.RecoverDet
+import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # RSA (RFC 8017) on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Rsa.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Rsa.publicPrecomputeApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.Fn.publicPrecompute
     verified := Proof.Rsa.PPC64LE.Scrub.publicPrecompute_scrubbed },
@@ -26,5 +29,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Rsa.recoverPrimesDetApi.artifact PPC64LE.target {
     code := Impl.Rsa.PPC64LE.Fn.recoverPrimesDet
     verified := Proof.Rsa.PPC64LE.Scrub.recoverPrimesDet_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Rsa.PPC64LE

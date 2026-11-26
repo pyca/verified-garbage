@@ -1,18 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.Scrub
-public import VerifiedGarbage.Impl.Sm4.X86.Fn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sm4.X86.AesNiWideScrub
-public import VerifiedGarbage.Impl.Sm4.X86.AesNiWideFn
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Spec.Sm4.CtrFinal
+import VerifiedGarbage.Proof.Sm4.X86.Scrub
+import VerifiedGarbage.Impl.Sm4.X86.Fn
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86.AesNiWideScrub
+import VerifiedGarbage.Impl.Sm4.X86.AesNiWideFn
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
-public import VerifiedGarbage.Proof.Variants.Sm4Ctr.X86
+import VerifiedGarbage.Proof.Variants.Sm4Ctr.X86
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-CTR on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Sm4Ctr.X86
 
@@ -25,7 +27,7 @@ def finals : List (Artifact X86.target) :=
       verified := Proof.Sm4.X86.Scrub.ctrFinal_scrubbed c
       spSafe := Proof.Sm4.X86.Scrub.ctrFinal_spSafeF c }
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.ctrApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Sm4.X86.AesNiWide.Fn.ctr
@@ -33,5 +35,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.ctrApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ctr
     verified := Proof.Sm4.X86.Scrub.ctr_scrubbed }] ++ finals
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Ctr.X86

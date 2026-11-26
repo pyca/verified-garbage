@@ -1,20 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Spec.MlDsa.PkTr
+public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.X86.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # ML-DSA (FIPS 204) on x86 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.MlDsa.X86
 
 open VG
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.MlDsa.keyGen44Api.artifact X86.target {
     code := Impl.MlDsa.X86.Fn.keyGen Spec.MlDsa.mlDsa44
     verified := Proof.MlDsa.X86.Scrub.keyGen_scrubbed "mldsa44" "ML-DSA-44" Proof.MlDsa.X86.Scrub.inst44.params
@@ -159,5 +163,7 @@ def artifacts : List (Artifact X86.target) := [
     code := Impl.MlDsa.X86.Fn.preparedVerifyMessage Spec.MlDsa.mlDsa87 "mldsa87"
     verified := Proof.MlDsa.X86.Scrub.preparedVerifyMessage_scrubbed Proof.MlDsa.X86.Scrub.inst87 "ML-DSA-87"
     spSafe := Proof.MlDsa.X86.Scrub.preparedVerifyMessage_spSafe Proof.MlDsa.X86.Scrub.inst87 }]
+
+spec_apis artifacts
 
 end VG.Artifacts.MlDsa.X86

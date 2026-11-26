@@ -47,6 +47,14 @@ named code and a theorem about it and nothing else (`target_problems`):
     those records, `Artifact.mk`) or updated (`{ … with … }`), and nothing of
     `<T>.Scrub`, the target's cleanup framework.
 
+It keeps everything but its list private, so that the emitter, which reads the list's
+compiled code and the theorem on its `Api`s, loads no proof (`public_problems`):
+
+  * no `public section`, and the only thing it declares `public` is `def artifacts`;
+  * its last command but its namespace's `end` is `spec_apis artifacts`, which proves
+    which `Api`s the artifacts are of (`Proof/Framework/SpecApis.lean`);
+  * it imports no module of `Proof/` or `Impl/` publicly.
+
 That each artifact is of its directory's target, whatever `target` means
 there, and that it is printed with that target's printer, is not checked here:
 the emitter's driver states it, and Lean checks it (`Emit.driver`).
@@ -321,6 +329,32 @@ def target_problems(rel: str, target: str, code: str, line) -> list[str]:
     return out
 
 
+PUBLIC = re.compile(r"^(?:@\[expose\]\s*)?public\s+(?!import|meta import)(.*)", re.M)
+LIST = re.compile(r"def artifacts :")
+LAST = re.compile(r"\nspec_apis artifacts\s+end VG\.Artifacts\.[\w.]+\s*\Z")
+PUBLIC_IMPORT = re.compile(r"^public (?:meta )?import VerifiedGarbage\.(?:Proof|Impl)\..*", re.M)
+
+
+def public_problems(rel: str, code: str, line) -> list[str]:
+    """What the registration file of a target with `code` makes public, but its list."""
+    out = []
+    found = 0
+    for m in PUBLIC.finditer(code):
+        if LIST.match(m.group(1)):
+            found += 1
+        else:
+            out.append(f"lean/{rel}:{line(m.start())}: `public` in a registration file but on its "
+                       f"list, `def artifacts`, which the emitter would load the proofs for {SKILL}")
+    if found != 1:
+        out.append(f"lean/{rel}: no `public def artifacts : …`, its list {SKILL}")
+    if not LAST.search(code):
+        out.append(f"lean/{rel}: does not end with `spec_apis artifacts` and its namespace's `end` {SKILL}")
+    for m in PUBLIC_IMPORT.finditer(code):
+        out.append(f"lean/{rel}:{line(m.start())}: a public import of a proof or code, which the "
+                   f"emitter would load; import it privately {SKILL}")
+    return out
+
+
 def problems(lean: pathlib.Path) -> list[str]:
     """What is wrong under `lean` (the directory with `VerifiedGarbage/`), one
     line each."""
@@ -360,8 +394,20 @@ def problems(lean: pathlib.Path) -> list[str]:
     return out
 
 
+def private_problems(lean: pathlib.Path) -> list[str]:
+    """What the registration files of targets under `lean` make public but their lists
+    (`public_problems`), one line each."""
+    out = []
+    for f in sorted((lean / "VerifiedGarbage" / "Artifacts").rglob("*.lean")):
+        rel = f.relative_to(lean).as_posix()
+        if TARGET_FILE.fullmatch(rel.removeprefix("VerifiedGarbage/")):
+            code = code_only(f.read_text())
+            out += public_problems(rel, code, lambda i: code.count("\n", 0, i) + 1)
+    return out
+
+
 def main() -> int:
-    ps = problems(LEAN)
+    ps = problems(LEAN) + private_problems(LEAN)
     for p in ps:
         print(p)
     return 1 if ps else 0

@@ -1,19 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Invert
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Key
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Idea.Contract
+import VerifiedGarbage.Proof.Idea.PPC64LE.Invert
+import VerifiedGarbage.Proof.Idea.PPC64LE.Key
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # IDEA on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Idea.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Idea.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.expandKey
     verified := Proof.Idea.PPC64LE.Scrub.expandKey_scrubbed },
@@ -23,5 +24,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Idea.ecbApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.ecb
     verified := Proof.Idea.PPC64LE.Scrub.ecb_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Idea.PPC64LE

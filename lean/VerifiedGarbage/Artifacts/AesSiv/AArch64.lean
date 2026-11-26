@@ -1,20 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
-public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
+import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesSiv.AArch64
 
 open VG.Proof.AesSiv.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
     Spec.Siv.initApi.artifact AArch64.target {
       suffix := v.suffix
@@ -29,5 +30,7 @@ def artifacts : List (Artifact AArch64.target) :=
       suffix := v.suffix
       code := Impl.AesSiv.AArch64.Fn.decrypt v.callee v.ctr.callee v.ctr.suffix
       verified := Proof.AesSiv.AArch64.decrypt_scrubbed v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.AArch64

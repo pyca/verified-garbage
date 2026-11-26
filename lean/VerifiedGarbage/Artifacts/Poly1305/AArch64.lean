@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
+import VerifiedGarbage.Proof.Poly1305.AArch64.Scrub
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Poly1305.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
     verified := Proof.Poly1305.AArch64.Fn.init },
@@ -32,5 +32,7 @@ def artifacts : List (Artifact AArch64.target) := [
   Spec.Poly1305.finalizeApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.Fn.finalize
     verified := Proof.Poly1305.AArch64.Fn.finalize }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Poly1305.AArch64

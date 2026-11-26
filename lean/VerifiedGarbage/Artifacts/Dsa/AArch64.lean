@@ -1,21 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ParameterSearchInit
-public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Dsa.AArch64.Scrub
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
-public import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillVerified
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
-public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
-public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
+public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+public import VerifiedGarbage.Spec.Dsa.Prevalidated
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.AArch64.ParameterSearchInit
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Dsa.AArch64.Scrub
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
+import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillVerified
+import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
+import VerifiedGarbage.Proof.Framework.QualifiedName
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # DSA (FIPS 186-4) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.Dsa.AArch64
 
@@ -31,7 +35,7 @@ namespace VG.Artifacts.Dsa.AArch64
 
 open VG.Proof.Dsa.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   direct ++
   (VG.Proof.Variants.DsaArithmetic.AArch64.variants.flatMap fun (v : Backend) => [
     Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target {
@@ -65,5 +69,7 @@ def artifacts : List (Artifact AArch64.target) :=
       code := Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm
       verified := Proof.Dsa.AArch64.Scrub.parameterSearch p v
       publicOutOk := Proof.Dsa.AArch64.Scrub.parameterSearch_public p v })
+
+spec_apis artifacts
 
 end VG.Artifacts.Dsa.AArch64

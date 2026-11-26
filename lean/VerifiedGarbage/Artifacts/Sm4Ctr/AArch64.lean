@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
-public import VerifiedGarbage.Proof.Variants.Sm4Ctr.AArch64
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Spec.Sm4.CtrFinal
+import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
+import VerifiedGarbage.Proof.Variants.Sm4Ctr.AArch64
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-public import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
+import VerifiedGarbage.Proof.Sm4.AArch64.CtrScrub
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4-CTR on AArch64 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4Ctr.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Sm4.ctrApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.ctrSm4
@@ -26,5 +28,7 @@ def artifacts : List (Artifact AArch64.target) := [
       suffix := v.suffix
       code := Impl.Sm4.AArch64.Fn.ctrFinal v.clear v.name v.code
       verified := Proof.Sm4.AArch64.CtrScrub.ctrFinal v }
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4Ctr.AArch64

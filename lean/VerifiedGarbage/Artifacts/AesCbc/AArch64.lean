@@ -1,22 +1,23 @@
 module
 
-public import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Wiped
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Cbc.Contract
+import VerifiedGarbage.Impl.AesCbc.AArch64.Fn
+import VerifiedGarbage.Proof.AesCbc.AArch64.Wiped
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
-public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
-public import VerifiedGarbage.Proof.Variants.AesCbc.AArch64
+import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
+import VerifiedGarbage.Proof.Variants.AesCbc.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CBC (NIST SP 800-38A §6.2) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesCbc.AArch64
 
 open VG.Proof.AesCbc.AArch64
 
-def artifacts : List (Artifact AArch64.target) := [
+public def artifacts : List (Artifact AArch64.target) := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Impl.AesCbc.AArch64.Fn.decrypt
@@ -49,5 +50,7 @@ def artifacts : List (Artifact AArch64.target) := [
       code := Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec
       verified := Proof.AesCbc.AArch64.Wiped.decryptWiped_scrubbed v
       publicOutOk := Proof.AesCbc.AArch64.Wiped.decryptWiped_public v }])
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCbc.AArch64

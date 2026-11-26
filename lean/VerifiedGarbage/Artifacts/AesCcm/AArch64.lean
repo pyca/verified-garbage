@@ -1,19 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-CCM (NIST SP 800-38C) on AArch64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesCcm.AArch64
 
 open VG.Proof.AesCcm.AArch64
 
-def artifacts : List (Artifact AArch64.target) :=
+public def artifacts : List (Artifact AArch64.target) :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
     Spec.Ccm.sealApi.artifact AArch64.target {
       suffix := v.suffix
@@ -23,5 +24,7 @@ def artifacts : List (Artifact AArch64.target) :=
       suffix := v.suffix
       code := Impl.AesCcm.AArch64.Fn.open v.callee v.ctr.callee
       verified := Proof.AesCcm.AArch64.open_scrubbed v }]
+
+spec_apis artifacts
 
 end VG.Artifacts.AesCcm.AArch64

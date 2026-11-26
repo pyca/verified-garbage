@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86.Scrub
-public import VerifiedGarbage.Impl.Sm4.X86.Fn
-public import VerifiedGarbage.Proof.Sm4.X86.AesNiKey
-public import VerifiedGarbage.Impl.Sm4.X86.AesNiKey
-public import VerifiedGarbage.Proof.Sm4.X86.AesNiWideEcb
-public import VerifiedGarbage.Impl.Sm4.X86.AesNiWideEcb
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm4.Contract
+import VerifiedGarbage.Proof.Sm4.X86.Scrub
+import VerifiedGarbage.Impl.Sm4.X86.Fn
+import VerifiedGarbage.Proof.Sm4.X86.AesNiKey
+import VerifiedGarbage.Impl.Sm4.X86.AesNiKey
+import VerifiedGarbage.Proof.Sm4.X86.AesNiWideEcb
+import VerifiedGarbage.Impl.Sm4.X86.AesNiWideEcb
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiKeyLit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM4 on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm4.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.expandKeyApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Sm4.X86.AesNiKey.Fn.expandKey
@@ -40,5 +41,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Sm4.ecbDecryptApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ecbDecrypt
     verified := Proof.Sm4.X86.Scrub.ecbDecrypt_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm4.X86

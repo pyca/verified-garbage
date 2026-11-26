@@ -1,56 +1,57 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Impl.AesCcm.X86_64
-public import VerifiedGarbage.Impl.Gcm.X86_64
-public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
-public import VerifiedGarbage.Proof.AesCcm.Mac
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Init
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Open
-public import VerifiedGarbage.Proof.AesSiv.X86_64.XorBytes
-public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
-public import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
-public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Impl.AesCcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+import VerifiedGarbage.Proof.AesSiv.X86_64.Init
+import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+import VerifiedGarbage.Proof.AesSiv.X86_64.XorBytes
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
+import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # AES-SIV (RFC 5297) on x86-64 -/
-
-@[expose] public section
 
 namespace VG.Artifacts.AesSiv.X86_64
 
 open VG.Proof.AesSiv.X86_64
 
-def artifacts : List (Artifact X86_64.target) :=
+public def artifacts : List (Artifact X86_64.target) :=
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
     Spec.Siv.initApi.artifact X86_64.target
       (match v.free with
@@ -120,5 +121,7 @@ def artifacts : List (Artifact X86_64.target) :=
           code := Impl.AesSiv.X86_64.Fn.decrypt (v.level.join v.ctr.level) v.callee v.ctr.callee v.ctr.suffix
           verified := Proof.AesSiv.X86_64.decrypt_scrubbed v
           spSafe := Proof.AesSiv.X86_64.decrypt_spSafeFn v })])
+
+spec_apis artifacts
 
 end VG.Artifacts.AesSiv.X86_64

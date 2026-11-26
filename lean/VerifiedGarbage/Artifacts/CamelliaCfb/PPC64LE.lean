@@ -1,22 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Camellia.Cfb
+public import VerifiedGarbage.Spec.Camellia.CfbFinal
+import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
+import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
+import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalVerified
+import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Camellia.PPC64LE.Scrub
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # Camellia-CFB128 on PPC64LE -/
 
-@[expose] public section
-
 namespace VG.Artifacts.CamelliaCfb.PPC64LE
 
-def artifacts : List (Artifact PPC64LE.target) := [
+public def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbEnc
     verified := Proof.Camellia.PPC64LE.Scrub.cfbEnc_scrubbed },
@@ -29,5 +31,7 @@ def artifacts : List (Artifact PPC64LE.target) := [
   Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbDecFinal
     verified := Proof.Camellia.PPC64LE.Scrub.cfbDecFinal_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.CamelliaCfb.PPC64LE

@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Sm3.X86.Scrub
-public import VerifiedGarbage.Impl.Sm3.X86.Stream
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Spec.Sm3.Contract
+import VerifiedGarbage.Proof.Sm3.X86.Scrub
+import VerifiedGarbage.Impl.Sm3.X86.Stream
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sm3.X86.Lit
+import VerifiedGarbage.Proof.Framework.SpecApis
 
 /-! # SM3 (GB/T 32905-2016) on x86 -/
 
-@[expose] public section
-
 namespace VG.Artifacts.Sm3.X86
 
-def artifacts : List (Artifact X86.target) := [
+public def artifacts : List (Artifact X86.target) := [
   Spec.Sm3.initApi.artifact X86.target {
     code := Impl.Sm3.X86.Fn.init
     verified := Proof.Sm3.X86.Scrub.init_scrubbed },
@@ -22,5 +23,7 @@ def artifacts : List (Artifact X86.target) := [
   Spec.Sm3.finalizeApi.artifact X86.target {
     code := Impl.Sm3.X86.Fn.finalize
     verified := Proof.Sm3.X86.Scrub.finalize_scrubbed }]
+
+spec_apis artifacts
 
 end VG.Artifacts.Sm3.X86
