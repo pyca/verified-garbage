@@ -60,6 +60,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Camellia.ScrubLocal
 meta import VerifiedGarbage.Proof.Camellia.ScrubLocal
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
+public meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubSelAll
 
 /-!
 # Camellia on x86-64, without secret residue
@@ -277,6 +279,23 @@ abbrev ctrCode : Prog isa :=
 theorem expandKey_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .rcx 401 Impl.Camellia.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
   sp_safe
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_sels`), which analyses the code they share once. -/
+theorem residue :
+    SelResidue Spec.Camellia.expandKeyApi.sig 3216 [] [] expandKeyCode ∧
+    SelResidue Spec.Camellia.ecbEncryptApi.sig 3216 [] [(0, 1)] ecbEncryptCode ∧
+    SelResidue Spec.Camellia.ecbDecryptApi.sig 3216 [] [(0, 1)] ecbDecryptCode ∧
+    SelResidue Spec.Camellia.cbcEncryptChainedApi.sig 3288 [] [(0, 1)] cbcEncryptCode ∧
+    SelResidue Spec.Camellia.cbcDecryptChainedApi.sig 3288 [] [(0, 1)] cbcDecryptCode ∧
+    SelResidue Spec.Camellia.cfbEncryptApi.sig 3288 [] [(0, 1)] cfbEncryptCode ∧
+    SelResidue Spec.Camellia.cfbEncryptFinalApi.sig 3288 [] [(0, 1)] cfbEncryptFinalCode ∧
+    SelResidue Spec.Camellia.cfbDecryptApi.sig 3288 [] [(0, 1)] cfbDecryptCode ∧
+    SelResidue Spec.Camellia.cfbDecryptFinalApi.sig 3288 [] [(0, 1)] cfbDecryptFinalCode ∧
+    SelResidue Spec.Camellia.ofbApi.sig 3288 [] [(0, 1)] ofbCode ∧
+    SelResidue Spec.Camellia.ofbFinalApi.sig 3288 [] [(0, 1)] ofbFinalCode ∧
+    SelResidue Spec.Camellia.ctrApi.sig 3288 [] [(0, 1)] ctrCode := by
+  taint_decide_sels
+
 /-- `Spec.Camellia.expandKeyApi`'s function as emitted (`Impl.Camellia.X86_64.Fn.expandKey`) meets its contract in
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
@@ -286,7 +305,7 @@ theorem expandKey_scrubbed :
       stack := 3216
       verified := Proof.Camellia.X86_64.expandKey_framed
       spSafe := expandKey_codeSp }
-    .sse [] expandKeyOut (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [] expandKeyOut (RScrub.pubOk_nil _) residue.1.choose_spec
 
 theorem expandKey_spSafe : Impl.Camellia.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe expandKey_codeSp
@@ -303,7 +322,7 @@ theorem ecbEncrypt_scrubbed :
       stack := 3216
       verified := Proof.Camellia.X86_64.ecb_framed .encrypt
       spSafe := ecbEncrypt_codeSp }
-    .sse [(0, 1)] (ecbOut .encrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ecbOut .encrypt _) (RScrub.pubOk_nil _) residue.2.1.choose_spec
 
 theorem ecbEncrypt_spSafe : Impl.Camellia.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbEncrypt_codeSp
@@ -320,7 +339,7 @@ theorem ecbDecrypt_scrubbed :
       stack := 3216
       verified := Proof.Camellia.X86_64.ecb_framed .decrypt
       spSafe := ecbDecrypt_codeSp }
-    .sse [(0, 1)] (ecbOut .decrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ecbOut .decrypt _) (RScrub.pubOk_nil _) residue.2.2.1.choose_spec
 
 theorem ecbDecrypt_spSafe : Impl.Camellia.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ecbDecrypt_codeSp
@@ -337,7 +356,7 @@ theorem cbcEncrypt_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cbcEncryptChained_framed
       spSafe := cbcEncrypt_codeSp }
-    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.1.choose_spec
 
 theorem cbcEncrypt_spSafe : Impl.Camellia.X86_64.Fn.cbcEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcEncrypt_codeSp
@@ -354,7 +373,7 @@ theorem cbcDecrypt_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cbcDecryptChained_framed
       spSafe := cbcDecrypt_codeSp }
-    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.1.choose_spec
 
 theorem cbcDecrypt_spSafe : Impl.Camellia.X86_64.Fn.cbcDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cbcDecrypt_codeSp
@@ -371,7 +390,7 @@ theorem cfbEncrypt_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cfbEncrypt_framed
       spSafe := cfbEncrypt_codeSp }
-    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncrypt_spSafe : Impl.Camellia.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncrypt_codeSp
@@ -388,7 +407,7 @@ theorem cfbEncryptFinal_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cfbEncryptFinal_framed
       spSafe := cfbEncryptFinal_codeSp }
-    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbEncryptFinal_spSafe : Impl.Camellia.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbEncryptFinal_codeSp
@@ -405,7 +424,7 @@ theorem cfbDecrypt_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cfbDecrypt_framed
       spSafe := cfbDecrypt_codeSp }
-    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecrypt_spSafe : Impl.Camellia.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecrypt_codeSp
@@ -422,7 +441,7 @@ theorem cfbDecryptFinal_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.cfbDecryptFinal_framed
       spSafe := cfbDecryptFinal_codeSp }
-    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem cfbDecryptFinal_spSafe : Impl.Camellia.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe cfbDecryptFinal_codeSp
@@ -439,7 +458,7 @@ theorem ofb_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.ofb_framed
       spSafe := ofb_codeSp }
-    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem ofb_spSafe : Impl.Camellia.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofb_codeSp
@@ -456,7 +475,7 @@ theorem ofbFinal_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.ofbFinal_framed
       spSafe := ofbFinal_codeSp }
-    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.2.1.choose_spec
 
 theorem ofbFinal_spSafe : Impl.Camellia.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ofbFinal_codeSp
@@ -473,7 +492,7 @@ theorem ctr_scrubbed :
       stack := 3288
       verified := Proof.Camellia.X86_64.ctr_framed
       spSafe := ctr_codeSp }
-    .sse [(0, 1)] (ctrOut _) (RScrub.pubOk_nil _) (by taint_decide)
+    .sse [(0, 1)] (ctrOut _) (RScrub.pubOk_nil _) residue.2.2.2.2.2.2.2.2.2.2.2.choose_spec
 
 theorem ctr_spSafe : Impl.Camellia.X86_64.Fn.ctr.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe ctr_codeSp
