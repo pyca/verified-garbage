@@ -1303,7 +1303,7 @@ theorem stageH_ok (hL : L.Ok) (hT : TabL P L) {u₁ : State} (hc₁ : Ctx L g m�
       show Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 (76 + (cfgOf P).fHo)) P.Q = _
       rw [show (cfgOf P).fHo = fH by simp only [Cfg.fHo, show (cfgOf P).big = false from hb, Bool.false_eq_true,
         ite_false], show 76 + fH = hB from rfl]
-      conv_lhs => rw [← toBytes_ofBytes (Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 hB) P.Q)]
+      conv => lhs; rw [← toBytes_ofBytes (Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 hB) P.Q)]
       rw [length_bytesAt, hh₂, hX, hSpec, Spec.Ecdsa.Rfc6979.bits2octets,
         Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlen_eq]
     · unfold DgOk

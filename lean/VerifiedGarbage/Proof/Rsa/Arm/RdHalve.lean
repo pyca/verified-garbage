@@ -150,7 +150,7 @@ theorem ctzBit_ok {j x i k : Nat} {σ s : State} {A AW V : Nat → Nat} {L LW LS
   obtain ⟨h5, hv5⟩ := h4.reg hv4 (u5.rest (ws := [.r6]) (by simp)) u5.mem
   refine wp_subs (op2_imm (by decide)) fun t ut zt => WP.block_nil ?_
   obtain ⟨ht, hvt⟩ := h5.reg hv5 (ut.rest (ws := [.r12]) (by simp)) ut.mem
-  set p := 32 * i + k with hp
+  generalize hp : 32 * i + k = p at p4 p5 p6
   have ms : x % 2 ^ (p + 1) = x % 2 ^ p + 2 ^ p * (x / 2 ^ p % 2) := Nat.mod_pow_succ
   obtain pp := Nat.two_pow_pos p
   obtain bl : x / 2 ^ p % 2 < 2 := Nat.mod_lt _ (by decide)
@@ -190,12 +190,12 @@ theorem ctzBit_ok {j x i k : Nat} {σ s : State} {A AW V : Nat → Nat} {L LW LS
       Nat.mod_eq_of_lt (a := x / 2 ^ p % 2 ^ (32 - k)) (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
         (Nat.pow_le_pow_right (by decide) (by omega_using []))),
       show 32 - k = (32 - (k + 1)) + 1 by omega_using [hk], Nat.pow_succ, Nat.mul_comm _ 2, Nat.mod_mul_right_div_self,
-      Nat.div_div_eq_div_mul, ← Nat.pow_succ, show 32 * i + (k + 1) = p + 1 by omega_using []]
+      Nat.div_div_eq_div_mul, ← Nat.pow_succ, show 32 * i + (k + 1) = p + 1 by omega_using [hp]]
     exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
       (Nat.pow_le_pow_right (by decide) (by omega_using [])))).symm
   · rw [ut.other _ (by decide), u5.other _ (by decide), u4.gpr, dpVal, u3.other _ (by decide),
       u2.other _ (by decide), u1.other _ (by decide), p4, r1v', ← BitVec.ofNat_add,
-      show 32 * i + (k + 1) = p + 1 by omega_using []]
+      show 32 * i + (k + 1) = p + 1 by omega_using [hp]]
     congr 1
     simp only [tzc]
     by_cases a : x % 2 ^ (p + 1) = 0
@@ -203,7 +203,7 @@ theorem ctzBit_ok {j x i k : Nat} {σ s : State} {A AW V : Nat → Nat} {L LW LS
       simp only [a, ↓reduceIte, tzc_zero a', Nat.sub_zero]
     · simp only [a, ↓reduceIte, Nat.sub_self, Nat.add_zero]
   · rw [ut.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), r5v,
-      show 32 * i + (k + 1) = p + 1 by omega_using []]
+      show 32 * i + (k + 1) = p + 1 by omega_using [hp]]
   · rw [zt, u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
       u1.other _ (by decide), p12, (cnt_sub (by omega_using [hk]) (by omega_using [])).1, (cnt_sub (by omega_using [hk]) (by omega_using [])).2]
     congr 1

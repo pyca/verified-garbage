@@ -1137,7 +1137,7 @@ theorem checkRoot_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
   · rw [flag₅, mask₄]
     change s₄.mem.readW (off base (c.sl FLAG)) 32 &&& _ = _
     rw [m₄, m₃, ← flagW, flag₂]
-    simp only [not_not]
+    simp only [Classical.not_not]
     exact mask32_and _ _
 
 end VG.Proof.EcKey.Compressed.X86

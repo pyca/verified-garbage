@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TaintSum

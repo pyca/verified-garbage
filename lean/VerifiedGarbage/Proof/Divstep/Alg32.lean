@@ -1,5 +1,6 @@
 module
 
+public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 import VerifiedGarbage.Proof.Divstep.Batch
 import Mathlib.Algebra.Order.Ring.Abs

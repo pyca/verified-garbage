@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.AArch64.MemEffect
+public import VerifiedGarbage.Proof.Framework.KernelList
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -405,61 +406,786 @@ theorem stepG_sound {W : Nat} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : 
       rw [sp₂]
       exact ptrStep_sound hp hsp rfl hD.2.1 hD.2.2.1 e₁ e₂
 
-/-! ## The step with its cases closed
+/-! ## The step the kernel evaluates
 
-As `RTaintCT.stepK`: `stepGK` is `stepG` (`stepGK_eq`) as one `casesOn` of the
-instruction whose minor premises are closed (`inline_match%`), made from
-`stepGC`, which is `stepG` with `RTaintCT.clobbersI` for `clobbers`. An
-instruction that stores nothing then hands on the mask as the term it was. -/
+`stepGK` is `stepG` (`stepGK_eq`) written for the kernel (see "An analysis the
+kernel finds again" in the `proof-performance` skill):
 
-/-- `ptrStep`, with `RTaintCT.clobbersI`. -/
-def ptrStepC (W d : Nat) (ptrs : List (Reg × Nat)) (i : Instr) : List (Reg × Nat) :=
-  let kept := ptrs.filter (fun e => !RTaintCT.clobbersI e.1 i)
-  match i with
-  | .addSp dd imm => (dd, W - d + imm) :: kept
-  | .addImm .x dd n k =>
-    match offOf W d ptrs (.reg n) with
-    | some o => (dd, o + k) :: kept
-    | none => kept
-  | .subImm .x dd n k =>
-    match offOf W d ptrs (.reg n) with
-    | some o => if k ≤ o then (dd, o - k) :: kept else kept
-    | none => kept
-  | _ => kept
+* it takes the taint apart once (`stepGK`'s match), and matches on the
+  instruction once, with the cases of the match closed (`stepGFnK`,
+  `inline_match%`);
+* the taint it gives is evaluated: what an instruction changes is forced
+  before the taint is built of it (`RegSet.force`, `forceN`, `forceB`,
+  `forceL`), and what it does not change is handed on as it was: the widths
+  and the pointers, if none is of the register it writes (`keepL`, `keepO`),
+  and the mask, if the bytes a store writes are in it, or are not, already
+  (`maskK`). So the kernel finds again a step it has made of the same
+  instruction from the same taint. -/
 
-theorem ptrStepC_eq (W d : Nat) (ptrs : List (Reg × Nat)) (i : Instr) :
-    ptrStepC W d ptrs i = ptrStep W d ptrs i := by
-  have h : (fun e : Reg × Nat => !RTaintCT.clobbersI e.1 i) = fun e => !clobbers i e.1 :=
-    funext fun e => by rw [RTaintCT.clobbersI_eq]
-  unfold ptrStepC ptrStep
-  rw [h]
+section
+open VG.KList (all filter find?)
 
-/-- `stepG`, with `RTaintB.stepC` and `ptrStepC`. -/
-def stepGC (W : Nat) (τ : T) (i : Instr) : Option T :=
-  (RTaintB.stepC τ.1 i).map fun τb => (τb, τ.2.map fun (d, P, ptrs) =>
-    (d, storesP W d ptrs τ.1 P (stores i), ptrStepC W d ptrs i))
+/-- `k n`, with `n` evaluated: what `k` is given is a numeral (see `RegSet.force`). -/
+def forceN {α : Type} (n : Nat) (k : Nat → α) : α :=
+  Nat.casesOn (motive := fun _ => α) (Nat.succ n) (k n) (fun m => k m)
 
-theorem stepGC_eq (W : Nat) (τ : T) (i : Instr) : stepGC W τ i = stepG W τ i := by
-  simp only [stepGC, stepG, RTaintB.stepC_eq, ptrStepC_eq]
+theorem forceN_eq {α : Type} (n : Nat) (k : Nat → α) : forceN n k = k n := rfl
 
-/-- `stepGC`, as a function of the instruction first. -/
-def stepGFn (i : Instr) : Nat → T → Option T := fun W τ => stepGC W τ i
+/-- `k b`, with `b` evaluated. -/
+def forceB {α : Type} (b : Bool) (k : Bool → α) : α :=
+  Bool.casesOn (motive := fun _ => α) b (k false) (k true)
+
+theorem forceB_eq {α : Type} (b : Bool) (k : Bool → α) : forceB b k = k b := by cases b <;> rfl
+
+def forceLC {α : Type} (l : List (Reg × Nat)) (k : List (Reg × Nat) → α) : α := k l
+
+/-- `k l`, with the list `l` evaluated to its cells and numerals. -/
+@[implemented_by forceLC] def forceL {α : Type} (l : List (Reg × Nat)) (k : List (Reg × Nat) → α) : α :=
+  List.rec (motive := fun _ => (List (Reg × Nat) → α) → α) (fun k => k [])
+    (fun e _ ih k => Prod.casesOn (motive := fun _ => α) e fun r n => forceN n fun n => ih fun l => k ((r, n) :: l)) l k
+
+theorem forceL_eq {α : Type} : ∀ (l : List (Reg × Nat)) (k : List (Reg × Nat) → α), forceL l k = k l
+  | [], _ => rfl
+  | (_, _) :: l, _ => forceL_eq l _
+
+/-- `a == b`, by the registers' indices. -/
+def regEq (a b : Reg) : Bool := Nat.beq a.ctorIdx b.ctorIdx
+
+theorem regEq_eq (a b : Reg) : regEq a b = (a == b) := by
+  rw [regEq, KList.beq_eq, Bool.eq_iff_iff, beq_iff_eq, beq_iff_eq]
+  exact ⟨fun h => RegIdx.idx_inj h, fun h => h ▸ rfl⟩
+
+/-- The registers of a list's entries. The kernel computes it once for a list,
+and for a list with one more entry from that of the list without it. -/
+def regsC (l : List (Reg × Nat)) : RegSet Reg := l.foldr (fun e s => s.insert e.1) .empty
+
+@[implemented_by regsC] def regsOf (l : List (Reg × Nat)) : RegSet Reg :=
+  List.rec (motive := fun _ => RegSet Reg) .empty (fun e _ ih => ih.insert e.1) l
+
+theorem mem_regsOf {l : List (Reg × Nat)} {r : Reg} : (regsOf l).mem r = l.any fun e => r == e.1 := by
+  induction l with
+  | nil => exact Bool.eq_false_iff.mpr (RegSet.not_mem_empty r)
+  | cons e l ih =>
+    rw [List.any_cons, ← ih, Bool.eq_iff_iff, Bool.or_eq_true, beq_iff_eq]
+    exact RegSet.mem_insert
+
+theorem filter_of_regsOf {l : List (Reg × Nat)} {d : Reg} (h : (regsOf l).mem d = false) :
+    (l.filter fun e => !(d == e.1)) = l := by
+  rw [mem_regsOf, List.any_eq_false] at h
+  exact List.filter_eq_self.mpr fun e he => by rw [Bool.not_eq_true', Bool.eq_false_iff]; exact h e he
+
+/-- The entry of `r`. -/
+def getK (l : List (Reg × Nat)) (r : Reg) : Option Nat :=
+  bif (regsOf l).mem r then (find? (fun e => regEq e.1 r) l).map (·.2) else none
+
+theorem getK_eq (l : List (Reg × Nat)) (r : Reg) : getK l r = (l.find? (·.1 == r)).map (·.2) := by
+  simp only [getK, KList.find?_eq, regEq_eq]
+  cases h : (regsOf l).mem r
+  · rw [mem_regsOf, List.any_eq_false] at h
+    rw [Bool.cond_false, List.find?_eq_none.mpr fun e he => by
+      have := h e he; rw [Bool.beq_comm]; exact this]
+    rfl
+  · rfl
+
+/-- `k` of the entries of `l` but those of `d`, evaluated: `l` as it is, if it has none. -/
+def keepL {α : Type} (l : List (Reg × Nat)) (d : Reg) (k : List (Reg × Nat) → α) : α :=
+  bif (regsOf l).mem d then forceL (filter (fun e => !regEq d e.1) l) k else k l
+
+theorem keepL_eq {α : Type} (l : List (Reg × Nat)) (d : Reg) (k : List (Reg × Nat) → α) :
+    keepL l d k = k (l.filter fun e => !(d == e.1)) := by
+  simp only [keepL, KList.filter_eq, forceL_eq, regEq_eq]
+  cases h : (regsOf l).mem d
+  · rw [Bool.cond_false, filter_of_regsOf h]
+  · rfl
+
+/-- The depth in the window, the mask and the pointers, unless forgotten. -/
+abbrev Win := Option (Nat × Nat × List (Reg × Nat))
+
+/-- `k` of `o` without the pointers of `d`. -/
+def keepO {α : Type} (o : Win) (d : Reg) (k : Win → α) : α :=
+  match o with
+  | none => k none
+  | some (d₀, P, p) =>
+    bif (regsOf p).mem d then forceL (filter (fun e => !regEq d e.1) p) fun p => k (some (d₀, P, p)) else k o
+
+/-- `o` with the pointers of `d` dropped. -/
+def dropO (o : Win) (d : Reg) : Win :=
+  o.map fun (d₀, P, p) => (d₀, P, p.filter fun e => !(d == e.1))
+
+theorem keepO_eq {α : Type} (o : Win) (d : Reg) (k : Win → α) : keepO o d k = k (dropO o d) := by
+  obtain _ | ⟨d₀, P, p⟩ := o
+  · rfl
+  simp only [keepO, KList.filter_eq, forceL_eq, regEq_eq, dropO, Option.map_some]
+  cases h : (regsOf p).mem d
+  · rw [Bool.cond_false, filter_of_regsOf h]
+  · rfl
+
+/-- `k` of `o` with the pointer `(dd, off)` in place of those of `dd`: `off`
+is given the window's depth and pointers. -/
+def ptrO {α : Type} (o : Win) (dd : Reg) (off : Nat → List (Reg × Nat) → Option Nat) (k : Win → α) : α :=
+  match o with
+  | none => k none
+  | some (d₀, P, p) =>
+    match off d₀ p with
+    | none => keepO o dd k
+    | some a => forceN a fun a => keepL p dd fun p => k (some (d₀, P, (dd, a) :: p))
+
+/-- `k` of the mask after a store of `n` bytes at offset `a`: `P` as it is if
+the store does not change it. -/
+def maskK {α : Type} (W a n P : Nat) (pub : Bool) (k : Nat → α) : α :=
+  bif Nat.ble (Nat.add a n) W then
+    bif pub then
+      bif Nat.beq (Nat.land (Nat.shiftRight P a) (ones n)) (ones n) then k P else k (bset P a n)
+    else
+      bif Nat.beq (Nat.land (Nat.shiftRight P a) (ones n)) 0 then k P else k (bclr P a n)
+  else bif pub then k P else k 0
+
+/-- `k` of `o` after a store through `b`. -/
+def stK {α : Type} (W : Nat) (o : Win) (b : Reg) (off n : Nat) (pub : Bool) (k : Win → α) : α :=
+  match o with
+  | none => k none
+  | some (d₀, P, p) =>
+    match getK p b with
+    | some a => forceN (Nat.add a off) fun a => maskK W a n P pub fun P => k (some (d₀, P, p))
+    | none => bif pub then k o else k (some (d₀, 0, p))
+
+/-- `k` of `o` after a store through the stack pointer. -/
+def stSpK {α : Type} (W : Nat) (o : Win) (off n : Nat) (pub : Bool) (k : Win → α) : α :=
+  match o with
+  | none => k none
+  | some (d₀, P, p) =>
+    forceN (Nat.add (Nat.sub W d₀) off) fun a => maskK W a n P pub fun P => k (some (d₀, P, p))
+
+/-- What an instruction does to a taint, given the window's bytes and the taint's parts. -/
+abbrev Fn := Nat → RegSet Reg → RegSet VReg → Bool → Nat → RegSet VReg → RegSet VReg → List (Reg × Nat) → Win → Option T
+
+/-- Whether what an instruction writes is public. -/
+abbrev PubF := RegSet Reg → RegSet VReg → Bool
+
+def p0 (b : Bool) : PubF := fun _ _ => b
+def p1 (n : Reg) : PubF := fun g _ => g.mem n
+def p2 (n m : Reg) : PubF := fun g _ => g.mem n && g.mem m
+def p3 (n m a : Reg) : PubF := fun g _ => g.mem n && g.mem m && g.mem a
+def pv (n : VReg) : PubF := fun _ v => v.mem n
+def pv2 (n m : VReg) : PubF := fun _ v => v.mem n && v.mem m
+
+/-- The taint after a write of `d`, public if `p`, with `hk` the bits of the
+result that may be secret if `d` is `x0`. -/
+def setR (d : Reg) (p : Bool) (hk : Nat) (g : RegSet Reg) (v : RegSet VReg) (f : Bool) (h : Nat)
+    (lo hi : RegSet VReg) (w : List (Reg × Nat)) (o : Win) : Option T :=
+  (bif p then g.insert d else g.erase d).force fun g =>
+    forceN (bif g.mem .x0 then 0 else bif regEq d .x0 then hk else h) fun h =>
+      some ((((((g, v), f, h), lo, hi)), w), o)
+
+/-- A write of `d` and nothing else. -/
+def wr (d : Reg) (p : PubF) (hk : Nat) : Fn := fun _ g v f h lo hi w o =>
+  keepL w d fun w => keepO o d fun o => setR d (p g v) hk g v f h lo hi w o
+
+/-- A write of `d` and of the flags, both public if `p`. -/
+def wrF (d : Reg) (p : PubF) : Fn := fun _ g v _ h lo hi w o =>
+  forceB (p g v) fun f => keepL w d fun w => keepO o d fun o => setR d f 64 g v f h lo hi w o
+
+/-- A write of `d` and of the flags, both secret. -/
+def wrS (d : Reg) : Fn := fun W g v _ h lo hi w o => wr d (p0 false) 64 W g v false h lo hi w o
+
+/-- A write of `d` of a value less than `2 ^ n`. -/
+def wrW (d : Reg) (p : PubF) (n : List (Reg × Nat) → Nat) : Fn := fun _ g v f h lo hi w o =>
+  forceN (n w) fun n => keepL w d fun w => keepO o d fun o => setR d (p g v) 64 g v f h lo hi ((d, n) :: w) o
+
+/-- A write of `d` of a pointer into the window. -/
+def wrP (d : Reg) (p : PubF) (off : Nat → Nat → List (Reg × Nat) → Option Nat) : Fn := fun W g v f h lo hi w o =>
+  keepL w d fun w => ptrO o d (off W) fun o => setR d (p g v) 64 g v f h lo hi w o
+
+/-- A load into `d`, through the base `n`. -/
+def ld (n d : Reg) : Fn := fun W g v f h lo hi w o =>
+  wr d (p0 false) 64 W (g.insert n) v f h lo hi w o
+
+/-- A load into `d` and `e`, through the base `n`. -/
+def ld2 (n d e : Reg) : Fn := fun _ g v f h lo hi w o =>
+  keepL w d fun w => keepL w e fun w => keepO o d fun o => keepO o e fun o =>
+    (((g.insert n).erase d).erase e).force fun g =>
+      forceN (bif g.mem .x0 then 0 else bif regEq d .x0 || regEq e .x0 then 64 else h) fun h =>
+        some ((((((g, v), f, h), lo, hi)), w), o)
+
+/-- The taint after an instruction that writes no general-purpose register. -/
+def same : Fn := fun _ g v f h lo hi w o =>
+  forceN (bif g.mem .x0 then 0 else h) fun h => some ((((((g, v), f, h), lo, hi)), w), o)
+
+/-- `same`, with the flags public if `p`. -/
+def sameF (p : PubF) : Fn := fun W g v _ h lo hi w o => forceB (p g v) fun f => same W g v f h lo hi w o
+
+/-- A store of `k` bytes, public if `p`, through the base `n`. -/
+def st (n : Reg) (off k : Nat) (p : PubF) : Fn := fun W g v f h lo hi w o =>
+  stK W o n off k (p g v) fun o => (g.insert n).force fun g => same W g v f h lo hi w o
+
+/-- A store of 16 bytes, the first 8 public if `p` and the others if `q`, through the base `n`. -/
+def st2 (n : Reg) (off : Nat) (p q : PubF) : Fn := fun W g v f h lo hi w o =>
+  stK W o n off 8 (p g v) fun o => stK W o n (Nat.add off 8) 8 (q g v) fun o =>
+    (g.insert n).force fun g => same W g v f h lo hi w o
+
+/-- A store of 8 bytes, public if `p`, through the stack pointer. -/
+def stSp (off : Nat) (p : PubF) : Fn := fun W g v f h lo hi w o =>
+  stSpK W o off 8 (p g v) fun o => same W g v f h lo hi w o
+
+/-- The taint after a write of the vector register `d`, public if `p`. -/
+def wv (d : VReg) (p : PubF) : Fn := fun W g v f h lo hi w o =>
+  (bif p g v then v.insert d else v.erase d).force fun v => (lo.erase d).force fun lo => (hi.erase d).force fun hi =>
+    same W g v f h lo hi w o
+
+/-- A load into the vector register `d`, through the base `n`. -/
+def ldv (n : Reg) (d : VReg) : Fn := fun W g v f h lo hi w o =>
+  (g.insert n).force fun g => wv d (p0 false) W g v f h lo hi w o
+
+/-- The taint after a write of half `k` of the vector register `d`, public if `n` is. -/
+def wl (d : VReg) (k : Bool) (n : Reg) : Fn := fun W g v f h lo hi w o =>
+  (bif v.mem d then lo.insert d else lo).force fun lo => (bif v.mem d then hi.insert d else hi).force fun hi =>
+    (v.erase d).force fun v =>
+      bif k then (bif g.mem n then hi.insert d else hi.erase d).force fun hi => same W g v f h lo hi w o
+      else (bif g.mem n then lo.insert d else lo.erase d).force fun lo => same W g v f h lo hi w o
+
+/-- `bitsOf`. -/
+def bitsK (n : Nat) : Nat := bif Nat.ble 2 n then bif Nat.ble 256 n then 16 else 8 else 1
+
+/-- `wget`. -/
+def wgetK (w : List (Reg × Nat)) (r : Reg) : Nat := (getK w r).getD 64
+
+/-- The smaller. -/
+def minK (a b : Nat) : Nat := bif Nat.ble a b then a else b
+
+/-- The bits of the result that may be secret after a write of size `sz`. -/
+def hkS : Size → Nat
+  | .w => 32
+  | .x => 64
+
+/-- `lsr`, by its size. -/
+def lsrK (d n : Reg) (sh : Nat) : Size → Fn
+  | .w => wr d (p1 n) 32
+  | .x => wr d (p1 n) (Nat.sub 64 sh)
+
+/-- `add` of an immediate, by its size. -/
+def addK (d n : Reg) (k : Nat) : Size → Fn
+  | .w => wr d (p1 n) 32
+  | .x => wrP d (p1 n) fun _ _ p => (getK p n).map fun a => Nat.add a k
+
+/-- `sub` of an immediate, by its size. -/
+def subK (d n : Reg) (k : Nat) : Size → Fn
+  | .w => wr d (p1 n) 32
+  | .x => wrP d (p1 n) fun _ _ p => (getK p n).bind fun a => bif Nat.ble k a then some (Nat.sub a k) else none
+
+/-- `movz`, by its size. -/
+def movzK (d : Reg) (imm : BitVec 16) (hw : Nat) : Size → Fn
+  | .w => wr d (p0 true) 32
+  | .x => bif Nat.beq hw 0 then wrW d (p0 true) fun _ => bitsK imm.toNat else wr d (p0 true) 64
+
+/-- The logical operations, by their size. -/
+def logicK (op : LogicOp) (d n m : Reg) : Size → Fn
+  | .w => wr d (p2 n m) 32
+  | .x => match op with
+    | .and => wrW d (p2 n m) fun w => minK (wgetK w n) (wgetK w m)
+    | _ => wr d (p2 n m) 64
+
+/-- `ins`, by its arrangement. -/
+def insK (d : VReg) (k : Nat) (n : Reg) : VArr → Fn
+  | .d2 => wl d (Nat.beq k 1) n
+  | _ => wv d (p0 false)
+
+/-- The vector operations. -/
+def vopFn : VOp → Fn
+  | .movi0 d => wv d (p0 true)
+  | .mov d n => wv d (pv n)
+  | .dup _ d n => wv d (p1 n)
+  | .add _ d n m | .sub _ d n m => wv d (pv2 n m)
+  | .ins a d k n => insK d k n a
+  | op => wv op.dst (p0 false)
+
+/-- `vopFn`, with its cases closed (`inline_match%`). -/
+def vopFnK : VOp → Fn := inline_match% vopFn VOp.dst
+
+theorem vopFnK_eq (op : VOp) : vopFnK op = vopFn op := by cases op <;> rfl
+
+/-- `stepG`, as a function of the instruction first, of the parts of the taint. -/
+def stepGFn : Instr → Fn
+  | .add sz d n m | .sub sz d n m => wr d (p2 n m) (hkS sz)
+  | .adds _ d n m | .subs _ d n m => wrF d (p2 n m)
+  | .logic op sz d n m => logicK op d n m sz
+  | .logicRor _ _ d n m _ | .bicRor _ d n m _ | .extr _ d n m _ | .mul _ d n m | .umulh d n m | .umull d n m =>
+    wr d (p2 n m) 64
+  | .adcs _ d _ _ | .sbcs _ d _ _ => wrS d
+  | .adc _ d _ _ | .sbc _ d _ _ | .csel _ d _ _ | .cselc _ d _ _ _ | .csneg _ d _ _ _ | .adrSym d _ | .mrsDit d
+  | .ldrSp d _ => wr d (p0 false) 64
+  | .tst _ n m => sameF (p2 n m)
+  | .ccmp .. => sameF (p0 false)
+  | .madd _ d n m a | .umaddl d n m a => wr d (p3 n m a) 64
+  | .addImm sz d n k => addK d n k sz
+  | .subImm sz d n k => subK d n k sz
+  | .lsr sz d n sh => lsrK d n sh sz
+  | .ror _ d n _ | .lsl _ d n _ | .rev32 d n | .rev d n | .clz _ d n | .rbit _ d n => wr d (p1 n) 64
+  | .addSp d imm => wrP d (p0 true) fun W d₀ _ => some (Nat.add (Nat.sub W d₀) imm)
+  | .movz sz d imm hw => movzK d imm hw sz
+  | .ldrTbl _ d .. => wr d (p0 true) 64
+  | .movk _ d _ _ => wr d (p1 d) 64
+  | .ldr _ t n _ | .ldrb t n _ => ld n t
+  | .ldp t1 t2 n _ => ld2 n t1 t2
+  | .str sz t n off => st n off sz.bytes (p1 t)
+  | .strb t n off => st n off 1 (p1 t)
+  | .stp t1 t2 n off => st2 n off (p1 t1) (p1 t2)
+  | .strq t n off => st n off 16 (pv t)
+  | .strSp t off => stSp off (p1 t)
+  | .ldrq t n _ => ldv n t
+  | .ldrqTbl t .. => wv t (p0 true)
+  | .umov _ d n _ => wr d (pv n) 64
+  | .vop op => vopFnK op
+  | .align _ | .msrDitImm _ | .barrier _ => same
+  | .blr _ | .push .. | .pop .. | .alloc _ | .free _ => fun _ _ _ _ _ _ _ _ _ => none
 
 /-- `stepGFn`, with its cases closed (`inline_match%`). -/
-def stepGFnK : Instr → Nat → T → Option T :=
-  inline_match% stepGFn stepGC ptrStepC stores storesP RTaintB.stepC RTaintB.wstepC RTaintCT.stepC
-    RTaintCT.stepLC RTaintCT.stepRC RTaintCT.hstepC RTaintCT.clobbersI dstOf RTaintCT.pubBase
-    RTaintCT.base RTaintL.lstep RTaintL.insD2 RTaint.vstep RTaint.vopStep RTaint.fstep
-    RTaint.setsFlags vdstOf VectorTaint.step Taint.step Taint.stepFn
+def stepGFnK : Instr → Fn := inline_match% stepGFn
 
 theorem stepGFnK_eq (i : Instr) : stepGFnK i = stepGFn i := by cases i <;> rfl
 
-/-- `stepG`, with its cases closed. -/
-def stepGK (W : Nat) (τ : T) (i : Instr) : Option T := stepGFnK i W τ
+/-! ### The step is `stepG` -/
+
+theorem ones_pos_land {P a n : Nat} (h : Nat.land (Nat.shiftRight P a) (ones n) = ones n) : bset P a n = P := by
+  apply Nat.eq_of_testBit_eq
+  intro k
+  rw [testBit_bset]
+  cases hk : decide (a ≤ k) && decide (k < a + n)
+  · rw [Bool.or_false]
+  · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
+    have hb := congrArg (fun x => x.testBit (k - a)) h
+    simp only [show Nat.land (Nat.shiftRight P a) (ones n) = (P >>> a) &&& ones n from rfl, Nat.testBit_and,
+      Nat.testBit_shiftRight, testBit_ones, show k - a < n by omega, decide_true, Bool.and_true,
+      show a + (k - a) = k by omega] at hb
+    rw [hb, Bool.or_true]
+
+theorem zero_land {P a n : Nat} (h : Nat.land (Nat.shiftRight P a) (ones n) = 0) : bclr P a n = P := by
+  apply Nat.eq_of_testBit_eq
+  intro k
+  rw [testBit_bclr]
+  cases hk : decide (a ≤ k) && decide (k < a + n)
+  · rw [Bool.not_false, Bool.and_true]
+  · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
+    have hb := congrArg (fun x => x.testBit (k - a)) h
+    simp only [show Nat.land (Nat.shiftRight P a) (ones n) = (P >>> a) &&& ones n from rfl, Nat.testBit_and,
+      Nat.testBit_shiftRight, testBit_ones, show k - a < n by omega, decide_true, Bool.and_true,
+      show a + (k - a) = k by omega, Nat.zero_testBit] at hb
+    rw [hb, Bool.false_and]
+
+theorem maskK_eq {α : Type} (W a n P : Nat) (pub : Bool) (k : Nat → α) :
+    maskK W a n P pub k = k (if a + n ≤ W then (if pub then bset P a n else bclr P a n) else (if pub then P else 0)) := by
+  simp only [maskK, KList.ble_eq, show Nat.add a n = a + n from rfl]
+  by_cases hW : a + n ≤ W <;> cases pub <;>
+    simp only [hW, decide_true, decide_false, Bool.cond_true, Bool.cond_false, ↓reduceIte, Bool.false_eq_true]
+  · cases hb : Nat.beq (Nat.land (Nat.shiftRight P a) (ones n)) 0
+    · rfl
+    · rw [zero_land (Nat.eq_of_beq_eq_true hb)]; rfl
+  · cases hb : Nat.beq (Nat.land (Nat.shiftRight P a) (ones n)) (ones n)
+    · rfl
+    · rw [ones_pos_land (Nat.eq_of_beq_eq_true hb)]; rfl
+
+/-- The window after a store. -/
+def stO (W : Nat) (o : Win) (τ : RTaintB.T) (st : Base × Nat × Nat × Src) : Win :=
+  o.map fun (d₀, P, p) => (d₀, storeP W d₀ p τ P st, p)
+
+theorem stK_eq {α : Type} (W : Nat) (o : Win) (b : Reg) (off n : Nat) (τ : RTaintB.T) (src : Src) (k : Win → α) :
+    stK W o b off n (srcPub τ src) k = k (stO W o τ (.reg b, off, n, src)) := by
+  obtain _ | ⟨d₀, P, p⟩ := o
+  · rfl
+  simp only [stK, getK_eq, maskK_eq, forceN_eq, stO, Option.map_some, storeP, offOf,
+    show ∀ a b : Nat, Nat.add a b = a + b from fun _ _ => rfl]
+  cases hf : (p.find? (·.1 == b)).map (·.2)
+  · simp only
+    cases srcPub τ src <;> rfl
+  · rfl
+
+theorem stSpK_eq {α : Type} (W : Nat) (o : Win) (off n : Nat) (τ : RTaintB.T) (src : Src) (k : Win → α) :
+    stSpK W o off n (srcPub τ src) k = k (stO W o τ (.sp, off, n, src)) := by
+  obtain _ | ⟨d₀, P, p⟩ := o
+  · rfl
+  simp only [stSpK, maskK_eq, forceN_eq, stO, Option.map_some, storeP, offOf,
+    show ∀ a b : Nat, Nat.add a b = a + b from fun _ _ => rfl, show ∀ a b : Nat, Nat.sub a b = a - b from fun _ _ => rfl]
+
+theorem ptrO_eq {α : Type} (o : Win) (dd : Reg) (off : Nat → List (Reg × Nat) → Option Nat) (k : Win → α) :
+    ptrO o dd off k = k (o.map fun (d₀, P, p) => (d₀, P, match off d₀ p with
+      | none => p.filter fun e => !(dd == e.1)
+      | some a => (dd, a) :: p.filter fun e => !(dd == e.1))) := by
+  obtain _ | ⟨d₀, P, p⟩ := o
+  · rfl
+  simp only [ptrO, Option.map_some, forceN_eq, keepL_eq, keepO_eq, dropO]
+  cases off d₀ p <;> rfl
+
+
+theorem bif_set (g : RegSet Reg) (d : Reg) (p : Bool) : (bif p then g.insert d else g.erase d) = Taint.set g d p := by
+  cases p <;> rfl
+
+theorem bif_setV (v : RegSet VReg) (d : VReg) (p : Bool) :
+    (bif p then v.insert d else v.erase d) = VectorTaint.setV v d p := by cases p <;> rfl
+
+/-- The result's bits after a write of `d`. -/
+def hAfter (g : RegSet Reg) (c : Bool) (hk h : Nat) : Nat :=
+  if Taint.pub g .x0 then 0 else if c then hk else h
+
+theorem forceN_h {α : Type} (g : RegSet Reg) (c : Bool) (hk h : Nat) (k : Nat → α) :
+    forceN (bif g.mem .x0 then 0 else bif c then hk else h) k = k (hAfter g c hk h) := by
+  rw [forceN_eq, hAfter, Taint.pub]
+  cases g.mem .x0 <;> cases c <;> rfl
+
+theorem forceN_h' {α : Type} (g : RegSet Reg) (h : Nat) (k : Nat → α) :
+    forceN (bif g.mem .x0 then 0 else h) k = k (hAfter g false 0 h) := forceN_h g false 0 h k
+
+theorem bitsK_eq (n : Nat) : bitsK n = RTaintB.bitsOf n := by
+  simp only [bitsK, RTaintB.bitsOf, KList.ble_eq]
+  by_cases h₂ : n < 2
+  · simp only [h₂, ↓reduceIte, show ¬ 2 ≤ n by omega, decide_false, Bool.cond_false]
+  · by_cases h₃ : n < 256
+    · simp only [h₂, h₃, ↓reduceIte, show 2 ≤ n by omega, show ¬ 256 ≤ n by omega, decide_true, decide_false,
+        Bool.cond_true, Bool.cond_false]
+    · simp only [h₂, h₃, ↓reduceIte, show 2 ≤ n by omega, show 256 ≤ n by omega, decide_true, Bool.cond_true]
+
+theorem minK_eq (a b : Nat) : minK a b = min a b := by
+  simp only [minK, KList.ble_eq, Nat.min_def]
+  cases h : decide (a ≤ b)
+  · rw [ite_eq_right (of_decide_eq_false h)]; rfl
+  · rw [ite_eq_left (of_decide_eq_true h)]; rfl
+
+theorem wgetK_eq (w : List (Reg × Nat)) (r : Reg) : wgetK w r = RTaintB.wget w r := by
+  rw [wgetK, getK_eq]; rfl
+
+theorem setR_eq (d : Reg) (p : Bool) (hk : Nat) (g : RegSet Reg) (v : RegSet VReg) (f : Bool) (h : Nat)
+    (lo hi : RegSet VReg) (w : List (Reg × Nat)) (o : Win) :
+    setR d p hk g v f h lo hi w o =
+      some ((((((Taint.set g d p, v), f, hAfter (Taint.set g d p) (d == .x0) hk h), lo, hi)), w), o) := by
+  simp only [setR, bif_set, RegSet.force_eq, regEq_eq, forceN_h]
+
+section
+variable {W : Nat} {g g₁ g' : RegSet Reg} {v v' : RegSet VReg} {f f' : Bool} {h h' : Nat} {lo hi lo' hi' : RegSet VReg}
+  {w w' : List (Reg × Nat)} {o : Win} {i : Instr}
+
+/-- `stepG`, from what its parts give. -/
+theorem stepG_parts (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g₁, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g₁, v) i = some (g', v')) (hf : RTaint.fstep g₁ f i = f') (hh : RTaint.hstep g' h i = h')
+    (hl : RTaintL.lstep ((g₁, v), f, h) (lo, hi) i = (lo', hi')) (hw : RTaintB.wstep w i = w') :
+    stepG W ((((((g, v), f, h), lo, hi)), w), o) i =
+      some ((((((g', v'), f', h'), lo', hi')), w'), o.map fun (d, P, p) =>
+        (d, storesP W d p ((((g, v), f, h), lo, hi), w) P (stores i), ptrStep W d p i)) := by
+  simp only [stepG, RTaintB.step, RTaintCT.step, hb, RTaintL.step, RTaint.step, hv, hf, hh, hl, hw, Option.map_some]
+
+theorem hh_of {d : Reg} {hk : Nat} (hc : clobbers i .x0 = (d == .x0))
+    (hx : d = .x0 → ∀ g' h, RTaint.hstep g' h i = hAfter g' true hk h) (g' : RegSet Reg) (h : Nat) :
+    RTaint.hstep g' h i = hAfter g' (d == .x0) hk h := by
+  cases hd : d == .x0
+  · simp only [RTaint.hstep, hAfter, hc, hd, Bool.not_false, Bool.false_eq_true, ↓reduceIte]
+  · exact hx (beq_iff_eq.mp hd) g' h
+
+theorem wr_eq {d : Reg} {p : PubF} {hk : Nat}
+    (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g₁, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g₁, v) i = some (Taint.set g₁ d (p g₁ v), v)) (hf : RTaint.fstep g₁ f i = f')
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' (d == .x0) hk h)
+    (hl : RTaintL.lstep ((g₁, v), f, h) (lo, hi) i = (lo, hi))
+    (hw : RTaintB.wstep w i = w.filter fun e => !clobbers i e.1)
+    (hs : stores i = []) (hp : ∀ W d₀ p, ptrStep W d₀ p i = p.filter fun e => !clobbers i e.1)
+    (hc : ∀ r, clobbers i r = (d == r)) :
+    wr d p hk W g₁ v f' h lo hi w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  rw [stepG_parts hb hv hf (hh _ _) hl hw]
+  simp only [wr, keepL_eq, keepO_eq, setR_eq, hc, hs, hp, storesP]
+  rfl
+
+/-- A load or a store through `n` is of a public base, once `n` is public. -/
+theorem vstep_ins {n : Reg} {x : RegSet Reg}
+    (h : RTaint.vstep (g.insert n, v) i =
+      (if Taint.pub (g.insert n) n = true then some x else none).map fun g => (g, v')) :
+    RTaint.vstep (g.insert n, v) i = some (x, v') := by
+  rw [h, show Taint.pub (g.insert n) n = true from RegSet.mem_insert.mpr (.inl rfl)]; rfl
+
+theorem wrF_eq (d : Reg) (p : PubF) (W : Nat) (g : RegSet Reg) (v : RegSet VReg) (f : Bool) (h : Nat) (lo hi : RegSet VReg)
+    (w : List (Reg × Nat)) (o : Win) :
+    wrF d p W g v f h lo hi w o = wr d p 64 W g v (p g v) h lo hi w o := by
+  rw [wrF, forceB_eq]; rfl
+
+theorem sameF_eq (p : PubF) (W : Nat) (g : RegSet Reg) (v : RegSet VReg) (f : Bool) (h : Nat) (lo hi : RegSet VReg)
+    (w : List (Reg × Nat)) (o : Win) :
+    sameF p W g v f h lo hi w o = same W g v (p g v) h lo hi w o := by
+  rw [sameF, forceB_eq]
+
+theorem wrP_eq {d : Reg} {p : PubF} {off : Nat → Nat → List (Reg × Nat) → Option Nat}
+    (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g, v) i = some (Taint.set g d (p g v), v)) (hf : RTaint.fstep g f i = f)
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' (d == .x0) 64 h)
+    (hl : RTaintL.lstep ((g, v), f, h) (lo, hi) i = (lo, hi))
+    (hw : RTaintB.wstep w i = w.filter fun e => !clobbers i e.1)
+    (hs : stores i = [])
+    (hp : ∀ W d₀ p, ptrStep W d₀ p i = match off W d₀ p with
+      | none => p.filter fun e => !clobbers i e.1
+      | some a => (d, a) :: p.filter fun e => !clobbers i e.1)
+    (hc : ∀ r, clobbers i r = (d == r)) :
+    wrP d p off W g v f h lo hi w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  rw [stepG_parts hb hv hf (hh _ _) hl hw]
+  simp only [wrP, keepL_eq, ptrO_eq, setR_eq, hc, hs, hp, storesP]
+
+theorem wrW_eq {d : Reg} {p : PubF} {n : List (Reg × Nat) → Nat}
+    (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g, v) i = some (Taint.set g d (p g v), v)) (hf : RTaint.fstep g f i = f)
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' (d == .x0) 64 h)
+    (hl : RTaintL.lstep ((g, v), f, h) (lo, hi) i = (lo, hi))
+    (hw : RTaintB.wstep w i = (d, n w) :: w.filter fun e => !clobbers i e.1)
+    (hs : stores i = []) (hp : ∀ W d₀ p, ptrStep W d₀ p i = p.filter fun e => !clobbers i e.1)
+    (hc : ∀ r, clobbers i r = (d == r)) :
+    wrW d p n W g v f h lo hi w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  rw [stepG_parts hb hv hf (hh _ _) hl hw]
+  simp only [wrW, forceN_eq, keepL_eq, keepO_eq, setR_eq, hc, hs, hp, storesP]
+  rfl
+
+theorem filter_none {l : List (Reg × Nat)} (hc : ∀ r, clobbers i r = false) :
+    (l.filter fun e => !clobbers i e.1) = l := by
+  exact List.filter_eq_self.mpr fun e _ => by rw [hc, Bool.not_false]
+
+/-- `same`, after the stores of an instruction that writes no general-purpose register. -/
+theorem same_eq (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g₁, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g₁, v) i = some (g₁, v')) (hf : RTaint.fstep g₁ f i = f')
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' false 0 h)
+    (hl : RTaintL.lstep ((g₁, v), f, h) (lo, hi) i = (lo', hi'))
+    (hw : RTaintB.wstep w i = w.filter fun e => !clobbers i e.1)
+    (hp : ∀ W d₀ p, ptrStep W d₀ p i = p.filter fun e => !clobbers i e.1)
+    (hc : ∀ r, clobbers i r = false) {o' : Win}
+    (ho : o' = o.map fun (d, P, p) => (d, storesP W d p ((((g, v), f, h), lo, hi), w) P (stores i), p)) :
+    same W g₁ v' f' h lo' hi' w o' = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  rw [stepG_parts hb hv hf (hh _ _) hl (hw.trans (filter_none hc)), ho]
+  simp only [same, forceN_h', hp, filter_none hc]
+
+/-- `same`, of an instruction that stores nothing. -/
+theorem same_eq₀ (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g₁, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g₁, v) i = some (g₁, v')) (hf : RTaint.fstep g₁ f i = f')
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' false 0 h)
+    (hl : RTaintL.lstep ((g₁, v), f, h) (lo, hi) i = (lo', hi'))
+    (hw : RTaintB.wstep w i = w.filter fun e => !clobbers i e.1) (hs : stores i = [])
+    (hp : ∀ W d₀ p, ptrStep W d₀ p i = p.filter fun e => !clobbers i e.1) (hc : ∀ r, clobbers i r = false) :
+    same W g₁ v' f' h lo' hi' w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i :=
+  same_eq hb hv hf hh hl hw hp hc (by rw [hs]; cases o <;> rfl)
+
+/-- `wv`, of an instruction that writes the vector register `d` alone. -/
+theorem wv_eq {d : VReg} {p : PubF} (hb : RTaintCT.pubBase (((g, v), f, h), lo, hi) i = (((g₁, v), f, h), lo, hi))
+    (hv : RTaint.vstep (g₁, v) i = some (g₁, VectorTaint.setV v d (p g₁ v))) (hf : RTaint.fstep g₁ f i = f)
+    (hh : ∀ g' h, RTaint.hstep g' h i = hAfter g' false 0 h)
+    (hl : RTaintL.lstep ((g₁, v), f, h) (lo, hi) i = (lo.erase d, hi.erase d))
+    (hw : RTaintB.wstep w i = w.filter fun e => !clobbers i e.1) (hs : stores i = [])
+    (hp : ∀ W d₀ p, ptrStep W d₀ p i = p.filter fun e => !clobbers i e.1) (hc : ∀ r, clobbers i r = false) :
+    wv d p W g₁ v f h lo hi w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  rw [← same_eq₀ hb hv hf hh hl hw hs hp hc]
+  simp only [wv, bif_setV, RegSet.force_eq]
+
+theorem st_eq (n : Reg) (off k : Nat) (p : PubF) (src : Src) (hp : p g v = srcPub ((((g, v), f, h), lo, hi), w) src) :
+    st n off k p W g v f h lo hi w o = same W (g.insert n) v f h lo hi w
+      (o.map fun (d, P, p) => (d, storesP W d p ((((g, v), f, h), lo, hi), w) P [(.reg n, off, k, src)], p)) := by
+  rw [st, hp, stK_eq]; rfl
+
+theorem st2_eq (n : Reg) (off : Nat) (p q : PubF) (src src' : Src) (hp : p g v = srcPub ((((g, v), f, h), lo, hi), w) src)
+    (hq : q g v = srcPub ((((g, v), f, h), lo, hi), w) src') :
+    st2 n off p q W g v f h lo hi w o = same W (g.insert n) v f h lo hi w
+      (o.map fun (d, P, p) => (d, storesP W d p ((((g, v), f, h), lo, hi), w) P
+        [(.reg n, off, 8, src), (.reg n, off + 8, 8, src')], p)) := by
+  rw [st2, hp, hq, stK_eq, stK_eq]
+  cases o <;> rfl
+
+theorem stSp_eq (off : Nat) (p : PubF) (src : Src) (hp : p g v = srcPub ((((g, v), f, h), lo, hi), w) src) :
+    stSp off p W g v f h lo hi w o = same W g v f h lo hi w
+      (o.map fun (d, P, p) => (d, storesP W d p ((((g, v), f, h), lo, hi), w) P [(.sp, off, 8, src)], p)) := by
+  rw [stSp, hp, stSpK_eq]; rfl
+
+theorem stepGFn_eq (W : Nat) (g : RegSet Reg) (v : RegSet VReg) (f : Bool) (h : Nat) (lo hi : RegSet VReg)
+    (w : List (Reg × Nat)) (o : Win) (i : Instr) :
+    stepGFn i W g v f h lo hi w o = stepG W ((((((g, v), f, h), lo, hi)), w), o) i := by
+  cases i
+  case add sz d n m | sub sz d n m =>
+    exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; cases sz <;> rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case adc d _ _ | sbc d _ _ | csel d _ _ | cselc d _ _ _ | csneg d _ _ _ | adrSym d _ | mrsDit d | ldrSp d _
+    | bicRor _ d _ _ _ | extr _ d _ _ _ | mul _ d _ _ | umulh d _ _ | umull d _ _ | madd _ d _ _ _ | umaddl d _ _ _ | ror _ d _ _
+    | lsl _ d _ _ | rev32 d _ | rev d _ | clz _ d _ | rbit _ d _ | movk _ d _ _ | umov _ d _ _ =>
+    exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case logicRor _ _ d _ _ _ | ldrTbl _ d _ _ _ _ =>
+    exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case adcs sz d n m | sbcs sz d n m =>
+    exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case adds sz d n m | subs sz d n m =>
+    refine (wrF_eq d (p2 n m) W g v f h lo hi w o).trans ?_
+    exact wr_eq (p := p2 n m) rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case lsr sz d n sh =>
+    cases sz <;>
+      exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case addImm sz d n k =>
+    cases sz
+    · exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    · refine wrP_eq (i := .addImm .x d n k) (p := p1 n) (off := fun _ _ p => (getK p n).map fun a => Nat.add a k)
+        rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun W d₀ p => ?_) (fun _ => rfl)
+      simp only [ptrStep, offOf, getK_eq]
+      cases (p.find? (·.1 == n)).map (·.2) <;> rfl
+  case subImm sz d n k =>
+    cases sz
+    · exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    · refine wrP_eq (i := .subImm .x d n k) (p := p1 n)
+        (off := fun _ _ p => (getK p n).bind fun a => bif Nat.ble k a then some (Nat.sub a k) else none)
+        rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun W d₀ p => ?_) (fun _ => rfl)
+      simp only [ptrStep, offOf, getK_eq]
+      cases (p.find? (·.1 == n)).map (·.2) with
+      | none => rfl
+      | some a =>
+        simp only [Option.bind_some, KList.ble_eq]
+        by_cases hk : k ≤ a <;> simp only [hk, decide_true, decide_false, Bool.cond_true, Bool.cond_false, ↓reduceIte] <;> rfl
+  case addSp d imm =>
+    exact wrP_eq (i := .addSp d imm) (p := p0 true) (off := fun W d₀ _ => some (Nat.add (Nat.sub W d₀) imm))
+      rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun W d₀ p => rfl) (fun _ => rfl)
+  case movz sz d imm hw =>
+    cases sz
+    · exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    · cases hw
+      · refine wrW_eq (i := .movz .x d imm 0) (d := d) (p := p0 true) (n := fun _ => bitsK imm.toNat) rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl ?_ rfl (fun _ _ _ => rfl) (fun _ => rfl)
+        simp only [RTaintB.wstep, bitsK_eq]
+      · exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case logic op sz d n m =>
+    cases sz
+    · cases op <;>
+        exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    · cases op
+      case and =>
+        refine wrW_eq (i := .logic .and .x d n m) (d := d) (p := p2 n m) (n := fun w => minK (wgetK w n) (wgetK w m)) rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl ?_ rfl (fun _ _ _ => rfl) (fun _ => rfl)
+        simp only [RTaintB.wstep, minK_eq, wgetK_eq]
+      all_goals exact wr_eq rfl rfl rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case ldr sz t n off | ldrb t n off =>
+    exact wr_eq rfl (vstep_ins rfl) rfl (hh_of rfl fun e _ _ => by subst e; rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case tst sz n m =>
+    refine (sameF_eq (p2 n m) W g v f h lo hi w o).trans ?_
+    exact same_eq₀ rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case ccmp =>
+    refine (sameF_eq (p0 false) W g v f h lo hi w o).trans ?_
+    exact same_eq₀ rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case align | msrDitImm | barrier =>
+    exact same_eq₀ rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case blr | push | pop | alloc | free => rfl
+  case str sz t n off =>
+    refine (st_eq n off sz.bytes (p1 t) (.gpr t) rfl).trans ?_
+    exact same_eq (i := .str sz t n off) rfl (vstep_ins rfl) rfl (fun _ _ => rfl) rfl rfl (fun _ _ _ => rfl) (fun _ => rfl) rfl
+  case strb t n off =>
+    refine (st_eq n off 1 (p1 t) (.gpr t) rfl).trans ?_
+    exact same_eq (i := .strb t n off) rfl (vstep_ins rfl) rfl (fun _ _ => rfl) rfl rfl (fun _ _ _ => rfl) (fun _ => rfl) rfl
+  case strq t n off =>
+    refine (st_eq n off 16 (pv t) (.vec t) rfl).trans ?_
+    exact same_eq (i := .strq t n off) rfl (vstep_ins rfl) rfl (fun _ _ => rfl) rfl rfl (fun _ _ _ => rfl) (fun _ => rfl) rfl
+  case stp t1 t2 n off =>
+    refine (st2_eq n off (p1 t1) (p1 t2) (.gpr t1) (.gpr t2) rfl rfl).trans ?_
+    exact same_eq (i := .stp t1 t2 n off) rfl (vstep_ins rfl) rfl (fun _ _ => rfl) rfl rfl (fun _ _ _ => rfl) (fun _ => rfl) rfl
+  case strSp t off =>
+    refine (stSp_eq off (p1 t) (.gpr t) rfl).trans ?_
+    exact same_eq (i := .strSp t off) rfl rfl rfl (fun _ _ => rfl) rfl rfl (fun _ _ _ => rfl) (fun _ => rfl) rfl
+  case ldp t1 t2 n off =>
+    rw [stepG_parts (g' := Taint.set (Taint.set (g.insert n) t1 false) t2 false) (v' := v) (f' := f)
+      (h' := hAfter (Taint.set (Taint.set (g.insert n) t1 false) t2 false) (Reg.x0 == t1 || Reg.x0 == t2) 64 h) (lo' := lo)
+      (hi' := hi) (w' := w.filter fun e => !(e.1 == t1 || e.1 == t2)) rfl (vstep_ins rfl) rfl (by
+        unfold hAfter RTaint.hstep
+        simp only [clobbers, Bool.not_eq_eq_eq_not, Bool.not_true]
+        cases Taint.pub (Taint.set (Taint.set (g.insert n) t1 false) t2 false) .x0 <;>
+          cases (Reg.x0 == t1 || Reg.x0 == t2) <;> rfl) rfl rfl]
+    show ld2 n t1 t2 W g v f h lo hi w o = _
+    simp only [ld2, keepL_eq, keepO_eq, RegSet.force_eq, regEq_eq, forceN_h, stores, storesP, ptrStep, clobbers, dropO,
+      List.filter_filter, Option.map_map]
+    have e : (fun e : Reg × Nat => !(t2 == e.1) && !(t1 == e.1)) = fun e => !(e.1 == t1 || e.1 == t2) := by
+      funext e
+      rw [Bool.not_or, Bool.and_comm, Bool.beq_comm (a := t1), Bool.beq_comm (a := t2)]
+    rw [e, Bool.beq_comm (a := t1), Bool.beq_comm (a := t2)]
+    obtain _ | ⟨d₀, P, p⟩ := o
+    · rfl
+    · simp only [Option.map_some, Function.comp_apply, List.filter_filter, e]; rfl
+  case ldrq t n off =>
+    exact wv_eq (p := p0 false) rfl (vstep_ins rfl) rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case ldrqTbl t n off name words =>
+    exact wv_eq (p := p0 true) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+  case vop op =>
+    refine (congrFun (congrFun (congrFun (congrFun (congrFun (congrFun (congrFun (congrFun (congrFun (vopFnK_eq op) W) g) v) f) h) lo) hi) w) o).trans ?_
+    cases op
+    case mov d n =>
+      exact wv_eq (p := pv n) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    case movi0 d =>
+      exact wv_eq (p := p0 true) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    case dup _ d n =>
+      exact wv_eq (p := p1 n) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    case add _ d n m | sub _ d n m =>
+      exact wv_eq (p := pv2 n m) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    case ins a d k n =>
+      cases a
+      case d2 =>
+        show wl d (Nat.beq k 1) n W g v f h lo hi w o = _
+        have hl : RTaintL.lstep ((g, v), f, h) (lo, hi) (.vop (.ins .d2 d k n)) =
+            LaneTaint.put (if v.mem d then LaneTaint.both (lo, hi) d true else (lo, hi)) (k == 1) d (Taint.pub g n) := rfl
+        rw [← same_eq₀ (v' := v.erase d) rfl rfl rfl (fun _ _ => rfl) hl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)]
+        simp only [wl, RegSet.force_eq, bif_setV, KList.beq_eq]
+        rw [show g.mem n = Taint.pub g n from rfl]
+        generalize Taint.pub g n = c
+        cases v.mem d <;> cases k == 1 <;> cases c <;> rfl
+      all_goals exact wv_eq (p := p0 false) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+    all_goals
+      exact wv_eq (p := p0 false) rfl rfl rfl (fun _ _ => rfl) rfl rfl rfl (fun _ _ _ => rfl) (fun _ => rfl)
+end
+
+/-- `stepG`, for the kernel. -/
+def stepGK (W : Nat) (τ : T) (i : Instr) : Option T :=
+  match τ with
+  | ((((((g, v), f, h), lo, hi)), w), o) => stepGFnK i W g v f h lo hi w o
 
 theorem stepGK_eq (W : Nat) (τ : T) (i : Instr) : stepGK W τ i = stepG W τ i := by
+  obtain ⟨⟨⟨⟨⟨g, v⟩, f, h⟩, lo, hi⟩, w⟩, o⟩ := τ
   rw [stepGK, stepGFnK_eq]
-  exact stepGC_eq W τ i
+  exact stepGFn_eq W g v f h lo hi w o i
+
+/-- `k τ`, with the taint `τ` evaluated, but the mask. -/
+def forceG {α : Type} (τ : T) (k : T → α) : α :=
+  match τ with
+  | ((((((g, v), f, h), lo, hi)), w), o) =>
+    g.force fun g => v.force fun v => forceB f fun f => forceN h fun h => lo.force fun lo => hi.force fun hi =>
+      forceL w fun w =>
+        match o with
+        | none => k ((((((g, v), f, h), lo, hi)), w), none)
+        | some (d, P, p) => forceN d fun d => forceL p fun p => k ((((((g, v), f, h), lo, hi)), w), some (d, P, p))
+
+theorem forceG_eq {α : Type} (τ : T) (k : T → α) : forceG τ k = k τ := by
+  obtain ⟨⟨⟨⟨⟨g, v⟩, f, h⟩, lo, hi⟩, w⟩, o⟩ := τ
+  simp only [forceG, RegSet.force_eq, forceB_eq, forceN_eq, forceL_eq]
+  cases o <;> rfl
+
+/-- `o`, with the taint evaluated. -/
+def forceO (o : Option T) : Option T :=
+  match o with
+  | none => none
+  | some τ => forceG τ some
+
+theorem forceO_eq (o : Option T) : forceO o = o := by
+  cases o
+  · rfl
+  · exact forceG_eq _ _
+
+end
+
+/-- A taint as a literal whose numbers are numerals (`Lean.mkRawNatLit`), as
+the steps leave them, so that the kernel finds again after a hint what it
+evaluated before it. -/
+instance (priority := high) : Lean.ToExpr T where
+  toTypeExpr := .const ``T []
+  toExpr τ :=
+    let (((((g, v), f, h), lo, hi), w), o) := τ
+    let nat : Lean.Expr := .const ``Nat []
+    let reg : Lean.Expr := .const ``Reg []
+    let pair (a b : Lean.Expr × Lean.Expr) : Lean.Expr × Lean.Expr :=
+      (Lean.mkApp4 (.const ``Prod.mk [0, 0]) a.2 b.2 a.1 b.1, Lean.mkApp2 (.const ``Prod [0, 0]) a.2 b.2)
+    let num (n : Nat) : Lean.Expr × Lean.Expr := (Lean.mkRawNatLit n, nat)
+    let set (R : Lean.Name) (n : Nat) : Lean.Expr × Lean.Expr :=
+      (Lean.mkApp2 (.const ``RegSet.mk []) (.const R []) (Lean.mkRawNatLit n), .app (.const ``RegSet []) (.const R []))
+    let list (l : List (Reg × Nat)) : Lean.Expr × Lean.Expr :=
+      let ty := Lean.mkApp2 (.const ``Prod [0, 0]) reg nat
+      (l.foldr (fun e l => Lean.mkApp3 (.const ``List.cons [0]) ty (pair (Lean.toExpr e.1, reg) (num e.2)).1 l)
+        (.app (.const ``List.nil [0]) ty), .app (.const ``List [0]) ty)
+    let win (d P : Nat) (p : List (Reg × Nat)) := pair (num d) (pair (num P) (list p))
+    let opt := match o with
+      | none => Lean.Expr.app (.const ``Option.none [0]) (win 0 0 []).2
+      | some (d, P, p) => Lean.mkApp2 (.const ``Option.some [0]) (win d P p).2 (win d P p).1
+    (pair (pair (pair (pair (pair (set ``Reg g.bits) (set ``VReg v.bits)) (pair (Lean.toExpr f, .const ``Bool []) (num h)))
+      (pair (set ``VReg lo.bits) (set ``VReg hi.bits))) (list w)) (opt, .app (.const ``Option [0]) (win 0 0 []).2)).1
 
 /-! ## Calls, returns and frames -/
 
@@ -797,8 +1523,9 @@ def rtaintG (W : Nat) : VG.TaintCT isa where
   meet_right := meetG_right
   le := leG
   le_sound := leG_sound
-  call τ := some (callG τ)
+  call τ := forceG (callG τ) some
   call_sound ha hs e₁ e₂ _ := by
+    rw [forceG_eq] at hs
     obtain rfl := Option.some.inj hs
     exact callG_sound ha e₁ e₂
   callAddrs_length _ _ := rfl
@@ -812,10 +1539,10 @@ def rtaintG (W : Nat) : VG.TaintCT isa where
     obtain rfl := Option.some.inj e₂
     exact ha
   retAddrs_length _ _ := rfl
-  push := pushG W
-  push_sound ha hs e₁ e₂ _ := pushG_sound ha hs e₁ e₂
-  pop := popG
-  pop_sound ha hs e₁ e₂ _ := popG_sound ha hs e₁ e₂
+  push τ i := forceO (pushG W τ i)
+  push_sound ha hs e₁ e₂ _ := pushG_sound ha ((forceO_eq _).symm.trans hs) e₁ e₂
+  pop τ i := forceO (popG τ i)
+  pop_sound ha hs e₁ e₂ _ := popG_sound ha ((forceO_eq _).symm.trans hs) e₁ e₂
 
 namespace RTaintG
 
@@ -826,7 +1553,7 @@ open VG.AArch64 VG.AArch64.Residue VG.AArch64.MemEffect VG.AArch64.RTaintF VG.AA
 
 /-- Every 16-byte granule of the `W` bytes but those of `ks` is in `P`. -/
 def granOk (W P : Nat) (ks : List Nat) : Bool :=
-  (List.range (W / 16)).all fun k => ks.contains k || (List.range 16).all fun j => P.testBit (16 * k + j)
+  (List.range (W / 16)).all fun k => ks.contains k || Nat.beq (Nat.land (Nat.shiftRight P (16 * k)) 65535) 65535
 
 /-- `doneF r` at depth 0, with the granules of the window not in `ks` agreeing,
 each of `ks` in the window, and, if `ks` is empty (no clearing), `x9` and
@@ -851,8 +1578,11 @@ theorem gran_bit {W P : Nat} {ks : List Nat} {b : Addr} (hW : W < 2 ^ 64) (hW16 
   simp only [granOk, List.all_eq_true, List.mem_range, Bool.or_eq_true, List.contains_iff_mem] at h
   rcases h (o / 16) (by omega) with hk | hk
   · exact absurd ⟨by omega, by omega⟩ (hn _ hk)
-  · have := hk (o % 16) (by omega)
-    rwa [show 16 * (o / 16) + o % 16 = o by omega] at this
+  · have hk : (P >>> (16 * (o / 16))) &&& ones 16 = ones 16 := Nat.eq_of_beq_eq_true hk
+    have := congrArg (fun x => x.testBit (o % 16)) hk
+    simp only [Nat.testBit_and, Nat.testBit_shiftRight, testBit_ones,
+      show o % 16 < 16 by omega, decide_true, Bool.and_true, show 16 * (o / 16) + o % 16 = o by omega] at this
+    exact this
 
 theorem zeroG_out {W : Nat} {ks : List Nat} (hks : ∀ k ∈ ks, 16 * k + 16 ≤ W) {b x : Addr} (m : Mem)
     (h : ¬ (x - b).toNat < W) : zeroG b ks m x = m x := by

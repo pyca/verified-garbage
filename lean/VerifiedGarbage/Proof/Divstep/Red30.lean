@@ -1,4 +1,5 @@
 module
+public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 public import VerifiedGarbage.Proof.Divstep.Red30Def
 

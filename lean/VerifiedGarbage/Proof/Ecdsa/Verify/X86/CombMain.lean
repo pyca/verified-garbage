@@ -418,7 +418,7 @@ theorem projectiveMatch_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s 
   · rw [u₈.gpr, u₇.gpr, u₆.gpr, e₅, u₆.other _ (by decide), k₅.1 _ (by decide), e₄,
       u₇.other _ (by decide), u₆.other _ (by decide), k₅.1 _ (by decide), k₄.1 _ (by decide),
       u₃.gpr, u₂.gpr, e₁, m₄, u₃.mem, u₂.mem, m₁]
-    simp only [reduceCtorEq, ite_false, ite_true, mask_not, ne_eq, not_not, mask32_and, projective_mask_or,
+    simp only [reduceCtorEq, ite_false, ite_true, mask_not, ne_eq, Classical.not_not, mask32_and, projective_mask_or,
       sv, and_comm, or_comm]
   · exact (((k₄'.widen k₅).widen u₆.keeps).widen u₇.keeps).widen u₈.keeps
   · rw [u₈.mem, u₇.mem, u₆.mem, m₅, m₄, u₃.mem, u₂.mem, m₁]

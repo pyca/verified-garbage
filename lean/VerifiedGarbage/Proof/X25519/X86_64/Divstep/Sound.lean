@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
 import VerifiedGarbage.Proof.Divstep.Iter
 import VerifiedGarbage.Proof.Divstep.Tc
 import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow

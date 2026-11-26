@@ -659,7 +659,7 @@ theorem ones_ok {s₀ : State} (hp : Pm s₀) {K i : Nat} (hK1 : 1 ≤ K) (hK8 :
           ofNat_bne (show nb s₀ - (i + 1) < 2 ^ 64 by omega_using [hn])]
       by_cases hlast : nb s₀ - (i + 1) = 0
       · have : i + 1 = nb s₀ := by omega_using [hi, hlast]
-        exact .inl ⟨by rw [hev, decide_eq_false (not_not.mpr hlast)], this ▸ hI'⟩
+        exact .inl ⟨by rw [hev, decide_eq_false (Classical.not_not.mpr hlast)], this ▸ hI'⟩
       · exact .inr ⟨by rw [hev, decide_eq_true hlast], nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl,
           by omega_using [hlast], hI'⟩
     obtain hlt : i < nb s₀ := by have := hI.le; simp only [decide_eq_false_iff_not] at h; omega_using [h]

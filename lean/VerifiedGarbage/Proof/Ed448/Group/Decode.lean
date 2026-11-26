@@ -46,7 +46,7 @@ theorem recoverX_root {y x : Fe} {sign : Bool} (h : Spec.Ed448.recoverX y sign =
   by_cases h1 : (Spec.Ed448.d * y * y - 1) * c * c ≠ y * y - 1
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h1)] at h; cases h
   rw [ite_eq_right_of_eq_false _ _ (eq_false h1)] at h
-  have h1 := not_not.mp h1
+  have h1 := Classical.not_not.mp h1
   by_cases h2 : (decide (c = 0) && sign) = true
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h2)] at h; cases h
   rw [ite_eq_right_of_eq_false _ _ (eq_false h2), Option.some.injEq] at h

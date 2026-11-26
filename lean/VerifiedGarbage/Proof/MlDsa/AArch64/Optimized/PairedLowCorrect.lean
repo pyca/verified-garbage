@@ -144,7 +144,7 @@ theorem checkAddr_sep (base : Addr) {i j : Fin 2 × Fin 8} (hne : j≠i) :
     Mem.Sep (checkAddr base i) 16 (checkAddr base j) 16 := by
   have hd : j.1.val≠i.1.val ∨ j.2.val≠i.2.val := by
     by_contra h
-    simp only [not_or,not_not] at h
+    simp only [not_or,Classical.not_not] at h
     exact hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
   exact Offset.sep base (by omega_using [hd]) (by omega_using []) (by omega_using [])
 

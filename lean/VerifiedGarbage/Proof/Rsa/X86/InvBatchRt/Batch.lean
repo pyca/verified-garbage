@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Divstep.Word32
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
