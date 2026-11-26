@@ -21,7 +21,9 @@ evaluator with these.
 namespace VG.Bitslice
 
 /-- The `w`-bit word whose bit `p` is the XOR of the atoms `g p`. -/
-def outWordW (w : Nat) (g : Nat → List Nat) : Nat × Nat := (0, mk w g w)
+def outWordW (w : Nat) (g : Nat → List Nat) : Nat × Nat := (0, mkK w g w)
+
+theorem outWordW_eq (w : Nat) (g : Nat → List Nat) : outWordW w g = (0, mk w g w) := by rw [outWordW, mkK_eq]
 
 /-- Input word `i`: bit `t` is atom `64 i + t`. -/
 def inWord (i : Nat) : Nat × Nat := inWordW 64 i
@@ -75,8 +77,8 @@ theorem outWordW_rel {w k : Nat} {W : Nat → BitVec w} {g : Nat → List Nat} {
     (hg : ∀ p < w, ∀ a ∈ g p, a < 2 ^ k) (h : LaneRel k (assign W (2 ^ k)) (outWordW w g) x) :
     ∀ p < w, x.getLsbD p = xorBits W (g p) := by
   intro p hp
-  rw [h.2 p hp]
-  simp only [outWordW, Nat.zero_testBit, Bool.false_xor]
+  rw [h.2 p hp, outWordW_eq]
+  simp only [Nat.zero_testBit, Bool.false_xor]
   rw [par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
@@ -96,8 +98,8 @@ theorem outWordW_rel_of_lt {w k : Nat} {W : Nat → BitVec w} {g : Nat → List 
     have : a ≤ ((List.range w).flatMap g).sum :=
       le_sum_of_mem (List.mem_flatMap.mpr ⟨q, List.mem_range.mpr hq, ha⟩)
     exact Nat.lt_of_le_of_lt this (Nat.lt_add_left _ (Nat.lt_succ_self _))
-  rw [h.2 p hp]
-  simp only [outWordW, Nat.zero_testBit, Bool.false_xor]
+  rw [h.2 p hp, outWordW_eq]
+  simp only [Nat.zero_testBit, Bool.false_xor]
   rw [← xorA_assign W (hM p hp), ← (Bool.true_and _ : (true && xorA _ (g p)) = _),
     ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
   refine par_congr_assign fun a ha => ?_
@@ -119,7 +121,7 @@ theorem outWord_rel {k : Nat} {W : Nat → BitVec 64} {g : Nat → List Nat} {x 
 again. -/
 def outOkW (w k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool :=
   match v with
-  | some v => v == outWordW w g && decide (v.2 < 2 ^ (w * 2 ^ k))
+  | some v => Nat.beq v.1 0 && (Nat.beq v.2 (mkK w g w) && Nat.blt v.2 (2 ^ (w * 2 ^ k)))
   | none => false
 
 /-- `outOkW` for words of 64 bits. -/
@@ -130,9 +132,10 @@ theorem outOkW_spec {w k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
   cases v with
   | none => cases h
   | some v =>
-    simp only [outOkW, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-    obtain ⟨rfl, h⟩ := h
-    exact ⟨rfl, h⟩
+    obtain ⟨c, f⟩ := v
+    simp only [outOkW, Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq, mkK_eq] at h
+    obtain ⟨rfl, rfl, h⟩ := h
+    exact ⟨congrArg some (outWordW_eq w g).symm, h⟩
 
 theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
     (h : outOk k v g = true) : v = some (outWord g) ∧ mk 64 g 64 < 2 ^ (64 * 2 ^ k) :=

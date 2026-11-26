@@ -46,18 +46,85 @@ def evalN : List Instr → Env α → Option (Env α)
   | [], e => some e
   | i :: is, e => (stepN D c ext e i).bind (evalN is)
 
-/-- Evaluates the block and checks `post` of the result: for `decide`. -/
-def checkN (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
-  match evalN D c ext is e with
-  | some e' => post e'
-  | none => false
+end
+
+namespace Kernel
+
+open VG.Bitslice.Machine (Op Ent bind)
+
+section
+variable (D : Dom α 32) (c : Cfg) (ext : Nat → Option α)
+
+/-- `notAbs`. -/
+noncomputable def notK (a : α) : Option α := bind (D.xor a) (D.const (BitVec.allOnes 32))
+
+noncomputable def opN : Instr → Op Reg (Ent α) α :=
+  opW D c ext (valK2 D fun a b => bind (D.and a) (notK D b)) (valK1 D (notK D))
+
+theorem notK_eq : notK D = notAbs D := funext fun _ => Machine.bind_eq ..
+
+variable {D c ext}
+
+/-- What the kernel's evaluator computes, `stepN` does. -/
+theorem step_of_opN {e : Env α} {i : Instr} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.step (toM e) (opN D c ext i) = some m) : (stepN D c ext e i).map toM = some m := by
+  rcases step_of_opW h with h | ⟨d, n, o, rfl, hd, h⟩ | ⟨d, o, rfl, hd, h⟩
+  · rw [← h]
+    cases i with
+    | mvn d o => cases h
+    | dp op d n o =>
+      cases op with
+      | bic =>
+        simp only [step] at h
+        split at h
+        · cases h
+        · split at h <;> cases h
+      | _ => rfl
+    | _ => rfl
+  · have := valK2_step h
+    simp only [stepN]; rw [ite_eq_right hd, ← this, notK_eq]
+    cases e.reg n with
+    | none => rfl
+    | some a =>
+      cases op2Abs D e o with
+      | none => rfl
+      | some b => show _ = Option.map toM (Option.map _ (Machine.bind _ _)); rw [Machine.bind_eq]
+  · have := valK1_step h
+    simp only [stepN]; rw [ite_eq_right hd, ← this, notK_eq]
+
+/-- What the kernel's evaluator computes, `evalN` does. -/
+theorem eval_of_opN {is : List Instr} {e : Env α} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.eval (opN D c ext) is (toM e) = some m) : ∃ e', evalN D c ext is e = some e' ∧ toM e' = m := by
+  induction is generalizing e with
+  | nil => exact ⟨e, rfl, Option.some.inj h⟩
+  | cons i is ih =>
+    simp only [Machine.eval, Option.bind_eq_some_iff] at h
+    obtain ⟨m₁, h₁, h₂⟩ := h
+    obtain ⟨e₁, he₁, rfl⟩ := Option.map_eq_some_iff.mp (step_of_opN h₁)
+    obtain ⟨e', he', hm⟩ := ih h₂
+    exact ⟨e', by rw [evalN, he₁]; exact he', hm⟩
+
+end
+
+end Kernel
+
+section
+variable (D : Dom α 32) (c : Cfg) (ext : Nat → Option α)
+
+/-- Evaluates the block and checks `post` of the result, for the kernel. -/
+noncomputable def checkN (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
+  Machine.run (Kernel.toM e) 4 (Nat.log2 c.slots + 1) (Kernel.opN D c ext) (fun e => post (Kernel.ofM e)) is
 
 theorem of_checkN {is : List Instr} {e : Env α} {post : Env α → Bool}
     (h : checkN D c ext is e post = true) : ∃ e', evalN D c ext is e = some e' ∧ post e' = true := by
-  unfold checkN at h
-  split at h
-  · exact ⟨_, by assumption, h⟩
-  · cases h
+  obtain ⟨m, hm, hp⟩ := Machine.run_sound h
+  obtain ⟨e', he, rfl⟩ := Kernel.eval_of_opN hm
+  rw [Kernel.ofM_toM] at hp
+  exact ⟨e', he, hp⟩
+
+theorem checkN_mono {is : List Instr} {e : Env α} {p q : Env α → Bool}
+    (hpq : ∀ e, p e = true → q e = true) (h : checkN D c ext is e p = true) :
+    checkN D c ext is e q = true := Machine.run_mono (fun _ => hpq _) h
 
 end
 

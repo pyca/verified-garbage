@@ -156,8 +156,7 @@ theorem check_of {c : Cfg} {is : List Instr} {ext : Nat → Option (Nat × Nat)}
     {T : Nat → Nat → List (Nat × Nat)} {S : Nat → Nat} (hS : ∀ j, mk 64 (flat T j) 64 = S j)
     (h : check (lanes 64 9) c ext is e (linPostS S) = true) :
     check (lanes 64 9) c ext is e (linPost 9 (qOuts (flat T))) = true := by
-  obtain ⟨e', he, hp⟩ := of_check _ _ _ h
-  rw [check, he]
+  refine check_mono _ _ _ (fun e' hp => ?_) h
   refine List.all_eq_true.mpr fun o ho => ?_
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ho
   exact outOkW_of (hS j) (List.all_eq_true.mp hp j hj)

@@ -79,11 +79,8 @@ theorem post2_of_K {e : Env (Nat × Nat)} (h : post2K e = true) : post2 e = true
     decide_eq_true_eq] at h ⊢
   exact fun i hi => ⟨h i hi, fun t ht a ha => l2_lt hi ht a ha⟩
 
-theorem g16Out_check : check (lanes 64 9) gCfg (fun _ => none) g16Out env2 post2 = true := by
-  obtain ⟨e, he, hp⟩ := of_check _ _ _ (show check (lanes 64 9) gCfg (fun _ => none) g16Out env2 post2K = true by lit_decide)
-  unfold check
-  rw [he]
-  exact post2_of_K hp
+theorem g16Out_check : check (lanes 64 9) gCfg (fun _ => none) g16Out env2 post2 = true :=
+  check_mono _ _ _ (fun _ => post2_of_K) (show check (lanes 64 9) gCfg (fun _ => none) g16Out env2 post2K = true by lit_decide)
 
 /-! ## Relating the checks to the machine -/
 

@@ -506,6 +506,23 @@ theorem addPr_ok (m : Nat) (inp : Nat → Nat → Nat) (s : St) (g : Pr) : ∀ l
     · simp only [sumP]
       exact ((Cg.refl m _).add (addPr_ok m inp s g qs)).trans (Cg.of_eq (by omega_using []))
 
+/-- Whether there is a product of the same factors. -/
+def hasPr (g : Pr) : List Pr → Bool
+  | [] => false
+  | q :: qs => Nat.beq q.a g.a && Nat.beq q.b g.b || hasPr g qs
+
+/-- `addPr`, with a product of new factors first. -/
+def putPr (m : Nat) (g : Pr) (l : List Pr) : List Pr :=
+  if hasPr g l then addPr m g l else ⟨g.a, g.b, g.cl % m, g.ch % m⟩ :: l
+
+theorem putPr_ok (m : Nat) (inp : Nat → Nat → Nat) (s : St) (g : Pr) (l : List Pr) :
+    Cg m (sumP inp s (putPr m g l)) (g.ev inp s + sumP inp s l) := by
+  rw [putPr]
+  split
+  · exact addPr_ok m inp s g l
+  · simp only [sumP, Pr.ev]
+    exact (((Cg.mod m _).mul _).add ((Cg.mod m _).mul _)).add (Cg.refl _ _)
+
 /-! ## Bounds -/
 
 /-- Lower and upper bounds on the registers, by number, and the carry's. -/
@@ -827,8 +844,8 @@ def back (m : Nat) (B : Bd) : Op → Fn → Option Fn
         let diff (f : Nat) (n q : Reg) (k : Nat) : Option Fn :=
           some ⟨k, f, addSeg m (full n w) (addSeg m (full q (m - w % m)) l), F.p⟩
         match o with
-        | .mul _ n q => some ⟨F.k, F.f, l, addPr m ⟨rn n, rn q, w, 0⟩ F.p⟩
-        | .umulh _ n q => some ⟨F.k, F.f, l, addPr m ⟨rn n, rn q, 0, w⟩ F.p⟩
+        | .mul _ n q => some ⟨F.k, F.f, l, putPr m ⟨rn n, rn q, w, 0⟩ F.p⟩
+        | .umulh _ n q => some ⟨F.k, F.f, l, putPr m ⟨rn n, rn q, 0, w⟩ F.p⟩
         | .add _ n q => if Nat.ble (B.u n + B.u q) (2 ^ 64 - 1) then both F.f n q F.k else none
         | .adc _ n q => if Nat.ble (B.u n + B.u q + B.c) (2 ^ 64 - 1) then both ((F.f + w) % m) n q F.k else none
         | .adds _ n q =>
@@ -1000,7 +1017,7 @@ theorem back_ok {m : Nat} (hm : 0 < m) {inp : Nat → Nat → Nat} (hi : ∀ k i
         subst h
         refine (main ht (noP_ok (d := d) hA hn)).trans ?_
         unfold Fn.ev
-        refine Cg.trans (Cg.of_eq ?_) ((Cg.refl _ _).add (addPr_ok m inp s _ _).symm)
+        refine Cg.trans (Cg.of_eq ?_) ((Cg.refl _ _).add (putPr_ok m inp s _ _).symm)
         have hg : (step inp (.mul d n q) s).g (Op.mul d n q).dst = s.g n * s.g q % 2 ^ 64 := g_set _ _ _
         have hc : (step inp (.mul d n q) s).c = s.c := rfl
         rw [hg, hc]
@@ -1021,7 +1038,7 @@ theorem back_ok {m : Nat} (hm : 0 < m) {inp : Nat → Nat → Nat} (hi : ∀ k i
         subst h
         refine (main ht (noP_ok (d := d) hA hn)).trans ?_
         unfold Fn.ev
-        refine Cg.trans (Cg.of_eq ?_) ((Cg.refl _ _).add (addPr_ok m inp s _ _).symm)
+        refine Cg.trans (Cg.of_eq ?_) ((Cg.refl _ _).add (putPr_ok m inp s _ _).symm)
         have hg : (step inp (.umulh d n q) s).g (Op.umulh d n q).dst = s.g n * s.g q / 2 ^ 64 := g_set _ _ _
         have hc : (step inp (.umulh d n q) s).c = s.c := rfl
         rw [hg, hc]

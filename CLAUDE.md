@@ -453,7 +453,7 @@ lemmas and tactics to use; read it before writing a proof:
   see, behind a structure with proofs (a registration's `r.code`, a
   variant's functions), is `taint_decide_lit`'s. Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
-  environment is a list, not a function updated at every write. An equation
+  environment is a list or a tree, not a function updated at every write. An equation
   between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
   of every instruction of code that calls verified functions follows from
   theirs (`NoSp.seq`, `NoSp.leaf`), and its registration's `spSafe` from it

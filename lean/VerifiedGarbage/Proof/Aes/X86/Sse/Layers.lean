@@ -155,7 +155,7 @@ def atoms (T : Nat → Nat → List (Nat × Nat)) (j p : Nat) : List Nat := (T j
 def linPost (lo : Nat → Loc) (T : Nat → Nat → List (Nat × Nat)) (e : StraightSse.Env (Nat × Nat)) : Bool :=
   (List.range 8).all fun j => locOk (lo j) && outOkW 128 11 (locAt e (lo j)) (atoms T j)
 
-def linCheck (n : Nat) (is : List Instr) (li : Nat → Loc) (ms : List (XReg × BitVec 128)) (lo : Nat → Loc)
+noncomputable def linCheck (n : Nat) (is : List Instr) (li : Nat → Loc) (ms : List (XReg × BitVec 128)) (lo : Nat → Loc)
     (T : Nat → Nat → List (Nat × Nat)) : Bool :=
   sseOnly is && check (ofDom (lanes 128 11)) (cfg n) linExt is (envOf (linIns li ms)) (linPost lo T)
 
@@ -201,7 +201,7 @@ def subIns : List (Loc × Nat) := (List.range 8).map fun j => (mid j, sbIn j)
 def subPost (lo : Nat → Loc) (T : List Nat) (e : StraightSse.Env Nat) : Bool :=
   (List.range 8).all fun j => locOk (lo j) && locAt e (lo j) == some (T.getD j 0)
 
-def subCheck (is : List Instr) (lo : Nat → Loc) (T : List Nat) : Bool :=
+noncomputable def subCheck (is : List Instr) (lo : Nat → Loc) (T : List Nat) : Bool :=
   sseOnly is && check (ofDom (table 128 256)) (cfg 0) (fun _ => none) is (envOf subIns) (subPost lo T)
 
 /-- An S-box that the evaluator accepts, `g` its table's function. -/
@@ -318,7 +318,7 @@ theorem invBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invBT j p, t.2 <
 /-! ### The layers' bits, from the lanes of their positions -/
 
 /-- `linCheck`, with the lanes of the outputs' words given as numbers. -/
-def linCheckS (n : Nat) (is : List Instr) (li : Nat → Loc) (lo : Nat → Loc) (S : Nat → Nat) : Bool :=
+noncomputable def linCheckS (n : Nat) (is : List Instr) (li : Nat → Loc) (lo : Nat → Loc) (S : Nat → Nat) : Bool :=
   sseOnly is && check (ofDom (lanes 128 11)) (cfg n) linExt is (envOf (linIns li [])) fun e =>
     (List.range 8).all fun j => locOk (lo j) && outOkS 128 11 (locAt e (lo j)) (S j)
 
@@ -326,8 +326,8 @@ theorem linCheck_of {n : Nat} {is : List Instr} {li lo : Nat → Loc} {T : Nat �
     (hS : ∀ j, mk 128 (atoms T j) 128 = S j) (h : linCheckS n is li lo S = true) : linCheck n is li [] lo T = true := by
   rw [linCheckS, Bool.and_eq_true] at h
   obtain ⟨hs, h⟩ := h
-  obtain ⟨e', he, hp⟩ := of_check _ _ _ h
-  rw [linCheck, hs, Bool.true_and, check, he]
+  rw [linCheck, hs, Bool.true_and]
+  refine check_mono _ _ _ (fun e' hp => ?_) h
   refine List.all_eq_true.mpr fun j hj => ?_
   have := List.all_eq_true.mp hp j hj
   rw [Bool.and_eq_true] at this ⊢
@@ -440,7 +440,7 @@ def keyPost (f : Bool) (e : StraightSse.Env (Nat × Nat)) : Bool :=
   (List.range 8).all fun j => outOkW 128 7 (e.slot j) (keyT f j)
 
 /-- The round key, whose word is `W ⊕ {63…}` with `W` atoms, to slices. -/
-def keyCheck (f : Bool) : Bool :=
+noncomputable def keyCheck (f : Bool) : Bool :=
   sseOnly (keyBytes f ++ keySlices) &&
     check (ofDom (lanes 128 7)) (cfgAt .edx 8 .edi 6) keyExt (keyBytes f ++ keySlices)
       { reg := fun r => if r = .xmm0 then some (inX 0 0x63636363636363636363636363636363) else none

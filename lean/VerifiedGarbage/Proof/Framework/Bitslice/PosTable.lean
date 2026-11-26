@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -54,13 +55,19 @@ def everywhere (w N t : Nat) : Nat := blocks N (fun _ => t) w
 
 /-- Tables of `N` rows at `w` positions: rotations and shifts move bits
 between positions, which the tables cannot follow. -/
-def posTables (w N : Nat) : Dom Nat w where
-  xor a b := some (a ^^^ b)
-  and a b := some (a &&& b)
-  or a b := some (a ||| b)
+noncomputable def posTables (w N : Nat) : Dom Nat w where
+  xor a b := Machine.seqSome (Nat.xor a b)
+  and a b := Machine.seqSome (Nat.land a b)
+  or a b := Machine.seqSome (Nat.lor a b)
   ror _ _ := none
   shr _ _ := none
   const v := some (spreadConst w N v.toNat)
+
+theorem posTables_xor (w N : Nat) (a b : Nat) : (posTables w N).xor a b = some (a ^^^ b) := Machine.seqSome_eq _
+
+theorem posTables_and (w N : Nat) (a b : Nat) : (posTables w N).and a b = some (a &&& b) := Machine.seqSome_eq _
+
+theorem posTables_or (w N : Nat) (a b : Nat) : (posTables w N).or a b = some (a ||| b) := Machine.seqSome_eq _
 
 /-- Row `cs p` of the table of each position `p` is bit `p` of the word. -/
 def PosRel {w : Nat} (N : Nat) (cs : Nat → Nat) (a : Nat) (x : BitVec w) : Prop :=
@@ -82,13 +89,13 @@ theorem testBit_everywhere {w N t p c : Nat} (ht : t < 2 ^ N) (hp : p < w) (hc :
 theorem posTables_sound {w N : Nat} {cs : Nat → Nat} (hcs : ∀ p < w, cs p < N) :
     (posTables w N).Sound (PosRel N cs) where
   xor ha hb h p hp := by
-    simp only [posTables, Option.some.injEq] at h; subst h
+    rw [posTables_xor, Option.some.injEq] at h; subst h
     rw [Nat.testBit_xor, BitVec.getLsbD_xor, ha p hp, hb p hp]
   and ha hb h p hp := by
-    simp only [posTables, Option.some.injEq] at h; subst h
+    rw [posTables_and, Option.some.injEq] at h; subst h
     rw [Nat.testBit_and, BitVec.getLsbD_and, ha p hp, hb p hp]
   or ha hb h p hp := by
-    simp only [posTables, Option.some.injEq] at h; subst h
+    rw [posTables_or, Option.some.injEq] at h; subst h
     rw [Nat.testBit_or, BitVec.getLsbD_or, ha p hp, hb p hp]
   ror _ h := by cases h
   shr _ h := by cases h

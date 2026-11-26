@@ -61,7 +61,7 @@ def planesIn (d : Nat) (w : Nat) : List (Nat × Nat × BitVec 128) := (List.rang
 def keyInG (q j p : Nat) : List Nat :=
   [128 * inS (p / 16) j + p, 128 * (8 + q) + 16 * (p / 16) + inS (p / 16) j]
 
-def roundInOk (q src : Nat) : Bool :=
+noncomputable def roundInOk (q src : Nat) : Bool :=
   check (ofDom (lanes 128 11)) cfg (linExt 8 0) (roundIn src (16 * q)) (linEnv (planesIn src 0))
     (linPost 60 11 ((List.range 8).map fun j => (j, keyInG q j)))
 
@@ -76,7 +76,7 @@ theorem sboxBit_eq (j : Nat) (b : Byte) : sboxBit j b.toNat = (sbox1 (b ^^^ 0xc5
   have e : 0xc5 ^^^ b.toNat = (b ^^^ 0xc5#8).toNat := by rw [BitVec.toNat_xor, Nat.xor_comm]; rfl
   rw [sboxBit, e, Camellia.testBit_sbox1T (BitVec.isLt _), BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.getLsbD_xor]
 
-def sboxOk : Bool :=
+noncomputable def sboxOk : Bool :=
   check (ofDom (table 128 256)) cfg (fun _ => none) sboxCode sboxEnv fun e =>
     (List.range 8).all fun j => e.slot j == some (tableOf (sboxBit j) 256)
 theorem sbox_chk : sboxOk = true := by lit_decide
@@ -84,7 +84,7 @@ theorem sbox_chk : sboxOk = true := by lit_decide
 def c6e (j : Nat) : BitVec 128 := if wBit j then BitVec.allOnes 128 else 0
 def roundOutG (j p : Nat) : List Nat :=
   (128 * (8 + j) + p) :: (pRow (p / 16)).map fun i => 128 * outS i j + 16 * i + p % 16
-def roundOutOk (dst : Nat) : Bool :=
+noncomputable def roundOutOk (dst : Nat) : Bool :=
   check (ofDom (lanes 128 11)) cfg (fun _ => none) (roundOut dst)
     (linEnv ((List.range 8).map (fun j => (j, j, c6e j)) ++ planesIn dst 8))
     (linPost 60 11 ((List.range 8).map fun j => (dst + j, roundOutG j)))
@@ -95,7 +95,7 @@ theorem roundIn_chk2 : roundInOk 3 d2 = true := by kernel_rfl
 
 /-- The blocks' planes. -/
 def inG (h j p : Nat) : List Nat := [128 * (p % 16) + 8 * (8 * h + p / 16) + j]
-def blocksInOk : Bool :=
+noncomputable def blocksInOk : Bool :=
   check (ofDom (lanes 128 11)) cfg (fun _ => none) blocksIn
     (linEnv ((List.range 16).map fun b => (bufS + b, b, 0)))
     (linPost 60 11 (((List.range 8).map fun j => (d1 + j, inG 0 j)) ++ ((List.range 8).map fun j => (d2 + j, inG 1 j))))
@@ -103,7 +103,7 @@ theorem blocksIn_chk : blocksInOk = true := by kernel_rfl
 
 def outG (b t : Nat) : List Nat :=
   [if t < 64 then 128 * (8 + t % 8) + 16 * (t / 8) + b else 128 * (t % 8) + 16 * (t / 8 - 8) + b]
-def blocksOutOk : Bool :=
+noncomputable def blocksOutOk : Bool :=
   check (ofDom (lanes 128 11)) cfg (fun _ => none) blocksOut (linEnv (planesIn d1 0 ++ planesIn d2 8))
     (linPost 60 11 ((List.range 16).map fun b => (bufS + b, outG b)))
 theorem blocksOut_chk : blocksOutOk = true := by kernel_rfl
@@ -111,7 +111,7 @@ theorem blocksOut_chk : blocksOutOk = true := by kernel_rfl
 /-- The whitening. -/
 def uW : BitVec 128 := 0x00c500e200c500c500e200c500c500c5#128
 def whitenG (q j p : Nat) : List Nat := [128 * j + p, 128 * (8 + q) + 16 * (p / 16) + j]
-def whitenOk (q d : Nat) : Bool :=
+noncomputable def whitenOk (q d : Nat) : Bool :=
   check (ofDom (lanes 128 11)) cfg (linExt 8 uW) (whiten (16 * q) d) (linEnv (planesIn d 0))
     (linPost 60 11 ((List.range 8).map fun j => (d + j, whitenG q j)))
 theorem whiten_chk : (whitenOk 0 d1 && whitenOk 1 d2 && whitenOk 2 d2 && whitenOk 3 d1) = true := by kernel_rfl
@@ -126,14 +126,14 @@ def orE (j : Nat) : XE :=
 def flEnv (d : Nat) : Env XE :=
   { reg := fun r => if r = .xmm6 then some (.atom 8) else none,
     slot := fun k => if d ≤ k ∧ k < d + 8 then some (.atom (k - d)) else none }
-def flOk (is : List Instr) (d : Nat) (E : Nat → XE) : Bool :=
+noncomputable def flOk (is : List Instr) (d : Nat) (E : Nat → XE) : Bool :=
   check exprs cfg (fun _ => none) is (flEnv d) fun e => (List.range 8).all fun j => e.slot (d + j) == some (E j)
 def rots (d : Nat) : List Instr := (List.range 8).flatMap (flRot d)
 def ors (d : Nat) : List Instr := (List.range 8).flatMap (flOr d)
 theorem fl_chk : (flOk (rots d1) d1 rotE && flOk (ors d1) d1 orE && flOk (rots d2) d2 rotE && flOk (ors d2) d2 orE) = true := by
   kernel_rfl
 
-def ldKOk (r : Nat) : Bool :=
+noncomputable def ldKOk (r : Nat) : Bool :=
   check exprs cfg (fun n => some (.atom n)) (ldK (16 * r)) ⟨fun _ => none, fun _ => none⟩ fun e =>
     e.reg .xmm6 == some (.bin .pxor (.atom r) (.const uW))
 theorem ldK_chk : (ldKOk 2 && ldKOk 3) = true := by kernel_rfl

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -182,16 +183,96 @@ theorem getLsbD_rotateRight_lt {w : Nat} (x : BitVec w) (n q : Nat) (hq : q < w)
 
 /-! ## The domain -/
 
+/-! The operations are written for the kernel: with the functions on `Nat`
+that it evaluates natively, and recursors, which evaluate what they compute
+before they give it (`seqN`); the masks of a lane are repeated by one
+multiplication (`repK`). -/
+
+/-- `rep w c k` (`rep_eq`). -/
+def repK (w c k : Nat) : Nat := Nat.mul c (rep w 1 k)
+
+theorem rep_lt {w c : Nat} (hc : c < 2 ^ w) (k : Nat) : rep w c k < 2 ^ (w * 2 ^ k) := by
+  apply Nat.lt_pow_two_of_testBit
+  intro i hi
+  rw [testBit_rep hc, decide_eq_false (Nat.not_lt.mpr hi), Bool.false_and]
+
+theorem rep_eq {w c : Nat} (hc : c < 2 ^ w) (k : Nat) : rep w c k = repK w c k := by
+  rcases Nat.eq_zero_or_pos w with rfl | hw
+  · obtain rfl : c = 0 := by simpa using hc
+    have : ∀ k, rep 0 0 k = 0 := fun k => by induction k with
+      | zero => rfl
+      | succ k ih => simp only [rep, ih, Nat.zero_shiftLeft, Nat.or_self]
+    rw [this, repK]; exact (Nat.zero_mul _).symm
+  induction k with
+  | zero => exact (Nat.mul_one c).symm
+  | succ k ih =>
+    have h1 : (1 : Nat) < 2 ^ w := Nat.one_lt_two_pow (Nat.ne_of_gt hw)
+    have or_add : ∀ x y n : Nat, x < 2 ^ n → x ||| y <<< n = x + y * 2 ^ n := fun x y n h => by
+      rw [Nat.or_comm, ← Nat.shiftLeft_add_eq_or_of_lt h, Nat.shiftLeft_eq, Nat.add_comm]
+    rw [rep, or_add _ _ _ (rep_lt hc k), repK, rep, or_add _ _ _ (rep_lt h1 k), ih, repK]
+    show c * _ + c * _ * _ = c * (_ + _)
+    rw [Nat.mul_add, Nat.mul_assoc]
+
+/-- `rotL`, for `m ≤ w` (`rotL_eq`). -/
+def rotLK (w k m f : Nat) : Nat :=
+  Nat.lor (Nat.land (Nat.shiftRight f m) (repK w (Nat.sub (Nat.pow 2 (Nat.sub w m)) 1) k))
+    (Nat.land (Nat.shiftLeft f (Nat.sub w m))
+      (repK w (Nat.shiftLeft (Nat.sub (Nat.pow 2 m) 1) (Nat.sub w m)) k))
+
+theorem rotL_eq {w m : Nat} (hm : m ≤ w) (k f : Nat) : rotL w k m f = rotLK w k m f := by
+  rw [rotL, rep_eq (two_pow_sub_one_lt (Nat.sub_le w m)), rep_eq (high_mask_lt hm)]; rfl
+
+/-- `shrL`. -/
+def shrLK (w k n f : Nat) : Nat :=
+  Nat.land (Nat.shiftRight f n) (repK w (Nat.sub (Nat.pow 2 (Nat.sub w n)) 1) k)
+
+theorem shrL_eq (w k n f : Nat) : shrL w k n f = shrLK w k n f := by
+  rw [shrL, rep_eq (two_pow_sub_one_lt (Nat.sub_le w n))]; rfl
+
+/-- A pair of evaluated numbers. -/
+noncomputable def seqPair (c f : Nat) : Option (Nat × Nat) := Machine.seqN c fun c => Machine.seqN f fun f => some (c, f)
+
+theorem seqPair_eq (c f : Nat) : seqPair c f = some (c, f) := by rw [seqPair, Machine.seqN_eq, Machine.seqN_eq]
+
 /-- Words of `w` bits as constant bits and lanes of the `2 ^ k` atoms. -/
-def lanes (w k : Nat) : Dom (Nat × Nat) w where
-  xor a b := some (a.1 ^^^ b.1, a.2 ^^^ b.2)
-  and a b :=
-    if a.2 = 0 then some (a.1 &&& b.1, b.2 &&& rep w a.1 k)
-    else if b.2 = 0 then some (a.1 &&& b.1, a.2 &&& rep w b.1 k) else none
-  or a b := if a.2 = 0 ∧ b.2 = 0 then some (a.1 ||| b.1, 0) else none
-  ror n a := if 0 < w then some (rotL w 0 (n % w) a.1, rotL w k (n % w) a.2) else none
-  shr n a := if n < w then some (shrL w 0 n a.1, shrL w k n a.2) else some (0, 0)
+noncomputable def lanes (w k : Nat) : Dom (Nat × Nat) w where
+  xor a b := seqPair (Nat.xor a.1 b.1) (Nat.xor a.2 b.2)
+  and a b := Bool.rec (motive := fun _ => Option (Nat × Nat))
+    (Bool.rec (motive := fun _ => Option (Nat × Nat)) none
+      (seqPair (Nat.land a.1 b.1) (Nat.land a.2 (repK w b.1 k))) (Nat.beq b.2 0))
+    (seqPair (Nat.land a.1 b.1) (Nat.land b.2 (repK w a.1 k))) (Nat.beq a.2 0)
+  or a b := Bool.rec (motive := fun _ => Option (Nat × Nat)) none
+    (Bool.rec (motive := fun _ => Option (Nat × Nat)) none (seqPair (Nat.lor a.1 b.1) 0) (Nat.beq b.2 0))
+    (Nat.beq a.2 0)
+  ror n a := Bool.rec (motive := fun _ => Option (Nat × Nat)) none
+    (seqPair (rotLK w 0 (Nat.mod n w) a.1) (rotLK w k (Nat.mod n w) a.2)) (Nat.ble 1 w)
+  shr n a := Bool.rec (motive := fun _ => Option (Nat × Nat)) (some (0, 0))
+    (seqPair (shrLK w 0 n a.1) (shrLK w k n a.2)) (Nat.ble (Nat.succ n) w)
   const v := some (v.toNat, 0)
+
+theorem lanes_xor (w k : Nat) (a b : Nat × Nat) :
+    (lanes w k).xor a b = some (a.1 ^^^ b.1, a.2 ^^^ b.2) := seqPair_eq _ _
+
+theorem lanes_and (w k : Nat) (a b : Nat × Nat) : (lanes w k).and a b =
+    if a.2 = 0 then some (a.1 &&& b.1, b.2 &&& repK w a.1 k)
+    else if b.2 = 0 then some (a.1 &&& b.1, a.2 &&& repK w b.1 k) else none := by
+  simp only [lanes, Machine.bool_rec_beq, seqPair_eq]; rfl
+
+theorem lanes_or (w k : Nat) (a b : Nat × Nat) : (lanes w k).or a b =
+    if a.2 = 0 then if b.2 = 0 then some (a.1 ||| b.1, 0) else none else none := by
+  simp only [lanes, Machine.bool_rec_beq, seqPair_eq]; rfl
+
+theorem lanes_ror (w k n : Nat) (a : Nat × Nat) : (lanes w k).ror n a =
+    if 0 < w then some (rotL w 0 (n % w) a.1, rotL w k (n % w) a.2) else none := by
+  simp only [lanes, Machine.bool_rec_ble, seqPair_eq]
+  by_cases hw : 1 ≤ w
+  · have hm : n % w ≤ w := Nat.le_of_lt (Nat.mod_lt n hw)
+    rw [ite_eq_left hw, ite_eq_left (show 0 < w from hw), rotL_eq hm, rotL_eq hm]; rfl
+  · rw [ite_eq_right hw, ite_eq_right (show ¬ 0 < w from hw)]
+
+theorem lanes_shr (w k n : Nat) (a : Nat × Nat) : (lanes w k).shr n a =
+    if n < w then some (shrL w 0 n a.1, shrL w k n a.2) else some (0, 0) := by
+  simp only [lanes, Machine.bool_rec_ble, seqPair_eq, shrL_eq]; rfl
 
 /-- Bit `q` of the word is constant bit `q` XOR the atoms of lane position `q`. -/
 def LaneRel {w : Nat} (k A : Nat) (a : Nat × Nat) (x : BitVec w) : Prop :=
@@ -204,35 +285,35 @@ theorem rotL_lt {w m c : Nat} (hm : m < w) : rotL w 0 m c < 2 ^ w := by
 
 theorem lanes_sound {w k A : Nat} : (lanes w k).Sound (LaneRel k A) where
   xor {a b c x y} ha hb h := by
-    simp only [lanes, Option.some.injEq] at h; subst h
+    rw [lanes_xor, Option.some.injEq] at h; subst h
     refine ⟨Nat.xor_lt_two_pow ha.1 hb.1, fun q hq => ?_⟩
     simp only [BitVec.getLsbD_xor, ha.2 q hq, hb.2 q hq, Nat.testBit_xor, par_xor]
     cases a.1.testBit q <;> cases b.1.testBit q <;> cases par w A a.2 q (2 ^ k) <;>
       cases par w A b.2 q (2 ^ k) <;> rfl
   and {a b c x y} ha hb h := by
-    simp only [lanes] at h
+    rw [lanes_and] at h
     split at h
-    · rename_i h0; simp only [Option.some.injEq] at h; subst h
+    · rename_i h0; rw [Option.some.injEq, ← rep_eq ha.1] at h; subst h
       refine ⟨Nat.and_lt_two_pow _ hb.1, fun q hq => ?_⟩
       simp only [BitVec.getLsbD_and, ha.2 q hq, hb.2 q hq, Nat.testBit_and,
         par_and_rep ha.1 hq (Nat.le_refl _), h0, par_zero]
       cases a.1.testBit q <;> cases b.1.testBit q <;> cases par w A b.2 q (2 ^ k) <;> rfl
     · split at h
-      · rename_i h0; simp only [Option.some.injEq] at h; subst h
+      · rename_i h0; rw [Option.some.injEq, ← rep_eq hb.1] at h; subst h
         refine ⟨Nat.and_lt_two_pow _ hb.1, fun q hq => ?_⟩
         simp only [BitVec.getLsbD_and, ha.2 q hq, hb.2 q hq, Nat.testBit_and,
           par_and_rep hb.1 hq (Nat.le_refl _), h0, par_zero]
         cases a.1.testBit q <;> cases b.1.testBit q <;> cases par w A a.2 q (2 ^ k) <;> rfl
       · cases h
   or {a b c x y} ha hb h := by
-    simp only [lanes] at h
-    split at h
-    · rename_i h0; simp only [Option.some.injEq] at h; subst h
+    rw [lanes_or] at h
+    by_cases h0 : a.2 = 0 <;> by_cases h1 : b.2 = 0 <;> simp only [h0, h1, ite_true, ite_false] at h
+    · simp only [Option.some.injEq] at h; subst h
       refine ⟨Nat.or_lt_two_pow ha.1 hb.1, fun q hq => ?_⟩
-      simp [BitVec.getLsbD_or, ha.2 q hq, hb.2 q hq, Nat.testBit_or, h0.1, h0.2, par_zero]
-    · cases h
+      simp [BitVec.getLsbD_or, ha.2 q hq, hb.2 q hq, Nat.testBit_or, h0, h1, par_zero]
+    all_goals cases h
   ror {n a c x} ha h := by
-    simp only [lanes] at h
+    rw [lanes_ror] at h
     split at h
     · rename_i hw
       simp only [Option.some.injEq] at h; subst h
@@ -246,7 +327,7 @@ theorem lanes_sound {w k A : Nat} : (lanes w k).Sound (LaneRel k A) where
       exact par_congr fun b hb => by rw [testBit_rotL hm hq hb, e]
     · cases h
   shr {n a c x} ha h := by
-    simp only [lanes] at h
+    rw [lanes_shr] at h
     split at h
     · rename_i hn
       simp only [Option.some.injEq] at h; subst h
@@ -287,6 +368,26 @@ def atomsAt (w q : Nat) : List Nat → Nat
 def mk (w : Nat) (g : Nat → List Nat) : Nat → Nat
   | 0 => 0
   | n + 1 => mk w g n ^^^ atomsAt w n (g n)
+
+/-- `atomsAt`, for the kernel. -/
+@[implemented_by atomsAt]
+def atomsAtK (w q : Nat) (l : List Nat) : Nat :=
+  List.rec 0 (fun a _ ih => Nat.xor (Nat.pow 2 (Nat.add (Nat.mul w a) q)) ih) l
+
+/-- `mk`, for the kernel. -/
+@[implemented_by mk]
+def mkK (w : Nat) (g : Nat → List Nat) (n : Nat) : Nat :=
+  Nat.rec 0 (fun n ih => Nat.xor ih (atomsAtK w n (g n))) n
+
+theorem atomsAtK_eq (w q : Nat) (l : List Nat) : atomsAtK w q l = atomsAt w q l := by
+  induction l with
+  | nil => rfl
+  | cons a l ih => rw [atomsAt, ← ih]; rfl
+
+theorem mkK_eq (w : Nat) (g : Nat → List Nat) (n : Nat) : mkK w g n = mk w g n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [mk, ← ih, ← atomsAtK_eq]; rfl
 
 theorem lane_inj {w a b q q' : Nat} (hq : q < w) (hq' : q' < w) (h : w * a + q = w * b + q') :
     a = b ∧ q = q' := by
