@@ -864,7 +864,7 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : Nat → Option
     have h0 : LaneRel k (assign W (2 ^ k)) (outWordW 128 g)
         (s'.mem.readW (xAddr (s.gpr c.base) j) 128 ^^^ BitVec.ofNat 128 cst) := by
       refine ⟨Nat.two_pow_pos _, fun q hq => ?_⟩
-      rw [BitVec.getLsbD_xor, this.2 q hq, BitVec.getLsbD_ofNat, decide_eq_true hq, Bool.true_and, hc, hm, outWordW]
+      rw [BitVec.getLsbD_xor, this.2 q hq, BitVec.getLsbD_ofNat, decide_eq_true hq, Bool.true_and, hc, hm, outWordW_eq]
       simp only [Nat.zero_testBit, Bool.false_xor]
       cases cst.testBit q <;> simp
     have hb := outWordW_rel_of_lt (by rw [← hm]; exact hlt) h0 q hq

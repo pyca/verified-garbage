@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
+import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -144,18 +146,393 @@ def eval : List Instr → Env α → Option (Env α)
   | [], e => some e
   | i :: is, e => (step D c ext e i).bind (eval is)
 
-/-- Evaluates the block and checks `post` of the result: for `decide`. -/
-def check (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
-  match eval D c ext is e with
-  | some e' => post e'
-  | none => false
+end
+
+/-! ## The evaluator the kernel runs (`Framework/Bitslice/Machine.lean`) -/
+
+namespace Kernel
+
+open VG.Bitslice.Machine (Op Idx bind Ent valK cstK val1 val2 cst1 cst2 mov1 cstK_eq)
+
+instance : Idx Reg := ⟨Reg.ctorIdx, fun {a b} h => by rw [← Reg.ofNat_ctorIdx a, h, Reg.ofNat_ctorIdx]⟩
+
+/-- An instruction that `step` or `stepN` (`StraightNot.lean`) evaluates. -/
+inductive Shape where
+  | bad
+  | mov (d : Reg) (o : Op2)
+  | dp (op : DpOp) (d n : Reg) (o : Op2)
+  | movw (d : Reg) (imm : BitVec 16)
+  | movt (d : Reg) (imm : BitVec 16)
+  | ldr (t n : Reg) (off : Nat)
+  | str (t n : Reg) (off : Nat)
+  | mvn (d : Reg) (o : Op2)
+
+def shapeFn : Instr → Shape
+  | .mov d o => .mov d o
+  | .dp op d n o => .dp op d n o
+  | .movw d imm => .movw d imm
+  | .movt d imm => .movt d imm
+  | .ldr t n off => .ldr t n off
+  | .str t n off => .str t n off
+  | .mvn d o => .mvn d o
+  | _ => .bad
+
+/-- `shapeFn`, with its cases closed (`inline_match%`). -/
+def shape : Instr → Shape := inline_match% shapeFn
+
+theorem shape_eq (i : Instr) : shape i = shapeFn i := by cases i <;> rfl
+
+section
+variable (D : Dom α 32) (c : Cfg) (ext : Nat → Option α)
+
+/-- `Cfg.loc`. -/
+noncomputable def locK (n : Reg) (off : Nat) (slot ext : Nat → Op Reg (Ent α) α) : Op Reg (Ent α) α :=
+  .eq (Nat.mod off 4) 0 (.lt off 4096 (.area n c.base c.slots c.ext c.exts (Nat.div off 4) slot ext))
+
+/-- A second operand: an encodable immediate, a register, or a function of one. -/
+noncomputable def srcK (imm : BitVec 32 → Op Reg (Ent α) α) (reg : Reg → Op Reg (Ent α) α)
+    (sh : (α → Option α) → Reg → Op Reg (Ent α) α) (o : Op2) : Op Reg (Ent α) α :=
+  Op2.rec (fun v => Bool.rec .bad (imm v) (encodable v)) reg
+    (fun r s n => .lt 0 n (.lt n 32 (Shift.rec .bad (sh (D.shr n) r) (sh (D.ror n) r) s))) o
+
+/-- `d := f n o`, of abstract values. -/
+noncomputable def valK2 (f : α → α → Option α) (d n : Reg) (o : Op2) : Op Reg (Ent α) α :=
+  srcK D (fun v => .r1 (val1 fun a => bind (f a) (D.const v)) d n) (fun r => .r2 (val2 f) d n r)
+    (fun g r => .r2 (val2 fun a b => bind (f a) (g b)) d n r) o
+
+/-- `d := f o`, of abstract values. -/
+noncomputable def valK1 (f : α → Option α) (d : Reg) (o : Op2) : Op Reg (Ent α) α :=
+  srcK D (fun v => .r0 (valK (bind f (D.const v))) d) (fun r => .r1 (val1 f) d r)
+    (fun g r => .r1 (val1 fun a => bind f (g a)) d r) o
+
+/-- `d := f n o`, of known constants. -/
+noncomputable def cstK2 (f : Nat → Nat → Nat) (d n : Reg) (o : Op2) : Op Reg (Ent α) α :=
+  srcK D (fun v => .r1 (cst1 D fun u => f u v.toNat) d n) (fun r => .r2 (cst2 D f) d n r)
+    (fun _ _ => .bad) o
+
+noncomputable def movK (d : Reg) (o : Op2) : Op Reg (Ent α) α :=
+  srcK D (fun v => .r0 (cstK D v.toNat) d) (fun r => .r1 (mov1 D) d r) (fun g r => .r1 (val1 g) d r) o
+
+/-- `2 ^ 32`. -/
+abbrev two32 : Nat := 4294967296
+
+/-- What the instruction does, `bic` and `mvn` being given. -/
+noncomputable def opW (bic : Reg → Reg → Op2 → Op Reg (Ent α) α) (mvn : Reg → Op2 → Op Reg (Ent α) α)
+    (i : Instr) : Op Reg (Ent α) α :=
+  Shape.rec (motive := fun _ => Op Reg (Ent α) α) .bad
+    (fun d o => .dst c.base c.ext d (movK D d o))
+    (fun op d n o => .dst c.base c.ext d (DpOp.rec
+      (cstK2 D (fun u v => Nat.mod (Nat.add u v) two32) d n o)
+      (cstK2 D (fun u v => Nat.mod (Nat.add (Nat.sub two32 v) u) two32) d n o)
+      (valK2 D D.and d n o) (valK2 D D.or d n o) (valK2 D D.xor d n o) (bic d n o) op))
+    (fun d imm => .dst c.base c.ext d (.r0 (cstK D imm.toNat) d))
+    (fun d imm => .dst c.base c.ext d
+      (.r1 (cst1 D fun v => Nat.lor (Nat.shiftLeft imm.toNat 16) (Nat.mod v 65536)) d d))
+    (fun t n off => .dst c.base c.ext t
+      (locK c n off (.ld (fun a => valK (some a)) t) fun k => .r0 (valK (ext k)) t))
+    (fun t n off => locK c n off (fun k => .st (fun x => x.val) k t) fun _ => .bad)
+    (fun d o => .dst c.base c.ext d (mvn d o))
+    (shape i)
+
+noncomputable def op : Instr → Op Reg (Ent α) α := opW D c ext (fun _ _ _ => .bad) (fun _ _ => .bad)
+
+/-- The abstract state, as the kernel's evaluator has it. -/
+def toM (e : Env α) : Machine.Env Reg (Ent α) α :=
+  ⟨fun r => some ⟨e.reg r, (e.cst r).map BitVec.toNat⟩, e.slot⟩
+
+def ofM (e : Machine.Env Reg (Ent α) α) : Env α :=
+  ⟨fun r => (e.reg r).bind Ent.val, e.slot, fun r => (e.reg r).bind fun x => x.cst.map (BitVec.ofNat 32)⟩
+
+theorem ofM_toM (e : Env α) : ofM (toM e) = e := by
+  cases e with
+  | mk r s k =>
+    refine congrArg (Env.mk r s) (funext fun q => ?_)
+    show (k q |>.map BitVec.toNat).map (BitVec.ofNat 32) = k q
+    cases k q with
+    | none => rfl
+    | some v => exact congrArg some (BitVec.ofNat_toNat ..|>.trans (BitVec.setWidth_eq v))
+
+theorem toM_set (e : Env α) (d : Reg) (a : Option α) (k : Option (BitVec 32)) :
+    (toM e).setReg d ⟨a, k.map BitVec.toNat⟩ = toM (e.set d a k) := by
+  refine congrArg (fun f => (⟨f, _⟩ : Machine.Env Reg (Ent α) α)) (funext fun r => ?_)
+  show (if Idx.ix r = Idx.ix d then _ else _) = _
+  by_cases h : r = d
+  · subst h; simp only [Env.set, ite_true]
+  · rw [ite_eq_right fun e => h (Idx.ix_inj e)]; simp only [toM, Env.set, ite_eq_right h]
+
+theorem toM_val (e : Env α) (d : Reg) (a : Option α) :
+    (valK a).map ((toM e).setReg d) = (a.map fun a => e.set d (some a) none).map toM := by
+  cases a with
+  | none => rfl
+  | some a => exact congrArg some (toM_set e d (some a) none)
+
+theorem toM_cst {D : Dom α 32} (e : Env α) (d : Reg) (v : BitVec 32) :
+    (cstK D v.toNat).map ((toM e).setReg d) = some (toM (constant D e d v)) := by
+  rw [cstK_eq]; exact congrArg some (toM_set e d (D.const v) (some v))
+
+theorem toM_cst' {D : Dom α 32} (e : Env α) (d : Reg) {n : Nat} {v : BitVec 32} (h : n = v.toNat) :
+    (cstK D n).map ((toM e).setReg d) = some (toM (constant D e d v)) := by
+  rw [h, toM_cst]
+
+theorem locK_eq (n : Reg) (off : Nat) (slot ext : Nat → Op Reg (Ent α) α) :
+    locK c n off slot ext = match c.loc n off with
+      | some (.slot k) => slot k
+      | some (.ext k) => ext k
+      | none => .bad := by
+  rw [locK, Op.eq_eq, Op.lt_eq, Op.area_eq, Cfg.loc]
+  show (if off % 4 = 0 then if off < 4096 then
+    (if n = c.base ∧ off / 4 < c.slots then slot (off / 4)
+    else if n = c.ext ∧ off / 4 < c.exts then ext (off / 4) else .bad) else .bad else .bad) = _
+  by_cases h2 : off % 4 = 0
+  · rw [ite_eq_left h2]
+    by_cases h1 : off < 4096
+    · rw [ite_eq_left h1, ite_eq_left (show _ ∧ _ from ⟨h2, h1⟩)]
+      by_cases hb : n = c.base ∧ off / 4 < c.slots
+      · rw [ite_eq_left hb, ite_eq_left hb]
+      · rw [ite_eq_right hb, ite_eq_right hb]
+        by_cases he : n = c.ext ∧ off / 4 < c.exts
+        · rw [ite_eq_left he, ite_eq_left he]
+        · rw [ite_eq_right he, ite_eq_right he]
+    · rw [ite_eq_right h1, ite_eq_right fun h => h1 h.2]
+  · rw [ite_eq_right h2, ite_eq_right fun h => h2 h.1]
+
+variable {D c ext}
+
+/-- A second operand that the evaluator accepts. -/
+theorem srcK_step {e : Env α} {imm : BitVec 32 → Op Reg (Ent α) α} {reg : Reg → Op Reg (Ent α) α}
+    {sh : (α → Option α) → Reg → Op Reg (Ent α) α} {o : Op2} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.step (toM e) (srcK D imm reg sh o) = some m) :
+    (∃ v, op2Abs D e o = D.const v ∧ op2Cst e o = some v ∧ Machine.step (toM e) (imm v) = some m) ∨
+    (∃ r, op2Abs D e o = e.reg r ∧ op2Cst e o = e.cst r ∧ Machine.step (toM e) (reg r) = some m) ∨
+    (∃ g r, op2Abs D e o = (e.reg r).bind g ∧ op2Cst e o = none ∧ Machine.step (toM e) (sh g r) = some m) := by
+  cases o with
+  | imm v =>
+    refine .inl ⟨v, ?_⟩
+    cases hv : encodable v with
+    | false => change Machine.step _ (Bool.rec _ _ (encodable v)) = _ at h; rw [hv] at h; cases h
+    | true =>
+      change Machine.step _ (Bool.rec _ _ (encodable v)) = _ at h; rw [hv] at h
+      exact ⟨by simp only [op2Abs, hv, ite_true], by simp only [op2Cst, hv, ite_true], h⟩
+  | reg r => exact .inr (.inl ⟨r, rfl, rfl, h⟩)
+  | shifted r s n =>
+    obtain ⟨h0, h⟩ := Machine.step_lt h
+    obtain ⟨hn, h⟩ := Machine.step_lt h
+    have hn' : 1 ≤ n ∧ n ≤ 31 := ⟨h0, Nat.le_of_lt_succ hn⟩
+    refine .inr (.inr ?_)
+    cases s with
+    | lsl => cases h
+    | lsr => exact ⟨D.shr n, r, by simp only [op2Abs]; exact ite_eq_left hn', rfl, h⟩
+    | ror => exact ⟨D.ror n, r, by simp only [op2Abs]; exact ite_eq_left hn', rfl, h⟩
+
+theorem toM_reg (e : Env α) (n : Reg) : (toM e).reg n = some ⟨e.reg n, (e.cst n).map BitVec.toNat⟩ := rfl
+
+theorem val1_eq (f : α → Option α) (x : Ent α) : val1 f x = valK (x.val.bind f) := by
+  obtain ⟨_ | a, _⟩ := x <;> rfl
+
+theorem val2_eq (f : α → α → Option α) (x y : Ent α) :
+    val2 f x y = valK (x.val.bind fun a => y.val.bind (f a)) := by
+  obtain ⟨_ | a, _⟩ := x <;> obtain ⟨_ | b, _⟩ := y <;> rfl
+
+theorem valK2_step {e : Env α} {f : α → α → Option α} {d n : Reg} {o : Op2}
+    {m : Machine.Env Reg (Ent α) α} (h : Machine.step (toM e) (valK2 D f d n o) = some m) :
+    (((e.reg n).bind fun a => (op2Abs D e o).bind (f a)).map fun r => e.set d (some r) none).map toM =
+      some m := by
+  rw [← toM_val]
+  rcases srcK_step h with ⟨v, ha, -, h⟩ | ⟨r, ha, -, h⟩ | ⟨g, r, ha, -, h⟩
+  · change (val1 _ _).map _ = _ at h
+    rw [val1_eq] at h
+    rw [ha, ← h]
+    simp only [Machine.bind_eq]
+  · change (val2 _ _ _).map _ = _ at h
+    rw [val2_eq] at h
+    rw [ha, ← h]
+  · change (val2 _ _ _).map _ = _ at h
+    rw [val2_eq] at h
+    rw [ha, ← h]
+    simp only [Machine.bind_eq, Option.bind_assoc]
+
+theorem valK1_step {e : Env α} {f : α → Option α} {d : Reg} {o : Op2}
+    {m : Machine.Env Reg (Ent α) α} (h : Machine.step (toM e) (valK1 D f d o) = some m) :
+    (((op2Abs D e o).bind f).map fun r => e.set d (some r) none).map toM = some m := by
+  rw [← toM_val]
+  rcases srcK_step h with ⟨v, ha, -, h⟩ | ⟨r, ha, -, h⟩ | ⟨g, r, ha, -, h⟩
+  · change (valK _).map _ = _ at h
+    rw [Machine.bind_eq] at h
+    rw [ha, ← h]
+  · change (val1 _ _).map _ = _ at h
+    rw [val1_eq] at h
+    rw [ha, ← h]
+  · change (val1 _ _).map _ = _ at h
+    rw [val1_eq] at h
+    rw [ha, ← h]
+    simp only [Machine.bind_eq, Option.bind_assoc]
+
+theorem cstK2_step {e : Env α} {f : Nat → Nat → Nat} {g : BitVec 32 → BitVec 32 → BitVec 32}
+    (hf : ∀ u v : BitVec 32, f u.toNat v.toNat = (g u v).toNat) {d n : Reg} {o : Op2}
+    {m : Machine.Env Reg (Ent α) α} (h : Machine.step (toM e) (cstK2 D f d n o) = some m) :
+    (match e.cst n, op2Cst e o with
+      | some x, some y => some (constant D e d (g x y))
+      | _, _ => none).map toM = some m := by
+  rcases srcK_step h with ⟨v, -, ha, h⟩ | ⟨r, -, ha, h⟩ | ⟨_, r, -, -, h⟩
+  · change (cst1 D _ ⟨_, (e.cst n).map _⟩).map _ = _ at h
+    rw [ha]
+    cases hn : e.cst n with
+    | none => rw [hn] at h; cases h
+    | some u => rw [hn] at h; rw [← h]; exact (toM_cst' e d (hf u v)).symm
+  · change (cst2 D _ ⟨_, (e.cst n).map _⟩ ⟨_, (e.cst r).map _⟩).map _ = _ at h
+    rw [ha]
+    cases hn : e.cst n with
+    | none => rw [hn] at h; cases h
+    | some u =>
+      cases hr : e.cst r with
+      | none => rw [hn, hr] at h; cases h
+      | some v => rw [hn, hr] at h; rw [← h]; exact (toM_cst' e d (hf u v)).symm
+  · cases h
+
+theorem movK_step {e : Env α} {d : Reg} {o : Op2} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.step (toM e) (movK D d o) = some m) :
+    (match op2Cst e o with
+      | some v => some (constant D e d v)
+      | none => (op2Abs D e o).map fun a => e.set d (some a) none).map toM = some m := by
+  rcases srcK_step h with ⟨v, -, ha, h⟩ | ⟨r, ha, hc, h⟩ | ⟨g, r, ha, hc, h⟩
+  · rw [ha, ← h]; exact (toM_cst e d v).symm
+  · change (mov1 D ⟨e.reg r, (e.cst r).map _⟩).map _ = _ at h
+    rw [ha, hc]
+    cases hr : e.cst r with
+    | none => rw [hr] at h; rw [← h]; exact (toM_val e d _).symm
+    | some v => rw [hr] at h; rw [← h]; exact (toM_cst e d v).symm
+  · change (val1 _ _).map _ = _ at h
+    rw [val1_eq] at h
+    rw [ha, hc, ← h]; exact (toM_val e d _).symm
+
+/-- What the kernel's evaluator computes, `step` does, `bic` and `mvn` aside. -/
+theorem step_of_opW {bic : Reg → Reg → Op2 → Op Reg (Ent α) α} {mvn : Reg → Op2 → Op Reg (Ent α) α}
+    {e : Env α} {i : Instr} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.step (toM e) (opW D c ext bic mvn i) = some m) :
+    (step D c ext e i).map toM = some m ∨
+    (∃ d n o, i = .dp .bic d n o ∧ ¬ (d = c.base ∨ d = c.ext) ∧ Machine.step (toM e) (bic d n o) = some m) ∨
+    (∃ d o, i = .mvn d o ∧ ¬ (d = c.base ∨ d = c.ext) ∧ Machine.step (toM e) (mvn d o) = some m) := by
+  rw [opW, shape_eq] at h
+  cases i with
+  | mov d o =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    refine .inl ?_
+    simp only [step]; rw [ite_eq_right hd]; exact movK_step h
+  | dp op d n o =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    have hv {f : α → α → Option α} (hop : binop D op = f) (h : Machine.step (toM e) (valK2 D f d n o) = some m) :
+        (match e.reg n, op2Abs D e o with
+          | some a, some b => (binop D op a b).map fun r => e.set d (some r) none
+          | _, _ => none).map toM = some m := by
+      rw [hop, ← valK2_step h]
+      cases e.reg n <;> cases op2Abs D e o <;> rfl
+    cases op with
+    | add =>
+      refine .inl ?_
+      simp only [step]; rw [ite_eq_right hd]
+      exact cstK2_step (g := (· + ·)) (fun u v => (BitVec.toNat_add ..).symm) h
+    | sub =>
+      refine .inl ?_
+      simp only [step]; rw [ite_eq_right hd]
+      exact cstK2_step (g := (· - ·)) (fun u v => by rw [BitVec.toNat_sub]; rfl) h
+    | and => refine .inl ?_; simp only [step]; rw [ite_eq_right hd]; exact hv rfl h
+    | orr => refine .inl ?_; simp only [step]; rw [ite_eq_right hd]; exact hv rfl h
+    | eor => refine .inl ?_; simp only [step]; rw [ite_eq_right hd]; exact hv rfl h
+    | bic => exact .inr (.inl ⟨d, n, o, rfl, hd, h⟩)
+  | movw d imm =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    refine .inl ?_
+    simp only [step]; rw [ite_eq_right hd, ← h]
+    refine (toM_cst' e d ?_).symm
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans imm.isLt (by decide))]
+  | movt d imm =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    refine .inl ?_
+    simp only [step]; rw [ite_eq_right hd]
+    change (cst1 D _ ⟨_, (e.cst d).map _⟩).map _ = _ at h
+    cases hn : e.cst d with
+    | some v =>
+      rw [hn] at h; rw [← h]
+      refine (toM_cst' e d ?_).symm
+      rw [BitVec.toNat_append, BitVec.extractLsb'_toNat, Nat.shiftRight_zero]; rfl
+    | none => rw [hn] at h; cases h
+  | ldr t n off =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    refine .inl ?_
+    simp only [step]; rw [ite_eq_right hd]
+    rw [locK_eq] at h
+    cases hl : c.loc n off with
+    | none => rw [hl] at h; cases h
+    | some w =>
+      rw [hl] at h
+      cases w with
+      | slot k =>
+        change ((e.slot k).bind _).map _ = _ at h
+        show ((e.slot k).map _).map toM = _
+        cases hk : e.slot k with
+        | none => rw [hk] at h; cases h
+        | some a => rw [hk] at h; rw [← h]; exact (toM_val e t _).symm
+      | ext k => rw [← h]; exact (toM_val e t _).symm
+  | str t n off =>
+    refine .inl ?_
+    simp only [step]
+    change Machine.step (toM e) (locK c n off _ _) = _ at h
+    rw [locK_eq] at h
+    cases hl : c.loc n off with
+    | none => rw [hl] at h; cases h
+    | some w =>
+      rw [hl] at h
+      cases w with
+      | slot k =>
+        change (e.reg t).map _ = _ at h
+        show ((e.reg t).map _).map toM = _
+        rw [← h]; cases e.reg t <;> rfl
+      | ext k => cases h
+  | mvn d o =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    exact .inr (.inr ⟨d, o, rfl, hd, h⟩)
+  | _ => cases h
+
+theorem step_of_op {e : Env α} {i : Instr} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.step (toM e) (op D c ext i) = some m) : (step D c ext e i).map toM = some m := by
+  rcases step_of_opW h with h | ⟨_, _, _, _, _, h⟩ | ⟨_, _, _, _, h⟩
+  · exact h
+  · cases h
+  · cases h
+
+/-- What the kernel's evaluator computes, `eval` does. -/
+theorem eval_of_op {is : List Instr} {e : Env α} {m : Machine.Env Reg (Ent α) α}
+    (h : Machine.eval (op D c ext) is (toM e) = some m) : ∃ e', eval D c ext is e = some e' ∧ toM e' = m := by
+  induction is generalizing e with
+  | nil => exact ⟨e, rfl, Option.some.inj h⟩
+  | cons i is ih =>
+    simp only [Machine.eval, Option.bind_eq_some_iff] at h
+    obtain ⟨m₁, h₁, h₂⟩ := h
+    obtain ⟨e₁, he₁, rfl⟩ := Option.map_eq_some_iff.mp (step_of_op h₁)
+    obtain ⟨e', he', hm⟩ := ih h₂
+    exact ⟨e', by rw [eval, he₁]; exact he', hm⟩
+
+end
+
+end Kernel
+
+section
+variable (D : Dom α 32) (c : Cfg) (ext : Nat → Option α)
+
+/-- Evaluates the block and checks `post` of the result, for the kernel. -/
+noncomputable def check (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
+  Machine.run (Kernel.toM e) 4 (Nat.log2 c.slots + 1) (Kernel.op D c ext) (fun e => post (Kernel.ofM e)) is
 
 theorem of_check {is : List Instr} {e : Env α} {post : Env α → Bool}
     (h : check D c ext is e post = true) : ∃ e', eval D c ext is e = some e' ∧ post e' = true := by
-  unfold check at h
-  split at h
-  · exact ⟨_, by assumption, h⟩
-  · cases h
+  obtain ⟨m, hm, hp⟩ := Machine.run_sound h
+  obtain ⟨e', he, rfl⟩ := Kernel.eval_of_op hm
+  rw [Kernel.ofM_toM] at hp
+  exact ⟨e', he, hp⟩
+
+theorem check_mono {is : List Instr} {e : Env α} {p q : Env α → Bool}
+    (hpq : ∀ e, p e = true → q e = true) (h : check D c ext is e p = true) :
+    check D c ext is e q = true := Machine.run_mono (fun _ => hpq _) h
 
 end
 

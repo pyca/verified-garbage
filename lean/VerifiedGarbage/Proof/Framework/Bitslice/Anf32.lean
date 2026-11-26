@@ -80,15 +80,45 @@ def linRor32 (n : Nat) (l : List Nat) : List Nat :=
 /-- Rotate each linear form of a monomial, and sort them again. -/
 def monoRor32 (n : Nat) (m : List (List Nat)) : List (List Nat) := (m.map (linRor32 n)).foldr atomIns []
 
-def pror32 (n : Nat) (p : Poly) : Poly :=
+def pror32C (n : Nat) (p : Poly) : Poly :=
   ⟨linRor32 n p.lin, p.c, (p.nl.map (monoRor32 n)).foldr monoIns []⟩
 
+/-- `linRor32`, for the kernel (`Anf.lean`). -/
+noncomputable def linRor32K (n : Nat) (l : List Nat) : List Nat :=
+  List.rec [] (fun k _ ih =>
+    keyInsK (Nat.add (Nat.mul (Nat.div k 64) 64) (Nat.mod (Nat.add (Nat.mod k 64) n) 32)) ih) l
+
+/-- `monoRor32`. -/
+noncomputable def monoRor32K (n : Nat) (m : List (List Nat)) : List (List Nat) :=
+  List.rec [] (fun a _ ih => atomInsK (linRor32K n a) ih) m
+
+@[implemented_by pror32C]
+def pror32 (n : Nat) (p : Poly) : Poly :=
+  forceP (linRor32K n p.lin) p.c (List.rec [] (fun m _ ih => monoInsK (monoRor32K n m) ih) p.nl)
+
+theorem linRor32K_eq (n : Nat) (l : List Nat) : linRor32K n l = linRor32 n l := by
+  induction l with
+  | nil => rfl
+  | cons k l ih => exact (keyInsK_eq ..).trans (by rw [← linRor32K, ih]; rfl)
+
+theorem monoRor32K_eq (n : Nat) (m : List (List Nat)) : monoRor32K n m = monoRor32 n m := by
+  induction m with
+  | nil => rfl
+  | cons a m ih => exact (atomInsK_eq ..).trans (by rw [← monoRor32K, ih, linRor32K_eq]; rfl)
+
+theorem pror32_eq (n : Nat) (p : Poly) : pror32 n p = pror32C n p := by
+  rw [pror32, forceP_eq, linRor32K_eq, pror32C]
+  refine congrArg _ ?_
+  induction p.nl with
+  | nil => rfl
+  | cons m ns ih => exact (monoInsK_eq ..).trans (by rw [ih, monoRor32K_eq]; rfl)
+
 /-- The ANF domain, for 32-bit words. -/
-def anf32 : Dom Poly 32 where
-  xor a b := some (pxor a b)
-  and a b := some (pand a b)
-  or a b := some (por a b)
-  ror n a := some (pror32 n a)
+noncomputable def anf32 : Dom Poly 32 where
+  xor a b := seqP (pxor a b)
+  and a b := seqP (pand a b)
+  or a b := seqP (por a b)
+  ror n a := seqP (pror32 n a)
   shr _ _ := none
   const v := if v = 0 then some zero else if v = BitVec.allOnes 32 then some one else none
 
@@ -134,7 +164,8 @@ theorem monos_ror32 (n : Nat) (ns : List (List (List Nat))) :
     simp only [monos, List.foldr_cons, rotateRight_xor]
 
 theorem eval_pror32 (n : Nat) (p : Poly) : eval (dblV V) (pror32 n p) = (eval (dblV V) p).rotateRight n := by
-  simp only [eval, pror32, lin_linRor32, monos_ror32, rotateRight_xor, cst_ror]
+  rw [pror32_eq]
+  simp only [eval, pror32C, lin_linRor32, monos_ror32, rotateRight_xor, cst_ror]
 
 /-- `Poly` stands for the 32-bit word that, written twice, it evaluates to
 on the atoms written twice. -/
@@ -147,16 +178,16 @@ theorem anf32Rel_atom (a : Nat) : Anf32Rel V (atom a) (V a) := eval_atom _ a
 
 theorem anf32_sound : anf32.Sound (Anf32Rel V) where
   xor ha hb h := by
-    simp only [anf32, Option.some.injEq] at h; subst h
+    simp only [anf32, seqP_eq, Option.some.injEq] at h; subst h
     simp only [Anf32Rel] at *; rw [eval_pxor, ha, hb, dbl_xor]
   and ha hb h := by
-    simp only [anf32, Option.some.injEq] at h; subst h
+    simp only [anf32, seqP_eq, Option.some.injEq] at h; subst h
     simp only [Anf32Rel] at *; rw [eval_pand, ha, hb, dbl_and]
   or ha hb h := by
-    simp only [anf32, Option.some.injEq] at h; subst h
+    simp only [anf32, seqP_eq, Option.some.injEq] at h; subst h
     simp only [Anf32Rel] at *; rw [eval_por, ha, hb, dbl_or]
   ror ha h := by
-    simp only [anf32, Option.some.injEq] at h; subst h
+    simp only [anf32, seqP_eq, Option.some.injEq] at h; subst h
     simp only [Anf32Rel] at *; rw [eval_pror32, ha, dbl_ror]
   shr _ h := by cases h
   const {v c} h := by

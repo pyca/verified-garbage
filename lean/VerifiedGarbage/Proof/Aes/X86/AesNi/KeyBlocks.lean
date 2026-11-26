@@ -115,17 +115,17 @@ theorem post_gat {α : Type} {R : α → BitVec 32 → Prop} {e : Env α} {s s' 
     exact this
 
 /-- The slices: the word shifted. -/
-def slicesCheck : Bool :=
+noncomputable def slicesCheck : Bool :=
   check (lanes 32 5) swCfg (fun _ => none) slices (genv [(.r .eax, inWordW 32 0)]) fun e =>
     (List.range 8).all fun j => outOkW 32 5 (e.slot j) fun p => if p + j < 32 then [p + j] else []
 theorem slices_check : slicesCheck = true := by decide +kernel
 
-def subSlicesCheck : Bool :=
+noncomputable def subSlicesCheck : Bool :=
   check (table 32 256) swCfg (fun _ => none) subSlices (genv ((List.range 8).map fun j => (.m j, sbIn j))) fun e =>
     (List.range 8).all fun j => gok (subOut j) && gat e (subOut j) == some (sbox0T.getD j 0)
 theorem subSlices_check : subSlicesCheck = true := by decide +kernel
 
-def gatherCheck : Bool :=
+noncomputable def gatherCheck : Bool :=
   check (lanes 32 8) swCfg (fun _ => none) gather (genv ((List.range 8).map fun j => (subOut j, inWordW 32 j))) fun e =>
     outOkW 32 8 (e.reg .eax) fun p => [32 * (p % 8) + 8 * (p / 8)]
 theorem gather_check : gatherCheck = true := by decide +kernel

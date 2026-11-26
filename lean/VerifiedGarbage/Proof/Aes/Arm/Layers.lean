@@ -398,7 +398,7 @@ def rOuts (r : Nat → Reg) (g : Nat → Nat → List Nat) : List (Reg × (Nat �
   (List.range 8).map fun j => (r j, g j)
 
 /-- The check of a linear layer from `a j` to `d j`. -/
-def linCheck (is : List Instr) (a d : Nat → Reg) (g : Nat → Nat → List Nat) : Bool :=
+noncomputable def linCheck (is : List Instr) (a d : Nat → Reg) (g : Nat → Nat → List Nat) : Bool :=
   check (lanes 32 8) noMem (linExt 0) is (linEnv (rIns a)) (linPost 8 (rOuts d g))
 
 theorem ortho_check : linCheck ortho q q orthoG = true := by decide +kernel
