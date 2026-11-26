@@ -17,6 +17,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Idea.KeyLit
+meta import VerifiedGarbage.Proof.Idea.KeyLit
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
+meta import VerifiedGarbage.Proof.Idea.AArch64.Lit
 
 /-!
 # IDEA on AArch64: returning without secret residue

@@ -24,6 +24,10 @@ import VerifiedGarbage.Proof.Sm4.FbScratch
 import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.Sm4.CtrFinal
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
+import VerifiedGarbage.Proof.Sm4.PPC64LE.LayersLit
+import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
+import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
 
 /-!
 # SM4 on PPC64LE, without secret residue

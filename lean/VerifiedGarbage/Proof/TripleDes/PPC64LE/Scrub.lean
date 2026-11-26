@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.FbScratch
 import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
 /-!
 # Triple DES on PPC64LE, without secret residue

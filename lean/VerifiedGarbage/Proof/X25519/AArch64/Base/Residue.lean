@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.X25519.AArch64.Lit
 meta import VerifiedGarbage.Proof.X25519.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
+meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
 
 -- separate module: only the registration needs it, and it imports the proof of the base-point multiplication, which the residue analysis would otherwise be built with
 
