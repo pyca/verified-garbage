@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Registers kept through SSE registers
@@ -100,7 +101,7 @@ the SSE registers. -/
 theorem step_xs {r : Reg} {i : Instr} (h : writesVec i = false) (a : Abs) : (step r a i).xs = a.xs := by
   unfold step
   split
-  · simp [writesVec] at h
+  · cases h
   · cases _ == r <;> rfl
   · simp only [h, Bool.cond_false]
 
@@ -155,20 +156,20 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
   cases hd : Taint.dstOf i with
   | some d => exact (Taint.exec_nonstore_xmm hd h).2.2.2.1
   | none =>
-    cases i <;> simp only [Taint.dstOf, reduceCtorEq, writesVec, Bool.true_eq_false] at hd hw
+    cases i <;> first | (cases hd; done) | (cases hw; done) | skip
     all_goals first
-      | (simp only [exec, reduceCtorEq] at h; done)
-      | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
+      | (simp only [reduceExec, reduceCtorEq] at h; done)
+      | (simp only [reduceExec, Option.some.injEq] at h; subst h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl)
       | (obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl)
-      | (simp only [exec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
+      | (simp only [reduceExec, State.store64, State.store32, State.store8, State.store16, State.store128, State.store512,
           State.store256] at h
          split at h <;> cases h; rfl)
       | (rename_i len _ _; cases len <;>
-          (simp only [exec, State.store128, State.store256] at h; split at h <;> cases h; rfl))
-      | (simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
+          (simp only [reduceExec, State.store128, State.store256] at h; split at h <;> cases h; rfl))
+      | (simp only [reduceExec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
          split at h <;> cases h; rfl)
-      | (simp only [exec, execMulx] at h; split at h
+      | (simp only [reduceExec, execMulx] at h; split at h
          · cases h
          · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl)
 
@@ -189,7 +190,7 @@ theorem step_holds {r : Reg} {v : BitVec 64} {a : Abs} {i : Instr} {s s' : State
   case xop op =>
     cases op
     case movq x q =>
-      simp only [exec, XOp.exec, Option.some.injEq] at h
+      simp only [reduceExec, XOp.exec, Option.some.injEq] at h
       subst h
       simp only [step]
       refine ⟨fun ho => ha.1 ho, fun y hy => ?_⟩

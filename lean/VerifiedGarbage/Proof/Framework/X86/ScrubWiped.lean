@@ -483,6 +483,7 @@ theorem verifiedScrubbedWiped {c : Prog isa}
       obtain ⟨hr₁, -⟩ := argsState_run (n := n) (e := e) p₁ hb.1
       obtain ⟨hr₂, -⟩ := argsState_run (n := n) (e := e) p₂ hb.1
       have hal : (allocState bytes s₁).unknowns = (allocState bytes s₂).unknowns := hu
+      unfold narrow State.withRegions
       exact (Exec.path (c := .block (setArgs bytes (slots sig))) (r₁ := []) (r₂ := []) (Exec.block hr₁)
         (Exec.block hr₂) (fun _ h => by simp [inames] at h)
         (by rw [allocState_esp, allocState_esp, osp]) hal).2
