@@ -1383,6 +1383,7 @@ vg_ecdh_brainpoolp320r1:
 	movz x17, #0, lsl #0
 	movi v28.2d, #0
 	movi v29.2d, #0
+	movi v31.2d, #0
 	tst x1, x1
 	add w0, w0, #0
 	ret

@@ -1955,6 +1955,7 @@ vg_ec_brainpoolp320r1_public_key:
 	movz x16, #0, lsl #0
 	movz x17, #0, lsl #0
 	movi v29.2d, #0
+	movi v31.2d, #0
 	tst x1, x1
 	add w0, w0, #0
 	ret

@@ -782,6 +782,7 @@ vg_ec_brainpoolp384r1_public_key:
 	movi v16.2d, #0
 	movi v17.2d, #0
 	movi v29.2d, #0
+	movi v31.2d, #0
 	tst x1, x1
 	add w0, w0, #0
 	ret
