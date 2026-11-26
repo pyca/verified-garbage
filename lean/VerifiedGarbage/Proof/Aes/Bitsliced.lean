@@ -347,7 +347,7 @@ theorem outOkW_of {w k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat} {
     obtain ⟨c, f⟩ := v
     simp only [outOkS, Bool.and_eq_true, Nat.beq_eq, Nat.blt_eq] at h
     obtain ⟨rfl, rfl, h⟩ := h
-    simp only [outOkW, outWordW, hS, beq_self_eq_true, decide_eq_true h, Bool.and_self]
+    simp only [outOkW, mkK_eq, hS, Nat.beq_refl, Nat.blt_eq.mpr h, Bool.and_self]
 
 def mcCoeffs : List Nat := [0x02, 0x03, 0x01, 0x01]
 def invMcCoeffs : List Nat := [0x0e, 0x0b, 0x0d, 0x09]

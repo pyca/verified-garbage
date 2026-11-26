@@ -570,7 +570,7 @@ theorem allocatedSetup_ok (hc : CfgOk p256) (hC : Law p256.C) (hO : PrimeOrder p
   have whole : Unch base [(0,size)] s₀.mem b.mem := unch_whole (hM.unch.trans un) (by
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
+    · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add size)
     · exact allocatedSetup_bounds w hw)
   obtain ⟨table,outside⟩ := tbl_of hTP (rd.trans hM.rd) whole
   have gen := JointGenerator.of_table hc hC hT table outside (by rw [ss,hM.syms]; rfl)
@@ -616,7 +616,7 @@ theorem mid_saved {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64}
   have whole : Unch base [(0,size)] s₀.mem t.mem := unch_whole (h.unch.trans hu.unch) (by
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
+    · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add size)
     · rw [List.mem_singleton.mp hw]; decide)
   refine ⟨h.scr.of_keepRegs hk (by simp),hk.wr.trans h.wr,hk.rd.trans h.rd,
     h.fixed.unch (by decide) h.scr.nowrap (by unfold FixedOk; decide +kernel) hu.unch,
@@ -658,7 +658,7 @@ theorem finalState_of_allocated {s₀ s t : State} {base : Addr} {g : Reg → Bi
   · exact unch_whole (h.unch.trans hu) (by
       intro w hw
       rcases List.mem_append.mp hw with hw | hw
-      · rw [List.mem_singleton.mp hw]; exact Nat.zero_add size |>.le
+      · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add size)
       · exact point_bounds w hw)
   · rw [same VG.Impl.Ecdsa.AArch64.K (by simp)]; exact h.k
 

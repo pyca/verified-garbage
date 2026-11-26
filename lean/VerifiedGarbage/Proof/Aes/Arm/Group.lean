@@ -259,7 +259,7 @@ def arkCfg (off : Nat) : Cfg := { base := sb, slots := 0, ext := kp, exts := off
 
 def arkG (off j x : Nat) : List Nat := [32 * j + x, 32 * (8 + (off / 4 + j)) + x]
 
-def arkCheck (off : Nat) (d a : Nat → Reg) : Bool :=
+noncomputable def arkCheck (off : Nat) (d a : Nat → Reg) : Bool :=
   check (lanes 32 11) (arkCfg off) (linExt 8) (addKey off d a) (linEnv (rIns a)) (linPost 11 (rOuts d (arkG off))) &&
     ((addKey off d a).all fun i => !clobbers i sb) && ((addKey off d a).all fun i => !clobbers i kp)
 

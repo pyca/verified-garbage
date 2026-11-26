@@ -136,7 +136,7 @@ def post (e : Straight.Env Poly) : Bool :=
   (List.range 24).all (fun j => e.reg (lane (j + 1)) == some (specP (j + 1))) &&
   e.slot 3 == some one
 
-def check : Bool := Straight.check anf cfg (fun _ => none) core env₀ post
+noncomputable def check : Bool := Straight.check anf cfg (fun _ => none) core env₀ post
 
 theorem check_eq : check = true := by lit_decide
 

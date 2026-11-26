@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.X86.WorkspaceFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
-import Mathlib.Data.Nat.Prime.Defs
+import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Impl.RsaKeyGen.X86.FermatExponent
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Wp
@@ -904,8 +904,11 @@ to reuse the native trial kernel; other exponents need the general check.
 section
 namespace VG.Proof.RsaKeyGen
 
-theorem prime65537 : Nat.Prime 65537 := by
-  exact Nat.prime_def_minFac.mpr ⟨by decide, by decide +kernel⟩
+theorem prime65537 : IsPrime 65537 := by
+  exact Pratt.prime_of_cert 65537 3 17 (List.replicate 16 2) (by decide) (by decide)
+    (fun f hf => by rw [List.eq_of_mem_replicate hf]; exact Pratt.prime_small 2 (by decide +kernel))
+    (by decide +kernel) (by decide +kernel)
+    (fun f hf => by rw [List.eq_of_mem_replicate hf]; decide +kernel)
 
 theorem coprime65537 (c : Nat) : Nat.gcd c 65537 = 1 ↔ c % 65537 ≠ 0 := by
   change Nat.Coprime c 65537 ↔ _

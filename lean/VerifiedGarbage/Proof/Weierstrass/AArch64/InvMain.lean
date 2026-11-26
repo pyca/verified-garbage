@@ -483,7 +483,7 @@ theorem finishS_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size
     rw [U₃ x hx, O₂ x (by omega_arith), m₁]
 
 /-- `[acc] = [base]^(m - 2)` in Montgomery form, for a prime `m > 2`. -/
-theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : IsPrime m) (hT : InvToM m)
     (hL : InvLay P size)
     (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkA P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m) :
@@ -593,7 +593,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
       exact this
 
 /-- A prime modulus's inversion is sound, given `InvToM` for it. -/
-theorem invSound_of_toM {m : Nat} [NeZero m] (hp : m.Prime) (hT : InvToM m) : InvSound m :=
+theorem invSound_of_toM {m : Nat} [NeZero m] (hp : IsPrime m) (hT : InvToM m) : InvSound m :=
   fun hL hm2 hR _ hs hM hX hC => invPow_ok hp hT hL hm2 hR hs hM hX hC
 
 end VG.Proof.Weierstrass.AArch64

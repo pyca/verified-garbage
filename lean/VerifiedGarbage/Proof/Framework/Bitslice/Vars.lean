@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -69,13 +70,15 @@ theorem xorSet_two_pow {w : Nat} (V : Nat → BitVec w) {v n : Nat} (hv : v < n)
       simp [h]
 
 /-- Words as sets of variables: only XOR and the constant 0. -/
-def vars (w : Nat) : Dom Nat w where
-  xor a b := some (a ^^^ b)
+noncomputable def vars (w : Nat) : Dom Nat w where
+  xor a b := Machine.seqSome (Nat.xor a b)
   and _ _ := none
   or _ _ := none
   ror _ _ := none
   shr _ _ := none
   const v := if v = 0 then some 0 else none
+
+theorem vars_xor (w : Nat) (a b : Nat) : (vars w).xor a b = some (a ^^^ b) := Machine.seqSome_eq _
 
 /-- The word is the XOR of the variables below `N` in the set. -/
 def VarRel {w : Nat} (V : Nat → BitVec w) (N : Nat) (a : Nat) (x : BitVec w) : Prop :=
@@ -83,7 +86,7 @@ def VarRel {w : Nat} (V : Nat → BitVec w) (N : Nat) (a : Nat) (x : BitVec w) :
 
 theorem vars_sound {w : Nat} (V : Nat → BitVec w) (N : Nat) : (vars w).Sound (VarRel V N) where
   xor ha hb h := by
-    simp only [vars, Option.some.injEq] at h; subst h
+    rw [vars_xor, Option.some.injEq] at h; subst h
     simp only [VarRel] at *; rw [ha, hb, xorSet_xor]
   and _ _ h := by cases h
   or _ _ h := by cases h

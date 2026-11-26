@@ -68,7 +68,7 @@ theorem gIn_chk : check (ofDom (lanes 128 9)) cfgG (fun _ => none) gIn
 
 /-- The truth tables of 512 rows, whose constants are 1 in the rows from 256 on where bit `p` of a word
 of them is. -/
-def tableM (m : BitVec 128) : Dom Nat 128 :=
+noncomputable def tableM (m : BitVec 128) : Dom Nat 128 :=
   { table 128 512 with const := fun v => if v = m then some (tableOf (fun c => c.testBit 8) 512) else none }
 
 /-- The mask of the S-box. -/
@@ -100,7 +100,7 @@ theorem gOut_chk : check (ofDom (lanes 128 10)) cfgG (fun _ => none) gOut
 /-- A block of these instructions, as expressions of the slots and the external words. -/
 def atomsE : Env XE := { reg := fun _ => none, slot := fun k => some (.atom k) }
 
-def exprOk (is : List Instr) (outs : List (Nat × XE)) : Bool :=
+noncomputable def exprOk (is : List Instr) (outs : List (Nat × XE)) : Bool :=
   check exprs cfg (fun n => some (.atom (80 + n))) is atomsE fun e =>
     outs.all fun o => decide (o.1 < 80) && e.slot o.1 == some o.2
 

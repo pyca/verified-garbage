@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P521
 public import VerifiedGarbage.Proof.Mont.AArch64.P521.Check
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -232,6 +233,364 @@ theorem chkZero_ok {ib : Nat → Nat → Nat} {os : List Op} {out : List Reg} (h
   rw [num, sumTo_congr (g := fun _ => 0) fun k hk => by rw [hz k hk, Nat.mul_zero]]
   rfl
 
+/-! ## The check, for the kernel
+
+`backs` run so that the kernel evaluates each functional, and each state's
+bounds, before the next: the coefficients by `seqN`
+(`Framework/Bitslice/Machine.lean`), everything else to numerals; and what it
+runs at every field and product by recursors and the comparisons of numbers
+that the kernel evaluates natively. -/
+
+section
+open VG.Bitslice.Machine (seqN seqN_eq bool_rec_beq bool_rec_ble)
+
+/-- `c n`, with `n` a numeral. -/
+noncomputable def numN {β : Type} (n : Nat) (c : Nat → β) : β :=
+  Nat.rec (motive := fun _ => β) (c n) (fun n _ => c n) (Nat.succ n)
+
+theorem numN_eq {β : Type} (n : Nat) (c : Nat → β) : numN n c = c n := rfl
+
+noncomputable def segsN (l : List Seg) (c : List Seg → Bool) : Bool :=
+  List.rec (motive := fun _ => (List Seg → Bool) → Bool) (fun c => c [])
+    (fun q _ ih c => Seg.rec (fun l lo hi w => numN l fun l => numN lo fun lo => numN hi fun hi => seqN w fun w =>
+      ih fun t => c (⟨l, lo, hi, w⟩ :: t)) q) l c
+
+theorem segsN_eq (l : List Seg) (c : List Seg → Bool) : segsN l c = c l := by
+  induction l generalizing c with
+  | nil => rfl
+  | cons q l ih => exact (seqN_eq ..).trans (ih _)
+
+/-- The products' list evaluated, but not its products' numbers, which are the terms they were. -/
+noncomputable def prsN (l : List Pr) (c : List Pr → Bool) : Bool :=
+  List.rec (motive := fun _ => (List Pr → Bool) → Bool) (fun c => c [])
+    (fun q _ ih c => Pr.rec (fun a b cl ch => ih fun t => c (⟨a, b, cl, ch⟩ :: t)) q) l c
+
+theorem prsN_eq (l : List Pr) (c : List Pr → Bool) : prsN l c = c l := by
+  induction l generalizing c with
+  | nil => rfl
+  | cons q l ih => exact ih _
+
+/-- The same, with the factors evaluated. -/
+noncomputable def prsF (l : List Pr) (c : List Pr → Bool) : Bool :=
+  List.rec (motive := fun _ => (List Pr → Bool) → Bool) (fun c => c [])
+    (fun q _ ih c => Pr.rec (fun a b cl ch => numN a fun a => numN b fun b => ih fun t => c (⟨a, b, cl, ch⟩ :: t)) q)
+    l c
+
+theorem prsF_eq (l : List Pr) (c : List Pr → Bool) : prsF l c = c l := by
+  induction l generalizing c with
+  | nil => rfl
+  | cons q l ih => exact ih _
+
+/-- What an operation may do to the products: nothing, change coefficients, or rename factors. -/
+inductive Chg
+  | no
+  | coef
+  | all
+
+def chg : Op → Chg
+  | .ld .. | .lsl .. | .extr .. => .all
+  | .mul .. | .umulh .. => .coef
+  | _ => .no
+
+/-- `c F`, with `F` evaluated. -/
+noncomputable def fnN (p : Chg) (F : Fn) (c : Fn → Bool) : Bool :=
+  Fn.rec (fun k f l q => seqN k fun k => seqN f fun f => segsN l fun l =>
+    Chg.rec (c ⟨k, f, l, q⟩) (prsN q fun q => c ⟨k, f, l, q⟩) (prsF q fun q => c ⟨k, f, l, q⟩) p) F
+
+theorem fnN_eq (p : Chg) (F : Fn) (c : Fn → Bool) : fnN p F c = c F := by
+  show seqN _ _ = _
+  rw [seqN_eq, seqN_eq, segsN_eq]
+  cases p
+  · rfl
+  · exact prsN_eq _ _
+  · exact prsF_eq _ _
+
+/-- The places in a factor, a bit for each. -/
+noncomputable def placeBits (e : Nat) : Nat :=
+  Bool.rec
+    (Bool.rec
+      (Nat.lor (Nat.pow 2 (Nat.div (Nat.sub e 2048) 1024)) (Nat.pow 2 (Nat.mod (Nat.sub e 2048) 1024)))
+      (Nat.pow 2 (Nat.sub e 1024)) (Nat.ble (Nat.succ e) 2048))
+    (Nat.pow 2 e) (Nat.ble (Nat.succ e) 1024)
+
+theorem testBit_placeBits (d e : Nat) : (placeBits e).testBit d = inE d e := by
+  have h (a b : Nat) : (Nat.pow 2 a).testBit b = Nat.beq a b := by
+    show (2 ^ a).testBit b = _
+    rw [Nat.testBit_two_pow, Bool.eq_iff_iff, Nat.beq_eq, decide_eq_true_iff]
+  rw [placeBits, bool_rec_ble, bool_rec_ble, inE]
+  show _ = if e.succ ≤ 1024 then _ else if e.succ ≤ 2048 then _ else _
+  split
+  · exact h _ _
+  · split
+    · exact h _ _
+    · exact (Nat.testBit_or ..).trans (by rw [h, h]; rfl)
+
+/-- The places in the products. The kernel evaluates it once for a list, and
+for a list with one more product from that of the list without it. -/
+noncomputable def placesP (l : List Pr) : Nat :=
+  List.rec 0 (fun q _ ih => Nat.lor (Nat.lor (placeBits q.a) (placeBits q.b)) ih) l
+
+/-- `noP`. -/
+noncomputable def noPK (d : Nat) (l : List Pr) : Bool :=
+  Nat.beq (Nat.land (Nat.shiftRight (placesP l) d) 1) 0
+
+theorem noPK_eq (d : Nat) (l : List Pr) : noPK d l = noP d l := by
+  have h : ∀ l, (placesP l).testBit d = !noP d l := fun l => by
+    induction l with
+    | nil => exact Nat.zero_testBit d
+    | cons q l ih =>
+      show ((placeBits q.a ||| placeBits q.b) ||| placesP l).testBit d = _
+      rw [Nat.testBit_or, Nat.testBit_or, testBit_placeBits, testBit_placeBits, ih, noP]
+      cases inE d q.a <;> cases inE d q.b <;> cases noP d l <;> rfl
+  have e : noPK d l = !(placesP l).testBit d := by
+    rw [Nat.testBit, noPK]
+    show Nat.beq (placesP l >>> d &&& 1) 0 = _
+    rw [Nat.and_comm]
+    rw [bne, Bool.not_not, Bool.eq_iff_iff, Nat.beq_eq, beq_iff_eq]
+  rw [e, h, Bool.not_not]
+
+/-- `subE`. -/
+noncomputable def subEK (d l e : Nat) : Nat :=
+  Bool.rec
+    (Bool.rec
+      (Nat.add (Nat.add 2048 (Nat.mul 1024
+          (Bool.rec (Nat.div (Nat.sub e 2048) 1024) l (Nat.beq (Nat.div (Nat.sub e 2048) 1024) d))))
+        (Bool.rec (Nat.mod (Nat.sub e 2048) 1024) l (Nat.beq (Nat.mod (Nat.sub e 2048) 1024) d)))
+      (Bool.rec e (Nat.add 1024 l) (Nat.beq (Nat.sub e 1024) d)) (Nat.ble (Nat.succ e) 2048))
+    (Bool.rec e l (Nat.beq e d)) (Nat.ble (Nat.succ e) 1024)
+
+theorem subEK_eq (d l e : Nat) : subEK d l e = subE d l e := by
+  simp only [subEK, bool_rec_ble, bool_rec_beq]; rfl
+
+/-- `subP`. -/
+noncomputable def subPK (d l : Nat) (p : List Pr) : List Pr :=
+  List.rec [] (fun q _ ih => ⟨subEK d l q.a, subEK d l q.b, q.cl, q.ch⟩ :: ih) p
+
+theorem subPK_eq (d l : Nat) (p : List Pr) : subPK d l p = subP d l p := by
+  induction p with
+  | nil => rfl
+  | cons q p ih =>
+    show (⟨subEK d l q.a, subEK d l q.b, q.cl, q.ch⟩ : Pr) :: subPK d l p = _
+    rw [ih, subEK_eq, subEK_eq]; rfl
+
+/-- `subL`. -/
+noncomputable def subLK (d l : Nat) (p : List Seg) : List Seg :=
+  List.rec [] (fun q _ ih => ⟨Bool.rec q.l l (Nat.beq q.l d), q.lo, q.hi, q.w⟩ :: ih) p
+
+theorem subLK_eq (d l : Nat) (p : List Seg) : subLK d l p = subL d l p := by
+  induction p with
+  | nil => rfl
+  | cons q p ih =>
+    show (⟨Bool.rec q.l l (Nat.beq q.l d), q.lo, q.hi, q.w⟩ : Seg) :: subLK d l p = _
+    rw [ih, subL]
+    cases Nat.beq q.l d <;> rfl
+
+/-- `putSeg`. -/
+noncomputable def putSegK (m : Nat) (g : Seg) (l : List Seg) : List Seg :=
+  List.rec [⟨g.l, g.lo, g.hi, Nat.mod g.w m⟩]
+    (fun q qs ih => Bool.rec (q :: ih)
+      (Bool.rec (q :: ih)
+        (Bool.rec (q :: ih) (⟨q.l, q.lo, q.hi, Nat.mod (Nat.add q.w g.w) m⟩ :: qs) (Nat.beq q.hi g.hi))
+        (Nat.beq q.lo g.lo))
+      (Nat.beq q.l g.l)) l
+
+theorem putSegK_eq (m : Nat) (g : Seg) (l : List Seg) : putSegK m g l = putSeg m g l := by
+  induction l with
+  | nil => rfl
+  | cons q l ih =>
+    have e : putSegK m g (q :: l) = Bool.rec (motive := fun _ => List Seg) (q :: putSegK m g l)
+      (Bool.rec (motive := fun _ => List Seg) (q :: putSegK m g l)
+        (Bool.rec (motive := fun _ => List Seg) (q :: putSegK m g l)
+          (⟨q.l, q.lo, q.hi, (q.w + g.w) % m⟩ :: l) (Nat.beq q.hi g.hi))
+        (Nat.beq q.lo g.lo)) (Nat.beq q.l g.l) := rfl
+    rw [e, ih, putSeg]
+    cases Nat.beq q.l g.l <;> cases Nat.beq q.lo g.lo <;> cases Nat.beq q.hi g.hi <;> rfl
+
+/-- `addSeg`. -/
+noncomputable def addSegK (m : Nat) (g : Seg) (l : List Seg) : List Seg :=
+  Bool.rec (putSegK m g l) l (Nat.beq (Nat.mod g.w m) 0)
+
+theorem addSegK_eq (m : Nat) (g : Seg) (l : List Seg) : addSegK m g l = addSeg m g l := by
+  rw [addSegK, putSegK_eq, addSeg]
+  exact (bool_rec_beq ..).trans (by simp only [Nat.beq_eq]; rfl)
+
+/-- `part`, each half. -/
+noncomputable def partK (d : Nat) (l : List Seg) : List Seg × List Seg :=
+  ⟨List.rec [] (fun q _ ih => Bool.rec ih (q :: ih) (Nat.beq q.l d)) l,
+    List.rec [] (fun q _ ih => Bool.rec (q :: ih) ih (Nat.beq q.l d)) l⟩
+
+theorem partK_eq (d : Nat) (l : List Seg) : partK d l = part d l := by
+  induction l with
+  | nil => rfl
+  | cons q l ih =>
+    have e : partK d (q :: l) = ⟨Bool.rec (motive := fun _ => List Seg) (partK d l).1 (q :: (partK d l).1) (Nat.beq q.l d),
+      Bool.rec (motive := fun _ => List Seg) (q :: (partK d l).2) (partK d l).2 (Nat.beq q.l d)⟩ := rfl
+    rw [e, ih, part]
+    cases Nat.beq q.l d <;> rfl
+
+/-- `take`. -/
+noncomputable def takeK (m d : Nat) (l : List Seg) : Option (Nat × List Seg) :=
+  let r := partK d l
+  match r.1 with
+  | [] => some (0, r.2)
+  | es@(_ :: _) =>
+    match pick 0 es with
+    | none => none
+    | some (q, _) => if tile m q.w 8 0 es then some (q.w, r.2) else none
+
+theorem takeK_eq (m d : Nat) (l : List Seg) : takeK m d l = take m d l := by
+  rw [takeK, partK_eq]; rfl
+
+/-- `putPr`. -/
+noncomputable def addPrK (m : Nat) (g : Pr) (l : List Pr) : List Pr :=
+  List.rec [⟨g.a, g.b, Nat.mod g.cl m, Nat.mod g.ch m⟩]
+    (fun q qs ih => Bool.rec (q :: ih)
+      (Bool.rec (q :: ih) (⟨q.a, q.b, Nat.mod (Nat.add q.cl g.cl) m, Nat.mod (Nat.add q.ch g.ch) m⟩ :: qs)
+        (Nat.beq q.b g.b)) (Nat.beq q.a g.a)) l
+
+theorem addPrK_eq (m : Nat) (g : Pr) (l : List Pr) : addPrK m g l = addPr m g l := by
+  induction l with
+  | nil => rfl
+  | cons q l ih =>
+    have e : addPrK m g (q :: l) = Bool.rec (motive := fun _ => List Pr) (q :: addPrK m g l)
+      (Bool.rec (motive := fun _ => List Pr) (q :: addPrK m g l)
+        (⟨q.a, q.b, (q.cl + g.cl) % m, (q.ch + g.ch) % m⟩ :: l) (Nat.beq q.b g.b)) (Nat.beq q.a g.a) := rfl
+    rw [e, ih, addPr]
+    cases Nat.beq q.a g.a <;> cases Nat.beq q.b g.b <;> rfl
+
+noncomputable def hasPrK (g : Pr) (l : List Pr) : Bool :=
+  List.rec false (fun q _ ih => Bool.rec ih (Bool.rec ih true (Nat.beq q.b g.b)) (Nat.beq q.a g.a)) l
+
+theorem hasPrK_eq (g : Pr) (l : List Pr) : hasPrK g l = hasPr g l := by
+  induction l with
+  | nil => rfl
+  | cons q l ih =>
+    have e : hasPrK g (q :: l) = Bool.rec (motive := fun _ => Bool) (hasPrK g l)
+      (Bool.rec (motive := fun _ => Bool) (hasPrK g l) true (Nat.beq q.b g.b)) (Nat.beq q.a g.a) := rfl
+    rw [e, ih, hasPr]
+    cases Nat.beq q.a g.a <;> cases Nat.beq q.b g.b <;> rfl
+
+noncomputable def putPrK (m : Nat) (g : Pr) (l : List Pr) : List Pr :=
+  Bool.rec (⟨g.a, g.b, Nat.mod g.cl m, Nat.mod g.ch m⟩ :: l) (addPrK m g l) (hasPrK g l)
+
+theorem putPrK_eq (m : Nat) (g : Pr) (l : List Pr) : putPrK m g l = putPr m g l := by
+  rw [putPrK, hasPrK_eq, addPrK_eq, putPr]
+  cases hasPr g l <;> rfl
+
+/-- `insP`. -/
+noncomputable def insPK (m : Nat) (g : Pr) (l : List Pr) : List Pr :=
+  List.rec [g]
+    (fun q qs ih => Bool.rec (Bool.rec (q :: ih) (g :: q :: qs) (Nat.ble g.key q.key))
+      (Bool.rec (Bool.rec (q :: ih) (g :: q :: qs) (Nat.ble g.key q.key))
+        (⟨q.a, q.b, Nat.mod (Nat.add q.cl g.cl) m, Nat.mod (Nat.add q.ch g.ch) m⟩ :: qs)
+        (Nat.beq q.b g.b)) (Nat.beq q.a g.a)) l
+
+theorem insPK_eq (m : Nat) (g : Pr) (l : List Pr) : insPK m g l = insP m g l := by
+  induction l with
+  | nil => rfl
+  | cons q l ih =>
+    have e : insPK m g (q :: l) = Bool.rec (motive := fun _ => List Pr)
+      (Bool.rec (motive := fun _ => List Pr) (q :: insPK m g l) (g :: q :: l) (Nat.ble g.key q.key))
+      (Bool.rec (motive := fun _ => List Pr)
+        (Bool.rec (motive := fun _ => List Pr) (q :: insPK m g l) (g :: q :: l) (Nat.ble g.key q.key))
+        (⟨q.a, q.b, (q.cl + g.cl) % m, (q.ch + g.ch) % m⟩ :: l) (Nat.beq q.b g.b)) (Nat.beq q.a g.a) := rfl
+    rw [e, ih, insP]
+    cases Nat.beq q.a g.a <;> cases Nat.beq q.b g.b <;> cases Nat.ble g.key q.key <;> rfl
+
+/-- `sortP`, each list evaluated before the next. -/
+noncomputable def sortPK (m : Nat) (l : List Pr) (c : List Pr → Bool) : Bool :=
+  List.rec (motive := fun _ => (List Pr → Bool) → Bool) (fun c => c [])
+    (fun q _ ih c => ih fun t => prsN (insPK m q t) c) l c
+
+theorem sortPK_eq (m : Nat) (l : List Pr) (c : List Pr → Bool) : sortPK m l c = c (sortP m l) := by
+  induction l generalizing c with
+  | nil => rfl
+  | cons q l ih =>
+    refine (ih _).trans ?_
+    rw [prsN_eq, insPK_eq]; rfl
+
+/-- `back`. -/
+noncomputable def backK (m : Nat) (B : Bd) : Op → Fn → Option Fn
+  | .ld k i d, F =>
+    if Nat.ble i 15 && Nat.ble k 3 then some ⟨F.k, F.f, subLK (rn d) (inpLoc k i) F.l, subPK (rn d) (inpLoc k i) F.p⟩
+    else none
+  | .lsl d n k, F =>
+    match pullShl m (rn d) (rn n) k F.l, (if Nat.beq k 1 then renP (rn d) (1024 + rn n) F.p else if noPK (rn d) F.p then some F.p else none) with
+    | some l, some p => if Nat.ble k 63 then some ⟨F.k, F.f, l, p⟩ else none
+    | _, _ => none
+  | .extr d n q k, F =>
+    match pullExtr m (rn d) (rn n) (rn q) k F.l, (if Nat.beq k 63 then renP (rn d) (2048 + 1024 * rn n + rn q) F.p else if noPK (rn d) F.p then some F.p else none) with
+    | some l, some p => if Nat.ble k 63 then some ⟨F.k, F.f, l, p⟩ else none
+    | _, _ => none
+  | o, F =>
+    if noPK (rn o.dst) F.p then
+      match takeK m (rn o.dst) F.l with
+      | none => none
+      | some (w, l) =>
+        let both (f : Nat) (n q : Reg) (k : Nat) : Option Fn := some ⟨k, f, addSegK m (full n w) (addSegK m (full q w) l), F.p⟩
+        let diff (f : Nat) (n q : Reg) (k : Nat) : Option Fn :=
+          some ⟨k, f, addSegK m (full n w) (addSegK m (full q (m - w % m)) l), F.p⟩
+        match o with
+        | .mul _ n q => some ⟨F.k, F.f, l, putPrK m ⟨rn n, rn q, w, 0⟩ F.p⟩
+        | .umulh _ n q => some ⟨F.k, F.f, l, putPrK m ⟨rn n, rn q, 0, w⟩ F.p⟩
+        | .add _ n q => if Nat.ble (B.u n + B.u q) (2 ^ 64 - 1) then both F.f n q F.k else none
+        | .adc _ n q => if Nat.ble (B.u n + B.u q + B.c) (2 ^ 64 - 1) then both ((F.f + w) % m) n q F.k else none
+        | .adds _ n q =>
+          if Nat.beq (F.f % m) (w * 2 ^ 64 % m) || Nat.ble (B.u n + B.u q) (2 ^ 64 - 1) then both 0 n q F.k else none
+        | .adcs _ n q =>
+          if Nat.beq (F.f % m) (w * 2 ^ 64 % m) || Nat.ble (B.u n + B.u q + B.c) (2 ^ 64 - 1) then both w n q F.k else none
+        | .subs _ n q =>
+          if Nat.beq (rn n) (rn q) then some ⟨(F.k + F.f) % m, 0, l, F.p⟩
+          else if Nat.beq (F.f % m) (w * 2 ^ 64 % m) then diff 0 n q ((F.k + w * 2 ^ 64) % m) else none
+        | .sbcs _ n q => if Nat.beq (F.f % m) (w * 2 ^ 64 % m) then diff w n q ((F.k + w * (2 ^ 64 - 1)) % m) else none
+        | .lsr _ n k => if Nat.ble k 63 then some ⟨F.k, F.f, addSegK m ⟨rn n, k, 64, w⟩ l, F.p⟩ else none
+        | .movz _ v => some ⟨(F.k + w * (v % 2 ^ 16)) % m, F.f, l, F.p⟩
+        | .low _ n q k =>
+          if Nat.beq (B.lb.getD (rn q) 0) (2 ^ k - 1) && Nat.beq (B.u q) (2 ^ k - 1) && Nat.ble k 64 then
+            some ⟨F.k, F.f, addSegK m ⟨rn n, 0, k, w⟩ l, F.p⟩
+          else none
+        | _ => none
+    else none
+
+theorem backK_eq (m : Nat) (B : Bd) (o : Op) (F : Fn) : backK m B o F = back m B o F := by
+  cases o <;> simp only [backK, back, subLK_eq, subPK_eq, noPK_eq, takeK_eq, addSegK_eq, putPrK_eq] <;> rfl
+
+/-- `backs`, then `c`. -/
+noncomputable def backsK (m : Nat) (ib : Nat → Nat → Nat) (os : List Op) : Bd → Fn → (Fn → Bool) → Bool :=
+  List.rec (motive := fun _ => Bd → Fn → (Fn → Bool) → Bool) (fun _ F c => c F)
+    (fun o _ ih B F c => ih (fwd ib o B) F fun G =>
+      Option.rec false (fun G => fnN (chg o) G c) (backK m B o G)) os
+
+theorem backsK_eq {m : Nat} {ib : Nat → Nat → Nat} {os : List Op} {B : Bd} {F : Fn} {c : Fn → Bool} :
+    backsK m ib os B F c = match backs m ib os B F with | none => false | some G => c G := by
+  induction os generalizing B F c with
+  | nil => rfl
+  | cons o os ih =>
+    refine ih.trans ?_
+    rw [backs]
+    cases backs m ib os (fwd ib o B) F with
+    | none => rfl
+    | some G =>
+      show Option.rec (motive := fun _ => Bool) false (fun G => fnN (chg o) G c) (backK m B o G) = _
+      rw [backK_eq]
+      show _ = match back m B o G with | none => false | some G => c G
+      cases back m B o G with
+      | none => rfl
+      | some G => exact fnN_eq ..
+
+/-- `chk`. -/
+noncomputable def chkK (os : List Op) (out : List Reg) (E : List Pr) : Bool :=
+  backsK prime inB os anyB (outFn prime 9 out 9) fun F =>
+    Nat.beq F.k 0 && Nat.beq F.f 0 && F.l.isEmpty && sortPK prime F.p fun p => eqP p E
+
+theorem chkK_eq (os : List Op) (out : List Reg) (E : List Pr) : chkK os out E = chk os out E := by
+  rw [chkK, backsK_eq, chk]
+  cases backs prime inB os anyB (outFn prime 9 out 9) with
+  | none => rfl
+  | some F => exact congrArg (fun b => Nat.beq F.k 0 && Nat.beq F.f 0 && F.l.isEmpty && b) (sortPK_eq ..)
+
+end
+
 /-! ## The product -/
 
 /-- A product of two places at word `e`. -/
@@ -314,7 +673,7 @@ theorem mulE_ev {inp : Nat → Nat → Nat} (hi : InB inp) (s : St) :
 theorem mul_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) :
     Cg prime (pw 9 * num (fun k => (run inp mulOps s).g (mulOut.getD k .x8)) 9)
       (num (inp 0) 9 * num (inp 1) 9) :=
-  (chk_ok (show chk mulOps mulOut mulE = true by decide +kernel) hi hs).trans (mulE_ev hi s)
+  (chk_ok ((chkK_eq ..).symm.trans (by decide +kernel)) hi hs).trans (mulE_ev hi s)
 
 theorem mul_top {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) :
     (run inp mulOps s).g (mulOut.getD 8 .x8) ≤ 512 := chkTop_ok (by decide +kernel) hi hs
@@ -481,7 +840,7 @@ theorem sqrE_ev {inp : Nat → Nat → Nat} (hi : InB inp) (s : St) :
 theorem sqr_kernel {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) :
     Cg prime (pw 9 * num (fun k => (run inp sqrOps s).g (sqrOut.getD k .x8)) 9)
       (num (inp 0) 9 * num (inp 0) 9) :=
-  (chk_ok (show chk sqrOps sqrOut sqrE = true by decide +kernel) hi hs).trans (sqrE_ev hi s)
+  (chk_ok ((chkK_eq ..).symm.trans (by decide +kernel)) hi hs).trans (sqrE_ev hi s)
 
 theorem sqr_top {inp : Nat → Nat → Nat} (hi : InB inp) {s : St} (hs : Ok s) :
     (run inp sqrOps s).g (sqrOut.getD 8 .x8) ≤ 512 := chkTop_ok (by decide +kernel) hi hs

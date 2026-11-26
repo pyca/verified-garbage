@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.IsPrime
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 public import VerifiedGarbage.Proof.Weierstrass.Env
@@ -482,7 +482,7 @@ theorem InvLay.of_chain {P : InvCfg} {size : Nat} (h : ChainLay P.toChain size) 
 
 /-- Every prime modulus's inversion is sound (`InvMain.lean`'s `invSound_of_toM`
 and `InvArith.lean`'s `invToM_of_prime`). -/
-def InvSounds : Prop := ∀ {m : Nat} [NeZero m], m.Prime → InvSound m
+def InvSounds : Prop := ∀ {m : Nat} [NeZero m], IsPrime m → InvSound m
 
 /-- The group law of `C` and the soundness of the inversions, as a value: what a
 curve's proofs on AArch64 take (`Proof/<Curve>/AArch64/Law.lean`), as `HasLaw` is on the targets without inversions by

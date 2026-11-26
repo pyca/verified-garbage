@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Framework.IsPrime
 public import VerifiedGarbage.Proof.Edwards.Group
 public import VerifiedGarbage.Spec.Ed25519
 import Mathlib.FieldTheory.Finite.Basic
@@ -19,186 +20,187 @@ section
 # `2^255 - 19` is prime
 
 A Pratt certificate (`Proof/Framework/Pratt.lean`), one theorem per prime of
-the tree. Factors below `2^16` are prime by `norm_num`.
+the tree. Factors below `2^16` are prime by trial division
+(`prime_small`).
 -/
 
 namespace VG.Proof.Ed25519
 
 open VG.Proof.Pratt
 
-theorem prime_569003 : Nat.Prime 569003 := by
+theorem prime_569003 : IsPrime 569003 := by
   refine prime_of_cert 569003 2 20 [2, 7, 97, 419] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_2773320623 : Nat.Prime 2773320623 := by
+theorem prime_2773320623 : IsPrime 2773320623 := by
   refine prime_of_cert 2773320623 5 32 [2, 2437, 569003] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_569003
 
-theorem prime_72106336199 : Nat.Prime 72106336199 := by
+theorem prime_72106336199 : IsPrime 72106336199 := by
   refine prime_of_cert 72106336199 7 37 [2, 13, 2773320623] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_2773320623
 
-theorem prime_8574133 : Nat.Prime 8574133 := by
+theorem prime_8574133 : IsPrime 8574133 := by
   refine prime_of_cert 8574133 2 24 [2, 2, 3, 7, 103, 991] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_1919519569386763 : Nat.Prime 1919519569386763 := by
+theorem prime_1919519569386763 : IsPrime 1919519569386763 := by
   refine prime_of_cert 1919519569386763 2 51 [2, 3, 7, 19, 47, 47, 127, 8574133] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_8574133
 
-theorem prime_75707 : Nat.Prime 75707 := by
+theorem prime_75707 : IsPrime 75707 := by
   refine prime_of_cert 75707 2 17 [2, 37853] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_75445702479781427272750846543864801 : Nat.Prime 75445702479781427272750846543864801 := by
+theorem prime_75445702479781427272750846543864801 : IsPrime 75445702479781427272750846543864801 := by
   refine prime_of_cert 75445702479781427272750846543864801 7 116 [2, 2, 2, 2, 2, 3, 3, 5, 5, 75707, 72106336199, 1919519569386763] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_75707
   · exact prime_72106336199
   · exact prime_1919519569386763
 
-theorem prime_430751 : Nat.Prime 430751 := by
+theorem prime_430751 : IsPrime 430751 := by
   refine prime_of_cert 430751 17 19 [2, 5, 5, 5, 1723] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_31757755568855353 : Nat.Prime 31757755568855353 := by
+theorem prime_31757755568855353 : IsPrime 31757755568855353 := by
   refine prime_of_cert 31757755568855353 10 55 [2, 2, 2, 3, 31, 107, 223, 4153, 430751] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_430751
 
-theorem prime_1923133 : Nat.Prime 1923133 := by
+theorem prime_1923133 : IsPrime 1923133 := by
   refine prime_of_cert 1923133 2 21 [2, 2, 3, 43, 3727] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_132049 : Nat.Prime 132049 := by
+theorem prime_132049 : IsPrime 132049 := by
   refine prime_of_cert 132049 26 18 [2, 2, 2, 2, 3, 3, 7, 131] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
 
-theorem prime_74058212732561358302231226437062788676166966415465897661863160754340907 : Nat.Prime 74058212732561358302231226437062788676166966415465897661863160754340907 := by
+theorem prime_74058212732561358302231226437062788676166966415465897661863160754340907 : IsPrime 74058212732561358302231226437062788676166966415465897661863160754340907 := by
   refine prime_of_cert 74058212732561358302231226437062788676166966415465897661863160754340907 2 236 [2, 3, 353, 57467, 132049, 1923133, 31757755568855353, 75445702479781427272750846543864801] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_132049
   · exact prime_1923133
   · exact prime_31757755568855353
   · exact prime_75445702479781427272750846543864801
 
-theorem prime_P : Nat.Prime 57896044618658097711785492504343953926634992332820282019728792003956564819949 := by
+theorem prime_P : IsPrime 57896044618658097711785492504343953926634992332820282019728792003956564819949 := by
   refine prime_of_cert 57896044618658097711785492504343953926634992332820282019728792003956564819949 2 255 [2, 2, 3, 65147, 74058212732561358302231226437062788676166966415465897661863160754340907] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hf
   rcases hf with rfl | rfl | rfl | rfl | rfl
-  · norm_num
-  · norm_num
-  · norm_num
-  · norm_num
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
+  · exact prime_small _ (by decide +kernel)
   · exact prime_74058212732561358302231226437062788676166966415465897661863160754340907
 
 theorem prime_field : Nat.Prime Spec.X25519.P := by
   rw [show Spec.X25519.P = 57896044618658097711785492504343953926634992332820282019728792003956564819949
     from rfl]
-  exact prime_P
+  exact Nat.prime_def.mpr prime_P
 
 instance fact_prime_field : Fact (Nat.Prime Spec.X25519.P) := ⟨prime_field⟩
 
@@ -429,9 +431,15 @@ private theorem d_val : (Spec.Ed25519.d : Fe).val =
     37095705934669439343138083508754565189542113879843219016388785533085940283555 := by
   decide +kernel
 
+/-- `Pratt.powMod_eq` with Mathlib's `^` (the monoid's), not core's: the kernel would
+evaluate the powers to compare the two. -/
+private theorem powMod_eq (m : Nat) (hm : 1 < m) (n b e : Nat) (he : e < 2 ^ n) :
+    Pratt.powMod m n b e = b ^ e % m :=
+  Pratt.powMod_eq m hm n b e he
+
 private theorem d_pow : 37095705934669439343138083508754565189542113879843219016388785533085940283555 ^
     ((P - 1) / 2) % P = P - 1 := by
-  rw [← Pratt.powMod_eq P (by decide) 256 _ _ (by decide)]; decide +kernel
+  rw [← powMod_eq P (by decide) 256 _ _ (by decide)]; decide +kernel
 
 theorem dZ_pow : dZ ^ ((P - 1) / 2) = -1 := by
   have h : dZ = ((37095705934669439343138083508754565189542113879843219016388785533085940283555 : Nat) :

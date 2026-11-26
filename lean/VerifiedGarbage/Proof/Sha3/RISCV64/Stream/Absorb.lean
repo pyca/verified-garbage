@@ -114,10 +114,8 @@ def post (e : Straight.Env Poly) : Bool :=
 
 /-- The round from `s` to `d`, with ι (the round constant, atom 25, loaded into
 `t6` and XORed into `t0`) between `roundA` and `roundB`. -/
-def check (s d : Reg) : Bool :=
-  match Straight.eval anf (cfg s d) ext (roundA s) env₀ with
-  | none => false
-  | some e₁ => match e₁.reg .t0 with
+noncomputable def check (s d : Reg) : Bool :=
+  Straight.check anf (cfg s d) ext (roundA s) env₀ fun e₁ => match e₁.reg .t0 with
     | some (.v a) => Straight.check anf (cfg s d) ext (roundB s d)
         ((e₁.setReg .t6 (.v (atom 25))).setReg .t0 (.v (pxor a (atom 25)))) post
     | _ => false
@@ -126,14 +124,11 @@ theorem of_check {s d : Reg} (h : check s d = true) :
     ∃ e₁ a, Straight.eval anf (cfg s d) ext (roundA s) env₀ = some e₁ ∧ e₁.reg .t0 = some (.v a) ∧
       Straight.check anf (cfg s d) ext (roundB s d)
         ((e₁.setReg .t6 (.v (atom 25))).setReg .t0 (.v (pxor a (atom 25)))) post = true := by
-  unfold check at h
+  obtain ⟨e₁, he₁, h⟩ := Straight.of_check _ _ _ h
   split at h
+  · rename_i a ha
+    exact ⟨e₁, a, he₁, ha, h⟩
   · cases h
-  · rename_i e₁ he₁
-    split at h
-    · rename_i a ha
-      exact ⟨e₁, a, he₁, ha, h⟩
-    · cases h
 
 /-- The registers a round keeps: the pointers, the loop's register, `s1`,
 and the callee-saved registers and return address it does not use. -/

@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Weierstrass.MontContract
 import VerifiedGarbage.Proof.Divstep.Tc32
 import VerifiedGarbage.Proof.Divstep.Iter
-import Mathlib.Data.Nat.Prime.Basic
+import VerifiedGarbage.Proof.Framework.IsPrime
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Divstep.Alg32
@@ -1072,7 +1072,7 @@ theorem finish_sign {P : InvCfg} {base : Addr} {s : State} {f : Int}
     rw [ite_eq_left (by omega_using [E'])]
 
 theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
-    (hpr : p.Prime) (hT : InvToM p) (L : InvLay P size) (hp2 : 2 < p)
+    (hpr : IsPrime p) (hT : InvToM p) (L : InvLay P size) (hp2 : 2 < p)
     (hR : UnitMod p (2 ^ 256)) {s : State} (hs : Scr s base size)
     (hM : ModOkW P.M size p s.mem base) (hX : val32 s.mem base P.base 8 < p) (hC : InvOk P p) :
     WP isa P.inv s fun z => Keeps invClob s z ∧ Unch base (invW P) s.mem z.mem ∧
@@ -1132,7 +1132,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
     intro hX0
     exact Divstep.W32.invRun_spec (N := 30) (B := 20) (by decide) odd (by omega_using [hp2]) hinvI done (by
       rw [Int.gcd_natCast_natCast]
-      exact Nat.coprime_of_lt_prime (by omega_using [hX0]) hX hpr)
+      exact hpr.coprime_of_lt (by omega_using [hX0]) hX)
   have signs := finish_sign I₂.f
   refine hT (K := 2 ^ 40) (f := I.f) hp2 hR hX ?_ ?_ ?_ E₃
   · intro hX0
@@ -1161,7 +1161,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
       push_cast at H ⊢
       simpa only [Int.ModEq, Int.neg_one_mul, Int.zero_sub] using H
 
-theorem invSound_of_toM {p : Nat} [NeZero p] (hp : p.Prime) (hT : InvToM p) : InvSound p :=
+theorem invSound_of_toM {p : Nat} [NeZero p] (hp : IsPrime p) (hT : InvToM p) : InvSound p :=
   fun L hp2 hR _ hs hM hX hC => invPow_ok hp hT L hp2 hR hs hM hX hC
 
 end VG.Proof.Weierstrass.X86.Inv

@@ -80,7 +80,7 @@ def kwIns : List (Reg × Nat) := (List.range 4).map fun c => (kw c, c)
 def kOuts (n : Nat) (r : Nat → Reg) (g : Nat → Nat → List Nat) : List (Reg × (Nat → List Nat)) :=
   (List.range n).map fun j => (r j, g j)
 
-def kCheck (is : List Instr) (n : Nat) (r : Nat → Reg) (g : Nat → Nat → List Nat) : Bool :=
+noncomputable def kCheck (is : List Instr) (n : Nat) (r : Nat → Reg) (g : Nat → Nat → List Nat) : Bool :=
   check (lanes 32 7) noMem (linExt 0) is (linEnv kwIns) (linPost 7 (kOuts n r g))
 
 theorem rot1_check : kCheck keyRot1 4 kw rot1G = true := by decide +kernel

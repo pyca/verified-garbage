@@ -135,7 +135,7 @@ theorem gather_ok (s : State) : ∃ s', runBlock isa wordGather s = some s' ∧
     have h0 : LaneRel 8 (Straight.assign W (2 ^ 8)) (Straight.outWord (gatherG 0)) (s'.gpr (q 0) ^^^ 0x63636363) := by
       refine ⟨Nat.two_pow_pos _, fun y hy => ?_⟩
       rw [BitVec.getLsbD_xor, h.2 y hy]
-      simp only [Straight.outWord, Nat.zero_testBit, Bool.false_xor]
+      simp only [Straight.outWord_eq, Nat.zero_testBit, Bool.false_xor]
       rw [show (0x63636363 : Nat).testBit y = (0x63636363 : BitVec 32).getLsbD y from rfl]
       cases (0x63636363 : BitVec 32).getLsbD y <;> simp
     have := Straight.outWord_rel_of_lt hpost.2 h0 x hx

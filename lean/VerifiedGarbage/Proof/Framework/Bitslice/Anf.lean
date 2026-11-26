@@ -1,8 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.KernelList
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -119,9 +121,9 @@ def one : Poly := ⟨[], true, []⟩
 /-- Atom `a`. -/
 def atom (a : Nat) : Poly := ⟨[64 * a], false, []⟩
 
-def pxor (p q : Poly) : Poly := ⟨linXor p.lin q.lin, p.c ^^ q.c, monosXor p.nl q.nl⟩
+def pxorC (p q : Poly) : Poly := ⟨linXor p.lin q.lin, p.c ^^ q.c, monosXor p.nl q.nl⟩
 
-def pror (n : Nat) (p : Poly) : Poly := ⟨linRor n p.lin, p.c, p.nl.map (·.map (linRor n))⟩
+def prorC (n : Nat) (p : Poly) : Poly := ⟨linRor n p.lin, p.c, p.nl.map (·.map (linRor n))⟩
 
 /-- The monomials of `p`, the constant as the empty one and the linear form
 as a monomial of one linear form. -/
@@ -136,16 +138,243 @@ def addMono (m : List (List Nat)) (p : Poly) : Poly :=
 
 def ofMonos (ms : List (List (List Nat))) : Poly := ms.foldr addMono zero
 
-def pand (p q : Poly) : Poly := ofMonos ((terms p).flatMap fun t => (terms q).map fun u => monoMul t u)
+def pandC (p q : Poly) : Poly := ofMonos ((terms p).flatMap fun t => (terms q).map fun u => monoMul t u)
+
+/-! ### The operations, for the kernel
+
+The same functions, as recursors that the kernel evaluates directly and
+with the comparisons of numbers that it evaluates natively
+(`Framework/KernelList.lean`), which leave what they give evaluated
+(`forceP`). Compiled code runs those above. -/
+
+/-- `c n`, with `n` a numeral. -/
+noncomputable def forceN {β : Type} (n : Nat) (c : Nat → β) : β :=
+  Nat.rec (motive := fun _ => β) (c n) (fun n _ => c n) (Nat.succ n)
+
+/-- `c l`, with `l` evaluated by `f`. -/
+noncomputable def forceL {α β : Type} (f : α → (α → β) → β) (l : List α) (c : List α → β) : β :=
+  List.rec (motive := fun _ => (List α → β) → β) (fun c => c [])
+    (fun x _ ih c => f x fun x => ih fun t => c (x :: t)) l c
+
+noncomputable def forceLin {β : Type} (l : List Nat) (c : List Nat → β) : β := forceL forceN l c
+
+noncomputable def forceB {β : Type} (b : Bool) (c : Bool → β) : β := Bool.rec (c false) (c true) b
+
+def forcePC (l : List Nat) (b : Bool) (ns : List (List (List Nat))) : Poly := ⟨l, b, ns⟩
+
+/-- `⟨l, b, ns⟩`, evaluated. -/
+@[implemented_by forcePC]
+def forceP (l : List Nat) (b : Bool) (ns : List (List (List Nat))) : Poly :=
+  forceLin l fun l => forceB b fun b => forceL (forceL forceLin) ns fun ns => ⟨l, b, ns⟩
+
+theorem forceN_eq {β : Type} (n : Nat) (c : Nat → β) : forceN n c = c n := rfl
+
+theorem forceL_eq {α β : Type} {f : α → (α → β) → β} (hf : ∀ a c, f a c = c a) (l : List α)
+    (c : List α → β) : forceL f l c = c l := by
+  induction l generalizing c with
+  | nil => rfl
+  | cons x l ih => exact (hf x _).trans (ih _)
+
+theorem forceLin_eq {β : Type} (l : List Nat) (c : List Nat → β) : forceLin l c = c l :=
+  forceL_eq forceN_eq l c
+
+theorem forceP_eq (l : List Nat) (b : Bool) (ns : List (List (List Nat))) : forceP l b ns = ⟨l, b, ns⟩ := by
+  rw [forceP, forceLin_eq]
+  have : ∀ c : List (List (List Nat)) → Poly, forceL (forceL forceLin) ns c = c ns :=
+    forceL_eq (forceL_eq forceLin_eq) ns
+  cases b <;> exact this _
+
+/-- `keyIns`. -/
+noncomputable def keyInsK (k : Nat) (l : List Nat) : List Nat :=
+  List.rec [k] (fun j l ih => Bool.rec (Bool.rec (j :: ih) (k :: j :: l) (Nat.ble k j)) l (Nat.beq k j)) l
+
+theorem keyInsK_eq (k : Nat) (l : List Nat) : keyInsK k l = keyIns k l := by
+  induction l with
+  | nil => rfl
+  | cons j l ih =>
+    show Bool.rec (motive := fun _ => List Nat) (Bool.rec (motive := fun _ => List Nat) (j :: keyInsK k l)
+      (k :: j :: l) (Nat.ble k j)) l (Nat.beq k j) = _
+    rw [Machine.bool_rec_beq, Machine.bool_rec_ble, ih, keyIns]
+    by_cases h : k = j
+    · rw [ite_eq_left h, ite_eq_left h]
+    · rw [ite_eq_right h, ite_eq_right h]
+      by_cases h' : k < j
+      · rw [ite_eq_left h', ite_eq_left (Nat.le_of_lt h')]
+      · rw [ite_eq_right h', ite_eq_right (fun e => h' (Nat.lt_of_le_of_ne e h))]
+
+/-- `linXor`. -/
+noncomputable def linXorK (a b : List Nat) : List Nat := List.rec b (fun k _ ih => keyInsK k ih) a
+
+theorem linXorK_eq (a b : List Nat) : linXorK a b = linXor a b := by
+  induction a with
+  | nil => rfl
+  | cons k a ih => show keyInsK k (linXorK a b) = _; rw [ih, keyInsK_eq]; rfl
+
+/-- `linRor`. -/
+noncomputable def linRorK (n : Nat) (l : List Nat) : List Nat :=
+  List.rec [] (fun k _ ih => Nat.add (Nat.mul (Nat.div k 64) 64) (Nat.mod (Nat.add (Nat.mod k 64) n) 64) :: ih) l
+
+theorem linRorK_eq (n : Nat) (l : List Nat) : linRorK n l = linRor n l := by
+  induction l with
+  | nil => rfl
+  | cons k l ih => exact congrArg _ ih
+
+/-- `linCmp`, as a match on what it gives. -/
+noncomputable def linCmpK {β : Type} (eq lt gt : β) (a : List Nat) : List Nat → β :=
+  List.rec (motive := fun _ => List Nat → β) (fun b => List.rec eq (fun _ _ _ => lt) b)
+    (fun x _ ih b => List.rec gt
+      (fun y b _ => Bool.rec (Bool.rec gt lt (Nat.ble x y)) (ih b) (Nat.beq x y)) b) a
+
+theorem linCmpK_eq {β : Type} (eq lt gt : β) (a b : List Nat) :
+    linCmpK eq lt gt a b = match linCmp a b with | .eq => eq | .lt => lt | .gt => gt := by
+  induction a generalizing b with
+  | nil => cases b <;> rfl
+  | cons x a ih =>
+    cases b with
+    | nil => rfl
+    | cons y b =>
+      show Bool.rec (motive := fun _ => β) (Bool.rec (motive := fun _ => β) gt lt (Nat.ble x y))
+        (linCmpK eq lt gt a b) (Nat.beq x y) = _
+      rw [Machine.bool_rec_beq, Machine.bool_rec_ble, ih, linCmp]
+      by_cases h : x = y
+      · rw [ite_eq_left h, ite_eq_right (by omega_using [h]), ite_eq_right (by omega_using [h])]
+      · rw [ite_eq_right h]
+        by_cases h' : x < y
+        · rw [ite_eq_left (Nat.le_of_lt h'), ite_eq_left h']
+        · rw [ite_eq_right (show ¬ x ≤ y by omega_using [h, h']), ite_eq_right h',
+            ite_eq_left (show y < x by omega_using [h, h'])]
+
+/-- `atomIns`. -/
+noncomputable def atomInsK (a : List Nat) (m : List (List Nat)) : List (List Nat) :=
+  List.rec [a] (fun b m ih => linCmpK (b :: m) (a :: b :: m) (b :: ih) a b) m
+
+theorem atomInsK_eq (a : List Nat) (m : List (List Nat)) : atomInsK a m = atomIns a m := by
+  induction m with
+  | nil => rfl
+  | cons b m ih =>
+    show linCmpK (b :: m) (a :: b :: m) (b :: atomInsK a m) a b = _
+    rw [linCmpK_eq, ih, atomIns]
+
+/-- `monoMul`. -/
+noncomputable def monoMulK (m₁ m₂ : List (List Nat)) : List (List Nat) :=
+  List.rec m₂ (fun a _ ih => atomInsK a ih) m₁
+
+theorem monoMulK_eq (a b : List (List Nat)) : monoMulK a b = monoMul a b := by
+  induction a with
+  | nil => rfl
+  | cons k a ih => show atomInsK k (monoMulK a b) = _; rw [ih, atomInsK_eq]; rfl
+
+/-- `monoCmp`, as a match on what it gives. -/
+noncomputable def monoCmpK {β : Type} (eq lt gt : β) (a : List (List Nat)) : List (List Nat) → β :=
+  List.rec (motive := fun _ => List (List Nat) → β) (fun b => List.rec eq (fun _ _ _ => lt) b)
+    (fun x _ ih b => List.rec gt (fun y b _ => linCmpK (ih b) lt gt x y) b) a
+
+theorem monoCmpK_eq {β : Type} (eq lt gt : β) (a b : List (List Nat)) :
+    monoCmpK eq lt gt a b = match monoCmp a b with | .eq => eq | .lt => lt | .gt => gt := by
+  induction a generalizing b with
+  | nil => cases b <;> rfl
+  | cons x a ih =>
+    cases b with
+    | nil => rfl
+    | cons y b =>
+      show linCmpK (monoCmpK eq lt gt a b) lt gt x y = _
+      rw [linCmpK_eq, ih, monoCmp]
+      cases linCmp x y <;> rfl
+
+/-- `monoIns`. -/
+noncomputable def monoInsK (m : List (List Nat)) (ns : List (List (List Nat))) : List (List (List Nat)) :=
+  List.rec [m] (fun n ns ih => monoCmpK ns (m :: n :: ns) (n :: ih) m n) ns
+
+theorem monoInsK_eq (m : List (List Nat)) (ns : List (List (List Nat))) : monoInsK m ns = monoIns m ns := by
+  induction ns with
+  | nil => rfl
+  | cons n ns ih =>
+    show monoCmpK ns (m :: n :: ns) (n :: monoInsK m ns) m n = _
+    rw [monoCmpK_eq, ih, monoIns]
+
+/-- `monosXor`. -/
+noncomputable def monosXorK (a b : List (List (List Nat))) : List (List (List Nat)) :=
+  List.rec b (fun m _ ih => monoInsK m ih) a
+
+theorem monosXorK_eq (a b : List (List (List Nat))) : monosXorK a b = monosXor a b := by
+  induction a with
+  | nil => rfl
+  | cons k a ih => show monoInsK k (monosXorK a b) = _; rw [ih, monoInsK_eq]; rfl
+
+@[implemented_by pxorC]
+def pxor (p q : Poly) : Poly :=
+  forceP (linXorK p.lin q.lin) (Bool.rec q.c (Bool.rec true false q.c) p.c) (monosXorK p.nl q.nl)
+
+theorem pxor_eq (p q : Poly) : pxor p q = pxorC p q := by
+  rw [pxor, forceP_eq, linXorK_eq, monosXorK_eq, pxorC]
+  cases p.c <;> cases q.c <;> rfl
+
+/-- Rotate each linear form of each monomial. -/
+noncomputable def nlRorK (f : List Nat → List Nat) (ns : List (List (List Nat))) : List (List (List Nat)) :=
+  KList.map (KList.map f) ns
+
+@[implemented_by prorC]
+def pror (n : Nat) (p : Poly) : Poly := forceP (linRorK n p.lin) p.c (nlRorK (linRorK n) p.nl)
+
+theorem pror_eq (n : Nat) (p : Poly) : pror n p = prorC n p := by
+  have e : linRorK n = linRor n := funext (linRorK_eq n)
+  rw [pror, forceP_eq, nlRorK, e, KList.map_eq, prorC]
+  congr 1
+  exact List.map_congr_left fun m _ => KList.map_eq ..
+
+/-- `addMono`. -/
+noncomputable def addMonoK (m : List (List Nat)) (p : Poly) : Poly :=
+  List.rec (forceP p.lin (Bool.rec true false p.c) p.nl)
+    (fun a m' _ => List.rec (forceP (linXorK a p.lin) p.c p.nl) (fun _ _ _ => forceP p.lin p.c (monoInsK m p.nl)) m')
+    m
+
+theorem addMonoK_eq (m : List (List Nat)) (p : Poly) : addMonoK m p = addMono m p := by
+  cases m with
+  | nil => show forceP _ _ _ = _; rw [forceP_eq]; cases h : p.c <;> simp only [addMono, h] <;> rfl
+  | cons a m' =>
+    cases m' with
+    | nil => show forceP _ _ _ = _; rw [forceP_eq, linXorK_eq]; rfl
+    | cons b m' => show forceP _ _ _ = _; rw [forceP_eq, monoInsK_eq]; rfl
+
+/-- `terms`. -/
+noncomputable def termsK (p : Poly) : List (List (List Nat)) :=
+  Bool.rec (List.rec p.nl (fun _ _ _ => [p.lin] :: p.nl) p.lin)
+    ([] :: List.rec p.nl (fun _ _ _ => [p.lin] :: p.nl) p.lin) p.c
+
+theorem termsK_eq (p : Poly) : termsK p = terms p := by
+  obtain ⟨l, c, ns⟩ := p
+  cases c <;> cases l <;> rfl
+
+@[implemented_by pandC]
+def pand (p q : Poly) : Poly :=
+  List.rec zero (fun t _ ih => List.rec ih (fun u _ ih => addMonoK (monoMulK t u) ih) (termsK q)) (termsK p)
+
+theorem mulRec_eq (t : List (List Nat)) (us : List (List (List Nat))) (z : Poly) :
+    (List.rec (motive := fun _ => Poly) z (fun u _ ih => addMonoK (monoMulK t u) ih) us : Poly) =
+      (us.map fun u => monoMul t u).foldr addMono z := by
+  induction us with
+  | nil => rfl
+  | cons u us ih => exact (addMonoK_eq ..).trans (by rw [monoMulK_eq, ih]; rfl)
+
+theorem pand_eq (p q : Poly) : pand p q = pandC p q := by
+  rw [pand, termsK_eq, termsK_eq, pandC, ofMonos]
+  induction terms p with
+  | nil => rfl
+  | cons t ts ih => exact (mulRec_eq ..).trans (by rw [ih, List.flatMap_cons, List.foldr_append])
 
 def por (p q : Poly) : Poly := pxor (pxor p q) (pand p q)
 
+/-- `some p`, with `p` evaluated. -/
+noncomputable def seqP (p : Poly) : Option Poly := Poly.rec (fun l c ns => some ⟨l, c, ns⟩) p
+
+theorem seqP_eq (p : Poly) : seqP p = some p := rfl
+
 /-- The ANF domain. -/
-def anf : Dom Poly 64 where
-  xor a b := some (pxor a b)
-  and a b := some (pand a b)
-  or a b := some (por a b)
-  ror n a := some (pror n a)
+noncomputable def anf : Dom Poly 64 where
+  xor a b := seqP (pxor a b)
+  and a b := seqP (pand a b)
+  or a b := seqP (por a b)
+  ror n a := seqP (pror n a)
   shr _ _ := none
   const v := if v = 0 then some zero else if v = BitVec.allOnes 64 then some one else none
 
@@ -304,7 +533,8 @@ theorem cst_xor (a b : Bool) : cst (a ^^ b) = cst a ^^^ cst b := by
   cases a <;> cases b <;> simp [cst]
 
 theorem eval_pxor (p q : Poly) : eval V (pxor p q) = eval V p ^^^ eval V q := by
-  simp only [eval, pxor, lin_linXor, monos_monosXor]
+  rw [pxor_eq]
+  simp only [eval, pxorC, lin_linXor, monos_monosXor]
   rw [cst_xor]
   ac_rfl
 
@@ -325,7 +555,8 @@ theorem monos_ror (n : Nat) (ns : List (List (List Nat))) :
     rw [ih, mono_ror, rotateRight_xor]
 
 theorem eval_pror (n : Nat) (p : Poly) : eval V (pror n p) = (eval V p).rotateRight n := by
-  simp only [eval, pror, lin_linRor, monos_ror, rotateRight_xor, cst_ror]
+  rw [pror_eq]
+  simp only [eval, prorC, lin_linRor, monos_ror, rotateRight_xor, cst_ror]
 
 theorem monos_append (a b : List (List (List Nat))) : monos V (a ++ b) = monos V a ^^^ monos V b := by
   induction a with
@@ -389,7 +620,7 @@ theorem monos_mul (a b : List (List (List Nat))) :
     rw [and_xor_right]
 
 theorem eval_pand (p q : Poly) : eval V (pand p q) = eval V p &&& eval V q := by
-  rw [pand, eval_ofMonos, monos_mul, eval_terms, eval_terms]
+  rw [pand_eq, pandC, eval_ofMonos, monos_mul, eval_terms, eval_terms]
 
 theorem or_eq (x y : W) : x ||| y = x ^^^ y ^^^ (x &&& y) := by
   apply BitVec.eq_of_getLsbD_eq; intro i _
@@ -409,16 +640,16 @@ def AnfRel (p : Poly) (x : W) : Prop := eval V p = x
 
 theorem anf_sound : anf.Sound (AnfRel V) where
   xor ha hb h := by
-    simp only [anf, Option.some.injEq] at h; subst h
+    simp only [anf, seqP_eq, Option.some.injEq] at h; subst h
     simp only [AnfRel] at *; rw [eval_pxor, ha, hb]
   and ha hb h := by
-    simp only [anf, Option.some.injEq] at h; subst h
+    simp only [anf, seqP_eq, Option.some.injEq] at h; subst h
     simp only [AnfRel] at *; rw [eval_pand, ha, hb]
   or ha hb h := by
-    simp only [anf, Option.some.injEq] at h; subst h
+    simp only [anf, seqP_eq, Option.some.injEq] at h; subst h
     simp only [AnfRel] at *; rw [eval_por, ha, hb]
   ror ha h := by
-    simp only [anf, Option.some.injEq] at h; subst h
+    simp only [anf, seqP_eq, Option.some.injEq] at h; subst h
     simp only [AnfRel] at *; rw [eval_pror, ha]
   shr _ h := by cases h
   const {v c} h := by

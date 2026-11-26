@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 import VerifiedGarbage.Proof.Divstep.Iter
-import Mathlib.Data.Nat.Prime.Basic
+import VerifiedGarbage.Proof.Framework.IsPrime
 import Mathlib.Tactic.FieldSimp
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
 import VerifiedGarbage.Proof.Divstep.Tc
@@ -654,7 +654,7 @@ theorem finishS_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size
       omega_using [h2, eL, eA, eNG, n4])]
 
 /-- `[acc] = [base]^(m - 2)` in Montgomery form, for a prime `m > 2`. -/
-theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : IsPrime m) (hT : InvToM m)
     (hL : InvLay P size) (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkW P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m)
     (hS : P.seed = none) :
@@ -720,7 +720,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
     fun hX0 => Divstep.invRun_spec (N := 59) (B := P.B) (by decide) (by exact_mod_cast hm2')
       (by exact_mod_cast hpr.one_lt) hmi (done X (by omega_using []) (by exact_mod_cast hX)) (by
         rw [Int.gcd_natCast_natCast]
-        exact Nat.coprime_of_lt_prime (by omega_using [hX0]) hX hpr)
+        exact hpr.coprime_of_lt (by omega_using [hX0]) hX)
   refine hT (K := 2 ^ (5 * P.B)) (f := I.f) (a := A) (Cs := Cs) hm2 hR hX
     ?_ ?_ ?_ ev
   · intro hX0
@@ -757,7 +757,7 @@ theorem initSRegs_sub {n : Nat} (h4 : 4 ≤ n) (h7 : n < 10) :
 starts at the seed `c ≡ 2^(5 B) R²`, so that `a` ends as `c` times the
 inversion's from `b = 1` (`Divstep.invRunC_rel`), which is the result up to
 the sign of `f`. -/
-theorem invPowS_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+theorem invPowS_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : IsPrime m) (hT : InvToM m)
     (hL : InvLay P size) (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkW P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m)
     {sd md : Nat} (hS : P.seed = some (sd, md)) (hSd : SeedOk P size m s.mem base) :
@@ -835,7 +835,7 @@ theorem invPowS_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m
       obtain h := Divstep.invRun_spec (N := 59) (B := P.B) (by decide) (by exact_mod_cast hm2')
         (by exact_mod_cast hpr.one_lt) hmi (done X (by omega_using []) (by exact_mod_cast hX)) (by
           rw [Int.gcd_natCast_natCast]
-          exact Nat.coprime_of_lt_prime (by omega_using [hX0]) hX hpr)
+          exact hpr.coprime_of_lt (by omega_using [hX0]) hX)
       rw [show (64 - 59) * P.B = 5 * P.B by omega_using [], ← hA0] at h
       exact h
   -- The constant the result is multiplied by.
@@ -923,7 +923,7 @@ theorem invPowS_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m
     exact hCs
 
 /-- A prime modulus's inversion is sound. -/
-theorem invSound_of_toM {m : Nat} [NeZero m] (hp : m.Prime) (hT : InvToM m) : InvSound m := by
+theorem invSound_of_toM {m : Nat} [NeZero m] (hp : IsPrime m) (hT : InvToM m) : InvSound m := by
   intro P _ _ hL hm2 hR _ hs hM hX hC hSd
   cases hS : P.seed with
   | none => exact invPow_ok hp hT hL hm2 hR hs hM hX hC hS

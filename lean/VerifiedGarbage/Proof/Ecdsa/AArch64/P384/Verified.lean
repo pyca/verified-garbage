@@ -219,7 +219,7 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   sh := by have := p384_nBits; have : p384.n = 6 := rfl; have : p384.C.len = 48 := rfl; unfold Cfg.sh; omega_arith
   n4 := by decide
   sound_p := hI (by
-    show Nat.Prime Spec.P384.curve.p
+    show IsPrime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
       39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
       by decide +kernel]

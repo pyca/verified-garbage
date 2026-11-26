@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.BrainpoolP512r1
-public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.IsPrime
 
 /-!
 # The brainpoolP512r1 field prime is prime
@@ -21,47 +21,47 @@ namespace VG.Proof.BrainpoolP512r1
 open VG.Proof.Pratt
 
 /-- The factors below `2^16`, each checked once. -/
-theorem small_2 : Nat.Prime 2 := prime_small _ (by decide +kernel)
-theorem small_3 : Nat.Prime 3 := prime_small _ (by decide +kernel)
-theorem small_5 : Nat.Prime 5 := prime_small _ (by decide +kernel)
-theorem small_7 : Nat.Prime 7 := prime_small _ (by decide +kernel)
-theorem small_11 : Nat.Prime 11 := prime_small _ (by decide +kernel)
-theorem small_13 : Nat.Prime 13 := prime_small _ (by decide +kernel)
-theorem small_17 : Nat.Prime 17 := prime_small _ (by decide +kernel)
-theorem small_19 : Nat.Prime 19 := prime_small _ (by decide +kernel)
-theorem small_23 : Nat.Prime 23 := prime_small _ (by decide +kernel)
-theorem small_29 : Nat.Prime 29 := prime_small _ (by decide +kernel)
-theorem small_41 : Nat.Prime 41 := prime_small _ (by decide +kernel)
-theorem small_47 : Nat.Prime 47 := prime_small _ (by decide +kernel)
-theorem small_61 : Nat.Prime 61 := prime_small _ (by decide +kernel)
-theorem small_71 : Nat.Prime 71 := prime_small _ (by decide +kernel)
-theorem small_89 : Nat.Prime 89 := prime_small _ (by decide +kernel)
-theorem small_101 : Nat.Prime 101 := prime_small _ (by decide +kernel)
-theorem small_109 : Nat.Prime 109 := prime_small _ (by decide +kernel)
-theorem small_127 : Nat.Prime 127 := prime_small _ (by decide +kernel)
-theorem small_131 : Nat.Prime 131 := prime_small _ (by decide +kernel)
-theorem small_149 : Nat.Prime 149 := prime_small _ (by decide +kernel)
-theorem small_239 : Nat.Prime 239 := prime_small _ (by decide +kernel)
-theorem small_277 : Nat.Prime 277 := prime_small _ (by decide +kernel)
-theorem small_293 : Nat.Prime 293 := prime_small _ (by decide +kernel)
-theorem small_1229 : Nat.Prime 1229 := prime_small _ (by decide +kernel)
-theorem small_1601 : Nat.Prime 1601 := prime_small _ (by decide +kernel)
-theorem small_1913 : Nat.Prime 1913 := prime_small _ (by decide +kernel)
-theorem small_3347 : Nat.Prime 3347 := prime_small _ (by decide +kernel)
-theorem small_3571 : Nat.Prime 3571 := prime_small _ (by decide +kernel)
-theorem small_4021 : Nat.Prime 4021 := prime_small _ (by decide +kernel)
-theorem small_4673 : Nat.Prime 4673 := prime_small _ (by decide +kernel)
-theorem small_5717 : Nat.Prime 5717 := prime_small _ (by decide +kernel)
-theorem small_15511 : Nat.Prime 15511 := prime_small _ (by decide +kernel)
-theorem small_18211 : Nat.Prime 18211 := prime_small _ (by decide +kernel)
-theorem small_19009 : Nat.Prime 19009 := prime_small _ (by decide +kernel)
-theorem small_24379 : Nat.Prime 24379 := prime_small _ (by decide +kernel)
-theorem small_28057 : Nat.Prime 28057 := prime_small _ (by decide +kernel)
-theorem small_36587 : Nat.Prime 36587 := prime_small _ (by decide +kernel)
-theorem small_37657 : Nat.Prime 37657 := prime_small _ (by decide +kernel)
-theorem small_41539 : Nat.Prime 41539 := prime_small _ (by decide +kernel)
+theorem small_2 : IsPrime 2 := prime_small _ (by decide +kernel)
+theorem small_3 : IsPrime 3 := prime_small _ (by decide +kernel)
+theorem small_5 : IsPrime 5 := prime_small _ (by decide +kernel)
+theorem small_7 : IsPrime 7 := prime_small _ (by decide +kernel)
+theorem small_11 : IsPrime 11 := prime_small _ (by decide +kernel)
+theorem small_13 : IsPrime 13 := prime_small _ (by decide +kernel)
+theorem small_17 : IsPrime 17 := prime_small _ (by decide +kernel)
+theorem small_19 : IsPrime 19 := prime_small _ (by decide +kernel)
+theorem small_23 : IsPrime 23 := prime_small _ (by decide +kernel)
+theorem small_29 : IsPrime 29 := prime_small _ (by decide +kernel)
+theorem small_41 : IsPrime 41 := prime_small _ (by decide +kernel)
+theorem small_47 : IsPrime 47 := prime_small _ (by decide +kernel)
+theorem small_61 : IsPrime 61 := prime_small _ (by decide +kernel)
+theorem small_71 : IsPrime 71 := prime_small _ (by decide +kernel)
+theorem small_89 : IsPrime 89 := prime_small _ (by decide +kernel)
+theorem small_101 : IsPrime 101 := prime_small _ (by decide +kernel)
+theorem small_109 : IsPrime 109 := prime_small _ (by decide +kernel)
+theorem small_127 : IsPrime 127 := prime_small _ (by decide +kernel)
+theorem small_131 : IsPrime 131 := prime_small _ (by decide +kernel)
+theorem small_149 : IsPrime 149 := prime_small _ (by decide +kernel)
+theorem small_239 : IsPrime 239 := prime_small _ (by decide +kernel)
+theorem small_277 : IsPrime 277 := prime_small _ (by decide +kernel)
+theorem small_293 : IsPrime 293 := prime_small _ (by decide +kernel)
+theorem small_1229 : IsPrime 1229 := prime_small _ (by decide +kernel)
+theorem small_1601 : IsPrime 1601 := prime_small _ (by decide +kernel)
+theorem small_1913 : IsPrime 1913 := prime_small _ (by decide +kernel)
+theorem small_3347 : IsPrime 3347 := prime_small _ (by decide +kernel)
+theorem small_3571 : IsPrime 3571 := prime_small _ (by decide +kernel)
+theorem small_4021 : IsPrime 4021 := prime_small _ (by decide +kernel)
+theorem small_4673 : IsPrime 4673 := prime_small _ (by decide +kernel)
+theorem small_5717 : IsPrime 5717 := prime_small _ (by decide +kernel)
+theorem small_15511 : IsPrime 15511 := prime_small _ (by decide +kernel)
+theorem small_18211 : IsPrime 18211 := prime_small _ (by decide +kernel)
+theorem small_19009 : IsPrime 19009 := prime_small _ (by decide +kernel)
+theorem small_24379 : IsPrime 24379 := prime_small _ (by decide +kernel)
+theorem small_28057 : IsPrime 28057 := prime_small _ (by decide +kernel)
+theorem small_36587 : IsPrime 36587 := prime_small _ (by decide +kernel)
+theorem small_37657 : IsPrime 37657 := prime_small _ (by decide +kernel)
+theorem small_41539 : IsPrime 41539 := prime_small _ (by decide +kernel)
 
-theorem prime_65797030259 : Nat.Prime 65797030259 := by
+theorem prime_65797030259 : IsPrime 65797030259 := by
   refine prime_of_cert 65797030259 2 36 [2, 23, 47, 1601, 19009] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -73,7 +73,7 @@ theorem prime_65797030259 : Nat.Prime 65797030259 := by
   · exact small_1601
   · exact small_19009
 
-theorem prime_60401673777763 : Nat.Prime 60401673777763 := by
+theorem prime_60401673777763 : IsPrime 60401673777763 := by
   refine prime_of_cert 60401673777763 2 46 [2, 3, 3, 3, 17, 65797030259] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -86,7 +86,7 @@ theorem prime_60401673777763 : Nat.Prime 60401673777763 := by
   · exact small_17
   · exact prime_65797030259
 
-theorem prime_329430728783919403 : Nat.Prime 329430728783919403 := by
+theorem prime_329430728783919403 : IsPrime 329430728783919403 := by
   refine prime_of_cert 329430728783919403 2 59 [2, 3, 3, 3, 101, 60401673777763] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -99,7 +99,7 @@ theorem prime_329430728783919403 : Nat.Prime 329430728783919403 := by
   · exact small_101
   · exact prime_60401673777763
 
-theorem prime_35143541 : Nat.Prime 35143541 := by
+theorem prime_35143541 : IsPrime 35143541 := by
   refine prime_of_cert 35143541 2 26 [2, 2, 5, 19, 23, 4021] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -112,7 +112,7 @@ theorem prime_35143541 : Nat.Prime 35143541 := by
   · exact small_23
   · exact small_4021
 
-theorem prime_1501501 : Nat.Prime 1501501 := by
+theorem prime_1501501 : IsPrime 1501501 := by
   refine prime_of_cert 1501501 2 21 [2, 2, 3, 5, 5, 5, 7, 11, 13] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -128,7 +128,7 @@ theorem prime_1501501 : Nat.Prime 1501501 := by
   · exact small_11
   · exact small_13
 
-theorem prime_54054037 : Nat.Prime 54054037 := by
+theorem prime_54054037 : IsPrime 54054037 := by
   refine prime_of_cert 54054037 2 26 [2, 2, 3, 3, 1501501] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -140,7 +140,7 @@ theorem prime_54054037 : Nat.Prime 54054037 := by
   · exact small_3
   · exact prime_1501501
 
-theorem prime_72186710089950647 : Nat.Prime 72186710089950647 := by
+theorem prime_72186710089950647 : IsPrime 72186710089950647 := by
   refine prime_of_cert 72186710089950647 5 57 [2, 19, 35143541, 54054037] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -151,7 +151,7 @@ theorem prime_72186710089950647 : Nat.Prime 72186710089950647 := by
   · exact prime_35143541
   · exact prime_54054037
 
-theorem prime_18335424362847464339 : Nat.Prime 18335424362847464339 := by
+theorem prime_18335424362847464339 : IsPrime 18335424362847464339 := by
   refine prime_of_cert 18335424362847464339 2 64 [2, 127, 72186710089950647] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -161,7 +161,7 @@ theorem prime_18335424362847464339 : Nat.Prime 18335424362847464339 := by
   · exact small_127
   · exact prime_72186710089950647
 
-theorem prime_8360987 : Nat.Prime 8360987 := by
+theorem prime_8360987 : IsPrime 8360987 := by
   refine prime_of_cert 8360987 2 23 [2, 149, 28057] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -171,7 +171,7 @@ theorem prime_8360987 : Nat.Prime 8360987 := by
   · exact small_149
   · exact small_28057
 
-theorem prime_50165923 : Nat.Prime 50165923 := by
+theorem prime_50165923 : IsPrime 50165923 := by
   refine prime_of_cert 50165923 2 26 [2, 3, 8360987] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -181,7 +181,7 @@ theorem prime_50165923 : Nat.Prime 50165923 := by
   · exact small_3
   · exact prime_8360987
 
-theorem prime_109267 : Nat.Prime 109267 := by
+theorem prime_109267 : IsPrime 109267 := by
   refine prime_of_cert 109267 2 17 [2, 3, 18211] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -191,7 +191,7 @@ theorem prime_109267 : Nat.Prime 109267 := by
   · exact small_3
   · exact small_18211
 
-theorem prime_1966807 : Nat.Prime 1966807 := by
+theorem prime_1966807 : IsPrime 1966807 := by
   refine prime_of_cert 1966807 3 21 [2, 3, 3, 109267] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -202,7 +202,7 @@ theorem prime_1966807 : Nat.Prime 1966807 := by
   · exact small_3
   · exact prime_109267
 
-theorem prime_5612846281303 : Nat.Prime 5612846281303 := by
+theorem prime_5612846281303 : IsPrime 5612846281303 := by
   refine prime_of_cert 5612846281303 3 43 [2, 3, 13, 36587, 1966807] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -214,7 +214,7 @@ theorem prime_5612846281303 : Nat.Prime 5612846281303 := by
   · exact small_36587
   · exact prime_1966807
 
-theorem prime_84395496284499229623254033 : Nat.Prime 84395496284499229623254033 := by
+theorem prime_84395496284499229623254033 : IsPrime 84395496284499229623254033 := by
   refine prime_of_cert 84395496284499229623254033 5 87 [2, 2, 2, 2, 11, 13, 131, 50165923, 5612846281303] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -230,7 +230,7 @@ theorem prime_84395496284499229623254033 : Nat.Prime 84395496284499229623254033 
   · exact prime_50165923
   · exact prime_5612846281303
 
-theorem prime_120179186709126902983513742993 : Nat.Prime 120179186709126902983513742993 := by
+theorem prime_120179186709126902983513742993 : IsPrime 120179186709126902983513742993 := by
   refine prime_of_cert 120179186709126902983513742993 3 97 [2, 2, 2, 2, 89, 84395496284499229623254033] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -243,7 +243,7 @@ theorem prime_120179186709126902983513742993 : Nat.Prime 12017918670912690298351
   · exact small_89
   · exact prime_84395496284499229623254033
 
-theorem prime_137341 : Nat.Prime 137341 := by
+theorem prime_137341 : IsPrime 137341 := by
   refine prime_of_cert 137341 18 18 [2, 2, 3, 3, 5, 7, 109] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -257,7 +257,7 @@ theorem prime_137341 : Nat.Prime 137341 := by
   · exact small_7
   · exact small_109
 
-theorem prime_1491408717607 : Nat.Prime 1491408717607 := by
+theorem prime_1491408717607 : IsPrime 1491408717607 := by
   refine prime_of_cert 1491408717607 3 41 [2, 3, 3, 29, 71, 293, 137341] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -271,7 +271,7 @@ theorem prime_1491408717607 : Nat.Prime 1491408717607 := by
   · exact small_293
   · exact prime_137341
 
-theorem prime_476647 : Nat.Prime 476647 := by
+theorem prime_476647 : IsPrime 476647 := by
   refine prime_of_cert 476647 13 19 [2, 3, 17, 4673] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -282,7 +282,7 @@ theorem prime_476647 : Nat.Prime 476647 := by
   · exact small_17
   · exact small_4673
 
-theorem prime_612609603457 : Nat.Prime 612609603457 := by
+theorem prime_612609603457 : IsPrime 612609603457 := by
   refine prime_of_cert 612609603457 5 40 [2, 2, 2, 2, 2, 2, 2, 3, 3347, 476647] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -299,7 +299,7 @@ theorem prime_612609603457 : Nat.Prime 612609603457 := by
   · exact small_3347
   · exact prime_476647
 
-theorem prime_200935949933897 : Nat.Prime 200935949933897 := by
+theorem prime_200935949933897 : IsPrime 200935949933897 := by
   refine prime_of_cert 200935949933897 3 48 [2, 2, 2, 41, 612609603457] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -311,7 +311,7 @@ theorem prime_200935949933897 : Nat.Prime 200935949933897 := by
   · exact small_41
   · exact prime_612609603457
 
-theorem prime_1064159 : Nat.Prime 1064159 := by
+theorem prime_1064159 : IsPrime 1064159 := by
   refine prime_of_cert 1064159 13 21 [2, 149, 3571] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -321,7 +321,7 @@ theorem prime_1064159 : Nat.Prime 1064159 := by
   · exact small_149
   · exact small_3571
 
-theorem prime_2128319 : Nat.Prime 2128319 := by
+theorem prime_2128319 : IsPrime 2128319 := by
   refine prime_of_cert 2128319 7 22 [2, 1064159] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -330,7 +330,7 @@ theorem prime_2128319 : Nat.Prime 2128319 := by
   · exact small_2
   · exact prime_1064159
 
-theorem prime_4256639 : Nat.Prime 4256639 := by
+theorem prime_4256639 : IsPrime 4256639 := by
   refine prime_of_cert 4256639 7 23 [2, 2128319] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -339,7 +339,7 @@ theorem prime_4256639 : Nat.Prime 4256639 := by
   · exact small_2
   · exact prime_2128319
 
-theorem prime_2234757903503 : Nat.Prime 2234757903503 := by
+theorem prime_2234757903503 : IsPrime 2234757903503 := by
   refine prime_of_cert 2234757903503 5 42 [2, 1913, 15511, 37657] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -350,7 +350,7 @@ theorem prime_2234757903503 : Nat.Prime 2234757903503 := by
   · exact small_15511
   · exact small_37657
 
-theorem prime_4188433 : Nat.Prime 4188433 := by
+theorem prime_4188433 : IsPrime 4188433 := by
   refine prime_of_cert 4188433 10 22 [2, 2, 2, 2, 3, 71, 1229] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -364,7 +364,7 @@ theorem prime_4188433 : Nat.Prime 4188433 := by
   · exact small_71
   · exact small_1229
 
-theorem prime_20020709741 : Nat.Prime 20020709741 := by
+theorem prime_20020709741 : IsPrime 20020709741 := by
   refine prime_of_cert 20020709741 2 35 [2, 2, 5, 239, 4188433] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -376,7 +376,7 @@ theorem prime_20020709741 : Nat.Prime 20020709741 := by
   · exact small_239
   · exact prime_4188433
 
-theorem prime_400414194821 : Nat.Prime 400414194821 := by
+theorem prime_400414194821 : IsPrime 400414194821 := by
   refine prime_of_cert 400414194821 2 39 [2, 2, 5, 20020709741] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -387,7 +387,7 @@ theorem prime_400414194821 : Nat.Prime 400414194821 := by
   · exact small_5
   · exact prime_20020709741
 
-theorem prime_31232307196039 : Nat.Prime 31232307196039 := by
+theorem prime_31232307196039 : IsPrime 31232307196039 := by
   refine prime_of_cert 31232307196039 6 45 [2, 3, 13, 400414194821] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -398,7 +398,7 @@ theorem prime_31232307196039 : Nat.Prime 31232307196039 := by
   · exact small_13
   · exact prime_400414194821
 
-theorem prime_4684846079405851 : Nat.Prime 4684846079405851 := by
+theorem prime_4684846079405851 : IsPrime 4684846079405851 := by
   refine prime_of_cert 4684846079405851 2 53 [2, 3, 5, 5, 31232307196039] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -410,7 +410,7 @@ theorem prime_4684846079405851 : Nat.Prime 4684846079405851 := by
   · exact small_5
   · exact prime_31232307196039
 
-theorem prime_57034811399347976721726973543287819857845741391551 : Nat.Prime 57034811399347976721726973543287819857845741391551 := by
+theorem prime_57034811399347976721726973543287819857845741391551 : IsPrime 57034811399347976721726973543287819857845741391551 := by
   refine prime_of_cert 57034811399347976721726973543287819857845741391551 6 166 [2, 3, 5, 5, 13, 17, 277, 5717, 24379, 4256639, 2234757903503, 4684846079405851] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -429,7 +429,7 @@ theorem prime_57034811399347976721726973543287819857845741391551 : Nat.Prime 570
   · exact prime_2234757903503
   · exact prime_4684846079405851
 
-theorem prime_297968944203544716575901889872036237935261750341463572996351910423 : Nat.Prime 297968944203544716575901889872036237935261750341463572996351910423 := by
+theorem prime_297968944203544716575901889872036237935261750341463572996351910423 : IsPrime 297968944203544716575901889872036237935261750341463572996351910423 := by
   refine prime_of_cert 297968944203544716575901889872036237935261750341463572996351910423 5 218 [2, 13, 200935949933897, 57034811399347976721726973543287819857845741391551] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -440,7 +440,7 @@ theorem prime_297968944203544716575901889872036237935261750341463572996351910423
   · exact prime_200935949933897
   · exact prime_57034811399347976721726973543287819857845741391551
 
-theorem prime_14435454750020088047685444818571282397270727096595623715684950293729763357371155607979 : Nat.Prime 14435454750020088047685444818571282397270727096595623715684950293729763357371155607979 := by
+theorem prime_14435454750020088047685444818571282397270727096595623715684950293729763357371155607979 : IsPrime 14435454750020088047685444818571282397270727096595623715684950293729763357371155607979 := by
   refine prime_of_cert 14435454750020088047685444818571282397270727096595623715684950293729763357371155607979 2 283 [2, 17, 23, 41539, 1491408717607, 297968944203544716575901889872036237935261750341463572996351910423] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -453,7 +453,7 @@ theorem prime_144354547500200880476854448185712823972707270965956237156849502937
   · exact prime_1491408717607
   · exact prime_297968944203544716575901889872036237935261750341463572996351910423
 
-theorem prime_8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 : Nat.Prime 8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 := by
+theorem prime_8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 : IsPrime 8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 := by
   refine prime_of_cert 8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 2 512 [2, 7, 61, 329430728783919403, 18335424362847464339, 120179186709126902983513742993, 14435454750020088047685444818571282397270727096595623715684950293729763357371155607979] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -467,42 +467,42 @@ theorem prime_894896220765023255165660281515915342216260964409835451134459718720
   · exact prime_120179186709126902983513742993
   · exact prime_14435454750020088047685444818571282397270727096595623715684950293729763357371155607979
 
-theorem p_prime : Nat.Prime Spec.BrainpoolP512r1.p := by
+theorem p_prime : IsPrime Spec.BrainpoolP512r1.p := by
   rw [show Spec.BrainpoolP512r1.p = 8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947 by decide +kernel]
   exact prime_8948962207650232551656602815159153422162609644098354511344597187200057010413552439917934304191956942765446530386427345937963894309923928536070534607816947
 
-theorem small_31 : Nat.Prime 31 := prime_small _ (by decide +kernel)
-theorem small_37 : Nat.Prime 37 := prime_small _ (by decide +kernel)
-theorem small_43 : Nat.Prime 43 := prime_small _ (by decide +kernel)
-theorem small_67 : Nat.Prime 67 := prime_small _ (by decide +kernel)
-theorem small_179 : Nat.Prime 179 := prime_small _ (by decide +kernel)
-theorem small_181 : Nat.Prime 181 := prime_small _ (by decide +kernel)
-theorem small_191 : Nat.Prime 191 := prime_small _ (by decide +kernel)
-theorem small_251 : Nat.Prime 251 := prime_small _ (by decide +kernel)
-theorem small_271 : Nat.Prime 271 := prime_small _ (by decide +kernel)
-theorem small_349 : Nat.Prime 349 := prime_small _ (by decide +kernel)
-theorem small_409 : Nat.Prime 409 := prime_small _ (by decide +kernel)
-theorem small_431 : Nat.Prime 431 := prime_small _ (by decide +kernel)
-theorem small_479 : Nat.Prime 479 := prime_small _ (by decide +kernel)
-theorem small_503 : Nat.Prime 503 := prime_small _ (by decide +kernel)
-theorem small_1559 : Nat.Prime 1559 := prime_small _ (by decide +kernel)
-theorem small_2647 : Nat.Prime 2647 := prime_small _ (by decide +kernel)
-theorem small_2729 : Nat.Prime 2729 := prime_small _ (by decide +kernel)
-theorem small_4289 : Nat.Prime 4289 := prime_small _ (by decide +kernel)
-theorem small_4391 : Nat.Prime 4391 := prime_small _ (by decide +kernel)
-theorem small_7853 : Nat.Prime 7853 := prime_small _ (by decide +kernel)
-theorem small_8311 : Nat.Prime 8311 := prime_small _ (by decide +kernel)
-theorem small_10837 : Nat.Prime 10837 := prime_small _ (by decide +kernel)
-theorem small_11113 : Nat.Prime 11113 := prime_small _ (by decide +kernel)
-theorem small_11801 : Nat.Prime 11801 := prime_small _ (by decide +kernel)
-theorem small_14557 : Nat.Prime 14557 := prime_small _ (by decide +kernel)
-theorem small_19543 : Nat.Prime 19543 := prime_small _ (by decide +kernel)
-theorem small_28513 : Nat.Prime 28513 := prime_small _ (by decide +kernel)
-theorem small_40129 : Nat.Prime 40129 := prime_small _ (by decide +kernel)
-theorem small_57527 : Nat.Prime 57527 := prime_small _ (by decide +kernel)
-theorem small_57571 : Nat.Prime 57571 := prime_small _ (by decide +kernel)
+theorem small_31 : IsPrime 31 := prime_small _ (by decide +kernel)
+theorem small_37 : IsPrime 37 := prime_small _ (by decide +kernel)
+theorem small_43 : IsPrime 43 := prime_small _ (by decide +kernel)
+theorem small_67 : IsPrime 67 := prime_small _ (by decide +kernel)
+theorem small_179 : IsPrime 179 := prime_small _ (by decide +kernel)
+theorem small_181 : IsPrime 181 := prime_small _ (by decide +kernel)
+theorem small_191 : IsPrime 191 := prime_small _ (by decide +kernel)
+theorem small_251 : IsPrime 251 := prime_small _ (by decide +kernel)
+theorem small_271 : IsPrime 271 := prime_small _ (by decide +kernel)
+theorem small_349 : IsPrime 349 := prime_small _ (by decide +kernel)
+theorem small_409 : IsPrime 409 := prime_small _ (by decide +kernel)
+theorem small_431 : IsPrime 431 := prime_small _ (by decide +kernel)
+theorem small_479 : IsPrime 479 := prime_small _ (by decide +kernel)
+theorem small_503 : IsPrime 503 := prime_small _ (by decide +kernel)
+theorem small_1559 : IsPrime 1559 := prime_small _ (by decide +kernel)
+theorem small_2647 : IsPrime 2647 := prime_small _ (by decide +kernel)
+theorem small_2729 : IsPrime 2729 := prime_small _ (by decide +kernel)
+theorem small_4289 : IsPrime 4289 := prime_small _ (by decide +kernel)
+theorem small_4391 : IsPrime 4391 := prime_small _ (by decide +kernel)
+theorem small_7853 : IsPrime 7853 := prime_small _ (by decide +kernel)
+theorem small_8311 : IsPrime 8311 := prime_small _ (by decide +kernel)
+theorem small_10837 : IsPrime 10837 := prime_small _ (by decide +kernel)
+theorem small_11113 : IsPrime 11113 := prime_small _ (by decide +kernel)
+theorem small_11801 : IsPrime 11801 := prime_small _ (by decide +kernel)
+theorem small_14557 : IsPrime 14557 := prime_small _ (by decide +kernel)
+theorem small_19543 : IsPrime 19543 := prime_small _ (by decide +kernel)
+theorem small_28513 : IsPrime 28513 := prime_small _ (by decide +kernel)
+theorem small_40129 : IsPrime 40129 := prime_small _ (by decide +kernel)
+theorem small_57527 : IsPrime 57527 := prime_small _ (by decide +kernel)
+theorem small_57571 : IsPrime 57571 := prime_small _ (by decide +kernel)
 
-theorem prime_56951731 : Nat.Prime 56951731 := by
+theorem prime_56951731 : IsPrime 56951731 := by
   refine prime_of_cert 56951731 3 26 [2, 3, 3, 5, 11, 57527] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -515,7 +515,7 @@ theorem prime_56951731 : Nat.Prime 56951731 := by
   · exact small_11
   · exact small_57527
 
-theorem prime_33278821 : Nat.Prime 33278821 := by
+theorem prime_33278821 : IsPrime 33278821 := by
   refine prime_of_cert 33278821 2 25 [2, 2, 3, 5, 47, 11801] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -528,7 +528,7 @@ theorem prime_33278821 : Nat.Prime 33278821 := by
   · exact small_47
   · exact small_11801
 
-theorem prime_82441673 : Nat.Prime 82441673 := by
+theorem prime_82441673 : IsPrime 82441673 := by
   refine prime_of_cert 82441673 3 27 [2, 2, 2, 179, 57571] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -540,7 +540,7 @@ theorem prime_82441673 : Nat.Prime 82441673 := by
   · exact small_179
   · exact small_57571
 
-theorem prime_447825179 : Nat.Prime 447825179 := by
+theorem prime_447825179 : IsPrime 447825179 := by
   refine prime_of_cert 447825179 2 29 [2, 7853, 28513] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -550,7 +550,7 @@ theorem prime_447825179 : Nat.Prime 447825179 := by
   · exact small_7853
   · exact small_28513
 
-theorem prime_733459 : Nat.Prime 733459 := by
+theorem prime_733459 : IsPrime 733459 := by
   refine prime_of_cert 733459 2 20 [2, 3, 11, 11113] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -561,7 +561,7 @@ theorem prime_733459 : Nat.Prime 733459 := by
   · exact small_11
   · exact small_11113
 
-theorem prime_55886090402833 : Nat.Prime 55886090402833 := by
+theorem prime_55886090402833 : IsPrime 55886090402833 := by
   refine prime_of_cert 55886090402833 5 46 [2, 2, 2, 2, 3, 191, 8311, 733459] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -576,7 +576,7 @@ theorem prime_55886090402833 : Nat.Prime 55886090402833 := by
   · exact small_8311
   · exact prime_733459
 
-theorem prime_1095220401229 : Nat.Prime 1095220401229 := by
+theorem prime_1095220401229 : IsPrime 1095220401229 := by
   refine prime_of_cert 1095220401229 6 40 [2, 2, 3, 3, 3, 17, 19, 29, 409, 2647] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -593,7 +593,7 @@ theorem prime_1095220401229 : Nat.Prime 1095220401229 := by
   · exact small_409
   · exact small_2647
 
-theorem prime_109412129269 : Nat.Prime 109412129269 := by
+theorem prime_109412129269 : IsPrime 109412129269 := by
   refine prime_of_cert 109412129269 2 37 [2, 2, 3, 3, 3, 3, 3, 13, 17, 47, 10837] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -611,7 +611,7 @@ theorem prime_109412129269 : Nat.Prime 109412129269 := by
   · exact small_47
   · exact small_10837
 
-theorem prime_516521 : Nat.Prime 516521 := by
+theorem prime_516521 : IsPrime 516521 := by
   refine prime_of_cert 516521 6 19 [2, 2, 2, 5, 37, 349] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -624,7 +624,7 @@ theorem prime_516521 : Nat.Prime 516521 := by
   · exact small_37
   · exact small_349
 
-theorem prime_8332699 : Nat.Prime 8332699 := by
+theorem prime_8332699 : IsPrime 8332699 := by
   refine prime_of_cert 8332699 2 23 [2, 3, 11, 251, 503] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -636,7 +636,7 @@ theorem prime_8332699 : Nat.Prime 8332699 := by
   · exact small_251
   · exact small_503
 
-theorem prime_1288691 : Nat.Prime 1288691 := by
+theorem prime_1288691 : IsPrime 1288691 := by
   refine prime_of_cert 1288691 2 21 [2, 5, 13, 23, 431] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -648,7 +648,7 @@ theorem prime_1288691 : Nat.Prime 1288691 := by
   · exact small_23
   · exact small_431
 
-theorem prime_361396637489 : Nat.Prime 361396637489 := by
+theorem prime_361396637489 : IsPrime 361396637489 := by
   refine prime_of_cert 361396637489 3 39 [2, 2, 2, 2, 31, 67, 271, 40129] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -663,7 +663,7 @@ theorem prime_361396637489 : Nat.Prime 361396637489 := by
   · exact small_271
   · exact small_40129
 
-theorem prime_191760954274777244141857 : Nat.Prime 191760954274777244141857 := by
+theorem prime_191760954274777244141857 : IsPrime 191760954274777244141857 := by
   refine prime_of_cert 191760954274777244141857 10 78 [2, 2, 2, 2, 2, 3, 4289, 1288691, 361396637489] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -679,7 +679,7 @@ theorem prime_191760954274777244141857 : Nat.Prime 191760954274777244141857 := b
   · exact prime_1288691
   · exact prime_361396637489
 
-theorem prime_290442013 : Nat.Prime 290442013 := by
+theorem prime_290442013 : IsPrime 290442013 := by
   refine prime_of_cert 290442013 5 29 [2, 2, 3, 7, 7, 181, 2729] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -693,7 +693,7 @@ theorem prime_290442013 : Nat.Prime 290442013 := by
   · exact small_181
   · exact small_2729
 
-theorem prime_1171601 : Nat.Prime 1171601 := by
+theorem prime_1171601 : IsPrime 1171601 := by
   refine prime_of_cert 1171601 11 21 [2, 2, 2, 2, 5, 5, 29, 101] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -708,7 +708,7 @@ theorem prime_1171601 : Nat.Prime 1171601 := by
   · exact small_29
   · exact small_101
 
-theorem prime_140592121 : Nat.Prime 140592121 := by
+theorem prime_140592121 : IsPrime 140592121 := by
   refine prime_of_cert 140592121 11 28 [2, 2, 2, 3, 5, 1171601] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -721,7 +721,7 @@ theorem prime_140592121 : Nat.Prime 140592121 := by
   · exact small_5
   · exact prime_1171601
 
-theorem prime_6599675343983 : Nat.Prime 6599675343983 := by
+theorem prime_6599675343983 : IsPrime 6599675343983 := by
   refine prime_of_cert 6599675343983 5 43 [2, 7, 7, 479, 140592121] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -733,7 +733,7 @@ theorem prime_6599675343983 : Nat.Prime 6599675343983 := by
   · exact small_479
   · exact prime_140592121
 
-theorem prime_2269518422590621710010337 : Nat.Prime 2269518422590621710010337 := by
+theorem prime_2269518422590621710010337 : IsPrime 2269518422590621710010337 := by
   refine prime_of_cert 2269518422590621710010337 3 81 [2, 2, 2, 2, 2, 37, 290442013, 6599675343983] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -748,7 +748,7 @@ theorem prime_2269518422590621710010337 : Nat.Prime 2269518422590621710010337 :=
   · exact prime_290442013
   · exact prime_6599675343983
 
-theorem prime_4982806528470961888578867896009647265488138691022009860168845631273 : Nat.Prime 4982806528470961888578867896009647265488138691022009860168845631273 := by
+theorem prime_4982806528470961888578867896009647265488138691022009860168845631273 : IsPrime 4982806528470961888578867896009647265488138691022009860168845631273 := by
   refine prime_of_cert 4982806528470961888578867896009647265488138691022009860168845631273 3 222 [2, 2, 2, 11, 19, 37, 43, 516521, 8332699, 191760954274777244141857, 2269518422590621710010337] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -766,7 +766,7 @@ theorem prime_498280652847096188857886789600964726548813869102200986016884563127
   · exact prime_191760954274777244141857
   · exact prime_2269518422590621710010337
 
-theorem prime_23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279 : Nat.Prime 23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279 := by
+theorem prime_23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279 : IsPrime 23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279 := by
   refine prime_of_cert 23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279 11 314 [2, 19543, 109412129269, 1095220401229, 4982806528470961888578867896009647265488138691022009860168845631273] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -778,7 +778,7 @@ theorem prime_233379254077089173432698734933196076388793414859142247462280385464
   · exact prime_1095220401229
   · exact prime_4982806528470961888578867896009647265488138691022009860168845631273
 
-theorem prime_8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 : Nat.Prime 8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 := by
+theorem prime_8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 : IsPrime 8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 := by
   refine prime_of_cert 8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 7 512 [2, 2, 2, 3, 41, 1559, 4391, 14557, 33278821, 56951731, 82441673, 447825179, 55886090402833, 23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279] (by decide) (by decide +kernel) ?_
     (by decide +kernel) (by decide +kernel) (by decide +kernel)
   intro f hf
@@ -799,7 +799,7 @@ theorem prime_894896220765023255165660281515915342216260964409835451134459718720
   · exact prime_55886090402833
   · exact prime_23337925407708917343269873493319607638879341485914224746228038546474382183428298476287118961279
 
-theorem n_prime : Nat.Prime Spec.BrainpoolP512r1.n := by
+theorem n_prime : IsPrime Spec.BrainpoolP512r1.n := by
   rw [show Spec.BrainpoolP512r1.n = 8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169 by decide +kernel]
   exact prime_8948962207650232551656602815159153422162609644098354511344597187200057010413418528378981730643524959857451398370029280583094215613882043973354392115544169
 

@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Bitslice.Machine
+import VerifiedGarbage.Proof.Framework.InlineMatch
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.RISCV64.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -154,18 +156,342 @@ def eval [DecidableEq α] : List Instr → Env α → Option (Env α)
   | [], e => some e
   | i :: is, e => (step D c ext e i).bind (eval is)
 
-/-- Evaluates the block and checks `post` of the result: for `decide`. -/
-def check [DecidableEq α] (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
-  match eval D c ext is e with
-  | some e' => post e'
-  | none => false
+end
 
-theorem of_check [DecidableEq α] {is : List Instr} {e : Env α} {post : Env α → Bool}
+/-! ## The evaluator the kernel runs (`Framework/Bitslice/Machine.lean`) -/
+
+namespace Kernel
+
+open VG.Bitslice.Machine (Op Idx KEq guard bind)
+
+instance : Idx Reg := ⟨Reg.ctorIdx, fun {a b} h => by rw [← Reg.ofNat_ctorIdx a, h, Reg.ofNat_ctorIdx]⟩
+
+/-- An instruction that `step` evaluates. -/
+inductive Shape where
+  | bad
+  | load (d b : Reg) (off : Nat)
+  | store (r b : Reg) (off : Nat)
+  | logic (op : LogicOp) (d n m : Reg)
+  | logicImm (op : LogicOp) (d n : Reg) (imm : Int)
+  | shift (op : ShiftOp) (d n : Reg) (sh : Nat)
+  | addi (d n : Reg) (imm : Int)
+
+def shapeFn : Instr → Shape
+  | .load .d d b off => .load d b off
+  | .store .d r b off => .store r b off
+  | .logic op d n m => .logic op d n m
+  | .logicImm op d n imm => .logicImm op d n imm
+  | .shift op .d d n sh => .shift op d n sh
+  | .addi d n imm => .addi d n imm
+  | _ => .bad
+
+/-- `shapeFn`, with its cases closed (`inline_match%`). -/
+def shape : Instr → Shape := inline_match% shapeFn
+
+theorem shape_eq (i : Instr) : shape i = shapeFn i := by
+  cases i <;> first | rfl | (rename Size => sz; cases sz <;> rfl) | (rename Width => sz; cases sz <;> rfl)
+
+section
+variable [KEq α] (D : Dom α 64) (c : Cfg) (ext : Nat → Option α)
+
+/-- `Cfg.loc`. -/
+noncomputable def locK (n : Reg) (off : Nat) (slot ext : Nat → Op Reg (Val α) α) : Op Reg (Val α) α :=
+  .lt off 2048 (.eq (Nat.mod off 8) 0 (.area n c.base c.slots c.ext c.exts (Nat.div off 8) slot ext))
+
+noncomputable def valK (a : Option α) : Option (Val α) := Option.rec none (fun a => some (.v a)) a
+
+noncomputable def binopK (op : LogicOp) : α → α → Option α := LogicOp.rec D.and D.or D.xor op
+
+/-- `shlD`. -/
+noncomputable def shlK (k : Nat) (a : α) : Option α :=
+  guard (Nat.ble 1 k) (guard (Nat.ble (Nat.succ k) 64)
+    (bind (fun r => bind (D.and r) (D.const (BitVec.allOnes 64 <<< k))) (D.ror (Nat.sub 64 k) a)))
+
+/-- The rotation of `a` (`combine`). -/
+noncomputable def rotK (op : LogicOp) (a b : α) (k k' : Nat) : Option (Val α) :=
+  guard (LogicOp.rec false true true op) (guard (KEq.eq a b) (guard (Nat.ble 1 k)
+    (guard (Nat.ble (Nat.succ k) 64) (guard (Nat.beq k' (Nat.sub 64 k)) (valK (D.ror k a))))))
+
+/-- `combine`. -/
+noncomputable def combineK (op : LogicOp) (x y : Val α) : Option (Val α) :=
+  Val.rec (motive := fun _ => Val α → Option (Val α))
+    (fun a y => Val.rec (fun b => valK (binopK D op a b))
+      (fun b k => valK (bind (binopK D op a) (shlK D k b))) (fun _ _ => none) y)
+    (fun b k y => Val.rec (fun a => valK (bind (fun c => binopK D op c a) (shlK D k b)))
+      (fun _ _ => none) (fun a k' => rotK D op a b k' k) y)
+    (fun a k y => Val.rec (fun _ => none) (fun b k' => rotK D op a b k k') (fun _ _ => none) y) x y
+
+/-- An operation with an immediate. -/
+noncomputable def immK (op : LogicOp) (b : Option α) (x : Val α) : Option (Val α) :=
+  Val.rec (fun a => valK (bind (binopK D op a) b)) (fun _ _ => none) (fun _ _ => none) x
+
+/-- `shiftV`. -/
+noncomputable def shiftK (op : ShiftOp) (k : Nat) (x : Val α) : Option (Val α) :=
+  Val.rec
+    (fun a => ShiftOp.rec (some (.shl a k))
+      (Option.rec (some (.shr a k)) (fun b => some (.v b)) (D.shr k a)) none op)
+    (fun _ _ => none) (fun _ _ => none) x
+
+noncomputable def op (i : Instr) : Op Reg (Val α) α :=
+  Shape.rec (motive := fun _ => Op Reg (Val α) α) .bad
+    (fun d b off => .dst c.base c.ext d (locK c b off (.ld (fun a => some (.v a)) d) fun k => .r0 (valK (ext k)) d))
+    (fun r b off => locK c b off
+      (fun k => .st (fun x => Val.rec some (fun _ _ => none) (fun _ _ => none) x) k r) fun _ => .bad)
+    (fun op d n m => .dst c.base c.ext d (.r2 (combineK D op) d n m))
+    (fun op d n imm => .dst c.base c.ext d (Bool.rec .bad
+      (.r1 (immK D op (D.const (BitVec.ofInt 64 imm))) d n) (decide (imm12 imm))))
+    (fun op d n sh => .dst c.base c.ext d (.lt 0 sh (.lt sh 64 (.r1 (shiftK D op sh) d n))))
+    (fun d n imm => Bool.rec .bad (.dst c.base c.ext d (.r1 some d n)) (decide (imm = 0)))
+    (shape i)
+
+omit [KEq α] in
+/-- The abstract state, as the kernel's evaluator has it. -/
+def toM (e : Env α) : Machine.Env Reg (Val α) α := ⟨e.reg, e.slot⟩
+
+def ofM (e : Machine.Env Reg (Val α) α) : Env α := ⟨e.reg, e.slot⟩
+
+omit [KEq α] in
+theorem toM_setReg (e : Env α) (d : Reg) (a : (Val α)) : (toM e).setReg d a = toM (e.setReg d a) := by
+  refine congrArg (fun f => (⟨f, _⟩ : Machine.Env Reg (Val α) α)) (funext fun r => ?_)
+  show (if Idx.ix r = Idx.ix d then _ else _) = _
+  by_cases h : r = d
+  · subst h; simp only [Env.setReg, ite_true]
+  · rw [ite_eq_right fun e => h (Idx.ix_inj e)]; simp only [toM, Env.setReg, ite_eq_right h]
+
+omit [KEq α] in
+theorem toM_map (e : Env α) (d : Reg) (a : Option (Val α)) :
+    a.map ((toM e).setReg d) = (a.map (e.setReg d)).map toM := by
+  cases a with
+  | none => rfl
+  | some a => exact congrArg some (toM_setReg e d a)
+
+omit [KEq α] in
+theorem locK_eq (n : Reg) (off : Nat) (slot ext : Nat → Op Reg (Val α) α) :
+    locK c n off slot ext = match c.loc n off with
+      | some (.slot k) => slot k
+      | some (.ext k) => ext k
+      | none => .bad := by
+  rw [locK, Op.eq_eq, Op.lt_eq, Op.area_eq, Cfg.loc]
+  show (if off < 2048 then if off % 8 = 0 then
+    (if n = c.base ∧ off / 8 < c.slots then slot (off / 8)
+    else if n = c.ext ∧ off / 8 < c.exts then ext (off / 8) else .bad) else .bad else .bad) = _
+  by_cases h2 : off < 2048
+  · rw [ite_eq_left h2]
+    by_cases h1 : off % 8 = 0
+    · rw [ite_eq_left h1, ite_eq_left (show _ ∧ _ from ⟨h2, h1⟩)]
+      by_cases hb : n = c.base ∧ off / 8 < c.slots
+      · rw [ite_eq_left hb, ite_eq_left hb]
+      · rw [ite_eq_right hb, ite_eq_right hb]
+        by_cases he : n = c.ext ∧ off / 8 < c.exts
+        · rw [ite_eq_left he, ite_eq_left he]
+        · rw [ite_eq_right he, ite_eq_right he]
+    · rw [ite_eq_right h1, ite_eq_right fun h => h1 h.2]
+  · rw [ite_eq_right h2, ite_eq_right fun h => h2 h.1]
+
+omit [KEq α] in
+theorem valK_eq (a : Option α) : valK a = a.map .v := by cases a <;> rfl
+
+omit [KEq α] in
+theorem binopK_eq (op : LogicOp) : binopK D op = binop D op := by cases op <;> rfl
+
+omit [KEq α] in
+theorem shlK_eq (k : Nat) (a : α) : shlK D k a = shlD D k a := by
+  simp only [shlK, shlD, Machine.guard_eq, Nat.ble_eq, Machine.bind_eq]
+  by_cases h1 : 0 < k
+  · by_cases h2 : k < 64
+    · rw [ite_eq_left (show 1 ≤ k from h1), ite_eq_left (show k.succ ≤ 64 from h2), ite_eq_left ⟨h1, h2⟩]; rfl
+    · rw [ite_eq_left (show 1 ≤ k from h1), ite_eq_right (show ¬ k.succ ≤ 64 from h2), ite_eq_right fun h => h2 h.2]
+  · rw [ite_eq_right (show ¬ 1 ≤ k from h1), ite_eq_right fun h => h1 h.1]
+
+theorem rotK_eq [DecidableEq α] (op : LogicOp) (a b : α) (k k' : Nat) : rotK D op a b k k' =
+    (if op ≠ .and ∧ a = b ∧ 0 < k ∧ k < 64 ∧ k' = 64 - k then D.ror k a else none).map .v := by
+  have e : (if op ≠ .and ∧ a = b ∧ 0 < k ∧ k < 64 ∧ k' = 64 - k then D.ror k a else none) =
+      guard (LogicOp.rec false true true op) (guard (KEq.eq a b) (guard (Nat.ble 1 k)
+        (guard (Nat.ble (Nat.succ k) 64) (guard (Nat.beq k' (Nat.sub 64 k)) (D.ror k a))))) := by
+    have e1 : ((LogicOp.rec false true true op : Bool) = true) = (op ≠ .and) := by cases op <;> decide
+    simp only [Machine.guard_eq, KEq.eq_iff, Nat.ble_eq, Nat.beq_eq, e1]
+    by_cases h1 : op ≠ .and
+    · by_cases h2 : a = b
+      · by_cases h3 : 0 < k
+        · by_cases h4 : k < 64
+          · by_cases h5 : k' = 64 - k
+            · rw [ite_eq_left (show _ ∧ _ ∧ _ ∧ _ ∧ _ from ⟨h1, h2, h3, h4, h5⟩), ite_eq_left h1, ite_eq_left h2,
+                ite_eq_left (show 1 ≤ k from h3), ite_eq_left (show k.succ ≤ 64 from h4), ite_eq_left (show k' = Nat.sub 64 k from h5)]
+            · rw [ite_eq_right fun h => h5 h.2.2.2.2, ite_eq_left h1, ite_eq_left h2,
+                ite_eq_left (show 1 ≤ k from h3), ite_eq_left (show k.succ ≤ 64 from h4), ite_eq_right (show ¬ k' = Nat.sub 64 k from h5)]
+          · rw [ite_eq_right fun h => h4 h.2.2.2.1, ite_eq_left h1, ite_eq_left h2,
+              ite_eq_left (show 1 ≤ k from h3), ite_eq_right (show ¬ k.succ ≤ 64 from h4)]
+        · rw [ite_eq_right fun h => h3 h.2.2.1, ite_eq_left h1, ite_eq_left h2, ite_eq_right (show ¬ 1 ≤ k from h3)]
+      · rw [ite_eq_right fun h => h2 h.2.1, ite_eq_left h1, ite_eq_right h2]
+    · rw [ite_eq_right fun h => h1 h.1, ite_eq_right h1]
+  have g {β γ : Type} (f : β → γ) (b : Bool) (x : Option β) : (guard b x).map f = guard b (x.map f) := by
+    cases b <;> rfl
+  rw [e, g, g, g, g, g, rotK, valK_eq]
+
+theorem combineK_eq [DecidableEq α] (op : LogicOp) (x y : Val α) :
+    combineK D op x y = (combine D op x y).map .v := by
+  cases x with
+  | v a => cases y with
+    | v b => show valK _ = _; rw [valK_eq, binopK_eq]; rfl
+    | shl b k => show valK _ = _; rw [valK_eq, binopK_eq, Machine.bind_eq, shlK_eq]; rfl
+    | shr b k => rfl
+  | shl b k => cases y with
+    | v a => show valK _ = _; rw [valK_eq, binopK_eq, Machine.bind_eq, shlK_eq]; rfl
+    | shl _ _ => rfl
+    | shr a k' => exact rotK_eq ..
+  | shr a k => cases y with
+    | v b => rfl
+    | shl b k' => exact rotK_eq ..
+    | shr _ _ => rfl
+
+omit [KEq α] in
+theorem shiftK_eq (op : ShiftOp) (k : Nat) (x : Val α) : shiftK D op k x = shiftV D op k x := by
+  cases x with
+  | v a => cases op with
+    | sll => rfl
+    | srl =>
+      show Option.rec _ _ _ = some _
+      cases D.shr k a <;> rfl
+    | sra => rfl
+  | shl _ _ => cases op <;> rfl
+  | shr _ _ => cases op <;> rfl
+
+variable [DecidableEq α] {D c ext}
+
+omit [KEq α] [DecidableEq α] in
+theorem toM_mapV (e : Env α) (d : Reg) (a : Option α) :
+    (a.map Val.v).map ((toM e).setReg d) = (a.map (e.setReg d ∘ Val.v)).map toM := by
+  rw [toM_map]; cases a <;> rfl
+
+/-- What the kernel's evaluator computes, `step` does. -/
+theorem step_of_op {e : Env α} {i : Instr} {m : Machine.Env Reg (Val α) α}
+    (h : Machine.step (toM e) (op D c ext i) = some m) : (step D c ext e i).map toM = some m := by
+  rw [op, shape_eq] at h
+  cases i with
+  | load sz d b off =>
+    cases sz <;> try cases h
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    simp only [step]; rw [ite_eq_right hd]
+    rw [locK_eq] at h
+    cases hl : c.loc b off with
+    | none => rw [hl] at h; cases h
+    | some w =>
+      rw [hl] at h
+      cases w with
+      | slot k =>
+        show ((e.slot k).map _).map toM = _
+        rw [← toM_mapV, ← h]
+        show _ = ((e.slot k).bind _).map _
+        cases e.slot k <;> rfl
+      | ext k => show ((ext k).map _).map toM = _; rw [← toM_mapV, ← valK_eq]; exact h
+  | store sz r b off =>
+    cases sz <;> try cases h
+    simp only [step]
+    change Machine.step (toM e) (locK c b off _ _) = _ at h
+    rw [locK_eq] at h
+    cases hl : c.loc b off with
+    | none => rw [hl] at h; cases h
+    | some w =>
+      rw [hl] at h
+      cases w with
+      | slot k =>
+        change ((e.reg r).bind _).map _ = _ at h
+        cases hr : e.reg r with
+        | none => rw [hr] at h; cases h
+        | some x =>
+          rw [hr] at h
+          cases x with
+          | v a => exact h
+          | shl _ _ => cases h
+          | shr _ _ => cases h
+      | ext k => cases h
+  | logic op d n m =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    simp only [step]; rw [ite_eq_right hd]
+    change ((e.reg n).bind fun x => (e.reg m).bind _).map _ = _ at h
+    cases hn : e.reg n with
+    | none => rw [hn] at h; cases h
+    | some a =>
+      cases hm : e.reg m with
+      | none => rw [hn, hm] at h; cases h
+      | some b =>
+        rw [hn, hm] at h
+        show ((combine D op a b).map _).map toM = _
+        rw [← toM_mapV, ← combineK_eq, ← h]; rfl
+  | logicImm op d n imm =>
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    by_cases hi : imm12 imm
+    · rw [decide_eq_true hi] at h
+      simp only [step]; rw [ite_eq_right (Machine.not_dst hd hi)]
+      change ((e.reg n).bind _).map _ = _ at h
+      cases hn : e.reg n with
+      | none => rw [hn] at h; cases h
+      | some x =>
+        rw [hn] at h
+        cases x with
+        | v a =>
+          cases hk : D.const (BitVec.ofInt 64 imm) with
+          | none => rw [hk] at h; cases h
+          | some b =>
+            rw [hk] at h
+            show ((binop D op a b).map _).map toM = _
+            rw [← toM_mapV, ← valK_eq, ← binopK_eq]; exact h
+        | shl _ _ => cases h
+        | shr _ _ => cases h
+    · rw [decide_eq_false hi] at h; cases h
+  | shift op sz d n sh =>
+    cases sz
+    · cases h
+    obtain ⟨hd, h⟩ := Machine.step_dst h
+    obtain ⟨h0, h⟩ := Machine.step_lt h
+    obtain ⟨hs, h⟩ := Machine.step_lt h
+    simp only [step]; rw [ite_eq_right (Machine.not_dst hd ⟨h0, hs⟩)]
+    change ((e.reg n).bind _).map _ = _ at h
+    cases hr : e.reg n with
+    | none => rw [hr] at h; cases h
+    | some a => rw [hr] at h; show ((shiftV D op sh a).map _).map toM = _; rw [← toM_map, ← shiftK_eq]; exact h
+  | addi d n imm =>
+    by_cases hi : imm = 0
+    · subst hi
+      obtain ⟨hd, h⟩ := Machine.step_dst h
+      simp only [step]; rw [ite_eq_right hd]
+      rw [← toM_map, ← h]; exact congrArg _ (Option.bind_fun_some (e.reg n)).symm
+    · change Machine.step _ (Bool.rec _ _ (decide _)) = _ at h
+      rw [decide_eq_false hi] at h; cases h
+  | _ => cases h
+
+/-- What the kernel's evaluator computes, `eval` does. -/
+theorem eval_of_op {is : List Instr} {e : Env α} {m : Machine.Env Reg (Val α) α}
+    (h : Machine.eval (op D c ext) is (toM e) = some m) : ∃ e', eval D c ext is e = some e' ∧ toM e' = m := by
+  induction is generalizing e with
+  | nil => exact ⟨e, rfl, Option.some.inj h⟩
+  | cons i is ih =>
+    simp only [Machine.eval, Option.bind_eq_some_iff] at h
+    obtain ⟨m₁, h₁, h₂⟩ := h
+    obtain ⟨e₁, he₁, rfl⟩ := Option.map_eq_some_iff.mp (step_of_op h₁)
+    obtain ⟨e', he', hm⟩ := ih h₂
+    exact ⟨e', by rw [eval, he₁]; exact he', hm⟩
+
+end
+
+end Kernel
+
+section
+variable (D : Dom α 64) (c : Cfg) (ext : Nat → Option α)
+
+/-- Evaluates the block and checks `post` of the result, for the kernel. -/
+noncomputable def check [DecidableEq α] [Machine.KEq α] (is : List Instr) (e : Env α) (post : Env α → Bool) : Bool :=
+  Machine.run (Kernel.toM e) 5 (Nat.log2 c.slots + 1) (Kernel.op D c ext) (fun e => post (Kernel.ofM e)) is
+
+theorem of_check [DecidableEq α] [Machine.KEq α] {is : List Instr} {e : Env α} {post : Env α → Bool}
     (h : check D c ext is e post = true) : ∃ e', eval D c ext is e = some e' ∧ post e' = true := by
-  unfold check at h
-  split at h
-  · exact ⟨_, by assumption, h⟩
-  · cases h
+  obtain ⟨m, hm, hp⟩ := Machine.run_sound h
+  obtain ⟨e', he, rfl⟩ := Kernel.eval_of_op hm
+  exact ⟨e', he, hp⟩
+
+theorem check_mono [DecidableEq α] [Machine.KEq α] {is : List Instr} {e : Env α} {p q : Env α → Bool}
+    (hpq : ∀ e, p e = true → q e = true) (h : check D c ext is e p = true) :
+    check D c ext is e q = true := Machine.run_mono (fun _ => hpq _) h
 
 end
 

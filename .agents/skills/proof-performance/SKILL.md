@@ -560,6 +560,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   filter of the first, and each element is forced through all of them.
   Rebuild the list at each step (`forceL`, `checkK`, `keepsK_eq` in
   `Proof/Bignum/AArch64/KeepLanes.lean`: half the time).
+  The evaluators of straight-line code (`Framework/<ISA>/Straight.lean`) run
+  in `Framework/Bitslice/Machine.lean`: registers and slots in a tree by the
+  bits of their number, instructions decoded to operations that are closed
+  terms, so that one met before is looked up, and the values evaluated before
+  they are stored. A wide numeral is evaluated (`seqN`) but the term is what
+  is stored: the kernel's hash of a numeral is of its low 64 bits, and states
+  full of numerals that agree there are one bucket of its tables. A few
+  hundred instructions then take less than computing what they are compared
+  with: write that for the kernel too (`mkK`, `Bitslice/Lanes.lean`).
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold

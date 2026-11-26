@@ -589,7 +589,7 @@ theorem invS_ok (hc : BaseCfgOk c) (h6 : c.n < 6) (h9 : c.n ≤ 9) (h4 : 4 ≤ c
       rw [hMn]; exact Or.inl (sl_below_bits c (i := PT) (by decide) 3 0)
     · show wordsVal s₂.mem base (c.sl PT) M.n = _
       rw [hMn, v₁, Nat.mod_eq_of_lt]
-      exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [hm2])) hmP.le
+      exact Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega_using [hm2])) (Nat.le_of_lt hmP)
     · exact w₁
   refine WP.mono (hS hL hm2 (show UnitMod m (2 ^ (64 * M.n)) by rw [hMn]; exact hR) hs₂ hM₁
     (show wordsVal s₂.mem base (c.sl bs) M.n < m by rw [hMn, hrz]; exact hB)

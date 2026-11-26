@@ -82,7 +82,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   sh := by rw [p384x_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P384.curve.p
+    show IsPrime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
       39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
       by decide +kernel]

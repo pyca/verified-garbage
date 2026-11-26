@@ -64,7 +64,7 @@ theorem spread_chk : check (ofDom (lanes 128 7)) cfg (fun _ => none) spreadV (li
 /-- Bit `t % 8` of byte `t / 8`, from block `t % 8`. -/
 def packG (t : Nat) : List Nat := [128 * (8 * (t / 64) + t % 8) + 16 * (t / 8 % 8) + t % 8]
 
-def packOk (dst : Nat) : Bool :=
+noncomputable def packOk (dst : Nat) : Bool :=
   check (ofDom (lanes 128 11)) cfg (fun _ => none) (packV dst) (linEnv (planesIn d1 0 ++ planesIn d2 8))
     (linPost 60 11 [(dst, packG)])
 
@@ -72,7 +72,7 @@ theorem pack_chk : (packOk vS && packOk kaS && packOk kbS) = true := by kernel_r
 
 def atomsEnv : Env XE := { reg := fun _ => none, slot := fun k => some (.atom k) }
 
-def xorOk (a b : Nat) : Bool :=
+noncomputable def xorOk (a b : Nat) : Bool :=
   check exprs cfg (fun _ => none) (xorV a b) atomsEnv fun e => e.slot vS == some (.bin .pxor (.atom a) (.atom b))
 
 theorem xor_chk : (xorOk klS krS && xorOk vS klS && xorOk kaS krS) = true := by kernel_rfl

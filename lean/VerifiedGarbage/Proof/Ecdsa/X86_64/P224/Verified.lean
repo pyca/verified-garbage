@@ -231,7 +231,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   sh := by rw [p224_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.P224.curve.p
+    show IsPrime Spec.P224.curve.p
     rw [show Spec.P224.curve.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide +kernel]
     exact Proof.P224.prime_26959946667150639794667015087019630673557916260026308143510066298881),
     InvOk.ofMod (by decide +kernel) (by decide)⟩

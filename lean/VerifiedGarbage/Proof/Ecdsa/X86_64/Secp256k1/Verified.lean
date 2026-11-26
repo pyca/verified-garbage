@@ -137,7 +137,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   sh := by rw [secp256k1_sh]; decide
   comb _ h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by
-    show Nat.Prime Spec.Secp256k1.curve.p
+    show IsPrime Spec.Secp256k1.curve.p
     rw [show Spec.Secp256k1.curve.p = 115792089237316195423570985008687907853269984665640564039457584007908834671663 by decide +kernel]
     exact Proof.Secp256k1.prime_115792089237316195423570985008687907853269984665640564039457584007908834671663),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
