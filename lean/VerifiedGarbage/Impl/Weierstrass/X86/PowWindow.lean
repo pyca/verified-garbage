@@ -29,16 +29,27 @@ inductive TabOp where
   | mul (i : Nat)
   deriving Repr
 
-def tabOp (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) : TabOp → Prog isa
+/-- The code of an operation, with `mul` that of the multiplication it calls. -/
+def tabOpOf (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) (mul : Prog isa) :
+    TabOp → Prog isa
   | .get i => .block (copy (2 * P.M.n) P.acc (tab.getD i 0))
   | .put i => .block (copy (2 * P.M.n) (tab.getD i 0) P.acc)
-  | .squares n => squareRun P F n
-  | .mul i => Mont.mulCall F P.acc P.acc (tab.getD i 0)
+  | .squares n => squareRunOf P F mul n
+  | .mul i => Mont.callOp (F.fn "mul") mul P.acc P.acc (tab.getD i 0)
 
-def tabChain (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) :
+def tabOp (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) (op : TabOp) : Prog isa :=
+  tabOpOf P F tab (Mont.mulFn F.k F.m) op
+
+def tabChainOf (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) (mul : Prog isa) :
     List TabOp → Prog isa
   | [] => .block []
-  | op :: ops => .seq (tabOp P F tab op) (tabChain P F tab ops)
+  | op :: ops => .seq (tabOpOf P F tab mul op) (tabChainOf P F tab mul ops)
+
+/-- The operations, one after the other: the code of the multiplication they call is
+computed once. -/
+def tabChain (P : PowCfg) (F : Impl.Weierstrass.Mont.Modulus) (tab : List Nat) (ops : List TabOp) :
+    Prog isa :=
+  tabChainOf P F tab (Mont.mulFn F.k F.m) ops
 
 /-- `[acc] = [base]^e` for the exponent `e` that `ops` reach from the
 accumulator holding the base and no saved power. -/

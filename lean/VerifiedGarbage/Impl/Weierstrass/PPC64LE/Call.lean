@@ -49,11 +49,16 @@ def addCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
 def subCall (S : Impl.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
   callOp (S.fn "sub") (Mont.subFn S.k S.m) o a b
 
+/-- The code of a field operation modulo `S`: a call of its function, whose code is `mul`,
+`add` or `sub`. (Each list of operations computes the three once: `fprog`.) -/
+def opCodeOf (S : Impl.Weierstrass.Mont.Modulus) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => callOp (S.fn "mul") mul o a b
+  | .add o a b => callOp (S.fn "add") add o a b
+  | .sub o a b => callOp (S.fn "sub") sub o a b
+
 /-- The code of a field operation modulo `S`: a call of its function. -/
-def opCode (S : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
-  | .mul o a b => mulCall S o a b
-  | .add o a b => addCall S o a b
-  | .sub o a b => subCall S o a b
+def opCode (S : Impl.Weierstrass.Mont.Modulus) (op : FOp) : Prog isa :=
+  opCodeOf S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m) op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -62,6 +67,7 @@ def progs : List (Prog isa) → Prog isa
   | p :: ps => .seq p (progs ps)
 
 /-- A straight-line sequence of field operations. -/
-def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa := progs (ops.map (opCode S))
+def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
+  progs (ops.map (opCodeOf S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m)))
 
 end VG.Impl.Weierstrass.PPC64LE
