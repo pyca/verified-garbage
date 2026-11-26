@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.CodeWalk
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -99,106 +100,41 @@ def writesCaK : Instr → Bool := inline_match% VG.PPC64LE.writesCa
 
 theorem writesCaK_eq (i : Instr) : writesCaK i = writesCa i := by cases i <;> rfl
 
-/-! ## The checks the kernel evaluates
+/-! ## The checks the kernel evaluates (`CodeWalk`) -/
 
-Each walks the code with `Code.rec`, not a structural recursion (compiled to
-`brecOn`), and the depths with `Nat.sub` and `Nat.add`, whose arguments the
-kernel evaluates once, where `max` gives one of them back as a term to
-evaluate again at every level. -/
-
-/-- `b`, which the kernel evaluates as a term of its own and so finds again
-when it meets it again: it remembers the value of a term it is asked for, not
-of those it passes through. -/
-noncomputable def ask (b : Bool) : Bool := Bool.rec false true b
-
-theorem ask_eq (b : Bool) : ask b = b := by cases b <;> rfl
-
-theorem rec_and (a b : Bool) : (Bool.rec false b a : Bool) = (a && b) := by cases a <;> rfl
-
-/-- `c.allInstrs p`, of code that calls indirectly only functions of `N`.
-Only the kernel evaluates it (`Code.allInstrs`). -/
-noncomputable def sideAll (p : Instr → Bool) (N : List String) (c : Prog isa) : Bool :=
-  Code.rec (motive := fun _ => Bool)
-    (fun is => ask (Code.allInstrs p (.block is : Prog isa)))
-    (fun _ _ a b => Bool.rec false b a) (fun _ _ _ t e => Bool.rec false e t) (fun _ _ b => b) (fun _ _ b => ask b)
-    (fun i _ j b => Bool.rec false (Bool.rec false b (p j)) (p i))
-    (fun i n _ _ b nx => Bool.rec false (Bool.rec false (Bool.rec false nx b) (p i)) (decide (n ∈ N))) c
-
-theorem sideAll_eq (p : Instr → Bool) (N : List String) (c : Prog isa) :
-    sideAll p N c = (c.allInstrs p && (inames c).all fun f => decide (f ∈ N)) := by
-  induction c with
-  | block is =>
-    rw [inames, List.all_nil, Bool.and_true]
-    exact ask_eq _
-  | seq a b iha ihb =>
-    rw [show sideAll p N (.seq a b) = (sideAll p N a && sideAll p N b) from rec_and _ _, iha, ihb, Code.allInstrs,
-      inames, List.all_append]
-    ac_rfl
-  | ite _ a b iha ihb =>
-    rw [show sideAll p N (.ite _ a b) = (sideAll p N a && sideAll p N b) from rec_and _ _, iha, ihb, Code.allInstrs,
-      inames, List.all_append]
-    ac_rfl
-  | loop b _ ih => exact ih
-  | call _ b ih => exact (ask_eq _).trans ih
-  | frame i b j ih =>
-    rw [show sideAll p N (.frame i b j) = (p i && (p j && sideAll p N b)) from
-      (rec_and _ _).trans (congrArg _ (rec_and _ _)), ih, Code.allInstrs, inames]
-    ac_rfl
-  | icall i n b nx ihb ihn =>
-    rw [show sideAll p N (.icall i n b nx) = (decide (n ∈ N) && (p i && (sideAll p N b && sideAll p N nx))) from
-      (rec_and _ _).trans (congrArg _ ((rec_and _ _).trans (congrArg _ (rec_and _ _)))), ihb, ihn, Code.allInstrs,
-      inames, List.cons_append, List.all_cons, List.all_append]
-    ac_rfl
-
-/-- `c` calls indirectly only functions of `N`. Only the kernel evaluates it. -/
-noncomputable def namesK (N : List String) (c : Prog isa) : Bool :=
-  Code.rec (motive := fun _ => Bool) (fun _ => true)
-    (fun _ _ a b => Bool.rec false b a) (fun _ _ _ t e => Bool.rec false e t) (fun _ _ b => b) (fun _ _ b => b)
-    (fun _ _ _ b => b) (fun _ n _ _ b nx => Bool.rec false (Bool.rec false nx b) (decide (n ∈ N))) c
-
-theorem namesK_eq (N : List String) (c : Prog isa) : namesK N c = (inames c).all fun f => decide (f ∈ N) := by
+theorem inames_walk (c : Prog isa) : CodeWalk.inames c = inames c := by
   induction c with
   | block => rfl
-  | seq a b iha ihb =>
-    rw [show namesK N (.seq a b) = (namesK N a && namesK N b) from rec_and _ _, iha, ihb, inames, List.all_append]
-  | ite _ a b iha ihb =>
-    rw [show namesK N (.ite _ a b) = (namesK N a && namesK N b) from rec_and _ _, iha, ihb, inames, List.all_append]
-  | loop b _ ih => exact ih
-  | call _ b ih => exact ih
-  | frame _ b _ ih => exact ih
-  | icall i n b nx ihb ihn =>
-    rw [show namesK N (.icall i n b nx) = (decide (n ∈ N) && (namesK N b && namesK N nx)) from
-      (rec_and _ _).trans (congrArg _ (rec_and _ _)), ihb, ihn, inames, List.cons_append, List.all_cons,
-      List.all_append]
+  | seq a b iha ihb | ite _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih
+  | icall _ _ a b iha ihb => rw [CodeWalk.inames, inames, iha, ihb]
 
-theorem icallFree_of_namesK {c : Prog isa} (h : namesK [] c = true) : icallFree c = true := by
+theorem icallFree_of_namesIn {c : Prog isa} (h : CodeWalk.namesIn [] c = true) : icallFree c = true := by
+  have hn : inames c = [] := by
+    rw [← inames_walk]
+    exact List.eq_nil_iff_forall_not_mem.mpr fun f hf => nomatch CodeWalk.namesIn_iff.mp h f hf
+  clear h
   induction c with
   | block => rfl
   | seq a b iha ihb | ite _ a b iha ihb =>
-    have h' : (namesK [] a && namesK [] b) = true := (rec_and _ _).symm.trans h
-    rw [Bool.and_eq_true] at h'
-    simp only [icallFree, iha h'.1, ihb h'.2, Bool.and_self]
-  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih h
-  | icall i n b nx => cases h
+    rw [inames, List.append_eq_nil_iff] at hn
+    rw [icallFree, iha hn.1, ihb hn.2, Bool.and_self]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih hn
+  | icall i n b nx => cases hn
 
 /-- `c.ppc64leDepth`. Only the kernel evaluates it. -/
-noncomputable def depthK (c : Prog isa) : Nat :=
-  Code.rec (motive := fun _ => Nat) (fun _ => 0) (fun _ _ a b => Nat.add (Nat.sub a b) b)
-    (fun _ _ _ t e => Nat.add (Nat.sub t e) e) (fun _ _ b => b) (fun _ _ b => b)
-    (fun i _ _ b => Nat.add b (frameBytes i)) (fun _ _ _ _ b nx => Nat.add (Nat.sub b nx) nx) c
+noncomputable def depthK (c : Prog isa) : Nat := CodeWalk.depth frameBytes 0 c
 
 theorem depthK_eq (c : Prog isa) : depthK c = c.ppc64leDepth := by
+  unfold depthK
   induction c with
   | block => rfl
-  | seq a b iha ihb =>
-    rw [Code.ppc64leDepth, ← iha, ← ihb]; exact Nat.sub_add_eq_max _ _
-  | ite _ a b iha ihb =>
-    rw [Code.ppc64leDepth, ← iha, ← ihb]; exact Nat.sub_add_eq_max _ _
-  | icall _ _ a b iha ihb =>
-    rw [Code.ppc64leDepth, ← iha, ← ihb]; exact Nat.sub_add_eq_max _ _
+  | seq a b iha ihb => rw [CodeWalk.depth_seq, Code.ppc64leDepth, iha, ihb]
+  | ite _ a b iha ihb => rw [CodeWalk.depth_ite, Code.ppc64leDepth, iha, ihb]
+  | icall _ _ a b iha ihb => rw [CodeWalk.depth_icall, Code.ppc64leDepth, iha, ihb, Nat.add_zero]
   | loop b _ ih => exact ih
   | call _ b ih => exact ih
-  | frame i b _ ih => rw [Code.ppc64leDepth, ← ih]; rfl
+  | frame i b _ ih => rw [CodeWalk.depth_frame, Code.ppc64leDepth, ih]
 
 /-- Code `c` (callees included) writes no register the tail with `cl` leaves
 as it is, the link registers among them if `c` calls: `Clear.Keeps`, as one
@@ -208,9 +144,9 @@ calls indirectly only functions of `N`. Only the kernel evaluates it
 matter. -/
 noncomputable def keepsB (c : Prog isa) (cl : Clear) (N : List String) : Bool :=
   if keptG cl = [] ∧ keptV cl = [] then
-    Bool.rec (sideAll (fun i => !writesCaK i) N c) (namesK N c) cl.ca
+    Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) cl.ca
   else
-    sideAll (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) N c &&
+    CodeWalk.sideAll (sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) cl.ca) N c &&
       (callFree c || linkRegs.all fun r => !(keptG cl).contains r)
 
 private theorem keepsB_eq (c : Prog isa) (cl : Clear) (N : List String) : keepsB c cl N =
@@ -229,13 +165,13 @@ private theorem keepsB_eq (c : Prog isa) (cl : Clear) (N : List String) : keepsB
         simp [sideI_eq, hd, hvec, RegSet.ofList, RegSet.mem, RegSet.empty]
     rw [empty]
     cases cl.ca
-    · rw [show (Bool.rec (sideAll (fun i => !writesCaK i) N c) (namesK N c) false : Bool) =
-        sideAll (fun i => !writesCaK i) N c from rfl, sideAll_eq]
+    · rw [show (Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) false : Bool) =
+        CodeWalk.sideAll (fun i => !writesCaK i) N c from rfl, CodeWalk.sideAll_eq, inames_walk]
       simp [Code.allInstrs_eq, linkRegs, writesCaK_eq]
-    · rw [show (Bool.rec (sideAll (fun i => !writesCaK i) N c) (namesK N c) true : Bool) = namesK N c from rfl,
-        namesK_eq]
+    · rw [show (Bool.rec (CodeWalk.sideAll (fun i => !writesCaK i) N c) (CodeWalk.namesIn N c) true : Bool) =
+        CodeWalk.namesIn N c from rfl, CodeWalk.namesIn_eq, inames_walk]
       simp [Code.allInstrs_eq, linkRegs]
-  · rw [sideAll_eq]
+  · rw [CodeWalk.sideAll_eq, inames_walk]
 
 theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} {N : List String} (h : keepsB c cl N = true) : cl.Keeps c := by
   simp only [keepsB_eq, Bool.and_eq_true, Bool.or_eq_true] at h
@@ -363,7 +299,7 @@ and that `cl` is a `Clear` the tail can run, with no stack to wipe, that has
 every volatile register `c` may write. -/
 noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Clear) : Bool :=
   decide (32 < bytes) && decide (bytes < 4096) && bytes % 16 == 0 && 8 * words == bytes - 32 &&
-    namesK [] body && Nat.beq (depthK body) 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl [] &&
+    CodeWalk.namesIn [] body && Nat.beq (depthK body) 0 && decide (rb ≤ 64) && wfB cl [] && keepsB c cl [] &&
     (cl.r3 || rb != 32)
 
 /-- `r`'s code, followed by the clearing of the registers stated alone, is
@@ -376,7 +312,7 @@ private theorem scrubWiped_ok {api : Api} (r : Unscrubbed api target) {bytes : N
       NoResidue (.seq r.code (scrubTail (retBitsOf r) [] cl)) r.contract (retBitsOf r) := by
   simp only [wipedSide, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, depthK_eq, Nat.beq_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hB1, hB2⟩, hB3⟩, hw⟩, hic⟩, hd⟩, hrb⟩, hwf⟩, hk⟩, -⟩ := hs
-  have hic := icallFree_of_namesK hic
+  have hic := icallFree_of_namesIn hic
   have sh : WipedShape r.code r.stack := ⟨bytes, reg, words, body, hc, ⟨hB1, hB2, hB3⟩, hw, hic, hd, hst⟩
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
