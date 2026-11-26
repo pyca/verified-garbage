@@ -37,9 +37,19 @@ def prepFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=
     (bits 3944 3304 (8*(C.n+1)))
 
 /-- The window's doublings, with their products inline. -/
-def doublesFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa × Prog isa :=
+def doubleBodiesFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa × Prog isa :=
   let k := config C
   (P521.double k.M k.S k.R k.D, P521.double k.M k.S k.D k.R)
+
+/-- Preserve the caller's link in an unused vector lane while calling a straight-line doubling. -/
+def callDouble (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v31 1 .x30)])
+    (.seq (.call name body) (.block [.umov .x .x30 .v31 1]))
+
+/-- Both window steps use the same two doubling bodies. -/
+def doublesFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa × Prog isa :=
+  let dd := doubleBodiesFor C
+  (callDouble "vg_p521_window_double_rd" dd.1, callDouble "vg_p521_window_double_dr" dd.2)
 
 /-- The window's mixed addition, with its products inline. -/
 def maddFor (C : VG.Impl.Ecdsa.AArch64.Cfg) : Prog isa :=

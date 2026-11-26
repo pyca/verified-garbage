@@ -1,6 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
@@ -67,6 +71,47 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Spec.Weierstrass
 
 open VG.Proof.Weierstrass.AArch64.P521 (unch_of_keep doubles_ok)
+
+theorem callDouble_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+    {body : Prog isa} {p o : Pt} {V : List Nat} (name : String) (hn : K.M.n = 9)
+    (hb : DblSpec K C base size body p o V)
+    (hv : ∀ i ∈ instrs body, vdstOf i ≠ some .v31) :
+    DblSpec K C base size (VG.Impl.Ecdh.AArch64.P521Window.callDouble name body) p o V := by
+  intro E s hi
+  have h0 : Reg.x0 ∉ clob K.M.n ++ winSaved K.M.n := by rw [hn]; decide
+  have h30 : Reg.x30 ∉ clob K.M.n ++ winSaved K.M.n := by rw [hn]; decide
+  have links : ∀ r, r ≠ .x30 → r ∉ clob K.M.n ++ winSaved K.M.n → r ∉ linkRegs := by
+    intro r hr hcl
+    have : r ≠ .x16 ∧ r ≠ .x17 := by
+      rw [hn] at hcl
+      revert hcl; cases r <;> decide
+    simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨this.1, this.2, hr⟩
+  unfold VG.Impl.Ecdh.AArch64.P521Window.callDouble
+  refine WP.seq (WP.mono (insOf_ok [(.x30, .v31, 1)] s (by simp) (by decide)) fun a ⟨ag, am, ard, awr, asp, alane, _⟩ => ?_)
+  have kas : KeepRegs [] s a := ⟨fun r _ => congrFun ag r, ard, awr, asp⟩
+  have ia := hi.of_mem (hi.scr.of_keepRegs kas (by decide)) am
+  have kc : KeepRegs linkRegs a a.callEntry := ⟨fun r hr => State.callEntry_gpr a hr, rfl, rfl, rfl⟩
+  have ic := ia.of_mem (ia.scr.of_keepRegs kc (by decide)) rfl
+  obtain ⟨tr, t, et, kt, ut, E', it, out⟩ := hb E a.callEntry ic
+  have keep31 := Exec.vec hv et
+  have ret : isa.ret a.callEntry t = some t := by
+    simp only [isa, VG.AArch64.ret, kt.gpr _ h30, ite_true]
+  refine WP.seq (show WP isa (.call name body) a _ from ⟨_, t, Exec.call (call_callEntry a) et ret, ?_⟩)
+  refine WP.mono (umovOf_ok [(.x30, .v31, 1)] t (by simp) (by decide)) fun z ⟨zm, zrd, zwr, zsp, zl, zg⟩ => ?_
+  have kz : KeepRegs (clob K.M.n ++ winSaved K.M.n) s z := by
+    refine ⟨fun r hr => ?_, zrd.trans (kt.rd.trans ard), zwr.trans (kt.wr.trans awr), zsp.trans (kt.sp.trans asp)⟩
+    by_cases heq : r = .x30
+    · subst r
+      rw [zl (.x30, .v31, 1) (by simp)]
+      change laneOf t .v31 1 = _
+      rw [laneOf, keep31]
+      exact alane (.x30, .v31, 1) (by simp)
+    · rw [zg r (by simpa using heq), kt.gpr r hr, State.callEntry_gpr a (links r heq hr), ag]
+  refine ⟨kz, ?_, E', it.of_mem ?_ zm, out⟩
+  · rw [zm]
+    simpa only [State.callEntry_mem, am] using ut
+  · exact it.scr.of_keepRegs (rs := [.x30]) ⟨fun r hr => zg r (by simpa using hr), zrd, zwr, zsp⟩ (by decide)
 
 theorem madd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hsp : VG.Impl.Weierstrass.AArch64.P521.supported K.M = true)
@@ -164,6 +209,8 @@ theorem recode_small {k : Nat} (hk : k < 2^521) : k+8*geom 131 < 16^131 := by
 
 theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
     (hsp : VG.Impl.Weierstrass.AArch64.P521.supported (config c).M = true)
+    (hV : (doubleBodiesFor c).1.allInstrs (fun i => vdstOf i != some .v31) = true ∧
+      (doubleBodiesFor c).2.allInstrs (fun i => vdstOf i != some .v31) = true)
     (hbd : 16*((2^521+135)/256)+8 < c.C.n) (hpadd : c.padd=none)
     (hL : WinLay (config c) size) (hA : WinA (config c))
     (hInv : ∀ base, InvSpecW (config c) c.C base size (Impl.Ecdh.AArch64.Cfg.invJ c)
@@ -250,7 +297,16 @@ theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (hInv base) hRC hx0
     hs₂ hM₂ hF (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hJ2
     (by rw [hJ]; exact winE_two_bound (d := wordsVal s.mem base (c.sl K) c.n) (J := 131) (b := 521) (n := c.C.n) (by decide) hk hbd) (winAddOk hc)
-    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (VG.Proof.Weierstrass.AArch64.P521.doubles_ok hsp hL hA hpR) (madd_ok hsp hL hA hpR) (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
+    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by
+      intro d hd
+      cases Option.some.inj hd
+      obtain ⟨hrd, hdr⟩ := VG.Proof.Weierstrass.AArch64.P521.doubles_ok hsp hL hA hpR _ rfl
+      have vec : ∀ (body : Prog isa), body.allInstrs (fun i => vdstOf i != some .v31) = true →
+          ∀ i ∈ instrs body, vdstOf i ≠ some .v31 := by
+        intro body hb i hi
+        rw [Code.allInstrs_eq] at hb
+        simpa only [bne_iff_ne] using List.all_eq_true.mp hb i hi
+      exact ⟨callDouble_ok _ h9 hrd (vec _ hV.1), callDouble_ok _ h9 hdr (vec _ hV.2)⟩) (madd_ok hsp hL hA hpR) (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
     fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_)
   change Unch base (winW (winQ c) ++ invJW c) s₂.mem s₃.mem at U₃
   rw [winW_eq] at U₃
@@ -428,7 +484,7 @@ theorem multiply_ok (hc : CfgOk c) (hC : Law c.C) (hO : PrimeOrder c.C) : MulOk 
   have htv : ∀ {i}, i < 45 → i ≠ K →
       tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) := by
     intro i hi hne; show toM _ _ (sv c base s₁ i) = toM _ _ (sv c base s i); rw [hv hi hne]
-  refine core_ok c hc rfl (by decide +kernel) (by decide +kernel) rfl (layout hc) (aligned hc) (inverse_spec hc) hC hO hs₁ F₁ hP
+  refine core_ok c hc rfl (by decide +kernel) ⟨by lit_decide, by lit_decide⟩ (by decide +kernel) rfl (layout hc) (aligned hc) (inverse_spec hc) hC hO hs₁ F₁ hP
     (by rw [hv (by decide) (by decide)]; exact hpx)
     (by rw [hv (by decide) (by decide)]; exact hpy)
     (by rw [htv (by decide) (by decide),htv (by decide) (by decide),htv (by decide) (by decide)]; exact hrep)
