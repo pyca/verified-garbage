@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Loading two prepared powers without per-record conversion -/
 
@@ -37,7 +38,7 @@ theorem loadPair_ok (j : Nat) (d : XReg) (s : State)
   let v := s.mem.readW a 256
   let t := s.setV .l256 d (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   rw [cvtPair, WP.block_cons_iff]
-  refine ⟨t, by simp only [isa, exec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl,
+  refine ⟨t, by simp only [isa, reduceExec, State.load256, ea_at, hin, ite_true, Option.map_some]; rfl,
     WP.block_nil ⟨fun l hl => ?_, rfl, rfl, rfl, rfl, fun r hr l _ => ?_⟩⟩
   · rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [t, State.lane_setV256, ite_true, v, load256_lo, a,

@@ -34,6 +34,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `AesGcmSiv.X86_64.Verified`, which only this module used -/
 
@@ -684,7 +685,7 @@ theorem cmpLens_run (s : State) (hin : InRegions (s.rd ++ s.wr) (stackArgAddr s 
       eval .ae u = some (decide (128 ≤ (stackArg s 0 ||| s.gpr .r8).toNat)) := by
   have ea : s.ea (at_ .rsp 8) = stackArgAddr s 0 := rfl
   refine ⟨?u, ?h1, ⟨?h2, ?h3, ?h4, ?h5, ?h6⟩, ?h7⟩
-  case h1 => simp [execBlock, cmpLens, exec, readSrc, ea, hin, addrs, srcAddrs, State.load64, execAlu]; rfl
+  case h1 => simp [execBlock, cmpLens, reduceExec, readSrc, ea, hin, addrs, srcAddrs, State.load64, execAlu]; rfl
   case h3 => rfl
   case h4 => rfl
   case h5 => rfl

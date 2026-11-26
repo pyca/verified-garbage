@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
 
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: straight-line code
@@ -310,7 +311,7 @@ theorem store_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ : Sym} {s : Stat
   have ea : s.ea m = (regn D s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
   have hin := in_regn hc hb h.wr hi' (by decide)
   refine ⟨s.setMem (s.mem.writeW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.zmm r)),
-    by simp only [exec, ea, State.store512_eq, hin, ite_true], SRel.mk' (fun r' p hp => ?_)
+    by simp only [reduceExec, ea, State.store512_eq, hin, ite_true], SRel.mk' (fun r' p hp => ?_)
     (fun b' i' hb' hi'' => ?_) (by simp [h.gpr]) (by simp [h.rd]) (by simp [h.wr]) ?_ fun hd => by cases hd⟩
   · simp only [zw_split, State.setMem_zlane]; exact h.reg r' p hp
   · simp only [State.setMem_mem, symStore]
@@ -363,7 +364,7 @@ theorem store3_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s�
   have hs2 : ∀ j, (symStore σ 3 i 16 (xidx r)).mem 2 j = .mem 2 j := fun j => by
     simp only [symStore, show (2 : Nat) ≠ 3 by decide, false_and, ite_false]; exact h.src rfl j
   refine ⟨s.setMem (s.mem.writeW ((dstR D s₀).base + BitVec.ofNat 64 (4 * i)) (s.zmm r)),
-    by simp only [exec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    by simp only [reduceExec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
     fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ => hs2, by simp [h.gpr], by simp [h.rd],
     by simp [h.wr], F, fun hd => by cases hd⟩⟩
   · simp only [zw_split, State.setMem_zlane]; exact h.reg r' p hp
@@ -418,7 +419,7 @@ theorem storeB_ok {D : Nat} {s₀ : State} (hc : Ctx 0 s₀ ∧ Ctx3 (regn D s�
   have hs2 : ∀ j, (symStore σ 1 i 16 (xidx r)).mem 2 j = .mem 2 j := fun j => by
     simp only [symStore, show (2 : Nat) ≠ 1 by decide, false_and, ite_false]; exact h.src rfl j
   refine ⟨s.setMem (s.mem.writeW ((regn D s₀ 1).base + BitVec.ofNat 64 (4 * i)) (s.zmm r)),
-    by simp only [exec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+    by simp only [reduceExec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
     fun b' i' hb' hi'' hcl => ?_, fun _ => m3, fun _ => hs2, by simp [h.gpr], by simp [h.rd],
     by simp [h.wr], F, fun hd => by cases hd⟩⟩
   · simp only [zw_split, State.setMem_zlane]; exact h.reg r' p hp
@@ -508,7 +509,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
       ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 128 128)
       ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 256 128)
       ((s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 384 128),
-      by simp only [exec, ea, State.load512, hin, ite_true, Option.map_some],
+      by simp only [reduceExec, ea, State.load512, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
@@ -529,7 +530,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
       (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 128),
-      by simp only [exec, ea, State.load128, hin, ite_true, Option.map_some],
+      by simp only [reduceExec, ea, State.load128, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
@@ -562,7 +563,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
     generalize hvd : s.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
     refine ⟨s.setZ d (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v), ?_,
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
-    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
+    · simp only [reduceExec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
     · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
       split
       · rw [pick4_same _ (div4_lt hp), dword_rep4 _ (mod4_lt p)]; exact hv
@@ -583,7 +584,7 @@ theorem sstepT_ok {to : Bool} {D : Nat} {s₀ : State} (hc : CtxT to D s₀) {σ
       (XBinOp.eval .paddd (s.zlane a 1) (v ++ v ++ v ++ v)) (XBinOp.eval .paddd (s.zlane a 2) (v ++ v ++ v ++ v))
       (XBinOp.eval .paddd (s.zlane a 3) (v ++ v ++ v ++ v)), ?_,
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
-    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
+    · simp only [reduceExec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
     · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
       split
       · rw [pick4_fn (fun l => XBinOp.eval .paddd (s.zlane a l) (v ++ v ++ v ++ v)) (div4_lt hp),

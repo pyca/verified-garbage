@@ -421,16 +421,16 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
   case alu op d src =>
     simp only [Option.map_eq_some_iff, Prod.exists] at hf
     obtain ⟨g, mr, _, rfl⟩ := hf
-    simp only [exec, execAlu_eq, Option.bind_eq_some_iff] at he
+    simp only [reduceExec, execAlu_eq, Option.bind_eq_some_iff] at he
     obtain ⟨v, _, he⟩ := he
     exact execAluW_frame (by simp) rfl he
   case andn d x y =>
     cases hf
-    simp only [exec, execAndn, Option.some.injEq] at he
+    simp only [reduceExec, execAndn, Option.some.injEq] at he
     subst he; exact Frame.arithReg _ _ _ _ _ (by simp) rfl
   case rorx d r n =>
     cases hf
-    simp only [exec, execRorx] at he
+    simp only [reduceExec, execRorx] at he
     split at he
     · simp only [Option.some.injEq] at he; subst he; exact Frame.setReg _ _ (by simp [regFp])
     · cases he
@@ -441,12 +441,12 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
     · exact execAluW_frame (by simp) rfl he
     · cases he
   case vop op =>
-    simp only [exec, Option.some.injEq] at he
+    simp only [reduceExec, Option.some.injEq] at he
     subst he; exact VOp.frame hf s
   case vmovdquLoad len d m =>
     simp only [Option.map_eq_some_iff] at hf
     obtain ⟨o, _, rfl⟩ := hf
-    cases len <;> simp only [exec, State.load128, State.load256] at he <;> split at he <;>
+    cases len <;> simp only [reduceExec, State.load128, State.load256] at he <;> split at he <;>
       first
       | (simp only [Option.map_some, Option.some.injEq] at he; subst he; exact Frame.setV _ _ _ _ (by simp))
       | cases he
@@ -454,7 +454,7 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
     simp only [Option.map_eq_some_iff] at hf
     obtain ⟨o, ho, rfl⟩ := hf
     obtain ⟨ea, -⟩ := memOff_ea ho s
-    cases len <;> simp only [exec, State.store128, State.store256, ea] at he <;> split at he <;>
+    cases len <;> simp only [reduceExec, State.store128, State.store256, ea] at he <;> split at he <;>
       first
       | (simp only [Option.some.injEq] at he; subst he; rw [writeW_eq]
          exact Frame.store _ fun k hk => testBit_range_add (by simp [lenBytes]; omega_using [hk]))

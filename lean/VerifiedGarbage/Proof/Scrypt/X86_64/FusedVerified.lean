@@ -28,6 +28,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Scrypt.X86_64.FusedInit`, which only this module used -/
 
@@ -884,7 +885,7 @@ theorem decrement_ok {p : Addr} {s : State} (si : s.gpr .rsi = p) (hs : InRegion
   have val : b.gpr .rax = s.mem.readW (bufAt p 40) 64 - 1 := by
     rw [ub.gpr, ua.gpr]; rfl
   refine VG.Proof.MdStream.X86_64.WP.cons (s' := { b with mem := b.mem.writeW (bufAt p 40) (b.gpr .rax) })
-    (by simp only [exec, State.store64, hea, hw, ite_true]) (WP.block_nil ?_)
+    (by simp only [reduceExec, State.store64, hea, hw, ite_true]) (WP.block_nil ?_)
   have mt : b.mem.writeW (bufAt p 40) (b.gpr .rax) =
       s.mem.writeW (bufAt p 40) (s.mem.readW (bufAt p 40) 64 - 1) := by rw [val, ub.mem, ua.mem]
   refine ⟨⟨ub.rd.trans ua.rd, ub.wr.trans ua.wr,

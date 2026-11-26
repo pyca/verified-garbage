@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `Pbkdf2.Md.AArch64.Pbkdf2CT`, which the modules that import this one used -/
 
@@ -843,10 +844,10 @@ theorem movzk_val (lo hi : BitVec 16) :
 theorem wp_movzk {d : Reg} {lo hi : BitVec 16}
     (k : ∀ s', Upd s s' d ((hi ++ lo).setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.movz .w d lo 0 :: .movk .w d hi 1 :: is)) s Q := by
-  refine Proof.MdStream.AArch64.WP.cons (s' := s.write .w d (lo.setWidth 32)) (by simp [exec]) ?_
+  refine Proof.MdStream.AArch64.WP.cons (s' := s.write .w d (lo.setWidth 32)) (by simp [reduceExec]) ?_
   refine Proof.MdStream.AArch64.WP.cons (s' := (s.write .w d (lo.setWidth 32)).write .w d (hi ++ lo)) ?_
     (k _ ?_)
-  · simp only [exec, State.read, State.write, Size.bits]
+  · simp only [reduceExec, State.read, State.write, Size.bits]
     simp only [show 16 * 1 < 32 by decide, ↓reduceIte, Option.some.injEq]
     refine congrArg (fun g => ({ s with gpr := g } : State)) ?_
     funext r'

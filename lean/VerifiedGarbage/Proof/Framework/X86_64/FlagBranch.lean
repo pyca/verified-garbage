@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Choosing on the prepared key context's count of powers, on x86-64
@@ -49,7 +50,7 @@ theorem testFlag_run {t : Nat} (htv : t = 16 ∨ t = 48) (s : State)
   have ea : s.ea { base := .rdi, disp := flagOff } = s.gpr .rdi + 1024 := rfl
   refine ⟨?u, ?h1, ⟨?h2, ?h3, ?h4, ?h5, ?h6⟩, ?h7⟩
   case h1 =>
-    simp only [execBlock, testFlag, exec, readSrc, ea, addrs, srcAddrs, State.load64, hin, ↓reduceIte]
+    simp only [execBlock, testFlag, reduceExec, readSrc, ea, addrs, srcAddrs, State.load64, hin, ↓reduceIte]
     rfl
   case h3 => rfl
   case h4 => rfl

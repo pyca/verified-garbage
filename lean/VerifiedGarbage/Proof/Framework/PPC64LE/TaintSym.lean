@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # PPC64LE taint tracking with the addresses of statics
@@ -46,7 +47,7 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
   · obtain ⟨d, n, rfl, hn⟩ := hl
     simp only [Instr.symLi, hn, ↓reduceIte, step, Option.some.injEq] at hs
     subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂

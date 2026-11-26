@@ -148,34 +148,34 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).write hr _ hc⟩
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | dcbz a b =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h
       obtain ⟨a, -, h⟩ := h
       exact hst h
   | load sz t n off | lbz t n off | lxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | vop op =>
     simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨d, v⟩, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
-  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩)
     | (split at h <;> [skip; cases h]
@@ -192,25 +192,25 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     split at h <;> cases h; rfl
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | dcbz a b =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     exact hst h
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h
       obtain ⟨a, -, h⟩ := h
       exact hst h
   | load sz t n off | lbz t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | lxvd2x d a b =>
@@ -228,15 +228,15 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
   | mtvsrd d n =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | mtlr r' =>
-    simp only [exec, Option.some.injEq] at h; subst h; rfl
+    simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | adrSym d name =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     exact hw s d _ fun e => hi (by simp [dstOf, e])
-  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h
        exact hw _ _ _ fun e => hi (by simp [dstOf, e]))

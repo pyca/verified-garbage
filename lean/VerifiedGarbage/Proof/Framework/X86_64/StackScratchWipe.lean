@@ -62,7 +62,7 @@ theorem wipeStores16_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ n,
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (8 + 16 * w)) (u.xmm .xmm0), ?_,
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStores16_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, BitVec.ofInt_natCast,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, State.store128, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       List.range_succ, List.map_append]
 
@@ -88,7 +88,7 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr)
       exact hc _ 8 (by omega_using [hk])
   refine ⟨m₂, ?_, fun a ha => (hf₂ a ha).trans (hf₁ a ha)⟩
   simp only [wipedRegs] at he₁ he₂ hsp
-  simp only [wipe, execBlock, isa, exec, readSrc32, Option.map_some, addrs, srcAddrs, List.map_nil,
+  simp only [wipe, execBlock, isa, reduceExec, readSrc32, Option.map_some, addrs, srcAddrs, List.map_nil,
     List.nil_append]
   rw [execBlock_append, he₁, Option.bind_some, he₂]
   simp [wipeTrace, wipeAtTrace, wipedRegs, XOp.exec, State.setXmm, State.setReg32, State.setReg]

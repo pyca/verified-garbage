@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Gcm.X86_64.Prepared.Loop`, which the modules that import this one used -/
 
@@ -84,7 +85,7 @@ theorem ld128_ok (d : XReg) (b : Reg) (o : Nat) (s : State)
     WP isa (.block [.vmovdquLoad .l128 d (at_ b o)]) s fun s' => ZFrame [d] s s' := by
   rw [WP.block_cons_iff]
   refine ⟨s.setV .l128 d (s.mem.readW (s.gpr b + BitVec.ofInt 64 (o : Int)) 128) 0,
-    by simp only [isa, exec, State.load128, ea_at, hin, ite_true, Option.map_some],
+    by simp only [isa, reduceExec, State.load128, ea_at, hin, ite_true, Option.map_some],
     WP.block_nil ⟨rfl, rfl, rfl, rfl, fun r hr l _ => ?_⟩⟩
   exact State.zlane_setV_ne _ _ (fun h => hr (List.mem_singleton.mpr h)) _ _ _
 
@@ -132,7 +133,7 @@ theorem st_zlane (b : Reg) (r : XReg) (j : Nat) (s : State)
   simp only [storesK]
   rw [WP.block_cons_iff]
   exact ⟨s.setMem (s.mem.writeW (s.gpr b + BitVec.ofInt 64 ((32 * j : Nat) : Int)) (s.ymm r)),
-    by simp only [isa, exec, State.store256_eq, ea_at, hin, ite_true], WP.block_nil fun _ _ => rfl⟩
+    by simp only [isa, reduceExec, State.store256_eq, ea_at, hin, ite_true], WP.block_nil fun _ _ => rfl⟩
 
 /-- What the conversions of a table need. -/
 structure CvtEnv (s₀ : State) (s : State) : Prop where
@@ -271,7 +272,7 @@ theorem powP48_ok {s₀ : State} (hp : SPreP s₀) {s : State} (hdi : s.gpr .rdi
     rw [wr₃, wr₂, z₁.wr, hwr, e832]; exact in_sub hp.base.p_in (by decide)
   rw [WP.block_cons_iff]
   refine ⟨s₃.setMem (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)),
-    by simp only [isa, exec, State.store512_eq, ea_at, hin832, ite_true]; rw [e832], WP.block_nil ?_⟩
+    by simp only [isa, reduceExec, State.store512_eq, ea_at, hin832, ite_true]; rw [e832], WP.block_nil ?_⟩
   have k₅ : ∀ o, o + 16 ≤ 832 → (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)).readW
       (pp s₀ + BitVec.ofNat 64 o) 128 = s₃.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 := fun o ho =>
     Mem.readW_writeW_sep (Offset.sep (pp s₀) (d := o) (n := 128 / 8) (e := 832) (k := 512 / 8) (by omega_arith) (by omega_arith)
@@ -514,7 +515,7 @@ theorem powP48_ok {s₀ : State} (hp : SPrePrepared s₀) {s : State} (hdi : s.g
     rw [wr₃, wr₂, hwr, e832]; exact in_sub hp.base.p_in (by decide)
   rw [WP.block_cons_iff]
   refine ⟨s₃.setMem (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)),
-    by simp only [isa, exec, State.store512_eq, ea_at, hin832, ite_true]; rw [e832], WP.block_nil ?_⟩
+    by simp only [isa, reduceExec, State.store512_eq, ea_at, hin832, ite_true]; rw [e832], WP.block_nil ?_⟩
   have k₅ : ∀ o, o + 16 ≤ 832 → (s₃.mem.writeW (pp s₀ + BitVec.ofNat 64 832) (s₃.zmm .xmm1)).readW
       (pp s₀ + BitVec.ofNat 64 o) 128 = s₃.mem.readW (pp s₀ + BitVec.ofNat 64 o) 128 := fun o ho =>
     Mem.readW_writeW_sep (Offset.sep (pp s₀) (d := o) (n := 128 / 8) (e := 832) (k := 512 / 8) (by omega_arith) (by omega_arith)

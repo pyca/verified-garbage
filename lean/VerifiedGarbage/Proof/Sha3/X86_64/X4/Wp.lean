@@ -175,7 +175,7 @@ theorem wp_vld {d : XReg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (k : ∀ s', VUpd s s' d (fun i => s.mem.readW (a + BitVec.ofNat 64 (8 * i)) 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.vmovdquLoad .l256 d m :: is)) s Q := by
   refine WP.cons (s' := s.setV .l256 d ((s.mem.readW a 256).extractLsb' 0 128)
-    ((s.mem.readW a 256).extractLsb' 128 128)) (by simp only [exec, ha, State.load256, hin, ite_true,
+    ((s.mem.readW a 256).extractLsb' 128 128)) (by simp only [reduceExec, ha, State.load256, hin, ite_true,
       Option.map_some]) (k _ ⟨fun i hi => ?_, fun r hr i _ => ?_, by simp, by simp, by simp, by simp⟩)
   · simp only [q4, State.lane_setV256, ite_true]
     have e : (if i / 2 = 0 then (s.mem.readW a 256).extractLsb' 0 128 else (s.mem.readW a 256).extractLsb' 128 128) =
@@ -194,7 +194,7 @@ theorem wp_vxorLd {d a : XReg} {m : MemOp} {p : Addr} (hp : s.ea m = p)
     WP isa (.block (.vbinLoad .vpxor .l256 d a m :: is)) s Q := by
   refine WP.cons (s' := s.setV .l256 d (VBinOp.vpxor.sse.eval (s.lane a 0) ((s.mem.readW p 256).extractLsb' 0 128))
     (VBinOp.vpxor.sse.eval (s.lane a 1) ((s.mem.readW p 256).extractLsb' 128 128)))
-    (by simp only [exec, hp, State.load256, hin, ite_true, Option.map_some])
+    (by simp only [reduceExec, hp, State.load256, hin, ite_true, Option.map_some])
     (k _ ⟨fun i hi => ?_, fun r hr i _ => ?_, by simp, by simp, by simp, by simp⟩)
   · simp only [q4, State.lane_setV256, ite_true]
     have e : (if i / 2 = 0 then VBinOp.vpxor.sse.eval (s.lane a 0) ((s.mem.readW p 256).extractLsb' 0 128)
@@ -211,7 +211,7 @@ theorem wp_vst {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InReg
       s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (.vmovdquStore .l256 m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.ymm r) }) ?_ (k _ rfl (fun _ _ => rfl) rfl rfl rfl)
-  simp [exec, State.store256, ha, hout]
+  simp [reduceExec, State.store256, ha, hout]
 
 end
 

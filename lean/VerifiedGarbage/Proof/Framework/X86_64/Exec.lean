@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract -- shake: keep (`realize_eqns`)
 
 /-!
 # x86-64: lemmas for symbolic execution
@@ -10,6 +11,9 @@ public import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 
 namespace VG.X86_64
+
+-- For the modules whose `simp` unfolds them.
+realize_eqns exec readSrc readSrc32 execAlu execAlu32 execShift XBinOp.eval XOp.exec VOp.exec
 
 /-! Symbolic execution of a block, one instruction at a time (see `runStep`).
 These are deliberately not proved by `rfl`: `simp` would use an `rfl` lemma

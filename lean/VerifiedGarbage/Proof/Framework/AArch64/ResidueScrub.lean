@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # What the clearing of the stack needs, after the analysis through calls and frames (AArch64)
@@ -148,7 +149,7 @@ theorem retFix_run (rb : Nat) (s : State) : ∃ g, execBlock isa (retFix rb) s =
   by_cases h0 : rb = 0
   · subst h0
     refine ⟨fun q => if q = .x0 then 0 else s.gpr q, ?_, fun q hq => by simp [hq], ?_⟩
-    · simp [retFix, execBlock, isa, exec, addrs, State.write]
+    · simp [retFix, execBlock, isa, reduceExec, addrs, State.write]
     · apply BitVec.eq_of_toNat_eq
       have h1 := ((((fun q => if q = .x0 then (0 : BitVec 64) else s.gpr q) .x0)).setWidth 0).isLt
       have h2 := ((s.gpr .x0).setWidth 0).isLt
@@ -158,7 +159,7 @@ theorem retFix_run (rb : Nat) (s : State) : ∃ g, execBlock isa (retFix rb) s =
   · subst h32
     refine ⟨fun q => if q = .x0 then ((s.gpr .x0).setWidth 32 + 0).setWidth 64 else s.gpr q, ?_,
       fun q hq => by simp [hq], ?_⟩
-    · simp [retFix, execBlock, isa, exec, addrs, State.write, State.read]
+    · simp [retFix, execBlock, isa, reduceExec, addrs, State.write, State.read]
     · simp
   · have : retFix rb = [] := by
       unfold retFix; split <;> simp_all

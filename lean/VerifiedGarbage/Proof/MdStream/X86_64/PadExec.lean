@@ -51,7 +51,7 @@ theorem wp_movdquStoreX {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hou
       s'.wr = s.wr → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
     WP isa (.block (.movdquStore m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.xmm r) }) ?_ (k _ rfl rfl rfl rfl rfl)
-  simp [exec, State.store128, ha, hout]
+  simp [reduceExec, State.store128, ha, hout]
 
 /-- `test`, keeping the SSE registers. -/
 theorem wp_testX {d : Reg}
@@ -85,7 +85,7 @@ theorem wp_shrX {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
   refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
     (if n = 1 then some (s.gpr d).msb else none) (some (s.gpr d >>> n == 0))
     (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) ?_ (k _ ?_ rfl)
-  · simp [exec, execShift, hn]
+  · simp [reduceExec, execShift, hn]
   · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl⟩
 
 end

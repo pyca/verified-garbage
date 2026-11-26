@@ -65,28 +65,28 @@ theorem exec_vpr_ca {i : Instr} (h : exec i s = some s') :
     fun t d v x hd => by simp [State.writeV, Ne.symm hd]
   cases i with
   | store sz t n off | stb t n off | stxvd2x t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     obtain ⟨h1, h2⟩ := hst h
     exact ⟨fun v _ => by rw [h1], fun _ => h2⟩
   | dcbz a b =>
-    simp only [exec, Option.bind_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff] at h
     obtain ⟨a, -, h⟩ := h
     obtain ⟨h1, h2⟩ := hst h
     exact ⟨fun v _ => by rw [h1], fun _ => h2⟩
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h
       obtain ⟨a, -, h⟩ := h
       obtain ⟨h1, h2⟩ := hst h
       exact ⟨fun v _ => by rw [h1], fun _ => h2⟩
   | load sz t n off | lbz t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨fun _ _ => rfl, fun _ => rfl⟩
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       exact ⟨fun _ _ => rfl, fun _ => rfl⟩
   | lxvd2x d a b =>
@@ -107,15 +107,15 @@ theorem exec_vpr_ca {i : Instr} (h : exec i s = some s') :
     simp only [reduceExec, Option.some.injEq] at h; subst h
     exact ⟨fun v hv => hwv _ _ _ _ fun e => hv (by simp [vdstOf, e]), fun _ => rfl⟩
   | mtlr r' =>
-    simp only [exec, Option.some.injEq] at h; subst h; exact ⟨fun _ _ => rfl, fun _ => rfl⟩
+    simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨fun _ _ => rfl, fun _ => rfl⟩
   | adrSym d name =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     exact ⟨fun _ _ => rfl, fun _ => rfl⟩
-  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ | bctrl => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨fun _ _ => rfl, fun _ => rfl⟩)
     | (simp only [Option.some.injEq] at h; subst h

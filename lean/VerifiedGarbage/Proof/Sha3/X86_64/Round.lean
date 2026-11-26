@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Sha3.ComplLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Keccak-f[1600] on x86-64: a round, by evaluation
@@ -160,7 +161,7 @@ theorem round_ok {sR dR : Reg} (hc : check sR dR = true) (hk : keeps sR dR = tru
   let v := s₁.gpr .r9 ^^^ rc
   have hexec : exec (iota k) s₁ =
       some ((arithFlags s₁ v false false).setReg .r9 v) := by
-    simp [iota, exec, execAlu, readSrc, State.load64, hea, hin₁, hrc₁, v]
+    simp [iota, reduceExec, execAlu, readSrc, State.load64, hea, hin₁, hrc₁, v]
   have hr9 : AnfRel V (pxor a (atom 25)) v := by
     simp only [AnfRel, eval_pxor, eval_atom, hV25, v]; rw [p₁.rel.reg _ _ ha]
   have hb₁ : Reg.r9 ≠ (cfg sR dR).base := fun h => by

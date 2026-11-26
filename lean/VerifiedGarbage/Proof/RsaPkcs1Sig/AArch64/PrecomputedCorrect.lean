@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # `vg_rsa_pkcs1_verify_precomputed` on AArch64: correctness
@@ -344,7 +345,7 @@ theorem afterPubP_ok {K : Nat} {s t : State} (hp : PreP K s) (hsig : stackArg s 
       rw [p₁.rd, p₁.wr, mw.wr]
       exact InRegions_append_cons (xs := w.rd) |>.mpr (.inl hc56)) fun w₂ p₂ f₂ => ?_
   refine VG.Proof.MlKem.AArch64.WP.cons (s' := w₂.write .w .x0 (w₂.read .w .x0 &&& w₂.read .w .x8))
-    (by simp [exec]) (wp_nil ⟨((mw.only p₁).only p₂).only (VG.Proof.MlKem.AArch64.only_write _ _ _ _), fun hc => ?_⟩)
+    (by simp [reduceExec]) (wp_nil ⟨((mw.only p₁).only p₂).only (VG.Proof.MlKem.AArch64.only_write _ _ _ _), fun hc => ?_⟩)
   rw [p₁.mem, hsl] at f₂
   simp only [State.write, State.read, ite_true, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),
     BitVec.setWidth_eq]

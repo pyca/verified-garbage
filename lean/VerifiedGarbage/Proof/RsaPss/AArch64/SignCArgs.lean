@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `RsaPss.AArch64.SignCall`, which this module and modules that import it used -/
 
@@ -583,7 +584,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp wp_mov)
 theorem wp_clz {s : State} {is : List Instr} {Q : State → Prop} {d n : Reg}
     (k : ∀ s', Only [d] s s' → s'.gpr d = (s.gpr n).clz → WP isa (.block is) s' Q) :
     WP isa (.block (.clz .x d n :: is)) s Q :=
-  wp_x (by simp [exec, State.read]) k
+  wp_x (by simp [reduceExec, State.read]) k
 
 theorem clz_table : ∀ x < 256, x ≠ 0 →
     ∃ j < 8, 2 ^ j ≤ x ∧ x < 2 ^ (j + 1) ∧ (BitVec.ofNat 64 x).clz = BitVec.ofNat 64 (63 - j) := by

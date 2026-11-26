@@ -25,6 +25,7 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Pbkdf2.X86_64.IterateCT`, which only this module used -/
 
@@ -749,7 +750,7 @@ theorem wp_loadXor {d c : XReg} {m : MemOp} {a : Addr} (hdc : ¬c = d) (ha : s.e
     (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
       s'.xmm d = s.mem.readW a 128 ^^^ s.xmm c → (∀ y, ¬y = d → s'.xmm y = s.xmm y) → WP isa (.block is) s' Q) :
     WP isa (.block (.movdquLoad d m :: .xop (.bin .pxor d c) :: is)) s Q := by
-  refine WP.cons (s' := s.setXmm d (s.mem.readW a 128)) (by simp [exec, State.load128, ha, hin])
+  refine WP.cons (s' := s.setXmm d (s.mem.readW a 128)) (by simp [reduceExec, State.load128, ha, hin])
     (wp_xbin (k _ rfl rfl rfl rfl ?_ fun y hy => ?_))
   · rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ hdc]; rfl
   · rw [RegUpd.xmm_setXmm_of_ne _ _ hy, RegUpd.xmm_setXmm_of_ne _ _ hy]

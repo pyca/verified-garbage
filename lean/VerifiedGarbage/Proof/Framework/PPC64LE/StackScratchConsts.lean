@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (PPC64LE)
@@ -145,7 +146,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
     exact ite_eq_left ⟨hb0, hb1, hb2, by omega_using [hsb]⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .r3) 32])
       (allocated bytes s) [] (scratchState sig bytes s) :=
-    .block (by simp only [execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
+    .block (by simp only [execBlock, isa, reduceExec, show (32 : Nat) < 2 ^ 15 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, scratchState]; rfl)
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩])
       (frameR bytes s :: s.wr) :=

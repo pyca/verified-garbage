@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (AArch64)
@@ -196,7 +197,7 @@ theorem withStackScratchK_run {c : Prog isa} (hk : (sig.words abi.ptrBits).lengt
     exact ite_eq_left ⟨hb0, hb1, hb2, by omega_arith⟩
   have hblk : Exec isa (.block [.addSp (argRegs.getD (sig.words abi.ptrBits).length .x0) 0])
       (allocated bytes s) [] (scratchState sig bytes s) :=
-    .block (by simp only [execBlock, isa, exec, show (0 : Nat) < 4096 by decide, ite_true,
+    .block (by simp only [execBlock, isa, reduceExec, show (0 : Nat) < 4096 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, scratchState])
   have hcov : Covers (s.wr ++ [⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩])
       (⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) :=

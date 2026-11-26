@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: VEX.128 blocks as SSE blocks on the lower lanes
@@ -80,17 +81,17 @@ theorem lane0_ok {i : Instr} {ss : List Instr} (h : lane0 i = some ss) (s : Stat
   cases i
   all_goals try (simp only [lane0, reduceCtorEq] at h)
   case movImm64 d v =>
-    cases h; simp [runBlock, exec, isa, proj_setReg]
+    cases h; simp [runBlock, reduceExec, isa, proj_setReg]
   case vmovdquLoad len d m =>
     cases len
     · simp only [Option.some.injEq] at h; subst h
-      simp only [exec, runBlock, isa, State.load128, State.proj_rd, State.proj_wr, State.proj_mem, proj_ea]
+      simp only [reduceExec, runBlock, isa, State.load128, State.proj_rd, State.proj_wr, State.proj_mem, proj_ea]
       by_cases hin : InRegions (s.rd ++ s.wr) (s.ea m) 16 <;> simp [hin, proj_setV128]
     · simp at h
   case vmovdquStore len m r =>
     cases len
     · simp only [Option.some.injEq] at h; subst h
-      simp only [exec, runBlock, isa, State.store128, State.proj_wr, proj_ea, proj_lane0]
+      simp only [reduceExec, runBlock, isa, State.store128, State.proj_wr, proj_ea, proj_lane0]
       by_cases hin : InRegions s.wr (s.ea m) 16
       · simp only [hin, ite_true, Option.map_some, Option.bind_some]
         cases s; rfl
@@ -102,55 +103,55 @@ theorem lane0_ok {i : Instr} {ss : List Instr} (h : lane0 i = some ss) (s : Stat
     case vbin op len d a b =>
       cases len
       · simp only [lane0V] at h
-        simp only [exec, VOp.exec, Option.map_some, proj_setV128]
+        simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128]
         split at h
         · subst_vars; cases h
-          simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+          simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
         · split at h
           · cases h
           · rename_i h1 h2; cases h
-            simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
+            simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
             rw [two_ops h2 op.sse.eval]
       · simp [lane0V] at h
     case vpclmulqdq len d a b n =>
       cases len
       · simp only [lane0V] at h
-        simp only [exec, VOp.exec, Option.map_some, proj_setV128]
+        simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128]
         split at h
         · subst_vars; cases h
-          simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+          simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
         · split at h
           · cases h
           · rename_i h1 h2; cases h
-            simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
+            simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
             rw [two_ops h2 (fun x y => pclmul x y n)]
       · simp [lane0V] at h
     case vshift op len d a n =>
       cases len
       · simp only [lane0V] at h
-        simp only [exec, VOp.exec, Option.map_some, proj_setV128]
+        simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128]
         split at h
         · subst_vars; cases h
-          simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+          simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
         · cases h
-          simp only [runBlock, isa, exec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
+          simp only [runBlock, isa, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm, eval_movdqa]
           rw [RegUpd.xmm_setXmm_self, setXmm_setXmm]
       · simp [lane0V] at h
     case vpshufd len d a o =>
       cases len
       · simp only [lane0V, Option.some.injEq] at h; subst h
-        simp only [exec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
+        simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
           Option.bind_some, State.proj_xmm]
       · simp [lane0V] at h
     case vmovdqa len d a =>
       cases len
       · simp only [lane0V, Option.some.injEq] at h; subst h
-        simp only [exec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
+        simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
           Option.bind_some, State.proj_xmm, eval_movdqa]
       · simp [lane0V] at h
     case vmovq d r =>
       simp only [lane0V, Option.some.injEq] at h; subst h
-      simp only [exec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
+      simp only [reduceExec, VOp.exec, Option.map_some, proj_setV128, runBlock, isa, XOp.exec,
         Option.bind_some, State.proj_gpr]
 
 theorem lane0Block_ok {vs ss : List Instr} (h : lane0Block vs = some ss) (s : State) :
@@ -187,19 +188,19 @@ theorem lane0_hi {i : Instr} {ss : List Instr} (h : lane0 i = some ss) {s s' : S
   case vmovdquLoad len d m =>
     have hrd : r ≠ d := fun h => hr (by rw [h]; rfl)
     cases len
-    · simp only [exec, Option.map_eq_some_iff] at e
+    · simp only [reduceExec, Option.map_eq_some_iff] at e
       obtain ⟨v, -, rfl⟩ := e
       simp [State.setV, hrd]
     · simp at h
   case vmovdquStore len m r' =>
     cases len
-    · simp only [exec, State.store128] at e
+    · simp only [reduceExec, State.store128] at e
       split at e
       · cases e; rfl
       · cases e
     · simp at h
   case vop o =>
-    simp only [exec, Option.some.injEq] at e
+    simp only [reduceExec, Option.some.injEq] at e
     subst e
     cases o <;> simp only [vdst, ne_eq, Option.some.injEq] at hr
     all_goals first
@@ -241,19 +242,19 @@ theorem lane0_gpr {i : Instr} {ss : List Instr} (h : lane0 i = some ss) (hn : no
   case movImm64 => simp [noGpr] at hn
   case vmovdquLoad len d m =>
     cases len
-    · simp only [exec, Option.map_eq_some_iff] at e
+    · simp only [reduceExec, Option.map_eq_some_iff] at e
       obtain ⟨v, -, rfl⟩ := e
       simp
     · simp at h
   case vmovdquStore len m r' =>
     cases len
-    · simp only [exec, State.store128] at e
+    · simp only [reduceExec, State.store128] at e
       split at e
       · cases e; rfl
       · cases e
     · simp at h
   case vop o =>
-    simp only [exec, Option.some.injEq] at e
+    simp only [reduceExec, Option.some.injEq] at e
     subst e
     exact VOp.exec_gpr o s
 

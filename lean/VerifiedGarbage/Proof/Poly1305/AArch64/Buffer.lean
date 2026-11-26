@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -62,34 +63,34 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addImm {d n : Reg} {imm : Nat} (h : imm < 4096)
     (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addImm .x d n imm :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n + BitVec.ofNat 64 imm)) (by simp only [exec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
+  WP.cons (s' := s.write .x d (s.gpr n + BitVec.ofNat 64 imm)) (by simp only [reduceExec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
     (k _ (Upd.write64 _ _ _))
 
 theorem wp_subImm {d n : Reg} {imm : Nat} (h : imm < 4096)
     (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.subImm .x d n imm :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n - BitVec.ofNat 64 imm)) (by simp only [exec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
+  WP.cons (s' := s.write .x d (s.gpr n - BitVec.ofNat 64 imm)) (by simp only [reduceExec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
     (k _ (Upd.write64 _ _ _))
 
 theorem wp_movz {d : Reg} {imm : BitVec 16}
     (k : ∀ s', Upd s s' d (imm.setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.movz .x d imm 0 :: is)) s Q :=
-  WP.cons (s' := s.write .x d (imm.setWidth 64)) (by simp only [exec, Nat.mul_zero, Nat.zero_lt_succ, ↓reduceIte, BitVec.shiftLeft_zero]) (k _ (Upd.write64 _ _ _))
+  WP.cons (s' := s.write .x d (imm.setWidth 64)) (by simp only [reduceExec, Nat.mul_zero, Nat.zero_lt_succ, ↓reduceIte, BitVec.shiftLeft_zero]) (k _ (Upd.write64 _ _ _))
 
 theorem wp_add {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n + s.gpr m) → WP isa (.block is) s' Q) :
     WP isa (.block (.add .x d n m :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n + s.gpr m)) (by simp only [exec, State.read, BitVec.setWidth_eq]) (k _ (Upd.write64 _ _ _))
+  WP.cons (s' := s.write .x d (s.gpr n + s.gpr m)) (by simp only [reduceExec, State.read, BitVec.setWidth_eq]) (k _ (Upd.write64 _ _ _))
 
 theorem wp_sub {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n - s.gpr m) → WP isa (.block is) s' Q) :
     WP isa (.block (.sub .x d n m :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n - s.gpr m)) (by simp only [exec, State.read, BitVec.setWidth_eq]) (k _ (Upd.write64 _ _ _))
+  WP.cons (s' := s.write .x d (s.gpr n - s.gpr m)) (by simp only [reduceExec, State.read, BitVec.setWidth_eq]) (k _ (Upd.write64 _ _ _))
 
 theorem wp_and {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → WP isa (.block is) s' Q) :
     WP isa (.block (.logic .and .x d n m :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n &&& s.gpr m)) (by simp only [exec, State.read, BitVec.setWidth_eq])
+  WP.cons (s' := s.write .x d (s.gpr n &&& s.gpr m)) (by simp only [reduceExec, State.read, BitVec.setWidth_eq])
     (k _ (Upd.write64 _ _ _))
 
 theorem wp_ldrb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
@@ -97,7 +98,7 @@ theorem wp_ldrb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
     (k : ∀ s', Upd s s' t ((s.mem a).setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.ldrb t n off :: is)) s Q := by
   refine WP.cons (s' := s.write .w t (((s.mem a).setWidth 32))) ?_ (k _ ?_)
-  · simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
+  · simp only [reduceExec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
       Option.bind_some, State.load, hin, Option.map_some, read_one]
   · have := Upd.write s .w t ((s.mem a).setWidth 32)
     have e : ((s.mem a).setWidth 32).setWidth 64 = (s.mem a).setWidth 64 := by
@@ -110,7 +111,7 @@ theorem wp_strb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
     WP isa (.block (.strb t n off :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr t).setWidth 8) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
-  simp only [exec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
+  simp only [reduceExec, addr, Nat.mod_one, true_and, show off < 4096 * 1 by omega_using [ho], ite_true, ha,
     Option.bind_some, State.store, hout, Mem.writeW, State.read]
   congr 3
   ext i hi; simp only [Size.bits, Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le, BitVec.getElem_setWidth, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq]; try omega
@@ -118,7 +119,7 @@ theorem wp_strb {t n : Reg} {off : Nat} {a : Addr} (ho : off < 4096)
 theorem wp_lsr {d n : Reg} {sh : Nat} (h : sh < 64)
     (k : ∀ s', Upd s s' d (s.gpr n >>> sh) → WP isa (.block is) s' Q) :
     WP isa (.block (.lsr .x d n sh :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.gpr n >>> sh)) (by simp only [exec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
+  WP.cons (s' := s.write .x d (s.gpr n >>> sh)) (by simp only [reduceExec, h, ↓reduceIte, State.read, BitVec.setWidth_eq])
     (k _ (Upd.write64 _ _ _))
 
 end

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ML-DSA signing on AArch64: the blocks between the calls
@@ -44,7 +45,7 @@ theorem wp_add32 {d n m : Reg}
       WP isa (.block is) s' Q) :
     WP isa (.block (.add .w d n m :: is)) s Q :=
   VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32 + (s.gpr m).setWidth 32))
-    (by simp [exec, State.read]) (k _ (only_write32 _ _ _) (write32_gpr _ _ _))
+    (by simp [reduceExec, State.read]) (k _ (only_write32 _ _ _) (write32_gpr _ _ _))
 
 end
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A scratch buffer on the stack, after stack arguments (x86-64)
@@ -197,7 +198,7 @@ theorem copyArg_run {bytes j : Nat} {u : State}
     execBlock isa (copyArg bytes j) u = some (copyState bytes j u,
       [.addr (u.gpr .rsp + BitVec.ofNat 64 (bytes + 8 + 8 * j)),
         .addr (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * j))]) := by
-  simp only [copyArg, execBlock, isa, exec, readSrc, State.load64, State.ea, ofInt_natCast, hr,
+  simp only [copyArg, execBlock, isa, reduceExec, readSrc, State.load64, State.ea, ofInt_natCast, hr,
     ite_true, Option.map_some, addrs, srcAddrs]
   simp [copyState, State.setReg, State.store64, hw]
 
@@ -318,7 +319,7 @@ theorem tail_run {m : Nat} {w : State}
       rw [BitVec.msb_eq_decide]; simp; omega_using [hm]
     simp [this]
     omega_using [hm]
-  simp only [execBlock, isa, exec, readSrc, execAlu, Option.map_some, Option.bind_some, addrs,
+  simp only [execBlock, isa, reduceExec, readSrc, execAlu, Option.map_some, Option.bind_some, addrs,
     srcAddrs, State.store64, State.ea, ofInt_natCast]
   simp [State.setReg, arithFlags, State.setFlags, hw, hse]
   intro q hq; simp [hq]

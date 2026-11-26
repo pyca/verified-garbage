@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # What an instruction writes to memory (AArch64)
@@ -61,7 +62,7 @@ theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s') :
   · cases i <;> simp only [Residue.regOnly, Bool.false_eq_true, not_false_eq_true,
       not_true_eq_false] at hr
     case str sz t n off =>
-      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, State.store, addr] at h
       obtain ⟨a, ha, h⟩ := h
       split at ha <;> [skip; cases ha]
       obtain rfl := Option.some.inj ha
@@ -71,7 +72,7 @@ theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s') :
       congr 1
       cases sz <;> first | rfl | simp | (rw [BitVec.setWidth_setWidth_of_le _ (by decide)])
     case strb t n off =>
-      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, State.store, addr] at h
       obtain ⟨a, ha, h⟩ := h
       split at ha <;> [skip; cases ha]
       obtain rfl := Option.some.inj ha
@@ -80,7 +81,7 @@ theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s') :
       simp only [stores, writeAll, Base.val, Src.val, State.read]
       rw [BitVec.setWidth_setWidth_of_le _ (by decide)]
     case strq t n off =>
-      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, State.store, addr] at h
       obtain ⟨a, ha, h⟩ := h
       split at ha <;> [skip; cases ha]
       obtain rfl := Option.some.inj ha
@@ -88,14 +89,14 @@ theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s') :
       obtain rfl := Option.some.inj h
       simp [stores, writeAll, Base.val, Src.val]
     case strSp t off =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       simp only [State.store] at h
       split at h <;> [skip; cases h]
       obtain rfl := Option.some.inj h
       simp [stores, writeAll, Base.val, Src.val, State.read]
     case stp t1 t2 n off =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain ⟨u, hu, h⟩ := Option.bind_eq_some_iff.mp h
       simp only [State.store] at hu h
@@ -107,47 +108,47 @@ theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s') :
       rw [show s.gpr n + BitVec.ofNat 64 off + 8 = s.gpr n + BitVec.ofNat 64 (off + 8) by
         rw [BitVec.ofNat_add, BitVec.add_assoc]; rfl]
     case ldr sz t n off =>
-      simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       simp [stores, writeAll, State.write]
     case ldrb t n off =>
-      simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       simp [stores, writeAll, State.write]
     case ldrq t n off =>
-      simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨a, -, v, -, rfl⟩ := h
       simp [stores, writeAll, State.setV]
     case ldrSp t off =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
       simp [stores, writeAll, State.write]
     case ldp t1 t2 n off =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain ⟨v, -, h⟩ := Option.bind_eq_some_iff.mp h
       obtain ⟨w, -, rfl⟩ := Option.map_eq_some_iff.mp h
       simp [stores, writeAll, State.write]
     case ldrqTbl t n off name ws =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain rfl := Option.some.inj h
       simp [stores, writeAll, State.setV]
     case ldrTbl sz t n off name ws =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain rfl := Option.some.inj h
       simp [stores, writeAll, State.write]
     case ccmp sz n imm nzcv cond =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       split at h <;> [skip; cases h]
       obtain rfl := Option.some.inj h
       split <;> simp [stores, writeAll, State.flagsAdd]
     case adrSym d name =>
-      simp only [exec] at h
+      simp only [reduceExec] at h
       obtain rfl := Option.some.inj h
       simp [stores, writeAll, State.write]
-    all_goals simp only [exec] at h; cases h
+    all_goals simp only [reduceExec] at h; cases h
 
 end VG.AArch64.MemEffect

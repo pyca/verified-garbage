@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
 public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Gcm.X86_64.Stitch.Gh`, which this module and modules that import it used -/
 
@@ -56,7 +57,7 @@ theorem ghLoad_ok {k : Nat} (hk : k < 8) (t : State) (h0 : ∀ l < 2, t.lane .xm
   let v := t.mem.readW a 256
   let t₁ := t.setV .l256 .xmm12 (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   rw [ghLoad, WP.block_cons_iff]
-  refine ⟨t₁, by simp only [isa, exec, State.load256, VG.Proof.Gcm.X86_64.Pclmul.ea_at, hpin, ite_true,
+  refine ⟨t₁, by simp only [isa, reduceExec, State.load256, VG.Proof.Gcm.X86_64.Pclmul.ea_at, hpin, ite_true,
     Option.map_some]; rfl, ?_⟩
   have keep : ∀ r, r ≠ .xmm12 → ∀ l < 2, t₁.lane r l = t.lane r l := fun r hr l _ => by
     simp [t₁, State.lane_setV256, hr]

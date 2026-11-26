@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `RsaPkcs1Sig.AArch64.RecPcCall`, which this module and modules that import it used -/
 
@@ -357,7 +358,7 @@ theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
 theorem wp_bic {d n m : Reg}
     (k : ∀ s', Only [d] s s' → s'.gpr d = (s.gpr n &&& ~~~(s.gpr m)) → WP isa (.block is) s' Q) :
     WP isa (.block (.bicRor .x d n m 0 :: is)) s Q :=
-  VG.Proof.MlKem.AArch64.wp_x (by simp [exec, State.read, rotateRight_zero]) k
+  VG.Proof.MlKem.AArch64.wp_x (by simp [reduceExec, State.read, rotateRight_zero]) k
 
 end
 
