@@ -1,7 +1,6 @@
 module
 
 public meta import Lean.Elab.Term
-public meta import Lean.Meta.Transform
 public meta import Lean.Meta.Match.MatcherInfo
 
 /-!
