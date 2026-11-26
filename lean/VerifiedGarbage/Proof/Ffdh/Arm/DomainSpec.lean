@@ -285,12 +285,7 @@ theorem domainValid_native_iff (p : Inputs) : Spec.Ffdh.domainValid p.k p.dom = 
 theorem checkedDomainFlag_spec (p : Inputs) : checkedDomainFlag p =
     if Spec.Ffdh.domainValid p.k p.dom then 1 else 0 := by
   have valid := domainValid_native_iff p
-  by_cases modulus : Spec.Rsa.modulusValid p.P p.k = true <;>
-    by_cases range : 1 < p.G ∧ p.G < p.P - 1 <;>
-    by_cases hasQ : p.hasQ = true <;>
-    by_cases qrange : 2 < p.Q ∧ p.Q < p.P - 1 ∧ p.Q % 2 = 1 <;>
-    by_cases divides : p.P % p.Q = 1 <;>
-    by_cases power : Spec.Rsa.powMod p.G p.Q p.P = 1 <;>
-    simp_all [checkedDomainFlag, domainMainFlag, domainTailFlag, domainQFlag]
+  simp only [checkedDomainFlag, domainMainFlag, domainTailFlag, domainQFlag]
+  grind
 
 end VG.Proof.Ffdh.Arm

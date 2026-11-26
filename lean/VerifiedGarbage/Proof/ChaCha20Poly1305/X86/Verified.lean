@@ -63,6 +63,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.SseDword
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 @[expose] public section
 
@@ -1052,7 +1055,7 @@ theorem longKey_rel :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [hx.edi, hy.edi]; exact hq.cx.symm
-      · exact hq.at_ hx.at_ hy.at_) (by taint_decide))
+      · exact hq.at_ hx.at_ hy.at_) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨pro4_ok hx, pro4_ok hy⟩) ?_
   exact RelCT.post (init_rel ha hb hq (kk := 128) (.inl (by decide)) fun x y ⟨hx, hy⟩ =>
       ⟨⟨hx.at_, hx.ecx, hx.edx⟩, ⟨hy.at_, hy.ecx, hy.edx⟩⟩)
@@ -1066,7 +1069,7 @@ theorem shortKey_rel (v : XorImpl) (hsa : Short a) (hsb : Short b) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [hx.edi, hy.edi]; exact hq.cx.symm
-      · exact hq.at_ hx.at_ hy.at_) (by taint_decide))
+      · exact hq.at_ hx.at_ hy.at_) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨skA_ok ha hx, skA_ok hb hy⟩) ?_
   refine RelCT.seq (R := fun x y => SkB a x ∧ SkB b y)
     (RelCT.post (skB_rel ha hb hq v) fun x y ⟨hx, hy⟩ => ⟨skB_ok v ha hx, skB_ok v hb hy⟩) ?_
@@ -1075,7 +1078,7 @@ theorem shortKey_rel (v : XorImpl) (hsa : Short a) (hsb : Short b) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [hx.edi, hy.edi]; exact hq.cx.symm
-      · exact hq.at_ hx.at_ hy.at_) (by taint_decide))
+      · exact hq.at_ hx.at_ hy.at_) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨skC_ok hx, skC_ok hy⟩) ?_
   exact RelCT.post (init_rel ha hb hq (kk := 576) (.inr ⟨by decide, by decide⟩) fun x y ⟨hx, hy⟩ =>
       ⟨⟨hx.at_, hx.ecx, hx.edx⟩, ⟨hy.at_, hy.ecx, hy.edx⟩⟩)
@@ -1090,7 +1093,7 @@ theorem prologue_rel (v : XorImpl) :
       subst hx hy
       rcases hr with rfl | rfl
       · exact hq.eax.symm
-      · exact hq.esp.symm) (by taint_decide))
+      · exact hq.esp.symm) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => by subst hx hy; exact ⟨pro1_ok ha, pro1_ok hb⟩) ?_
   refine RelCT.seq (R := fun (x y : State) => (Pro2 a x ∧ x.cf = some (decide (Short a))) ∧
       (Pro2 b y ∧ y.cf = some (decide (Short b))))
@@ -1100,7 +1103,7 @@ theorem prologue_rel (v : XorImpl) :
       · rw [hx.ecx, hy.ecx]; exact hq.kp.symm
       · rw [hx.edx, hy.edx]; exact hq.np.symm
       · rw [hx.edi, hy.edi]; exact hq.cx.symm
-      · exact hq.at_ hx.at_ hy.at_) (by taint_decide))
+      · exact hq.at_ hx.at_ hy.at_) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨pro2s_ok ha hx, pro2s_ok hb hy⟩) ?_
   refine RelCT.ite (fun x y h => by
     show x.cf = y.cf
@@ -1123,7 +1126,7 @@ theorem absorbOne_rel {k : Nat} (hk : k = 48 ∨ k = 32) :
     (RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨WP.mono (oneA_ok hx k) fun _ h => h.1,
       WP.mono (oneA_ok hy k) fun _ h => h.1⟩) (oneB_rel ha hb hq hk')
   rcases hk with rfl | rfl <;>
-  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide)
+  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide)
 
 /-- After the tail's start is computed and the block zeroed. -/
 def PDz (s₀ : State) (i : Nat) (s : State) : Prop :=
@@ -1145,7 +1148,7 @@ theorem padTail_rel {i : Nat} (hsa : Src a (arg a i) (arg a (i + 1)).toNat)
         · rw [hx.ebp, hy.ebp, ei']
         · rw [hx.edx, hy.edx, ei']
         · rw [hx.inv.edi, hy.inv.edi]; exact hq.cx.symm
-        · exact hq.at_ hx.inv.at hy.inv.at) (by taint_decide))
+        · exact hq.at_ hx.inv.at hy.inv.at) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (pd_ok ha hx) fun _ h => ⟨h.1, h.2.2⟩,
         WP.mono (pd_ok hb hy) fun _ h => ⟨h.1, h.2.2⟩⟩) ?_
   refine RelCT.seq (R := fun x y => Inv a x ∧ Inv b y)
@@ -1157,7 +1160,7 @@ theorem padTail_rel {i : Nat} (hsa : Src a (arg a i) (arg a (i + 1)).toNat)
         · rw [hx.ecx, hy.ecx, hq.c32]
         · rw [hx.edx, hy.edx, ei']
         · rw [hx.inv.edi, hy.inv.edi]; exact hq.cx.symm
-        · exact hq.at_ hx.inv.at hy.inv.at) (by taint_decide))
+        · exact hq.at_ hx.inv.at hy.inv.at) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ =>
         ⟨WP.mono (copy_ok ha (by rw [hx.1.inv.rd]) (by rw [hx.1.inv.wr]) hsa.tail (by lit_omega) (cp0 hx.1 hx.2))
           fun _ h => copied_inv ha hx.1 h,
@@ -1175,7 +1178,7 @@ theorem macPad_rel {i : Nat} (hi : i = 2 ∨ i = 4) (hsa : Src a (arg a i) (arg 
     (RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨WP.mono (maA_ok ha hi' hx) fun _ h => h.1,
       WP.mono (maA_ok hb hi' hy) fun _ h => h.1⟩) ?_
   · rcases hi with rfl | rfl <;>
-    exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide)
+    exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide)
   refine RelCT.seq (R := fun x y => MB a i x ∧ MB b i y)
     (RelCT.post (maB_rel ha hb hq hi' hsa hsb) fun x y ⟨hx, hy⟩ =>
       ⟨WP.mono (maB_ok ha hsa hx) fun _ h => h.1, WP.mono (maB_ok hb hsb hy) fun _ h => h.1⟩) ?_
@@ -1186,7 +1189,7 @@ theorem macPad_rel {i : Nat} (hi : i = 2 ∨ i = 4) (hsa : Src a (arg a i) (arg 
         rcases hr with rfl | rfl | rfl
         · rw [hx.ebp, hy.ebp, ei']
         · rw [hx.inv.edi, hy.inv.edi]; exact hq.cx.symm
-        · exact hq.at_ hx.inv.at hy.inv.at) (by taint_decide))
+        · exact hq.at_ hx.inv.at hy.inv.at) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (maC_ok hx) fun _ h => h.1, WP.mono (maC_ok hy) fun _ h => h.1⟩) ?_
   refine RelCT.ite (fun x y ⟨hx, hy⟩ => by simp only [eval, hx.zf, hy.zf, ei'])
     (RelCT.nil fun _ _ _ => trivial) fun x y t₁ t₂ x' y' ⟨⟨hx, hy⟩, he⟩ e₁ e₂ => ?_
@@ -1197,7 +1200,7 @@ theorem macPad_rel {i : Nat} (hi : i = 2 ∨ i = 4) (hsa : Src a (arg a i) (arg 
 theorem crypt_rel (v : XorImpl) : RelCT isa (fun x y => Inv a x ∧ Inv b y) (crypt v.callee) fun _ _ => True := by
   rw [crypt_eq]
   exact RelCT.seq (R := fun x y => CrA a x ∧ CrA b y)
-    (RelCT.post (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
+    (RelCT.post (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (crA_ok ha hx) fun _ h => h.1, WP.mono (crA_ok hb hy) fun _ h => h.1⟩)
     (crB_rel ha hb hq v)
 
@@ -1206,7 +1209,7 @@ theorem cryptAny_rel (v : XorImpl) :
   rw [cryptAny_eq]
   refine RelCT.seq (R := fun (x y : State) => (Inv a x ∧ x.cf = some (decide (Short a))) ∧
       (Inv b y ∧ y.cf = some (decide (Short b))))
-    (RelCT.post (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
+    (RelCT.post (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (isShortInv_ok ha hx) fun _ h => ⟨h.1, h.2.2⟩,
         WP.mono (isShortInv_ok hb hy) fun _ h => ⟨h.1, h.2.2⟩⟩) ?_
   refine RelCT.ite (fun x y h => by
@@ -1214,7 +1217,7 @@ theorem cryptAny_rel (v : XorImpl) :
     rw [h.1.2, h.2.2]; exact congrArg some (decide_eq_decide.mpr hq.short.symm)) ?_ ?_
   · rw [shortCrypt_eq]
     refine RelCT.seq (R := fun x y => ScA a x ∧ ScA b y)
-      (RelCT.post (taintRel [.edi, .esp] (fun x y h => hq.inv h.1.1.1 h.1.2.1) (by taint_decide))
+      (RelCT.post (taintRel [.edi, .esp] (fun x y h => hq.inv h.1.1.1 h.1.2.1) (by native_taint_decide))
         fun x y h => ⟨WP.mono (scA_ok ha h.1.1.1) fun _ h => h.1, WP.mono (scA_ok hb h.1.2.1) fun _ h => h.1⟩) ?_
     exact sseRel [.esi, .edx, .ecx, .ebp] (fun x y ⟨hx, hy⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1222,7 +1225,7 @@ theorem cryptAny_rel (v : XorImpl) :
       · rw [hx.esi, hy.esi]; exact hq.dp.symm
       · rw [hx.edx, hy.edx]; exact hq.op.symm
       · rw [hx.ecx, hy.ecx]; exact hq.ln.symm
-      · rw [hx.ebp, hy.ebp, hq.c32]) (by taint_decide)
+      · rw [hx.ebp, hy.ebp, hq.c32]) (by native_taint_decide)
   · exact RelCT.mono (crypt_rel ha hb hq v) (fun x y h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
 
 theorem finalizeWith_rel {out : List Instr} {O : State → BitVec 32} (hoa : OutOk a (O a))
@@ -1260,7 +1263,7 @@ theorem sealBody_rel {a b : State} (ha : APre true a) (hb : APre true b) (hq : P
   refine RelCT.seq (R := fun x y => Inv a x ∧ Inv b y) (RelCT.mono (prologue_rel ha hb hq v) (fun _ _ h => h) fun x y ⟨hx, hy⟩ => ⟨hx.inv, hy.inv⟩) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inl rfl) (srcA ha) (srcA hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcA hp) h) fun _ h => h.1)) ?_
-  refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
+  refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide))
     (fun s₀ _ hp h => WP.mono (lengths_ok hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (cryptAny_rel ha hb hq v) (fun s₀ _ hp h => WP.mono (cryptAny_ok v hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inr rfl) (srcD ha) (srcD hb))
@@ -1269,10 +1272,10 @@ theorem sealBody_rel {a b : State} (ha : APre true a) (hb : APre true b) (hq : P
     (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega_using []))) fun _ h => h.1)) ?_
   refine RelCT.seq (R := fun x y => Fin a x ∧ Fin b y) (RelCT.post (finalizeWith_rel ha hb hq (O := TP)
     (outOk_tag ha) (outOk_tag hb) hq.tp
-    (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide)) (fun _ h => out_tag ha h) (fun _ h => out_tag hb h))
+    (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide)) (fun _ h => out_tag ha h) (fun _ h => out_tag hb h))
     fun x y ⟨hx, hy⟩ => ⟨WP.mono (finalizeWith_ok ha hx (outOk_tag ha) (out_tag ha hx)) fun _ h => h.1,
       WP.mono (finalizeWith_ok hb hy (outOk_tag hb) (out_tag hb hy)) fun _ h => h.1⟩) ?_
-  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by taint_decide)
+  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by native_taint_decide)
 
 theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b) (v : XorImpl) :
     RelCT isa (fun x y => x = a ∧ y = b) (openMain v.callee) fun _ _ => True := by
@@ -1282,7 +1285,7 @@ theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcA hp) h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inr rfl) (srcD ha) (srcD hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcD hp) h) fun _ h => h.1)) ?_
-  refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
+  refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide))
     (fun s₀ _ hp h => WP.mono (lengths_ok hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (absorbOne_rel ha hb hq (.inr rfl))
     (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inl (by omega_using []))) fun _ h => h.1)) ?_
@@ -1290,13 +1293,13 @@ theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub
   refine RelCT.seq (R := fun (x y : State) => (Fin a x ∧ x.mem.readW (argAddr a 6) 32 = TP a) ∧
       (Fin b y ∧ y.mem.readW (argAddr b 6) 32 = TP b))
     (RelCT.post (finalizeWith_rel ha hb hq (O := fun s => C32 s 16) (outOk_640 ha) (outOk_640 hb)
-      (hq.c32 16) (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
+      (hq.c32 16) (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by native_taint_decide))
       (fun _ _ => out_640) (fun _ _ => out_640))
     fun x y ⟨hx, hy⟩ => ⟨WP.mono (finalize_open_ok ha hx) fun _ h => ⟨h.1, h.2.2.2.1⟩,
       WP.mono (finalize_open_ok hb hy) fun _ h => ⟨h.1, h.2.2.2.1⟩⟩) ?_
   refine RelCT.seq (R := fun (x y : State) => (Fin a x ∧ x.gpr .edx = TP a) ∧ (Fin b y ∧ y.gpr .edx = TP b))
     (RelCT.post (taintRel [.esp] (fun x y ⟨hx, hy⟩ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hq.at_ hx.1.at_ hy.1.at_) (by taint_decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact hq.at_ hx.1.at_ hy.1.at_) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (loadTag_ok ha hx.1 hx.2) fun _ h => ⟨h.1, h.2.1⟩,
         WP.mono (loadTag_ok hb hy.1 hy.2) fun _ h => ⟨h.1, h.2.1⟩⟩) ?_
   exact taintRel [.edx, .edi, .esp] (fun x y ⟨hx, hy⟩ r hr => by
@@ -1304,7 +1307,7 @@ theorem body_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub
     rcases hr with rfl | rfl | rfl
     · rw [hx.2, hy.2]; exact hq.tp.symm
     · rw [hx.1.edi, hy.1.edi]; exact hq.cx.symm
-    · exact hq.at_ hx.1.at_ hy.1.at_) (by taint_decide)
+    · exact hq.at_ hx.1.at_ hy.1.at_) (by native_taint_decide)
 
 theorem ok_iff (s₀ : State) :
     okX86 s₀ = true ↔ mac (otk s₀) (macData (A s₀) (D s₀)) = T0 s₀ := by
@@ -1366,7 +1369,7 @@ theorem zeroData_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq :
       (w.gpr .ecx = OP b ∧ w.gpr .edx = BitVec.ofNat 32 (L b) ∧ w.zf = some (BitVec.ofNat 32 (L b) == 0)))
     (RelCT.post (taintRel [.esp] (fun x y h r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hq.at_ h.1.1.fin.at_ h.1.2.fin.at_) (by taint_decide))
+        exact hq.at_ h.1.1.fin.at_ h.1.2.fin.at_) (by native_taint_decide))
       fun x y h => ⟨WP.mono (zeroArgs_ok ha h.1.1.fin (eax0 h.1.1 h.2) h.1.1.op h.1.1.ln) fun _ h' => h'.2,
         WP.mono (zeroArgs_ok hb h.1.2.fin (eax0 h.1.2 (he h.1.1 h.1.2 h.2)) h.1.2.op h.1.2.ln)
           fun _ h' => h'.2⟩) ?_
@@ -1379,7 +1382,7 @@ theorem zeroData_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [h.1.1.1, h.1.2.1, hD]
-    · rw [h.1.1.2.1, h.1.2.2.1, hL]) (by taint_decide)
+    · rw [h.1.1.2.1, h.1.2.2.1, hL]) (by native_taint_decide)
 
 /-- `open`'s body, for `open` and `open_to`. -/
 theorem openBody_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq : Pub a b)
@@ -1399,7 +1402,7 @@ theorem openBody_rel {a b : State} (ha : APre false a) (hb : APre false b) (hq :
           rw [h.1.2.zf, h.1.2.eax, ← bit_eq hl, ← h.1.1.eax, ← h.1.1.zf]; exact h.2)) h.1.2.op h.1.2.ln)
         fun _ h' => h'.1.fin⟩)
     (skip_rel fun _ _ h => ⟨h.1.1.fin, h.1.2.fin⟩)) ?_
-  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by taint_decide)
+  exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by native_taint_decide)
 
 /-! ## The entries -/
 
@@ -1422,7 +1425,7 @@ theorem inPlace_rel {s₁ s₂ : State} (h₁ : (s₁.gpr .esp).toNat + 36 ≤ 2
     (w₂ : (⟨argAddr s₂ 0, 32⟩ : Region) ∈ s₂.wr) (hsp : s₁.gpr .esp = s₂.gpr .esp) :
     RelCT isa (fun x y => x = s₁ ∧ y = s₂) (.block inPlace) fun x y => InPost s₁ x ∧ InPost s₂ y :=
   RelCT.post (taintRel [.esp] (fun x y ⟨hx, hy⟩ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr hx hy; exact hsp) (by taint_decide))
+      simp only [List.mem_singleton] at hr; subst hr hx hy; exact hsp) (by native_taint_decide))
     fun x y ⟨hx, hy⟩ => by subst hx hy; exact ⟨inPlace_ok h₁ w₁, inPlace_ok h₂ w₂⟩
 
 theorem toEntry_rel {s₁ s₂ : State} (h₁ : (s₁.gpr .esp).toNat + 44 ≤ 2 ^ 32)
@@ -1430,7 +1433,7 @@ theorem toEntry_rel {s₁ s₂ : State} (h₁ : (s₁.gpr .esp).toNat + 44 ≤ 2
     (w₂ : (⟨argAddr s₂ 0, 40⟩ : Region) ∈ s₂.wr) (hsp : s₁.gpr .esp = s₂.gpr .esp) :
     RelCT isa (fun x y => x = s₁ ∧ y = s₂) (.block toEntry) fun x y => ToPost s₁ x ∧ ToPost s₂ y :=
   RelCT.post (taintRel [.esp] (fun x y ⟨hx, hy⟩ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr hx hy; exact hsp) (by taint_decide))
+      simp only [List.mem_singleton] at hr; subst hr hx hy; exact hsp) (by native_taint_decide))
     fun x y ⟨hx, hy⟩ => by subst hx hy; exact ⟨toEntry_ok h₁ w₁, toEntry_ok h₂ w₂⟩
 
 /-- The body's entry states of two runs of `seal` or `open` that agree on the

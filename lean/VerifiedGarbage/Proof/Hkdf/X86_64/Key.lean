@@ -184,13 +184,11 @@ theorem args_ok {s a : State} (k : KPre w f s a) : WP isa (.block keyArgs) a (KA
   · rw [u₉.gpr, hm₈, show s.gpr .rcx + BitVec.ofNat 64 0 = s.gpr .rcx + BitVec.ofNat 64 0 from rfl]
     exact k.tm.1
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rw [g r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)
-      (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)]
+    have ne : ∀ q : Reg, q ∉ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15] → r ≠ .rsp → r ≠ q := by
+      rintro q hq hs rfl
+      exact hq (by simpa only [List.mem_cons, List.not_mem_nil, or_false, hs, false_or] using hr)
+    rw [g r (ne _ (by decide) hr') (ne _ (by decide) hr') (ne _ (by decide) hr') (ne _ (by decide) hr')
+      (ne _ (by decide) hr') (ne _ (by decide) hr') (ne _ (by decide) hr')]
     exact k.gpr r hr'
   · rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact k.rsp
   · rw [u₉.mem, hm₈]

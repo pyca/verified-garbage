@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.RoundLit
+import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
 /-!
 # Streaming TDEA-CMAC on PPC64LE, without secret residue

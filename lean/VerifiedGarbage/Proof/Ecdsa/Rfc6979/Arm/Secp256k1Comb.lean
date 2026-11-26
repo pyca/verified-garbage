@@ -116,7 +116,7 @@ theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) s
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signSecp256k1CombU :=
   VG.Taint.constantTime (A := taintSymU [secp256k1Comb.tsym,(secp256k1With true).constSym]) τ₁
-    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Arm.Secp256k1
 

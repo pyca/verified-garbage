@@ -682,7 +682,7 @@ theorem fnOps_noFrames (S : Impl.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : L
   obtain add : (Mont.addFnWith u S.k S.m).noFrames = true := addFnWith_noFrames u _ _
   obtain sub : (Mont.subFnWith u S.k S.m).noFrames = true := subFnWith_noFrames u _ _
   have fields (op : FOp) : (opCodeR (enc S.k dbl) S u op).noFrames = true := by
-    cases op <;> simp only [opCodeR, callR, Code.noFrames, Bool.true_and] <;> with_reducible assumption
+    cases op <;> simp only [opCodeR, Point.opCodeOf, callR, Code.noFrames, Bool.true_and] <;> with_reducible assumption
   obtain seqs : ∀ ps : List (Prog isa), (∀ p ∈ ps, p.noFrames = true) → (progs ps).noFrames = true := by
     intro ps
     induction ps with

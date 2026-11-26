@@ -66,6 +66,9 @@ public import VerifiedGarbage.Impl.Sha256.X86
 meta import VerifiedGarbage.Impl.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
@@ -213,10 +216,10 @@ theorem initWith_verified {hc} (hct : (taint.check initτ₀ (initWith iv) hc).i
   · exact VG.Taint.constantTime (A := taint) initτ₀ (fun _ _ h₁ h₂ hp => init_agree₀ iv h₁ h₂ hp) hct
 
 theorem init_verified : Verified X86.target init (Proof.Sha256.initX86 H0) :=
-  initWith_verified _ (hct := by taint_decide)
+  initWith_verified _ (hct := by native_taint_decide)
 
 theorem init224_verified : Verified X86.target init224 (Proof.Sha256.initX86 Spec.Sha256.H0_224) :=
-  initWith_verified _ (hct := by taint_decide)
+  initWith_verified _ (hct := by native_taint_decide)
 
 end VG.Proof.Sha256.X86.Stream
 
@@ -276,7 +279,7 @@ theorem update_verified : Verified X86.target Impl.Sha256.X86.Stream.update Proo
   have ct : ConstantTime isa (updK (P := params) md 160).pre (updK (P := params) md 160).pub
       Impl.Sha256.X86.Stream.update :=
     VG.Taint.constantTime (A := taint) (MdStream.X86.Update.τ₀ params 160)
-      (fun _ _ h₁ h₂ hp => MdStream.X86.Update.agree₀ dims h₁ h₂ hp) (by taint_decide)
+      (fun _ _ h₁ h₂ hp => MdStream.X86.Update.agree₀ dims h₁ h₂ hp) (by native_taint_decide)
   rw [update_eq] at ct ⊢
   have h := MdStream.X86.Update.verified (name := "vg_sha256_compress") dims callee ct
   exact Verified.of_implies h
@@ -293,7 +296,7 @@ theorem finalize_verified : Verified X86.target Impl.Sha256.X86.Stream.finalize 
   have ct : ConstantTime isa (finK (P := params) md 160).pre (finK (P := params) md 160).pub
       Impl.Sha256.X86.Stream.finalize :=
     VG.Taint.constantTime (A := taint) (MdStream.X86.Finalize.τ₀ params 160)
-      (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀ dims h₁ h₂ hp) (by taint_decide)
+      (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀ dims h₁ h₂ hp) (by native_taint_decide)
   rw [finalize_eq] at ct ⊢
   have h := MdStream.X86.Finalize.verified (name := "vg_sha256_compress") dims shape callee ct
   exact Verified.of_implies h

@@ -24,6 +24,9 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! ### `Ecdsa.X86.CombStepCT`, which only this module used -/
 
@@ -213,7 +216,7 @@ theorem gMul_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
         rw [List.mem_singleton.mp hr]
         exact widen32_inj (hs₁.edi.trans hs₂.edi.symm))
     (c := .block (Impl.Weierstrass.X86.setConst p256Comb.n (p256Comb.sl EM) (p256Comb.mont p256Comb.C.b)))
-    (by taint_decide)
+    (by native_taint_decide)
   have prep' := prep.wp (fun _ _ h => by
     rcases h with ⟨rfl, rfl⟩
     exact ⟨combPrepare_ok (d := p256d) hc rfl p256Comb.C.b hs₁ F₁ hk₁ hb₁ hTM₁ hout hap₁ hsp₁,

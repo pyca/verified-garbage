@@ -45,6 +45,9 @@ public import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 meta import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM4 ECB on x86 (32-bit) meets its contracts
@@ -979,9 +982,9 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) := by
   cases dir
   · exact VG.Taint.constantTime_of_exists (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree _ h₁ h₂ hp) (by taint_decide_sum [cryptSumEcb])
+      (fun _ _ h₁ h₂ hp => ecbTaint_agree _ h₁ h₂ hp) (by native_taint_decide_sum [cryptSumEcb])
   · exact VG.Taint.constantTime_of_exists (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree _ h₁ h₂ hp) (by taint_decide_sum [cryptSumEcb])
+      (fun _ _ h₁ h₂ hp => ecbTaint_agree _ h₁ h₂ hp) (by native_taint_decide_sum [cryptSumEcb])
 
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=

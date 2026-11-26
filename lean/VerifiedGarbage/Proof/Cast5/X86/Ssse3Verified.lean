@@ -48,6 +48,9 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # CAST5's modes over the look-ups by `pshufb` on x86 (32-bit): the contracts
@@ -142,30 +145,30 @@ theorem ofbFinal_wp {s₀ : State} (hp : (finalP FbFinal.ofbPost).pre s₀) :
 theorem cbcEncryptChained_ct :
     ConstantTime isa (modeP ModeFns.cbcEncPost).pre (modeP ModeFns.cbcEncPost).pub cbcEncryptChained :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem ofb_ct : ConstantTime isa (modeP ModeFns.ofbPost).pre (modeP ModeFns.ofbPost).pub ofb :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem cfbEncrypt_ct : ConstantTime isa (modeP ModeFns.cfbEncPost).pre (modeP ModeFns.cfbEncPost).pub cfbEncrypt :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => ModeFns.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem cfbEncryptFinal_ct :
     ConstantTime isa (finalP FbFinal.encPost).pre (finalP FbFinal.encPost).pub cfbEncryptFinal :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem cfbDecryptFinal_ct :
     ConstantTime isa (finalP FbFinal.decPost).pre (finalP FbFinal.decPost).pub cfbDecryptFinal :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem ofbFinal_ct :
     ConstantTime isa (finalP FbFinal.ofbPost).pre (finalP FbFinal.ofbPost).pub ofbFinal :=
   VG.Taint.constantTime (A := VG.X86.sseTaint) (τG 632 8)
-    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => FbFinal.τG_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 /-! ## The contracts -/
 

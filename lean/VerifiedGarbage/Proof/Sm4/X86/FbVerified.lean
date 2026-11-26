@@ -52,6 +52,9 @@ meta import VerifiedGarbage.Spec.Ctr.Contract
 meta import VerifiedGarbage.Spec.Sm4.Cfb
 public import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
 meta import VerifiedGarbage.Proof.Sm4.X86.PreparedBody
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86 (32-bit) meet their contracts
@@ -282,15 +285,15 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
 
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
   VG.Taint.constantTime_of_exists (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide_sum [prepSum, cryptSum])
+    (by native_taint_decide_sum [prepSum, cryptSum])
 
 /-! ## The contracts -/
 

@@ -73,13 +73,11 @@ open VG.Emit
   \n\
   namespace VG.Emit\n\
   \n\
-  def all : List (String × List _root_.VG.EmitArtifact) := [\n  \
-    (\"VerifiedGarbage.Artifacts.Sha3.X86_64\", \
-    _root_.VG.EmitArtifact.ofList _root_.VG.X86_64.target _root_.VG.X86_64.emitter\n    \
-    _root_.VG.Artifacts.Sha3.X86_64.artifacts),\n  \
-    (\"VerifiedGarbage.Artifacts.Sha3.AArch64\", \
-    _root_.VG.EmitArtifact.ofList _root_.VG.AArch64.target _root_.VG.AArch64.emitter\n    \
-    _root_.VG.Artifacts.Sha3.AArch64.artifacts)]\n\
+  def all : List _root_.VG.TargetArtifacts := [\n  \
+    _root_.VG.TargetArtifacts.of _root_.VG.X86_64.target _root_.VG.X86_64.emitter [\n    \
+    (\"VerifiedGarbage.Artifacts.Sha3.X86_64\", _root_.VG.Artifacts.Sha3.X86_64.artifacts)],\n  \
+    _root_.VG.TargetArtifacts.of _root_.VG.AArch64.target _root_.VG.AArch64.emitter [\n    \
+    (\"VerifiedGarbage.Artifacts.Sha3.AArch64\", _root_.VG.Artifacts.Sha3.AArch64.artifacts)]]\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\
@@ -95,7 +93,7 @@ open VG.Emit
   \n\
   end\n"
 #guard (driver []).toOption.any fun d =>
-  (d.splitOn "def all : List (String × List _root_.VG.EmitArtifact) := []\n").length == 2
+  (d.splitOn "def all : List _root_.VG.TargetArtifacts := []\n").length == 2
 #guard (driver ["VerifiedGarbage.Artifacts.Sha3"]).toOption.isNone
 
 -- The target directory of a registration module.
@@ -197,7 +195,7 @@ def VG.Emit.VG.AArch64.target : Target := VG.Artifacts.TestAbi.AArch64.target
 
 /-- `vg_ct_eq`, with that printer. -/
 def VG.Artifacts.TestPrinter.AArch64.artifacts : List EmitArtifact :=
-  EmitArtifact.ofList VG.AArch64.target VG.Test.Emit.swapped VG.Artifacts.Ct.AArch64.artifacts
+  VG.Artifacts.Ct.AArch64.artifacts.map (.of VG.Test.Emit.swapped)
 
 namespace VG.Artifacts.TestApi.AArch64
 open VG.AArch64
@@ -279,11 +277,12 @@ set_option Elab.async false
 -- printed by its printer.
 run_cmd do
   let errors ← driverErrors "VerifiedGarbage.Artifacts.Ct.AArch64" "\n\
-    #guard (VG.Emit.all.flatMap fun (_, as) => as.map (VG.Rust.function · fun _ => \"\")) ==\n  \
+    #guard (VG.Emit.all.flatMap fun g => g.arts.flatMap fun (_, as) =>\n  \
+      as.map fun a => VG.Rust.function ⟨⟨g.target⟩, a⟩ fun _ => \"\") ==\n  \
       VG.Artifacts.Ct.AArch64.artifacts.map fun a =>\n    \
         VG.Rust.function (VG.EmitArtifact.of VG.AArch64.emitter a) fun _ => \"\"\n\
-    example : VG.Emit.all.map (fun (_, as) => as.map fun a => a.target) =\n  \
-      [[VG.EmitTarget.of VG.AArch64.target VG.AArch64.emitter]] := rfl\n"
+    example : VG.Emit.all.map (·.target) =\n  \
+      [VG.EmitTarget.of VG.AArch64.target VG.AArch64.emitter] := rfl\n"
   unless errors.isEmpty do throwError "{errors}"
 
 -- The check above tells the printers apart.

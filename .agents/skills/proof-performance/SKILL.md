@@ -114,7 +114,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   match that is left still costs a third of a millisecond: Lean compiles
   it to a matcher, a function of the instruction and of the alternatives,
   and unfolding it builds a term of every case around the alternatives to
-  keep one. `inline_match% f g …` (`Proof/Framework/Taint.lean`) is
+  keep one. `inline_match% f g …` (`Proof/Framework/InlineMatch.lean`) is
   `f` as a `casesOn` whose cases are closed terms, with the matches of `f`
   and of the functions `g …` it applies to the instruction resolved in
   each (`stepKeepFnK`, `RTaint.stepFn1K`; equal to `f` by cases and
@@ -624,6 +624,9 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   evaluating it. `Proof/Bignum/PPC64LE/CrtPinsB.lean` says ten times that a
   prefix of the CRT's flattened code is a program written from the same
   parts (`WP.of_flat`): 42 s by `decide +kernel`, 1.4 s by `kernel_rfl`.
+  That functions of the same name are the same code, over a list of
+  variants, is `coh_of_first`'s (`Proof/HashTable/First.lean`), not a
+  decision over every pair, which compares each variant's code with itself.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one

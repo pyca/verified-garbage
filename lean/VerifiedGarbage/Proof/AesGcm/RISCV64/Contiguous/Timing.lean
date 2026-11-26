@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Impl.AesGcm.RISCV64.Contiguous
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ResidueTaintSound
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 
 /-! # Timing and residue of contiguous RISC-V seal -/
 

@@ -20,7 +20,7 @@ are printed, not the file: the driver takes the list at the type
 so that it fails to elaborate unless every artifact is of exactly that ISA model,
 calling convention, preserved state and `noResidue`, and pairs them with
 `VG.X86_64.emitter` (`TCB/X86_64/Print.lean`), the printer, Rust `cfg` and Rust ABI
-string they are emitted with (`EmitArtifact.ofList`).
+string they are emitted with (`TargetArtifacts.of`).
 
 ## Variants
 
@@ -104,12 +104,12 @@ what it binds the artifacts to from the root (`_root_.VG.X86_64.target`), so tha
 no declaration of a module it imports is taken for it, however it is named; and a
 module it imports declares it (`driverImports`), so no other can. -/
 def driverBody (mods : List String) : Except String String := do
-  let entries ← mods.mapM fun m => do
-    let t ← targetDir m
-    return s!"\n  (\"{m}\", _root_.VG.EmitArtifact.ofList _root_.VG.{t}.target _root_.VG.{t}.emitter\n    \
-      _root_.{listOf m})"
+  let entries ← (Rust.dedup (← mods.mapM targetDir)).mapM fun t => do
+    let ms ← mods.filterM fun m => return (← targetDir m) == t
+    return s!"\n  _root_.VG.TargetArtifacts.of _root_.VG.{t}.target _root_.VG.{t}.emitter [" ++
+      ",".intercalate (ms.map fun m => s!"\n    (\"{m}\", _root_.{listOf m})") ++ "]"
   return "public section\n\nnamespace VG.Emit\n\n" ++
-    "def all : List (String × List _root_.VG.EmitArtifact) := [" ++ ",".intercalate entries ++ "]\n\n" ++
+    "def all : List _root_.VG.TargetArtifacts := [" ++ ",".intercalate entries ++ "]\n\n" ++
     "#assert_standard_axioms all\n" ++
     "#assert_no_compiler_overrides all run\n" ++
     "#assert_spec_origin\n" ++
@@ -150,16 +150,17 @@ def parts (mods : List String) : Except String (List (String × List String)) :=
 `Api`, `Artifact.base`) is in the list of one registration module of `all`,
 so that the order that list gives them is the one its dispatcher tries
 them in (`Rust.dispatcher`). -/
-def checkSources (all : List (String × List EmitArtifact)) : Except String Unit := do
-  let mut seen : List ((String × String) × String) := []
-  for (m, as) in all do
-    for a in as do
-      match seen.lookup (a.target.name, a.base) with
-      | some m' =>
-        unless m' == m do
-          throw s!"{a.target.name}: the implementations of {a.base} are in two registration \
-            files, {m'} and {m}: its dispatcher tries them in the order one lists them"
-      | none => seen := ((a.target.name, a.base), m) :: seen
+def checkSources (all : List TargetArtifacts) : Except String Unit := do
+  for g in all do
+    let mut seen : Rust.ByName String := {}
+    for (m, as) in g.arts do
+      for a in as do
+        match seen.find? a.base with
+        | some m' =>
+          unless m' == m do
+            throw s!"{g.target.name}: the implementations of {a.base} are in two registration \
+              files, {m'} and {m}: its dispatcher tries them in the order one lists them"
+        | none => seen := seen.insert a.base m
 
 def usage : String := "usage: lake env lean --run Emit.lean [--check] [DIR]"
 
@@ -240,16 +241,15 @@ With `--part FILE`, `all` are the registration modules of a part (`parts`): only
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
-def run (all : List (String × List EmitArtifact)) (args : List String) : IO UInt32 := do
+def run (all : List TargetArtifacts) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
   if let .error e := checkSources all then
     IO.eprintln e
     return 1
-  let as := all.flatMap (·.2)
-  let files ← match Rust.files as with
+  let files ← match Rust.files all with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1
-  let targets := Rust.targetsOf as
+  let targets := Rust.targetsOf all
   let own := targets.flatMap (Rust.generatedDirs ·.1)
   let ok ← match part with
     | none => sync dir check files (Rust.dedup (own ++ (← codeDirs dir))) []

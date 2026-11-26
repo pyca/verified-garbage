@@ -30,6 +30,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.AArch64.LadderLit
+meta import VerifiedGarbage.Proof.X25519.AArch64.LadderLit
 
 /-!
 # X25519 on AArch64 returns without secret residue

@@ -132,7 +132,7 @@ pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
 
 -- The emitter writes the static from the instruction's words, byte for byte,
 -- and the code may name it without `Artifact.consts`.
-#guard (Rust.checkConsts [.of (.of artifact)] (.of (.of artifact))).isOk
+#guard (Rust.checkConsts (.of artifact.toArtifact)).isOk && (Rust.checkTables "" [("", Rust.tablesOf artifact)]).isOk
 #guard Rust.tables [artifact] == [(name, tbl 42)]
 #guard Rust.tableFile "x86_64" name (tbl 42) ==
   Rust.header ++ "//! The table of constants `VG_TEST_ALUTBL` of the verified functions for `x86_64` (`Artifact.consts`).
@@ -151,10 +151,12 @@ pub static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
 -- words: refused.
 def same : EmitArtifact := artifactOf "vg_test_alutbl_same" 42
 def other : EmitArtifact := artifactOf "vg_test_alutbl_other" 41
-#guard (Rust.checkConsts [.of (.of artifact), .of (.of same)] (.of (.of artifact))).isOk
+#guard (Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf same)]).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of artifact))).isOk
-#guard !(Rust.checkConsts [.of (.of artifact), .of (.of other)] (.of (.of other))).isOk
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact), ("b", Rust.tablesOf other)]).isOk
+#guard !(Rust.checkTables "" [("b", Rust.tablesOf other), ("a", Rust.tablesOf artifact)]).isOk
+-- Nor may one artifact give it two lists of words.
+#guard !(Rust.checkTables "" [("a", Rust.tablesOf artifact ++ Rust.tablesOf other)]).isOk
 
 -- The semantics: the word at the table's offset, else a fault.
 #guard Instr.asm (add 42) == ["add rax, QWORD PTR [rdx+8]"]

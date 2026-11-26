@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallWipe
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.PPC64LE.CheckEk
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha3.PPC64LE.Lit
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 on PPC64LE, without secret residue

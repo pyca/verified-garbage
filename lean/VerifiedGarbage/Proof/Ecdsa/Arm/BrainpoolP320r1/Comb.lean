@@ -67,7 +67,7 @@ theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) s
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signBrainpoolP320r1CombU :=
   VG.Taint.constantTime (A := taintSymU [brainpoolp320r1Comb.tsym,(brainpoolp320r1With true).constSym]) τ₁
-    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
 
 theorem combSign_ok (hC : Law Spec.BrainpoolP320r1.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signBrainpoolP320r1CombWith u) s₀ fun t => SignKeep (brainpoolp320r1With u) s₀ t ∧ SignPost (brainpoolp320r1With u) s₀ t := by

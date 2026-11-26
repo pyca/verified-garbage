@@ -15,6 +15,8 @@ public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 
 /-! ### `Ed448.AArch64.VerifyRoot`, which only this module used -/
 

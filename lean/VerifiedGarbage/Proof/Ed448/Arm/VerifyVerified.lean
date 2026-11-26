@@ -2081,7 +2081,7 @@ theorem vbefore_ct :
     exacts [h0, h1, h2, h3]
   cases fv
   · exact ctRegsErased [.r0, .r1, .r2, .r3] hp (c' := vbeforeErased) rfl (by native_taint_decide)
-  · exact ctRegsU [.r0, .r1, .r2, .r3] hp (by taint_decide)
+  · exact ctRegsU [.r0, .r1, .r2, .r3] hp (by native_taint_decide)
 
 /-! ### `k`'s digits -/
 
@@ -2158,7 +2158,7 @@ theorem vtable_ct (base : Addr) (S K : Nat) :
       exact scr_agree (mx.coded kx ox).1 (my.coded ky oy).1
     cases fv
     · exact ctRegs [.r0] hp (by native_taint_decide)
-    · exact ctRegsU [.r0] hp (by taint_decide)
+    · exact ctRegsU [.r0] hp (by native_taint_decide)
   · rintro x ⟨t, ⟨s, pk, sig, M⟩, tk, to, td⟩
     obtain ⟨hs, hb, he⟩ := M.coded tk to
     exact WP.mono (vtable_ok hs hb (by rw [he]; exact congrArg Spec.Ed448.Point.Z M.b) (by rw [he]; exact M.d))
@@ -2205,7 +2205,7 @@ theorem vdoubleAdd_ct (base : Addr) (S K : Nat) {n : Nat} (hn : n < 456) :
       · exact hx.r11.trans hy.r11.symm
     cases fv
     · exact ctRegs [.r0, .r8, .r11] hp (by native_taint_decide)
-    · exact ctRegsU [.r0, .r8, .r11] hp (by taint_decide)
+    · exact ctRegsU [.r0, .r8, .r11] hp (by native_taint_decide)
   · rintro x ⟨A, s₀, hb, ht, hi⟩
     exact WP.mono (vdoubleAdd_ok hn hb ht hi) fun u ⟨hu, hz⟩ => ⟨⟨A, s₀, hb, ht, hu⟩, hz⟩
 
@@ -2250,7 +2250,7 @@ theorem vafter_ct (base : Addr) (S K : Nat) :
     exact scr_agree hx.scr hy.scr
   cases fv
   · exact ctRegs [.r0] hp (by native_taint_decide)
-  · exact ctRegsU [.r0] hp (by taint_decide)
+  · exact ctRegsU [.r0] hp (by native_taint_decide)
 
 theorem verifyEquation_ct (hR : RecoverOk) :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub (verifyEquation fv) := by

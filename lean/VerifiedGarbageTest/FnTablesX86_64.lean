@@ -259,8 +259,14 @@ def untabled : EmitArtifact where
   contract := untabledContract
   verified := renderOnly_verified untabledVerified
 
-def prepared : Rust.Prepared := .of (.of artifact)
-def internals : List Rust.Internal := Rust.internalsOf [prepared]
+/-- The artifact `a`, and the internal functions its code calls. -/
+def linked (a : EmitArtifact) : Rust.Linked a.target :=
+  let ps : List (Rust.Prepared a.target) := [.of a.toArtifact]
+  .of ps (Rust.internalsOf ps)
+
+/-- `checkFnTables` of the artifact `a`, whose functions are `l`'s. -/
+def checked (a : EmitArtifact) (l : Rust.Linked a.target) : Except String Unit := do
+  Rust.checkFnTables l (← Rust.checkAllFnTables a.target.name [a]) (.of a.toArtifact)
 
 /-- The rendering: the indirect call is its instruction alone (`call r11`,
 `41 FF D3`, after `mov r11, [rdi]`, `4C 8B 1F`), and the documentation says
@@ -313,12 +319,14 @@ pub static VG_TEST_FNS_A: super::TestFns = super::TestFns {
   "pub use vg_test_fns_a::{VG_TEST_FNS_A, VG_TEST_FNS_A_FEATURES};\n").length == 2
 
 -- Both functions the indirect call may reach are emitted, as internal functions.
-#guard internals.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]
-#guard (Rust.checkCalls [prepared] internals prepared) matches .ok _
-#guard (Rust.checkFnTables [prepared] internals prepared) matches .ok _
-#guard (Rust.checkFeatures prepared) matches .ok _
+#guard (linked artifact).hs.map (·.name) == ["vg_test_fn_a", "vg_test_fn_b"]
+#guard (Rust.checkCalls (linked artifact)) matches .ok _
+#guard (checked artifact (linked artifact)) matches .ok _
+#guard (Rust.checkFeatures (T := artifact.target) (.of artifact.toArtifact)) matches .ok _
+-- Nor is the indirect call checked unless they are.
+#guard (Rust.checkCalls (T := artifact.target) (.of [.of artifact.toArtifact] [])) matches .error _
 -- A table naming a function that is not emitted is refused.
-#guard (Rust.checkFnTables [prepared] [] prepared) matches .error _
+#guard (checked artifact (.of [.of artifact.toArtifact] [])) matches .error _
 
 /-! ## The interface the signature names
 
@@ -327,8 +335,7 @@ The signature, not the registration, says which tables the function takes
 
 /-- The error that `checkFnTables` reports of `a`, or nothing. -/
 def refusal (a : EmitArtifact) : String :=
-  let p : Rust.Prepared := .of (.of a)
-  match Rust.checkFnTables [p] (Rust.internalsOf [p]) p with
+  match checked a (linked a) with
   | .ok _ => ""
   | .error e => e
 

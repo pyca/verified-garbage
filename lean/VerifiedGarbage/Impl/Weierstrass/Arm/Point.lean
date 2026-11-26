@@ -43,16 +43,23 @@ def callR (enc : Nat → Nat) (f : String) (body : Prog isa) (o a b : Nat) : Pro
   .seq (.block [.mov .r0 (.reg .r12), .movw .r1 (BitVec.ofNat 16 (enc o)), .movw .r2 (BitVec.ofNat 16 (enc a)),
     .movw .r3 (BitVec.ofNat 16 (enc b))]) (.call f body)
 
+/-- The code of a field operation modulo `S` on the slots `enc` gives, where the codes of the
+functions are `mul`, `add` and `sub`. (Each list of operations computes the three once: `fprogR`.) -/
+def opCodeOf (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool) (mul add sub : Prog isa) :
+    FOp → Prog isa
+  | .mul o a b => callR enc (Mont.mulName u S) mul o a b
+  | .add o a b => callR enc (Mont.addName u S) add o a b
+  | .sub o a b => callR enc (Mont.subName u S) sub o a b
+
 /-- The code of a field operation modulo `S` on the slots `enc` gives. -/
-def opCodeR (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
-  | .mul o a b => callR enc (Mont.mulName u S) (Mont.mulFnWith u S.k S.m) o a b
-  | .add o a b => callR enc (Mont.addName u S) (Mont.addFnWith u S.k S.m) o a b
-  | .sub o a b => callR enc (Mont.subName u S) (Mont.subFnWith u S.k S.m) o a b
+def opCodeR (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) (op : FOp) : Prog isa :=
+  opCodeOf enc S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m) (Mont.subFnWith u S.k S.m) op
 
 /-- A straight-line sequence of field operations on the slots `enc` gives. -/
 def fprogR (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) :
     Prog isa :=
-  progs (ops.map (opCodeR enc S u))
+  progs (ops.map (opCodeOf enc S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m)
+    (Mont.subFnWith u S.k S.m)))
 
 /-! ## The slots, by number -/
 

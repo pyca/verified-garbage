@@ -27,12 +27,10 @@ block functions, internal too: an internal function names another.
 namespace VG.Test.Internal
 open VG
 
-def emitted (as : List (Artifact AArch64.target)) : List EmitArtifact :=
-  EmitArtifact.ofList AArch64.target AArch64.emitter as
+def arts : List (Artifact AArch64.target) := Artifacts.Rc2.AArch64.artifacts
 
-def arts : List EmitArtifact := emitted Artifacts.Rc2.AArch64.artifacts
-
-def filesOf (as : List EmitArtifact) : List (String × String) := match Rust.files as with
+def filesOf (as : List (Artifact AArch64.target)) : List (String × String) :=
+  match Rust.files [.of AArch64.target AArch64.emitter [("", as)]] with
   | .ok fs => fs
   | .error e => [("error", e)]
 
@@ -76,7 +74,7 @@ def internal : List String := ["vg_rc2_decrypt_block", "vg_rc2_encrypt_block", "
   "vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key::vg_rc2_expand_key,\n"
 #guard has (file "src/rc2_cbc.rs")
   "vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block::vg_rc2_encrypt_block,\n"
-#guard has (fileIn (filesOf (emitted (Artifacts.Aes.AArch64.artifacts ++ Artifacts.AesXts.AArch64.artifacts)))
+#guard has (fileIn (filesOf (Artifacts.Aes.AArch64.artifacts ++ Artifacts.AesXts.AArch64.artifacts))
     "src/internal/vg_aes_xts_encrypt.rs")
   "vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,\n"
 #guard has (file "src/internal/vg_rc2_encrypt_block.rs")
