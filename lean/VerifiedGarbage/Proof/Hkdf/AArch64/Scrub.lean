@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Hkdf.AArch64.Table
 public import VerifiedGarbage.Proof.Hkdf.Common
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.AArch64.SideFillT
+public import VerifiedGarbage.Proof.HmacTable.AArch64.Up
 public import VerifiedGarbage.Impl.Hkdf.AArch64.Fn
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -32,7 +33,7 @@ namespace VG.Proof.Hkdf.AArch64.Scrub
 
 open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
-open VG.Proof.HmacTable.AArch64 (tables fnsOf)
+open VG.Proof.HmacTable.AArch64 (HmacUp tables fnsOf names stubFns fnsOf_up mem_tableFns variants_up)
 open VG.Impl.Hkdf.AArch64 (kFr xFr eFr)
 
 /-! ## `vg_hkdf_key` -/
@@ -66,16 +67,22 @@ theorem keyOk (vs : List MdHash) :
   scrubAllOk_tables (scrubAllOk_regs (sig := Spec.Hkdf.keySig) (Nat.le_of_ble_eq_true rfl) (by decide)
     (Nat.le_refl _) keyLocal)
 
+theorem key_tfill {vs : List MdHash} (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill 1 (names vs) (Impl.Hkdf.AArch64.key stubFns) (Impl.Hkdf.AArch64.key (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
+
 /-- `vg_hkdf_key` as emitted, cleanup included (`Impl.Hkdf.AArch64.Fn.key`),
 with the tables of `vs`: it meets its contract in constant time and returns
-without secret residue, given what the cleanup needs of the code, which
-the registration's variants' evaluate. -/
+without secret residue, given what the cleanup needs of each variant's
+functions (`HmacUp`). -/
 theorem key_scrubbed {vs : List MdHash} (hO : Proof.Hkdf.AArch64.OK vs) (hS : Proof.Hkdf.AArch64.Streams vs)
-    (hdit : (Impl.Hkdf.AArch64.key (fnsOf vs)).all (fun i => !i.writesDit) = true)
-    (ht : tablesCall (Impl.Hkdf.AArch64.key (fnsOf vs)) [("hmac", tables vs)] = true)
-    (hd : 16 * (Impl.Hkdf.AArch64.key (fnsOf vs)).aarch64Depth ≤ kFr + 32) :
-    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.key (fnsOf vs)) (Proof.Hkdf.AArch64.specKey vs) 0 :=
-  verifiedScrubbedOfTA (Proof.Hkdf.AArch64.key_spec hO hS) (keyOk vs) (by decide) hd hdit
+    (hv : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.key (fnsOf vs)) (Proof.Hkdf.AArch64.specKey vs) 0 := by
+  obtain ⟨hdit, ht, hd⟩ := (key_tfill hv).ok (fun _ h => mem_tableFns h)
+    (d := (kFr + 32) / 16) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  exact verifiedScrubbedOfTA (Proof.Hkdf.AArch64.key_spec hO hS) (keyOk vs) (by decide)
+    (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hdit
     (fun _ _ h => contract_pub h) ht (.inl rfl)
 
 /-! ## `vg_hkdf_extract` -/
@@ -106,14 +113,20 @@ theorem extractOk (vs : List MdHash) :
   scrubAllOk_tables (scrubAllOk_regs_pre (sig := Spec.Hkdf.extractSig) (Nat.le_of_ble_eq_true rfl) (by decide)
     (Nat.le_refl _) extractLocal)
 
+theorem extract_tfill {vs : List MdHash} (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill 1 (names vs) (Impl.Hkdf.AArch64.extract stubFns) (Impl.Hkdf.AArch64.extract (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
+
 /-- `vg_hkdf_extract` as emitted, cleanup included
 (`Impl.Hkdf.AArch64.Fn.extract`), with the tables of `vs`. -/
 theorem extract_scrubbed {vs : List MdHash} (hO : Proof.Hkdf.AArch64.OK vs) (hS : Proof.Hkdf.AArch64.Streams vs)
-    (hdit : (Impl.Hkdf.AArch64.extract (fnsOf vs)).all (fun i => !i.writesDit) = true)
-    (ht : tablesCall (Impl.Hkdf.AArch64.extract (fnsOf vs)) [("hmac", tables vs)] = true)
-    (hd : 16 * (Impl.Hkdf.AArch64.extract (fnsOf vs)).aarch64Depth ≤ xFr + 32) :
-    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.extract (fnsOf vs)) (Proof.Hkdf.AArch64.specExtract vs) 0 :=
-  verifiedScrubbedOfTA (Proof.Hkdf.AArch64.extract_spec hO hS) (extractOk vs) (by decide) hd hdit
+    (hv : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.extract (fnsOf vs)) (Proof.Hkdf.AArch64.specExtract vs) 0 := by
+  obtain ⟨hdit, ht, hd⟩ := (extract_tfill hv).ok (fun _ h => mem_tableFns h)
+    (d := (xFr + 32) / 16) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  exact verifiedScrubbedOfTA (Proof.Hkdf.AArch64.extract_spec hO hS) (extractOk vs) (by decide)
+    (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hdit
     (fun _ _ h => contract_pub h) ht (.inl rfl)
 
 /-! ## `vg_hkdf_expand` -/
@@ -141,14 +154,20 @@ theorem expandOk (vs : List MdHash) :
   scrubAllOk_tables (scrubAllOk_regs (sig := Spec.Hkdf.expandSig) (Nat.le_of_ble_eq_true rfl) (by decide)
     (Nat.le_refl _) expandLocal)
 
+theorem expand_tfill {vs : List MdHash} (hv : ∀ w ∈ vs, HmacUp w) :
+    TFill 1 (names vs) (Impl.Hkdf.AArch64.expand stubFns) (Impl.Hkdf.AArch64.expand (fnsOf vs)) := by
+  obtain ⟨hI, hU, hF⟩ := fnsOf_up hv
+  tfill_calls
+
 /-- `vg_hkdf_expand` as emitted, cleanup included
 (`Impl.Hkdf.AArch64.Fn.expand`), with the tables of `vs`. -/
 theorem expand_scrubbed {vs : List MdHash} (hO : Proof.Hkdf.AArch64.OK vs) (hS : Proof.Hkdf.AArch64.Streams vs)
-    (hdit : (Impl.Hkdf.AArch64.expand (fnsOf vs)).all (fun i => !i.writesDit) = true)
-    (ht : tablesCall (Impl.Hkdf.AArch64.expand (fnsOf vs)) [("hmac", tables vs)] = true)
-    (hd : 16 * (Impl.Hkdf.AArch64.expand (fnsOf vs)).aarch64Depth ≤ eFr + 32) :
-    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.expand (fnsOf vs)) (Proof.Hkdf.AArch64.specExpand vs) 0 :=
-  verifiedScrubbedOfTA (Proof.Hkdf.AArch64.expand_spec hO hS) (expandOk vs) (by decide) hd hdit
+    (hv : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.expand (fnsOf vs)) (Proof.Hkdf.AArch64.specExpand vs) 0 := by
+  obtain ⟨hdit, ht, hd⟩ := (expand_tfill hv).ok (fun _ h => mem_tableFns h)
+    (d := (eFr + 32) / 16) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  exact verifiedScrubbedOfTA (Proof.Hkdf.AArch64.expand_spec hO hS) (expandOk vs) (by decide)
+    (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hdit
     (fun _ _ h => contract_pub h) ht (.inl rfl)
 
 /-! ## The registrations' variants -/
@@ -179,22 +198,20 @@ theorem variants_streams : Proof.Hkdf.AArch64.Streams variants := by
 /-- `vg_hkdf_key` as emitted, with the tables of the registrations' variants. -/
 theorem key_scrubbedV :
     VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.key (fnsOf variants)) (Proof.Hkdf.AArch64.specKey variants) 0 :=
-  key_scrubbed variants_ok variants_streams (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+  key_scrubbed variants_ok variants_streams variants_up
 
 /-- `vg_hkdf_extract` as emitted, with the tables of the registrations'
 variants. -/
 theorem extract_scrubbedV :
     VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.extract (fnsOf variants))
       (Proof.Hkdf.AArch64.specExtract variants) 0 :=
-  extract_scrubbed variants_ok variants_streams (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+  extract_scrubbed variants_ok variants_streams variants_up
 
 /-- `vg_hkdf_expand` as emitted, with the tables of the registrations'
 variants. -/
 theorem expand_scrubbedV :
     VerifiedScrubbed target (Impl.Hkdf.AArch64.Fn.expand (fnsOf variants))
       (Proof.Hkdf.AArch64.specExpand variants) 0 :=
-  expand_scrubbed variants_ok variants_streams (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+  expand_scrubbed variants_ok variants_streams variants_up
 
 end VG.Proof.Hkdf.AArch64.Scrub

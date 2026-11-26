@@ -114,7 +114,7 @@ theorem p192Sign_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstra
       32 :=
   Scrub.sign_scrubbed (R := p192 hL hI)
     (p192T_verified hL hI _ Scrub.variants_ok) rfl p192_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_p192_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.P192.Joint.Fn.verifyHash`): it meets its contract in
