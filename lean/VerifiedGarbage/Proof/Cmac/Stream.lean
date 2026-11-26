@@ -46,11 +46,34 @@ theorem chainedLen_add_held (n : Nat) : chainedLen 16 n + held n = n := by
 
 theorem chainedLen_mod (n : Nat) : chainedLen 16 n % 16 = 0 := by unfold chainedLen; omega_arith
 
+/-- Past a whole number `c` of blocks, at most one more: the first `c` are chained. -/
+theorem chainedLen_of {c e : Nat} (he : 0 < e) (he' : e ≤ 16) : chainedLen 16 (16 * c + e) = 16 * c := by
+  rw [chainedLen, show 16 * c + e + 16 - 1 = 16 * (c + 1) + (e - 1) by omega_using [he], Nat.mul_add_div (by decide),
+    Nat.div_eq_of_lt (by omega_using [he, he']), Nat.add_zero, Nat.add_sub_cancel]
+
+theorem held_of {c e : Nat} (he : 0 < e) (he' : e ≤ 16) : held (16 * c + e) = e := by
+  rw [held, chainedLen_of he he', Nat.add_sub_cancel_left]
+
+/-- `n` is 0, or `16 c + e` with `0 < e ≤ 16`. -/
+theorem split16 (n : Nat) : n = 0 ∨ ∃ c e, 0 < e ∧ e ≤ 16 ∧ n = 16 * c + e := by
+  rcases Nat.eq_zero_or_pos n with h | h
+  · exact .inl h
+  · exact .inr ⟨(n - 1) / 16, (n - 1) % 16 + 1, Nat.succ_pos _, Nat.mod_lt _ (by decide), by
+      rw [← Nat.add_assoc, Nat.div_add_mod, Nat.sub_add_cancel h]⟩
+
 theorem chainedLen_fill {n l : Nat} (h : l ≤ 16 - held n) : chainedLen 16 (n + l) = chainedLen 16 n := by
-  unfold held chainedLen at *; omega_arith
+  rcases split16 n with rfl | ⟨c, e, he, he', rfl⟩
+  · rw [held_zero] at h
+    rcases Nat.eq_zero_or_pos l with rfl | hl
+    · rfl
+    · rw [chainedLen_of (c := 0) hl h]; rfl
+  · rw [held_of he he'] at h
+    rw [Nat.add_assoc, chainedLen_of (by omega_using [he]) (by omega_using [h, he']), chainedLen_of he he']
 
 theorem held_fill {n l : Nat} (h : l ≤ 16 - held n) : held (n + l) = held n + l := by
-  unfold held chainedLen at *; omega_arith
+  have hc := chainedLen_fill h
+  have := chainedLen_add_held n
+  rw [held, hc]; omega_using [this]
 
 /-- The number of whole blocks of `d` chained after the block held back is
 completed with the first `16 - held n` bytes of `d`. -/
@@ -58,11 +81,26 @@ def nblocks (n l : Nat) : Nat := (l - (16 - held n) - 1) / 16
 
 theorem chainedLen_chain {n l : Nat} (h : 16 - held n < l) :
     chainedLen 16 (n + l) = chainedLen 16 n + 16 + 16 * nblocks n l := by
-  unfold nblocks held chainedLen at *; omega_arith
+  unfold nblocks
+  -- The bytes after the completed block: `16 k + e`, `0 < e ≤ 16`.
+  obtain ⟨k, e, he, he', hk⟩ : ∃ k e, 0 < e ∧ e ≤ 16 ∧ l - (16 - held n) = 16 * k + e :=
+    (split16 _).resolve_left (by omega_using [h])
+  rw [hk, show 16 * k + e - 1 = 16 * k + (e - 1) by omega_using [he], Nat.mul_add_div (by decide),
+    Nat.div_eq_of_lt (by omega_using [he, he']), Nat.add_zero]
+  have hn : chainedLen 16 n + held n = n := chainedLen_add_held n
+  have h16 : chainedLen 16 n = 16 * ((n + 16 - 1) / 16 - 1) := rfl
+  rw [show n + l = 16 * ((n + 16 - 1) / 16 - 1 + 1 + k) + e by omega_using [hn, h16, hk, h, held_le n],
+    chainedLen_of he he', h16, Nat.mul_add, Nat.mul_add]
+  rfl
 
 theorem held_chain {n l : Nat} (h : 16 - held n < l) :
     held (n + l) = l - (16 - held n) - 16 * nblocks n l := by
-  unfold nblocks held chainedLen at *; omega_arith
+  have hc := chainedLen_chain h
+  have hn := chainedLen_add_held n
+  rw [held, hc]
+  generalize chainedLen 16 n = c at hn ⊢
+  generalize 16 * nblocks n l = k
+  omega_using [hn, h, held_le n]
 
 theorem held_chain_pos {n l : Nat} (h : 16 - held n < l) :
     0 < l - (16 - held n) - 16 * nblocks n l ∧ l - (16 - held n) - 16 * nblocks n l ≤ 16 := by

@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Camellia.Words
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
 import Std.Data.DTreeMap.Internal.Balancing
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `Camellia.KeySched`, which this module and modules that import it used -/
 
@@ -149,43 +150,62 @@ def rotHalf (H L : BitVec 64) (r : Nat) (hi : Bool) : BitVec 64 :=
 
 theorem rot128_bit (H L : BitVec 64) {r k : Nat} (hr : r < 128) (hk : k < 128) :
     ((H ++ L : BitVec (64 + 64)).rotateLeft r).getLsbD k =
-      if (k + 128 - r) % 128 < 64 then L.getLsbD ((k + 128 - r) % 128) else H.getLsbD ((k + 128 - r) % 128 - 64) := by
-  rw [BitVec.getLsbD_rotateLeft]
-  simp only [show r % (64 + 64) = r by omega_using [hr]]
-  split <;> rename_i h1 <;> simp only [BitVec.getLsbD_append, show k < 64 + 64 by omega_using [hk], decide_true, Bool.true_and] <;>
-    split <;> rename_i h2 <;> split <;> rename_i h3 <;> first | omega | (congr 1; omega_arith)
+      if k < r then (H ++ L : BitVec (64 + 64)).getLsbD (128 - r + k) else (H ++ L : BitVec (64 + 64)).getLsbD (k - r) := by
+  rw [BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hr]
+  simp only [show k < 64 + 64 from hk, decide_true, Bool.true_and]
+
+/-- Bit `t` of one half of `rotHalf`, from the two it joins. -/
+theorem join_bit (a b : BitVec 64) {s t : Nat} (ht : t < 64) :
+    (if s = 0 then a else (a <<< s) ||| (b >>> (64 - s))).getLsbD t =
+      if t < s then b.getLsbD (64 - s + t) else a.getLsbD (t - s) := by
+  by_cases h0 : s = 0
+  · subst h0; rfl
+  rw [ite_eq_right h0, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight]
+  by_cases h : t < s
+  · simp only [h, ite_true, decide_true, Bool.not_true, Bool.and_false, Bool.false_and, Bool.false_or]
+  · rw [BitVec.getLsbD_of_ge b _ (by omega_using [h])]
+    simp only [h, ht, ite_false, decide_true, decide_false, Bool.not_false, Bool.and_true, Bool.true_and, Bool.or_false]
 
 theorem hi_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : hi (H ++ L) r = rotHalf H L r true := by
   apply BitVec.eq_of_getLsbD_eq; intro t ht
   change ((((H ++ L : BitVec (64 + 64)).rotateLeft r) >>> 64).setWidth 64).getLsbD t = _
   rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, rot128_bit H L hr (by omega_using [ht])]
-  simp only [ht, decide_true, Bool.true_and, rotHalf]
-  by_cases h64 : r < 64 <;> by_cases h0 : r % 64 = 0 <;>
-    simp only [h64, h0, decide_true, decide_false, ↓reduceIte, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, ht, Bool.true_and]
-  all_goals (try simp only [Bool.false_eq_true, ↓reduceIte])
-  all_goals (by_cases h2 : t < r % 64 <;>
-    (try simp only [h2, decide_true, decide_false, Bool.not_true, Bool.not_false, Bool.false_and, Bool.true_and,
-      Bool.false_or]) <;>
-    split <;> rename_i h1 <;>
-    (try rw [BitVec.getLsbD_of_ge _ (64 - r % 64 + t) (by omega), Bool.or_false]) <;>
-    first | omega | (congr 1; omega_arith))
+  simp only [ht, decide_true, Bool.true_and, rotHalf, join_bit _ _ ht, BitVec.getLsbD_append]
+  by_cases h64 : r < 64
+  · simp only [h64, decide_true, ite_true, Nat.mod_eq_of_lt h64, show ¬ (64 + t < r) by omega_using [h64], ite_false]
+    by_cases h : t < r
+    · simp only [h, show 64 + t - r < 64 by omega_using [h], ite_true]
+      exact congrArg _ (by omega_using [h64])
+    · simp only [h, show ¬ (64 + t - r < 64) by omega_using [h], ite_false]
+      exact congrArg _ (by omega_using [])
+  · obtain ⟨s, rfl⟩ : ∃ s, r = 64 + s := ⟨r - 64, by omega_using [h64]⟩
+    have hs : s < 64 := by omega_using [hr]
+    simp only [h64, decide_false, Bool.false_eq_true, ite_false, Nat.add_mod_left, Nat.mod_eq_of_lt hs,
+      Nat.add_lt_add_iff_left, Nat.add_sub_add_left]
+    by_cases h : t < s
+    · simp only [h, show ¬ (128 - (64 + s) + (64 + t) < 64) by omega_using [hs], ite_true, ite_false]
+      exact congrArg _ (by omega_using [hs])
+    · simp only [h, show t - s < 64 by omega_using [ht], ite_true, ite_false]
 
 theorem lo_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : lo (H ++ L) r = rotHalf H L r false := by
   apply BitVec.eq_of_getLsbD_eq; intro t ht
   change (((H ++ L : BitVec (64 + 64)).rotateLeft r).setWidth 64).getLsbD t = _
   rw [BitVec.getLsbD_setWidth, rot128_bit H L hr (by omega_using [ht])]
-  simp only [ht, decide_true, Bool.true_and, rotHalf]
-  by_cases h64 : r < 64 <;> by_cases h0 : r % 64 = 0 <;>
-    simp only [h64, h0, decide_true, decide_false, ↓reduceIte, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, ht, Bool.true_and]
-  all_goals (try simp only [Bool.false_eq_true, ↓reduceIte])
-  all_goals (by_cases h2 : t < r % 64 <;>
-    (try simp only [h2, decide_true, decide_false, Bool.not_true, Bool.not_false, Bool.false_and, Bool.true_and,
-      Bool.false_or]) <;>
-    split <;> rename_i h1 <;>
-    (try rw [BitVec.getLsbD_of_ge _ (64 - r % 64 + t) (by omega), Bool.or_false]) <;>
-    first | omega | (congr 1; omega_arith))
+  simp only [ht, decide_true, Bool.true_and, rotHalf, join_bit _ _ ht, BitVec.getLsbD_append]
+  by_cases h64 : r < 64
+  · simp only [h64, decide_true, Bool.true_eq_false, ite_false, Nat.mod_eq_of_lt h64]
+    by_cases h : t < r
+    · simp only [h, show ¬ (128 - r + t < 64) by omega_using [h64], ite_true, ite_false]
+      exact congrArg _ (by omega_using [h64])
+    · simp only [h, show t - r < 64 by omega_using [ht], ite_true, ite_false]
+  · obtain ⟨s, rfl⟩ : ∃ s, r = 64 + s := ⟨r - 64, by omega_using [h64]⟩
+    have hs : s < 64 := by omega_using [hr]
+    simp only [h64, decide_false, ite_true, Nat.add_mod_left, Nat.mod_eq_of_lt hs, show t < 64 + s by omega_using [ht]]
+    by_cases h : t < s
+    · simp only [h, show 128 - (64 + s) + t < 64 by omega_using [h, hs], ite_true]
+      exact congrArg _ (by omega_using [hs])
+    · simp only [h, show ¬ (128 - (64 + s) + t < 64) by omega_using [h, hs], ite_false]
+      exact congrArg _ (by omega_using [h, hs])
 
 
 theorem split128 (x : BitVec 128) : x = hiW x ++ loW x := by
@@ -215,11 +235,11 @@ theorem scheduleWords_expandKey (key : List Byte) :
   · simp only [expandKey, h, ↓reduceIte, scheduleWords, subkeyWords, Impl.Camellia.subkeys128,
       Impl.Camellia.KL, Impl.Camellia.KA]
     simp (disch := decide) only [hi_split, lo_split]
-    simp [List.range_succ, List.flatMap_cons]
+    kernel_rfl
   · simp only [expandKey, h, ↓reduceIte, scheduleWords, subkeyWords, Impl.Camellia.subkeys256,
       Impl.Camellia.KL, Impl.Camellia.KR, Impl.Camellia.KA, Impl.Camellia.KB]
     simp (disch := decide) only [hi_split, lo_split]
-    simp [List.range_succ, List.flatMap_cons]
+    kernel_rfl
 
 end VG.Proof.Camellia
 

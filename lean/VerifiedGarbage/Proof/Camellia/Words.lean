@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.Camellia
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
+
 /-!
 # Camellia in terms of the words of a table of subkeys
 
@@ -52,14 +54,10 @@ def decPerm (g i : Nat) : Nat :=
 
 theorem encryptWith_eq {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : BitVec 128) :
     encryptWith (subkeysOfWords R ws) m = cryptWords (R / 6) (fun i => ws.getD i 0) m := by
-  rcases hR with rfl | rfl <;>
-  simp [encryptWith, subkeysOfWords, cryptWords, groups, group, pair, List.range_succ,
-    List.flatMap_cons]
+  rcases hR with rfl | rfl <;> kernel_rfl
 
 theorem decryptWith_eq {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : BitVec 128) :
     decryptWith (subkeysOfWords R ws) m = cryptWords (R / 6) (fun i => ws.getD (decPerm (R / 6) i) 0) m := by
-  rcases hR with rfl | rfl <;>
-  simp [decryptWith, reverseSubkeys, encryptWith, subkeysOfWords, cryptWords, groups, group, pair,
-    List.range_succ, List.flatMap_cons, decPerm]
+  rcases hR with rfl | rfl <;> kernel_rfl
 
 end VG.Proof.Camellia

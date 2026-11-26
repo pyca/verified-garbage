@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Spec.Camellia
 
@@ -50,33 +51,44 @@ def pRow : Nat → List Nat
 def xorRow (t : Nat → Byte) (l : List Nat) (j : Nat) : Bool :=
   l.foldr (fun i acc => (t i).getLsbD j ^^ acc) false
 
-set_option linter.unusedSimpArgs false in
+theorem getLsbD_cat_hi {n : Nat} (x : BitVec n) (y : Byte) (m : Nat) : (x ++ y).getLsbD (m + 8) = x.getLsbD m := by
+  rw [BitVec.getLsbD_append, ite_eq_right_of_eq_false _ _ (eq_false (by omega_using [])), Nat.add_sub_cancel]
+
+theorem getLsbD_cat_lo {n : Nat} (x : BitVec n) (y : Byte) {j : Nat} (hj : j < 8) : (x ++ y).getLsbD j = y.getLsbD j := by
+  rw [BitVec.getLsbD_append, ite_eq_left_of_eq_true _ _ (eq_true hj)]
+
 /-- Bit `56 - 8 i + j` of eight bytes appended is bit `j` of the `i`-th. -/
 theorem getLsbD_cat8 (y0 y1 y2 y3 y4 y5 y6 y7 : Byte) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (y0 ++ y1 ++ y2 ++ y3 ++ y4 ++ y5 ++ y6 ++ y7).getLsbD (56 - 8 * i + j) =
       ([y0, y1, y2, y3, y4, y5, y6, y7].getD i 0).getLsbD j := by
+  rw [Nat.add_comm (56 - 8 * i) j]
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_using [hi]) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [BitVec.getLsbD_append, List.getD_cons_succ, List.getD_cons_zero] <;>
-  simp (disch := omega) only [ite_eq_right_of_eq_false, ite_eq_left_of_eq_true, eq_false, eq_true,
-    Nat.reduceMul, Nat.reduceSub, ite_true, ite_false] <;>
-  congr 1 <;> omega_using []
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · show BitVec.getLsbD _ (j + 8 + 8 + 8 + 8 + 8 + 8 + 8) = y0.getLsbD j; simp only [getLsbD_cat_hi]
+  · show BitVec.getLsbD _ (j + 8 + 8 + 8 + 8 + 8 + 8) = y1.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ (j + 8 + 8 + 8 + 8 + 8) = y2.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ (j + 8 + 8 + 8 + 8) = y3.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ (j + 8 + 8 + 8) = y4.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ (j + 8 + 8) = y5.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ (j + 8) = y6.getLsbD j; simp only [getLsbD_cat_hi, getLsbD_cat_lo _ _ hj]
+  · show BitVec.getLsbD _ j = y7.getLsbD j; simp only [getLsbD_cat_lo _ _ hj]
+
+/-- The F-function as its eight bytes, from the S-boxes. -/
+theorem f_eq (x k : BitVec 64) (t : Nat → Byte) (ht : t = fun i => sboxAt i (byteOf (x ^^^ k) i)) :
+    f x k = (t 0 ^^^ t 2 ^^^ t 3 ^^^ t 5 ^^^ t 6 ^^^ t 7) ++ (t 0 ^^^ t 1 ^^^ t 3 ^^^ t 4 ^^^ t 6 ^^^ t 7) ++
+      (t 0 ^^^ t 1 ^^^ t 2 ^^^ t 4 ^^^ t 5 ^^^ t 7) ++ (t 1 ^^^ t 2 ^^^ t 3 ^^^ t 4 ^^^ t 5 ^^^ t 6) ++
+      (t 0 ^^^ t 1 ^^^ t 5 ^^^ t 6 ^^^ t 7) ++ (t 1 ^^^ t 2 ^^^ t 4 ^^^ t 6 ^^^ t 7) ++
+      (t 2 ^^^ t 3 ^^^ t 4 ^^^ t 5 ^^^ t 7) ++ (t 0 ^^^ t 3 ^^^ t 4 ^^^ t 5 ^^^ t 6) := by
+  subst ht; kernel_rfl
 
 theorem getLsbD_byteOf_f (x k : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (byteOf (f x k) i).getLsbD j =
       xorRow (fun i' => sboxAt i' (byteOf (x ^^^ k) i')) (pRow i) j := by
-  have ht : ∀ n, 1 ≤ n → n ≤ 8 →
-      ((x ^^^ k) >>> (64 - 8 * n)).setWidth 8 = byteOf (x ^^^ k) (n - 1) := fun n h1 h2 => by
-    simp only [byteOf]; congr 2; omega_using [h1]
-  -- In one pass: each `rw` would rebuild the whole (large) goal.
-  simp only [f, ht 1 (by omega_using []) (by omega_using []), ht 2 (by omega_using []) (by omega_using []), ht 3 (by omega_using []) (by omega_using []),
-    ht 4 (by omega_using []) (by omega_using []), ht 5 (by omega_using []) (by omega_using []), ht 6 (by omega_using []) (by omega_using []),
-    ht 7 (by omega_using []) (by omega_using []), ht 8 (by omega_using []) (by omega_using [])]
-  rw [getLsbD_byteOf _ hi hj, getLsbD_cat8 _ _ _ _ _ _ _ _ hi hj]
-  generalize byteOf (x ^^^ k) = b
+  obtain ⟨t, ht⟩ : ∃ t, t = fun i => sboxAt i (byteOf (x ^^^ k) i) := ⟨_, rfl⟩
+  rw [getLsbD_byteOf _ hi hj, f_eq x k t ht, getLsbD_cat8 _ _ _ _ _ _ _ _ hi hj, ← ht]
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_using [hi]) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [List.getD_cons_succ, List.getD_cons_zero, BitVec.getLsbD_xor, xorRow, pRow, sboxAt,
+  simp only [List.getD_cons_succ, List.getD_cons_zero, BitVec.getLsbD_xor, xorRow, pRow,
     List.foldr_cons, List.foldr_nil, Bool.xor_false, Bool.xor_assoc]
 
 /-! ## FL and FLINV, bit by bit

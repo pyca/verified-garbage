@@ -28,13 +28,30 @@ namespace VG.Proof.Blowfish
 
 open VG VG.Spec.Blowfish VG.Impl.Blowfish
 
+/-- Byte `b` of a word with a byte XORed in at byte `a`. -/
+theorem byte_or_shl (w : BitVec 64) (x : Byte) (a : Nat) {b : Nat} (hb : b < 8) :
+    (w ||| x.zeroExtend 64 <<< (8 * a)).extractLsb' (8 * b) 8 =
+      if a = b then w.extractLsb' (8 * b) 8 ||| x else w.extractLsb' (8 * b) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_or,
+    BitVec.getLsbD_shiftLeft, BitVec.truncate_eq_setWidth, BitVec.getLsbD_setWidth, show 8 * b + j < 64 by omega_using [hb, hj]]
+  by_cases h : a = b
+  · subst h
+    simp only [ite_true, BitVec.getLsbD_or, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
+      Nat.not_lt.mpr (Nat.le_add_right (8 * a) j), decide_false, Bool.not_false, Nat.add_sub_cancel_left,
+      show j < 64 by omega_using [hj]]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false h), BitVec.getLsbD_extractLsb']
+    simp only [hj, decide_true, Bool.true_and]
+    rcases Nat.lt_or_gt_of_ne h with h | h
+    · rw [BitVec.getLsbD_of_ge x _ (by omega_using [h]), Bool.and_false, Bool.and_false, Bool.or_false]
+    · rw [decide_eq_true (show 8 * b + j < 8 * a by omega_using [h, hj]), Bool.not_true, Bool.false_and, Bool.or_false]
+
 theorem initWord_byte (i : Nat) {b : Nat} (hb : b < 8) :
     (initWord i).extractLsb' (8 * b) 8 = initByte (8 * i + b) := by
-  simp only [initWord, List.range, List.range.loop, List.foldl_cons, List.foldl_nil]
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
+  simp only [initWord, List.range, List.range.loop, List.foldl_cons, List.foldl_nil, byte_or_shl _ _ _ hb]
   rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6 ∨ b = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) [hj, decide_eq_true, decide_eq_false, BitVec.getLsbD_of_ge]
+    simp only [Nat.reduceEqDiff, ite_true, ite_false] <;> exact BitVec.zero_or
 
 theorem initByte_entry {i b : Nat} (hi : i < 1042) (hb : b < 4) :
     initByte (entryOff i b) = (initial.getD i 0).extractLsb' (8 * b) 8 := by
@@ -103,9 +120,11 @@ theorem expandKey_step : (fun ((k : Schedule), xL, xR) j =>
   funext ⟨k, xL, xR⟩ j; rfl
 
 theorem expandKey_eq (key : List Byte) : expandKey key = (ksIter key 521).1 := by
-  -- Rewriting `keyed` too leaves both sides the same term, which the kernel
-  -- then compares without evaluating the 1042 entries of the initial schedule.
-  rw [expandKey, ksIter, ← expandKey_step, keyed]
+  rewrite [expandKey, ksIter, ← expandKey_step, ← keyed]
+  -- Of any state: the kernel would evaluate the 521 steps to take this one apart.
+  generalize List.foldl _ _ _ = st
+  obtain ⟨_, _, _⟩ := st
+  rfl
 
 end VG.Proof.Blowfish
 
