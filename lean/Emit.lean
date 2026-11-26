@@ -99,7 +99,8 @@ def modulesUnder (ext : String) (dir : System.FilePath) (out module : String) (a
 
 /-- The setup file of every program (`lean --setup`): a module, which may
 import any module of this project's library, and any built module of the other
-directories of `LEAN_PATH` (as `lake env` sets it: the dependencies' and Lean's), by
+directories of `LEAN_PATH` (as `lake env` sets it: the dependencies' and Lean's; one
+that it lists twice, as a `lake env` inside another makes it, once), by
 the files `moduleFiles` names, and which loads the shared libraries `libs`. This
 project's are listed by its sources: its build directory holds a dozen files of each
 module, which take ten times longer to list. -/
@@ -107,10 +108,13 @@ def setupJson (libs : List System.FilePath) : IO String := do
   let real (p : System.FilePath) : IO String := return (← IO.FS.realPath p).toString
   let own ← real (".lake" / "build" / "lib" / "lean")
   let mut files ← modulesUnder ".lean" "VerifiedGarbage" (own ++ "/VerifiedGarbage") "VerifiedGarbage" #[] 64
+  let mut seen := [own]
   for root in System.SearchPath.parse ((← IO.getEnv "LEAN_PATH").getD "") do
     unless ← root.isDir do continue
     let root ← real root
-    unless root == own do files ← modulesUnder ".olean" root root "" files 64
+    if seen.contains root then continue
+    seen := root :: seen
+    files ← modulesUnder ".olean" root root "" files 64
   let libs ← libs.mapM fun l => return "\"" ++ (← plain (← real l)) ++ "\""
   return "{\"name\":\"_unknown\",\"isModule\":true,\"importArts\":{" ++
     ",".intercalate files.toList ++ "},\"dynlibs\":[" ++ ",".intercalate libs ++
