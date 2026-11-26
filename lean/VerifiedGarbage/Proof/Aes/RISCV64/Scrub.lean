@@ -41,6 +41,8 @@ meta import VerifiedGarbage.Proof.Aes.Scratch
 meta import VerifiedGarbage.Proof.AesEcb.Wipe
 meta import VerifiedGarbage.Proof.AesCbc.Wipe
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 /-!
 # AES and its modes on RISC-V, without secret residue
 
@@ -228,6 +230,31 @@ theorem ofbFinalOut (stack : Nat) :
 
 /-! ## The functions as emitted -/
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 512 [])
+      (Impl.Scrub.RISCV64.scrubSelBody []
+        (Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 80 [])
+      (Impl.Scrub.RISCV64.scrubSelBody []
+        (Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 64 [])
+      (Impl.Scrub.RISCV64.scrubSelBody []
+        (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 64 [])
+      (Impl.Scrub.RISCV64.scrubSelBody []
+        (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 64 [])
+      (Impl.Scrub.RISCV64.scrubSelBody []
+        (Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal))
+      (RTaint.done 64) := by
+  taint_decide_ct_all
+
 /-- `vg_aes_expand_key` as emitted (`Impl.Aes.RISCV64.Fn.expandKey`) meets its contract in
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
@@ -235,7 +262,7 @@ theorem expandKey_scrubbed :
   verifiedScrubbedSel (api := Spec.Aes.expandKeyApi) (W := 512)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
       verified := Proof.Aes.RISCV64.expandKey_framed }
-    [] [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    [] [] (expandKeyOut _) (by lit_decide) (hbp_nil _) residue.1
 
 /-- `vg_aes_ecb_encrypt` as emitted (`Impl.Aes.RISCV64.Fn.ecbEncrypt`) meets its contract in
 constant time and returns without secret residue. -/
@@ -321,7 +348,7 @@ theorem ctrFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Ctr.aesFinalApi) (W := 80)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
       verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed }
-    [] [] (ctrFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    [] [] (ctrFinalOut _) (by lit_decide) (hbp_nil _) residue.2.1
 
 /-- `vg_aes_cfb128_encrypt` as emitted (`Impl.Aes.RISCV64.Fn.cfbEncrypt`) meets its contract in
 constant time and returns without secret residue. -/
@@ -348,7 +375,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cfb.aesEncryptFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal
       verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.RISCV64.Final.encryptFinal_framed }
-    [] [] (cfbEncryptFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    [] [] (cfbEncryptFinalOut _) (by lit_decide) (hbp_nil _) residue.2.2.1
 
 /-- `vg_aes_cfb128_decrypt_final` as emitted (`Impl.Aes.RISCV64.Fn.cfbDecryptFinal`) meets its contract in
 constant time and returns without secret residue. -/
@@ -357,7 +384,7 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cfb.aesDecryptFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal
       verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.RISCV64.Final.decryptFinal_framed }
-    [] [] (cfbDecryptFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    [] [] (cfbDecryptFinalOut _) (by lit_decide) (hbp_nil _) residue.2.2.2.1
 
 /-- `vg_aes_cfb8_encrypt` as emitted (`Impl.Aes.RISCV64.Fn.cfb8Encrypt`) meets its contract in
 constant time and returns without secret residue. -/
@@ -393,6 +420,6 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Ofb.aesFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal
       verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed }
-    [] [] (ofbFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    [] [] (ofbFinalOut _) (by lit_decide) (hbp_nil _) residue.2.2.2.2
 
 end VG.Proof.Aes.RISCV64.Scrub

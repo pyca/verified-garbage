@@ -44,6 +44,8 @@ meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 meta import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Blowfish on x86 (32-bit), without secret residue
@@ -265,6 +267,19 @@ theorem ecbDecrypt_scrubbed :
       verified := Proof.Blowfish.X86.ecb_framed false }
     (ecbOut .decrypt _)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cbcDecryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cfbDecrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.cfbDecryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 112 0) Impl.Blowfish.X86.Fn.ofbFinal (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Blowfish.cbcEncryptChainedApi` as emitted (`Impl.Blowfish.X86.Fn.cbcEncryptChained`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
@@ -272,7 +287,7 @@ theorem cbcEncryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncryptChained
       verified := Proof.Blowfish.X86.Cbc.cbcEncryptChained_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cbcEncryptOut _) (by decide) residue.1
 
 /-- `Spec.Blowfish.cbcDecryptChainedApi` as emitted (`Impl.Blowfish.X86.Fn.cbcDecryptChained`) meets its contract
 in constant time and returns without secret residue. -/
@@ -281,7 +296,7 @@ theorem cbcDecryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cbcDecryptChainedApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecryptChained
       verified := Proof.Blowfish.X86.Cbc.cbcDecryptChained_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cbcDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cbcDecryptOut _) (by decide) residue.2.1
 
 /-- `Spec.Blowfish.cfbEncryptApi` as emitted (`Impl.Blowfish.X86.Fn.cfbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -290,7 +305,7 @@ theorem cfbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
       verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cfbEncryptOut _) (by decide) residue.2.2.1
 
 /-- `Spec.Blowfish.cfbDecryptApi` as emitted (`Impl.Blowfish.X86.Fn.cfbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
@@ -299,7 +314,7 @@ theorem cfbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
       verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cfbDecryptOut _) (by decide) residue.2.2.2.1
 
 /-- `Spec.Blowfish.cfbEncryptFinalApi` as emitted (`Impl.Blowfish.X86.Fn.cfbEncryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -308,7 +323,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
       verified := Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cfbEncryptFinalOut _) (by decide) residue.2.2.2.2.1
 
 /-- `Spec.Blowfish.cfbDecryptFinalApi` as emitted (`Impl.Blowfish.X86.Fn.cfbDecryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -317,7 +332,7 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
       verified := Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }
-    Impl.Blowfish.X86.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (cfbDecryptFinalOut _) (by decide) residue.2.2.2.2.2.1
 
 /-- `Spec.Blowfish.ofbApi` as emitted (`Impl.Blowfish.X86.Fn.ofb`) meets its contract
 in constant time and returns without secret residue. -/
@@ -326,7 +341,7 @@ theorem ofb_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.ofbApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
       verified := Proof.Blowfish.X86.Fb.ofb_framed }
-    Impl.Blowfish.X86.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (ofbOut _) (by decide) residue.2.2.2.2.2.2.1
 
 /-- `Spec.Blowfish.ofbFinalApi` as emitted (`Impl.Blowfish.X86.Fn.ofbFinal`) meets its contract
 in constant time and returns without secret residue. -/
@@ -335,6 +350,6 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.ofbFinalApi) (W := 112)
     { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
       verified := Proof.Blowfish.X86.FbFinal.ofbFinal_framed }
-    Impl.Blowfish.X86.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Blowfish.X86.Fn.modeWords (ofbFinalOut _) (by decide) residue.2.2.2.2.2.2.2
 
 end VG.Proof.Blowfish.X86.Scrub

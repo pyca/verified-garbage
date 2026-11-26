@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Camellia.X86.AesNiFbFinal
 meta import VerifiedGarbage.Proof.Camellia.X86.AesNiLit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Camellia's chained modes by the AES S-box on x86 (32-bit), without secret residue
@@ -42,6 +44,17 @@ namespace VG.Proof.Camellia.X86.AesNi.Scrub
 open VG.X86 VG.X86.Scrub VG.Spec.Camellia
 open VG.Proof.Camellia.X86.Scrub (cbcEncryptOut cfbEncryptOut ofbOut cfbEncryptFinalOut cfbDecryptFinalOut ofbFinalOut)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.ofbFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 580 0) Impl.Camellia.X86.AesNi.Fn.cfbDecryptFinal (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Camellia.cbcEncryptChainedApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.cbcEncryptChained`) meets its
 contract in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
@@ -50,7 +63,7 @@ theorem cbcEncryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.cbcEncryptChainedApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.cbcEncryptChained
       verified := Proof.Camellia.X86.AesNi.Fb.cbcEncryptChained_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (cbcEncryptOut _) (by decide) residue.1
 
 /-- `Spec.Camellia.ofbApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.ofb`) meets its contract in constant time
 and returns without secret residue. -/
@@ -59,7 +72,7 @@ theorem ofb_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.ofbApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.ofb
       verified := Proof.Camellia.X86.AesNi.Fb.ofb_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (ofbOut _) (by decide) residue.2.1
 
 /-- `Spec.Camellia.ofbFinalApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.ofbFinal`) meets its contract in
 constant time and returns without secret residue. -/
@@ -68,7 +81,7 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.ofbFinalApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.ofbFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.ofbFinal_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (ofbFinalOut _) (by decide) residue.2.2.1
 
 /-- `Spec.Camellia.cfbEncryptApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.cfbEncrypt`) meets its contract in
 constant time and returns without secret residue. -/
@@ -78,7 +91,7 @@ theorem cfbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.cfbEncrypt
       verified := Proof.Camellia.X86.AesNi.Fb.cfbEncrypt_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptOut _) (by decide) residue.2.2.2.1
 
 /-- `Spec.Camellia.cfbEncryptFinalApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.cfbEncryptFinal`) meets its
 contract in constant time and returns without secret residue. -/
@@ -88,7 +101,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.cfbEncryptFinalApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.cfbEncryptFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.cfbEncryptFinal_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbEncryptFinalOut _) (by decide) residue.2.2.2.2.1
 
 /-- `Spec.Camellia.cfbDecryptFinalApi` as emitted (`Impl.Camellia.X86.AesNi.Fn.cfbDecryptFinal`) meets its
 contract in constant time and returns without secret residue. -/
@@ -98,6 +111,6 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Camellia.cfbDecryptFinalApi) (W := 580)
     { code := Impl.StackScratch.X86.withStackScratchWiped 576 5 136 Impl.Camellia.X86.AesNi.cfbDecryptFinal
       verified := Proof.Camellia.X86.AesNi.FbFinal.cfbDecryptFinal_framed }
-    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Camellia.X86.AesNi.Fn.modeWords (cfbDecryptFinalOut _) (by decide) residue.2.2.2.2.2
 
 end VG.Proof.Camellia.X86.AesNi.Scrub

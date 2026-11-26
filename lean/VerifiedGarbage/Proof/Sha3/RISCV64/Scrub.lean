@@ -19,6 +19,8 @@ meta import VerifiedGarbage.Proof.Sha3.RISCV64.Instances
 meta import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SHA-3 and SHAKE on RISC-V, without secret residue
@@ -61,6 +63,63 @@ theorem absorbOut (rate stack : Nat) :
     PostOut (updateContract RISCV64.abi rate stack) (updateSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.updatePost_out rate 64)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_224.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_256.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_384.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.hashSha3_512.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.absorb Spec.Sha3.xofShake128.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1200 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1200, [(24, 54), (140, 10)])]
+        (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1200 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1200, [(24, 54), (140, 10)])]
+        (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1200 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1200, [(24, 54), (140, 10)])]
+        (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1200 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1200, [(24, 54), (140, 10)])]
+        (Impl.Sha3.RISCV64.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1136 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1136, [(24, 50), (140, 2)])]
+        (Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake128.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake128.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1136 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1136, [(24, 50), (140, 2)])]
+        (Impl.Sha3.RISCV64.Instances.xofFinalize Spec.Sha3.xofShake256.rate))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 1168 [(.a0, 25 * Elem.u64.size)])
+      (Impl.Scrub.RISCV64.scrubSelBody [(1168, [(24, 50), (140, 6)])]
+        (Impl.Sha3.RISCV64.Instances.xofSqueeze Spec.Sha3.xofShake256.rate))
+      (RTaint.done 64) := by
+  taint_decide_ct_all
+
 /-- `vg_sha3_224_update` as emitted (`Impl.Sha3.RISCV64.Fn.update`) meets its contract in
 constant time and returns without secret residue. -/
 theorem update_sha3_224_scrubbed :
@@ -70,7 +129,7 @@ theorem update_sha3_224_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_224.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_224 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.1
 
 /-- `vg_sha3_256_update` as emitted (`Impl.Sha3.RISCV64.Fn.update`) meets its contract in
 constant time and returns without secret residue. -/
@@ -81,7 +140,7 @@ theorem update_sha3_256_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_256.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_256 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.1
 
 /-- `vg_sha3_384_update` as emitted (`Impl.Sha3.RISCV64.Fn.update`) meets its contract in
 constant time and returns without secret residue. -/
@@ -92,7 +151,7 @@ theorem update_sha3_384_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_384.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_384 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.1
 
 /-- `vg_sha3_512_update` as emitted (`Impl.Sha3.RISCV64.Fn.update`) meets its contract in
 constant time and returns without secret residue. -/
@@ -103,7 +162,7 @@ theorem update_sha3_512_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_512.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_512 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.1
 
 /-- `vg_shake128_update` as emitted (`Impl.Sha3.RISCV64.Fn.update`) meets its contract in
 constant time and returns without secret residue. -/
@@ -114,7 +173,7 @@ theorem update_shake128_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.absorb xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.2.1
 
 /-- `vg_sha3_224_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.finalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -125,7 +184,7 @@ theorem finalize_sha3_224_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_224.rate hashSha3_224.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_224 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_224 _ (by decide)) (by lit_decide)
-    (hbp_firstArray _ rfl) ⟨_, by taint_decide_ct⟩
+    (hbp_firstArray _ rfl) residue.2.2.2.2.2.1
 
 /-- `vg_sha3_256_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.finalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -136,7 +195,7 @@ theorem finalize_sha3_256_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_256.rate hashSha3_256.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_256 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_256 _ (by decide)) (by lit_decide)
-    (hbp_firstArray _ rfl) ⟨_, by taint_decide_ct⟩
+    (hbp_firstArray _ rfl) residue.2.2.2.2.2.2.1
 
 /-- `vg_sha3_384_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.finalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -147,7 +206,7 @@ theorem finalize_sha3_384_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_384.rate hashSha3_384.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_384 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_384 _ (by decide)) (by lit_decide)
-    (hbp_firstArray _ rfl) ⟨_, by taint_decide_ct⟩
+    (hbp_firstArray _ rfl) residue.2.2.2.2.2.2.2.1
 
 /-- `vg_sha3_512_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.finalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -158,7 +217,7 @@ theorem finalize_sha3_512_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_512.rate hashSha3_512.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_512 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_512 _ (by decide)) (by lit_decide)
-    (hbp_firstArray _ rfl) ⟨_, by taint_decide_ct⟩
+    (hbp_firstArray _ rfl) residue.2.2.2.2.2.2.2.2.1
 
 /-- `vg_shake128_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.xofFinalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -169,7 +228,7 @@ theorem finalize_shake128_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.xofFinalize xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.finalize_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (xofFinalizeOut xofShake128 _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_shake128_squeeze` as emitted (`Impl.Sha3.RISCV64.Fn.xofSqueeze`) meets its contract in
 constant time and returns without secret residue. -/
@@ -180,7 +239,7 @@ theorem squeeze_shake128_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.xofSqueeze xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (xofSqueezeOut xofShake128 _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_shake256_finalize` as emitted (`Impl.Sha3.RISCV64.Fn.xofFinalize`) meets its contract in
 constant time and returns without secret residue. -/
@@ -191,7 +250,7 @@ theorem finalize_shake256_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.xofFinalize xofShake256.rate,
       verified := Proof.Sha3.RISCV64.Instances.finalize_shake256 }
     _ [(.a0, 25 * Elem.u64.size)] (xofFinalizeOut xofShake256 _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_shake256_squeeze` as emitted (`Impl.Sha3.RISCV64.Fn.xofSqueeze`) meets its contract in
 constant time and returns without secret residue. -/
@@ -202,6 +261,6 @@ theorem squeeze_shake256_scrubbed :
     { code := Impl.Sha3.RISCV64.Instances.xofSqueeze xofShake256.rate,
       verified := Proof.Sha3.RISCV64.Instances.squeeze_shake256 }
     _ [(.a0, 25 * Elem.u64.size)] (xofSqueezeOut xofShake256 _) (by lit_decide) (hbp_firstArray _ rfl)
-    ⟨_, by taint_decide_ct⟩
+    residue.2.2.2.2.2.2.2.2.2.2.2.2
 
 end VG.Proof.Sha3.RISCV64

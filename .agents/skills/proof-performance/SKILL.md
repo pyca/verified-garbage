@@ -231,6 +231,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   68 s to 10 s). Of literals it gains nothing, nor where the checks
   share code but not the term asked of each instruction (a mask that
   differs), and `taint_decide` of different taints does not share.
+* **Residue analyses of functions that run the same code:** a cipher's modes,
+  or a hash's functions, reach the code they share in the same taint, its
+  literal or not, so their analyses in one declaration are little more than
+  one of them: prove them together, as a conjunction of `TaintCT.Ends`, by
+  `taint_decide_ct_all` (`Proof/Framework/TaintCTAll.lean`), and take each
+  function's from it (`residue`, `Proof/Camellia/X86/SseScrub.lean`: nine
+  modes, 4.2 s to 0.8 s in the kernel).
 * **Constant time of many callers of the same function:** prove the
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every

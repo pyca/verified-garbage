@@ -35,6 +35,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SM4-ECB on AArch64 returns without secret residue
@@ -80,13 +82,22 @@ theorem ecbDecryptScrubOk : RTaintF.ScrubOk (Spec.Sm4.ecbContract AArch64.abi Sp
 /-- `vg_sm4_ecb_decrypt`. -/
 abbrev ecbDecryptCode : Prog isa := Impl.Sm4.AArch64.Fn.ecbDecrypt
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, []))
+      Impl.Sm4.AArch64.Fn.ecbEncryptBase (doneG 3264 0 [0, 1, 2, 3, 4, 203]) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, []))
+      Impl.Sm4.AArch64.Fn.ecbDecryptBase (doneG 3264 0 [0, 1, 2, 3, 4, 203]) := by
+  taint_decide_ct_all
+
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ecbEncrypt
       (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.encrypt 3264) 0 :=
   AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ecbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbEncryptScrubOk
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+    (fun _ _ _ _ _ hb => by simp at hb) residue.1
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -94,6 +105,6 @@ theorem _root_.VG.Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ecbDecrypt
       (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.decrypt 3264) 0 :=
   AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbDecryptScrubOk
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+    (fun _ _ _ _ _ hb => by simp at hb) residue.2
 
 end VG.Proof.Sm4.AArch64.EcbResidue

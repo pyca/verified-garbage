@@ -51,6 +51,8 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # CAST5's modes over the look-ups by `pshufb` on x86 (32-bit): the contracts
@@ -613,6 +615,17 @@ theorem cbcEncryptChainedOut (stack : Nat) :
       rw [cbcBlocksAt_of0 hb.2.2 (lenP ln 8), bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 672 0) Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 672 0) Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 672 0) Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 672 0) Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 672 0) Fn.cfbDecryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 672 0) Fn.ofbFinal (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Cast5.cbcEncryptChainedApi` as emitted (`Impl.Cast5.X86.Ssse3.Fn.cbcEncryptChained`) meets its contract in
 constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
@@ -620,7 +633,7 @@ theorem cbcEncryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cbcEncryptChainedApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed cbcEncryptChained_framed }
-    Fn.words (cbcEncryptChainedOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (cbcEncryptChainedOut _) (by decide) residue.1
 
 /-! ## `ofb` -/
 
@@ -661,7 +674,7 @@ theorem ofb_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ofbApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 ofb
       verified := Proof.Cast5.ofb_keyed ofb_framed }
-    Fn.words (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (ofbOut _) (by decide) residue.2.1
 
 /-! ## `cfbEncrypt` -/
 
@@ -702,7 +715,7 @@ theorem cfbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed cfbEncrypt_framed }
-    Fn.words (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (cfbEncryptOut _) (by decide) residue.2.2.1
 
 /-! ## `cfbEncryptFinal` -/
 
@@ -743,7 +756,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptFinalApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed cfbEncryptFinal_framed }
-    Fn.words (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (cfbEncryptFinalOut _) (by decide) residue.2.2.2.1
 
 /-! ## `cfbDecryptFinal` -/
 
@@ -784,7 +797,7 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptFinalApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed cfbDecryptFinal_framed }
-    Fn.words (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (cfbDecryptFinalOut _) (by decide) residue.2.2.2.2.1
 
 /-! ## `ofbFinal` -/
 
@@ -825,6 +838,6 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Cast5.ofbFinalApi) (W := 672)
     { code := Impl.StackScratch.X86.withStackScratchWiped 664 5 158 ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed ofbFinal_framed }
-    Fn.words (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (ofbFinalOut _) (by decide) residue.2.2.2.2.2
 
 end VG.Proof.Cast5.X86.Ssse3
