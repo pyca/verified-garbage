@@ -315,10 +315,84 @@ theorem invAT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invAT j p, t.2 <
 theorem invBT_lt (j : Nat) {p : Nat} (hp : p < 128) : ∀ t ∈ invBT j p, t.2 < 128 :=
   withKey_lt (mixL_lt _ _ (sr2Src_lt hp))
 
-theorem linA_check : linCheck 8 linA subOut [] mid linAT = true := by decide +kernel
-theorem linB_check : linCheck 8 linB subOut [] mid linBT = true := by decide +kernel
-theorem invLinA_check : linCheck 8 invLinA invSubOut [] mid invAT = true := by decide +kernel
-theorem invLinB_check : linCheck 8 invLinB invSubOut [] mid invBT = true := by decide +kernel
+/-! ### The layers' bits, from the lanes of their positions -/
+
+/-- `linCheck`, with the lanes of the outputs' words given as numbers. -/
+def linCheckS (n : Nat) (is : List Instr) (li : Nat → Loc) (lo : Nat → Loc) (S : Nat → Nat) : Bool :=
+  sseOnly is && check (ofDom (lanes 128 11)) (cfg n) linExt is (envOf (linIns li [])) fun e =>
+    (List.range 8).all fun j => locOk (lo j) && outOkS 128 11 (locAt e (lo j)) (S j)
+
+theorem linCheck_of {n : Nat} {is : List Instr} {li lo : Nat → Loc} {T : Nat → Nat → List (Nat × Nat)} {S : Nat → Nat}
+    (hS : ∀ j, mk 128 (atoms T j) 128 = S j) (h : linCheckS n is li lo S = true) : linCheck n is li [] lo T = true := by
+  rw [linCheckS, Bool.and_eq_true] at h
+  obtain ⟨hs, h⟩ := h
+  obtain ⟨e', he, hp⟩ := of_check _ _ _ h
+  rw [linCheck, hs, Bool.true_and, check, he]
+  refine List.all_eq_true.mpr fun j hj => ?_
+  have := List.all_eq_true.mp hp j hj
+  rw [Bool.and_eq_true] at this ⊢
+  exact ⟨this.1, outOkW_of (hS j) this.2⟩
+
+/-- The positions of the bytes a column's output byte takes. -/
+def mixP (f : Bool) (i p : Nat) : Nat := posAt 8 f (down (byteAt 8 f p) i) (p % 8)
+
+/-- The round key's slice `j`, its lanes. -/
+def keyS (j : Nat) : Nat := mk 128 (fun p => [p]) 128 <<< (128 * 128 * (8 + j))
+
+/-- The lanes of the slices' word, and the same of the round key's. -/
+def withKeyS (x : Nat) : Nat := x ^^^ x <<< (128 * 128 * 8)
+
+def linAS (j : Nat) : Nat := mixS 128 (mixP true) (fun i => mulT (mcCoeffs.getD i 0) j) ^^^ keyS j
+def linBS (j : Nat) : Nat :=
+  mixS 128 (fun i p => sr2Src 8 (mixP false i p)) (fun i => mulT (mcCoeffs.getD i 0) j) ^^^ keyS j
+def invAS (j : Nat) : Nat := withKeyS (mixS 128 (mixP true) fun i => mulT (invMcCoeffs.getD i 0) j)
+def invBS (j : Nat) : Nat :=
+  withKeyS (mixS 128 (fun i p => mixP false i (sr2Src 8 p)) fun i => mulT (invMcCoeffs.getD i 0) j)
+
+theorem keyS_eq (j : Nat) : mk 128 (fun p => [128 * (8 + j) + p]) 128 = keyS j := mk_shift 128 (8 + j) (fun p => [p]) 128
+
+theorem withKeyS_eq (T : Nat → Nat → List (Nat × Nat)) (j : Nat) :
+    mk 128 (atoms (fun j p => withKey (T j p)) j) 128 = withKeyS (mk 128 (atoms T j) 128) := by
+  have h (q : Nat) (l : List (Nat × Nat)) : atomsAt 128 q ((withKey l).map fun t => 128 * t.1 + t.2) =
+      atomsAt 128 q ((l.map fun t => 128 * t.1 + t.2) ++ (l.map fun t => 128 * t.1 + t.2).map (128 * 8 + ·)) := by
+    rw [atomsAt_append]
+    induction l with
+    | nil => exact (Nat.xor_zero 0).symm
+    | cons t l ih =>
+      have e : 128 * (8 + t.1) + t.2 = 128 * 8 + (128 * t.1 + t.2) := by omega_arith
+      show 2 ^ _ ^^^ (2 ^ (128 * (128 * (8 + t.1) + t.2) + q) ^^^ atomsAt 128 q ((withKey l).map _)) =
+        (2 ^ _ ^^^ atomsAt 128 q _) ^^^ (2 ^ (128 * (128 * 8 + (128 * t.1 + t.2)) + q) ^^^ atomsAt 128 q _)
+      rw [ih, e]; ac_rfl
+  have e (n : Nat) : mk 128 (atoms (fun j p => withKey (T j p)) j) n =
+      mk 128 (fun p => atoms T j p ++ (atoms T j p).map (128 * 8 + ·)) n := by
+    induction n with
+    | zero => rfl
+    | succ n ih => rw [mk, mk, ih]; exact congrArg _ (h n (T j n))
+  rw [e, mk_append, mk_shift, withKeyS]
+
+theorem linAS_eq (j : Nat) : mk 128 (atoms linAT j) 128 = linAS j := by
+  rw [linAS, ← keyS_eq, ← mk_mix, ← mk_append]
+  exact congrArg (fun g => mk 128 g 128) (funext fun p => List.map_append)
+
+theorem linBS_eq (j : Nat) : mk 128 (atoms linBT j) 128 = linBS j := by
+  rw [linBS, ← keyS_eq, ← mk_mix, ← mk_append]
+  refine congrArg (fun g => mk 128 g 128) (funext fun p => List.map_append.trans ?_)
+  refine congrArg (fun l : List (Nat × Nat) => l.map (fun t => 128 * t.1 + t.2) ++ [128 * (8 + j) + p]) ?_
+  simp only [mixL, List.map_flatMap, List.map_map]
+  rfl
+
+theorem invAS_eq (j : Nat) : mk 128 (atoms invAT j) 128 = invAS j := by
+  rw [invAS, ← mk_mix]
+  exact withKeyS_eq (mixL invMcCoeffs true) j
+
+theorem invBS_eq (j : Nat) : mk 128 (atoms invBT j) 128 = invBS j := by
+  rw [invBS, ← mk_mix]
+  exact withKeyS_eq (fun j p => mixL invMcCoeffs false j (sr2Src 8 p)) j
+
+theorem linA_check : linCheck 8 linA subOut [] mid linAT = true := linCheck_of linAS_eq (by decide +kernel)
+theorem linB_check : linCheck 8 linB subOut [] mid linBT = true := linCheck_of linBS_eq (by decide +kernel)
+theorem invLinA_check : linCheck 8 invLinA invSubOut [] mid invAT = true := linCheck_of invAS_eq (by decide +kernel)
+theorem invLinB_check : linCheck 8 invLinB invSubOut [] mid invBT = true := linCheck_of invBS_eq (by decide +kernel)
 
 /-! ## Between bytes and slices -/
 

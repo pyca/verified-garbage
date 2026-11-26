@@ -148,6 +148,24 @@ theorem termsOk_lt {T : Nat → Nat → List (Nat × Nat)} (h : termsOk T = true
   of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp (List.all_eq_true.mp h j
     (List.mem_range.mpr hj)) p (List.mem_range.mpr hp)) t ht)
 
+/-- `linPost` of words whose lanes are given as numbers. -/
+def linPostS (S : Nat → Nat) (e : Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => outOkS 64 9 (word (e.reg (q j))) (S j)
+
+theorem check_of {c : Cfg} {is : List Instr} {ext : Nat → Option (Nat × Nat)} {e : Env (Nat × Nat)}
+    {T : Nat → Nat → List (Nat × Nat)} {S : Nat → Nat} (hS : ∀ j, mk 64 (flat T j) 64 = S j)
+    (h : check (lanes 64 9) c ext is e (linPostS S) = true) :
+    check (lanes 64 9) c ext is e (linPost 9 (qOuts (flat T))) = true := by
+  obtain ⟨e', he, hp⟩ := of_check _ _ _ h
+  rw [check, he]
+  refine List.all_eq_true.mpr fun o ho => ?_
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ho
+  exact outOkW_of (hS j) (List.all_eq_true.mp hp j hj)
+
+theorem termsOk_mixT (cs : List Nat) (f : Bool) : termsOk (mixT cs 4 f) = true :=
+  List.all_eq_true.mpr fun j _ => List.all_eq_true.mpr fun p hp => List.all_eq_true.mpr fun t ht =>
+    decide_eq_true (mixT_lt cs f j (by decide) (List.mem_range.mp hp) t ht)
+
 /-- Code that the lane domain shows to leave slice `j` the sums `T j`, of bits
 of the words `W`: the slices, then the external words. -/
 theorem lin_ok {k : Nat} {c : Cfg} {is : List Instr} {ext : Nat → Option (Nat × Nat)}
@@ -287,24 +305,24 @@ theorem bs_invShiftRows {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
 
 theorem mixColumns_check :
     check (lanes 64 9) bsCfg (kExt []) mixColumns (linEnv qIns)
-      (linPost 9 (qOuts (flat (mixT mcCoeffs 4 false)))) = true := by
-  decide +kernel
+      (linPost 9 (qOuts (flat (mixT mcCoeffs 4 false)))) = true :=
+  check_of (mixTS_eq 64 mcCoeffs 4 false) (by decide +kernel)
 
 theorem invMixColumns_check :
     check (lanes 64 9) bsCfg (kExt []) invMixColumns (linEnv qIns)
-      (linPost 9 (qOuts (flat (mixT invMcCoeffs 4 false)))) = true := by
-  decide +kernel
+      (linPost 9 (qOuts (flat (mixT invMcCoeffs 4 false)))) = true :=
+  check_of (mixTS_eq 64 invMcCoeffs 4 false) (by decide +kernel)
 
 theorem mixColumns_ok {s : State} (hok : Ok bsCfg s) :
     ∃ s', runBlock isa mixColumns s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT mcCoeffs 4 false j p)) ∧ Rest bsCfg s s' :=
-  lin_ok mixColumns_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+  lin_ok mixColumns_check (termsOk_mixT _ _) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
     (kExt_rel (ks := []) fun _ _ h => by cases h)
 
 theorem invMixColumns_ok {s : State} (hok : Ok bsCfg s) :
     ∃ s', runBlock isa invMixColumns s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT invMcCoeffs 4 false j p)) ∧ Rest bsCfg s s' :=
-  lin_ok invMixColumns_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+  lin_ok invMixColumns_check (termsOk_mixT _ _) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
     (kExt_rel (ks := []) fun _ _ h => by cases h)
 
 theorem bs_mixColumns {W W' : Nat → BitVec 64} {S : Nat → Spec.Aes.State}
@@ -380,24 +398,24 @@ theorem sr2_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fx
 
 theorem mixColumns1_check :
     check (lanes 64 9) srCfg (kExt fx1Ks) mixColumns1 (linEnv qIns)
-      (linPost 9 (qOuts (flat (mixT mcCoeffs 4 true)))) = true := by
-  decide +kernel
+      (linPost 9 (qOuts (flat (mixT mcCoeffs 4 true)))) = true :=
+  check_of (mixTS_eq 64 mcCoeffs 4 true) (by decide +kernel)
 
 theorem mixColumns1_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fx1Ks) :
     ∃ s', runBlock isa mixColumns1 s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT mcCoeffs 4 true j p)) ∧ Rest srCfg s s' :=
-  lin_ok mixColumns1_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+  lin_ok mixColumns1_check (termsOk_mixT _ _) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
     (kExt_rel hks)
 
 theorem invMixColumns1_check :
     check (lanes 64 9) srCfg (kExt fx1Ks) invMixColumns1 (linEnv qIns)
-      (linPost 9 (qOuts (flat (mixT invMcCoeffs 4 true)))) = true := by
-  decide +kernel
+      (linPost 9 (qOuts (flat (mixT invMcCoeffs 4 true)))) = true :=
+  check_of (mixTS_eq 64 invMcCoeffs 4 true) (by decide +kernel)
 
 theorem invMixColumns1_ok {s : State} (hok : Ok srCfg s) (hks : MasksAt s.mem (s.gpr sb) fx1Ks) :
     ∃ s', runBlock isa invMixColumns1 s = some s' ∧
       (∀ j < 8, ∀ p < 64, (Q s' j).getLsbD p = termsXor (Q s) (mixT invMcCoeffs 4 true j p)) ∧ Rest srCfg s s' :=
-  lin_ok invMixColumns1_check (by decide +kernel) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
+  lin_ok invMixColumns1_check (termsOk_mixT _ _) (by decide +kernel) (by decide) hok (Q s) (fun _ _ => rfl)
     (kExt_rel hks)
 
 /-! ## The round keys with `{63}` added -/

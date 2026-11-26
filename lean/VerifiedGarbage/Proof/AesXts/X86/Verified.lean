@@ -148,7 +148,8 @@ theorem mulX_run {t : XReg} (h2 : ¬ t = .xmm2) (h6 : ¬ t = .xmm6) (h7 : ¬ t =
   have h7' : ¬ XReg.xmm7 = t := fun h => h7 h.symm
   refine ⟨_, by
     simp only [mulX, runBlock_cons, runStep_some, runBlock_nil, exec, exec_bin, exec_shift, exec_pshufd]
-    rfl, ?_, fun r h₁ h₂ => ?_, by rfl, by rfl, by rfl, by rfl⟩
+    rfl, ?_, fun r h₁ h₂ => ?_, by simp only [gpr_setXmm], by simp only [mem_setXmm], by simp only [rd_setXmm],
+    by simp only [wr_setXmm]⟩
   · simp only [xmm_setXmm_self, xmm_setXmm_of_ne _ _ h2, xmm_setXmm_of_ne _ _ h2', reduceCtorEq,
       not_false_eq_true, xmm_setXmm_of_ne, x6, x7]
     exact mulX_val _

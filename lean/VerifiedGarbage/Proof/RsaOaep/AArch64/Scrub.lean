@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MdHashTable.AArch64.Tables
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSAES-OAEP on AArch64, without secret residue
@@ -45,8 +46,9 @@ theorem encryptOk (vs : List MdHash) (stack : Nat) :
     ScrubAllOk (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)]) stack)
       stack (Spec.RsaOaep.encryptMdTablesSig.retBits abi.ptrBits) :=
-  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaOaep.encryptMdTablesSig) fun
-    | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaOaep.encryptMdTablesSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro out outLen _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec (Spec.RsaOaep.encryptMdTablesSig.retBits abi.ptrBits) → Prop)
@@ -66,8 +68,9 @@ theorem decryptOk (vs : List MdHash) (stack : Nat) :
     ScrubAllOk (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)]) stack)
       stack (Spec.RsaOaep.decryptPrecomputedMdTablesSig.retBits abi.ptrBits) :=
-  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaOaep.decryptPrecomputedMdTablesSig) fun
-    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  scrubAllOk_tables (scrubAllOk_args_pre_any (sig := Spec.RsaOaep.decryptPrecomputedMdTablesSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 27) ?_
+      intro out outLen ml _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaOaep.decryptPrecomputedMdTablesSig, Spec.RsaOaep.decryptSig, List.cons_append,
         List.nil_append, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp

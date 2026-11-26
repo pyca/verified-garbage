@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSAES-PKCS1-v1_5 on x86 (32-bit), without secret residue
@@ -58,8 +59,9 @@ theorem writtenRandom_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} 
 
 theorem encryptRandomOut (stack : Nat) :
     PostOut (Proof.RsaPkcs1Enc.encryptRandomAskedContract abi stack) (Spec.RsaPkcs1Enc.encryptRandomSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, tape, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 15) ?_
+      intro out outLen tape _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.encryptRandomSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp

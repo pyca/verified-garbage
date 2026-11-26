@@ -166,13 +166,12 @@ private def backendFns (F : Impl.Pbkdf2.Whole.X86.Fns) (M : Impl.Pbkdf2.Md.X86.H
 with the hash sizes, instruction lists and backend functions abstract. -/
 private theorem backend_fill (F : Impl.Pbkdf2.Whole.X86.Fns) (M : Impl.Pbkdf2.Md.X86.Hash)
     (bytes : Nat) (cn un fn hin hfn itn : String) (c u f : Prog isa)
-    (hc : calleeSide c 20 = true) (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true)
-    (hinit : Fill 20 M.st.initC M.st.initC) :
+    (hc : calleeSide c 20 = true) (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
     Fill 20 (withStackScratch bytes 7
       (backendFns F M M.compN M.st.updN M.st.finN (.block []) (.block []) (.block [])).pbkdf2)
       (withStackScratch bytes 7
         (backendFns { F with hiN := hin, hfN := hfn, itN := itn } M cn un fn c u f).pbkdf2) := by
-  fill_calls <;> exact hinit
+  fill_calls
 
 theorem sha1_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
@@ -180,7 +179,7 @@ theorem sha1_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = t
       (withStackScratch (pbkFrame Spec.Hmac.sha1I) 7 (Proof.Sha1.X86.Variants.fns sfx cN c u f).pbkdf2) := by
   let F := (Proof.Sha1.X86.Variants.fns sfx cN c u f)
   exact backend_fill sha1Stub (Proof.Sha1.X86.Variants.mdHash "" "" (.block []) (.block []) (.block []))
-    (pbkFrame Spec.Hmac.sha1I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf (by fill_calls)
+    (pbkFrame Spec.Hmac.sha1I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf
 
 theorem sha224_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
@@ -188,7 +187,7 @@ theorem sha224_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 =
       (withStackScratch (pbkFrame Spec.Hmac.sha224I) 7 (Proof.Sha256.X86.Variants.fns224 sfx cN c u f).pbkdf2) := by
   let F := (Proof.Sha256.X86.Variants.fns224 sfx cN c u f)
   exact backend_fill sha224Stub (Proof.Sha256.X86.Variants.mdHash224 "" "" (.block []) (.block []) (.block []))
-    (pbkFrame Spec.Hmac.sha224I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf (by fill_calls)
+    (pbkFrame Spec.Hmac.sha224I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf
 
 theorem sha256_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 = true)
     (hu : calleeSide u 20 = true) (hf : calleeSide f 20 = true) :
@@ -196,7 +195,7 @@ theorem sha256_fill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20 =
       (withStackScratch (pbkFrame Spec.Hmac.sha256I) 7 (Proof.Sha256.X86.Variants.fns sfx cN c u f).pbkdf2) := by
   let F := (Proof.Sha256.X86.Variants.fns sfx cN c u f)
   exact backend_fill sha256Stub (Proof.Sha256.X86.Variants.mdHash "" "" (.block []) (.block []) (.block []))
-    (pbkFrame Spec.Hmac.sha256I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf (by fill_calls)
+    (pbkFrame Spec.Hmac.sha256I) cN F.H.updN F.H.finN F.hiN F.hfN F.itN c u f hc hu hf
 
 /-- `scrubFSide` of PBKDF2-HMAC-SHA1, whatever the backend. -/
 theorem sha1_scrub (v : Proof.Sha1.X86.Variants.Backend) :

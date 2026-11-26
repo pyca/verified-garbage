@@ -231,6 +231,9 @@ theorem qv_align_row (s : State) {k : Nat} (hk : k < 4) :
       if k = 0 then qv s (vreg 26) 3 else qv s (carryHigh3072 7) (k - 1) := by
   change qv (s.setVy (vreg 27) (alignQwords (s.vy (carryHigh3072 7)) (s.vy (vreg 26)) 3)) (vreg 27) k = _
   rw [qv_setVy, ite_eq_left rfl, qword256_align _ _ _ hk (by decide)]
-  rcases cases4 hk with rfl | rfl | rfl | rfl <;> rfl
+  rw [show (3 : BitVec 8).toNat = 3 from rfl]
+  by_cases h : k = 0
+  · rw [ite_eq_left h, ite_eq_left (show k + 3 < 4 by omega), h]; rfl
+  · rw [ite_eq_right h, ite_eq_right (show ¬ k + 3 < 4 by omega), show k + 3 - 4 = k - 1 by omega]; rfl
 
 end VG.Proof.Bignum.X86_64.Ifma

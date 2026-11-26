@@ -36,6 +36,15 @@ private theorem and127 (x : Addr) : x &&& BitVec.ofNat 64 127 = BitVec.ofNat 64 
     show (127 : Nat)=2^7-1 by decide,Nat.and_two_pow_sub_one_eq_mod]
   omega
 
+/-- The fused core's output, in the caller's registers. -/
+theorem bufferOutput_called (s : State) : SplitBlocks.bufferOutput (called s) =
+    VG.Spec.Gcm.ctr32 (VG.Spec.Gcm.ctxCiph s.mem (s.gpr .r29) (s.gpr .r28).toNat)
+      (VG.Spec.Gcm.blockAt s.mem (s.gpr .r30+48)) (VG.Spec.Gcm.blocksAt s.mem (s.gpr .r19) (fusedBlocks s)) := by
+  rw [SplitBlocks.bufferOutput, show ((called s).gpr .r8).toNat = fusedBlocks s from count_eq s,
+    show (called s).mem = s.mem from rfl, show (called s).gpr .r3 = s.gpr .r29 from rfl,
+    show (called s).gpr .r4 = s.gpr .r28 from rfl, show (called s).gpr .r5 = s.gpr .r30+48 from rfl,
+    show (called s).gpr .r7 = s.gpr .r19 from rfl]
+
 theorem prefix_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
     {s : State} (access : FusedAccess s) (read : Covers (fusedRead s++fusedWrite s) (s.rd++s.wr))
     (write : Covers (fusedWrite s) s.wr) : WP isa prefixCode s (PrefixResult s) := by
@@ -92,6 +101,11 @@ theorem prefix_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.F
       simp [u,State.write,good.1,good.2.1,good.2.2.1,good.2.2.2.1,good.2.2.2.2.1,regs r good.2.2.2.2.2]
     · change if n<512 then _ else _
       simp only [big,↓reduceIte]
-      exact ⟨v,rfl,⟨fv.rd,fv.wr,fv.sp,regs,fv.frame,fv.data,fv.counter,fv.hash⟩⟩
+      obtain out : SplitBlocks.bufferOutput (called z) = SplitBlocks.bufferOutput (called s) := by
+        rw [bufferOutput_called, bufferOutput_called]; rfl
+      have data := fv.data
+      have hash := fv.hash
+      rw [out] at data hash
+      exact ⟨v,rfl,⟨fv.rd,fv.wr,fv.sp,regs,fv.frame,data,fv.counter,hash⟩⟩
 
 end VG.Proof.AesGcm.PPC64LE.Contiguous

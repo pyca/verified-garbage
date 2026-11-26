@@ -167,9 +167,11 @@ theorem data_eq (d : Direction) (m : Mem) (s : State) :
 theorem iv_eq (d : Direction) (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (core d).bw) = ivAt m s := rfl
 theorem cipher_enc (s : State) :
-    (coreSpec .encrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
+    (coreSpec .encrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := by
+  simp only [coreSpec, Proof.Seed.dirCipher]
 theorem cipher_dec (s : State) :
-    (coreSpec .decrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = invCiph s := rfl
+    (coreSpec .decrypt).cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = invCiph s := by
+  simp only [coreSpec, Proof.Seed.dirCipher]
 
 theorem levels_fit (d : Direction) : Proof.Modes.X86.LevelsFit (core d) levels := by
   intro g hg

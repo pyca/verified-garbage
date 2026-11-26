@@ -32,6 +32,7 @@ meta import VerifiedGarbage.Proof.Rsa.X86.Rd.TimingW
 meta import VerifiedGarbage.Proof.Rsa.X86.Rd.GcdDone
 meta import VerifiedGarbage.Proof.Rsa.X86.RtShape
 meta import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSA's key functions on x86 (32-bit), without secret residue
@@ -91,8 +92,9 @@ theorem privatePrecomputeOut (stack : Nat) :
 
 theorem crtValuesOut (stack : Nat) :
     PostOut (Spec.Rsa.crtValuesContract abi stack) (Spec.Rsa.crtValuesSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro dp dpLen dq dqLen qinv qinvLen _ _ _ pLen _ qLen _ _ _ _ hp hb h
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp

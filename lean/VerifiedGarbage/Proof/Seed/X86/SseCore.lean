@@ -794,10 +794,10 @@ theorem blocksOut_ok (h : At s₀ B q s) (hs : SlotsIn m s₀ B) (hm : 80 ≤ m)
     rw [e, hX.bit (by omega_arith) (by omega_arith) (by omega_arith), show 4 * (b / 4) + b % 4 = b by omega_arith]
   have ar := arrs
   rcases cases4 (show i / 4 < 4 by omega_arith) with e | e | e | e
-  · rw [e]; exact rd hx.2.2.1 (by omega_arith)
-  · rw [e]; exact rd hx.2.2.2 (by omega_arith)
-  · rw [e]; exact rd hx.1 (by omega_arith)
-  · rw [e]; exact rd hx.2.1 (by omega_arith)
+  · rw [e]; exact rd (X := fun b => (x b).2.2.1) hx.2.2.1 (by omega_arith)
+  · rw [e]; exact rd (X := fun b => (x b).2.2.2) hx.2.2.2 (by omega_arith)
+  · rw [e]; exact rd (X := fun b => (x b).1) hx.1 (by omega_arith)
+  · rw [e]; exact rd (X := fun b => (x b).2.1) hx.2.1 (by omega_arith)
 
 /-- The block function, on sixteen blocks. -/
 theorem cryptFn_wp (hs : Env0 112 s B) (hk : Keys s.mem B rk)

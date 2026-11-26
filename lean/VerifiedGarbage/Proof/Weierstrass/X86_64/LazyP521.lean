@@ -1120,31 +1120,11 @@ theorem dbl_run {m : Nat} [NeZero m] (S : RcbSlots) (p : Pt) (E : Nat → Fin m)
     (runs (dblOps S p) E p.x = (dblJF (E p.x) Y (E p.z)).1 ∧
       runs (dblOps S p) E p.y = (dblJF (E p.x) Y (E p.z)).2.1 + (dblJF (E p.x) Y (E p.z)).2.1) ∧
       runs (dblOps S p) E p.z = (dblJF (E p.x) Y (E p.z)).2.2 := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  rcases hd with ⟨⟨h01, h02, h03, h04, h05, h06⟩, ⟨h12, h13, h14, h15, h16⟩, ⟨h23, h24, h25, h26⟩,
-    ⟨h34, h35, h36⟩, ⟨h45, h46⟩, h56, _⟩
-  have h10 := Ne.symm h01
-  have h20 := Ne.symm h02
-  have h30 := Ne.symm h03
-  have h40 := Ne.symm h04
-  have h50 := Ne.symm h05
-  have h60 := Ne.symm h06
-  have h21 := Ne.symm h12
-  have h31 := Ne.symm h13
-  have h41 := Ne.symm h14
-  have h51 := Ne.symm h15
-  have h61 := Ne.symm h16
-  have h32 := Ne.symm h23
-  have h42 := Ne.symm h24
-  have h52 := Ne.symm h25
-  have h62 := Ne.symm h26
-  have h43 := Ne.symm h34
-  have h53 := Ne.symm h35
-  have h63 := Ne.symm h36
-  have h54 := Ne.symm h45
-  have h64 := Ne.symm h46
-  have h65 := Ne.symm h56
+  have hd' : (List.reverse _).Nodup := List.pairwise_reverse.mpr (hd.imp Ne.symm)
+  simp only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, List.nodup_cons, List.mem_cons,
+    List.not_mem_nil, or_false, not_or] at hd hd'
   simp only [dblOps, runs, List.foldl, run, Function.update_apply, dblJF, *, ite_true, ite_false]
+  clear hd hd'
   refine ⟨⟨?_, ?_⟩, ?_⟩ <;> grind
 
 theorem lazyChecks_spec {L : Bounds} {ops : List LOp} {want : Bounds} (h : WinCfg.lazyChecks L ops want = true) :
@@ -1163,7 +1143,9 @@ theorem lazyOk_spec {K : WinCfg} (h : WinCfg.lazyOk K = true) :
       L.lookup K.R.z = some 1) ∧
     ∃ L, check (WinCfg.lazyAddBounds K) (maddOps K.S K.R K.E K.D K.zero) = some L ∧ L.lookup K.D.x = some 0 ∧
       L.lookup K.D.y = some 0 ∧ L.lookup K.D.z = some 0 := by
-  rw [WinCfg.lazyOk, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+  -- `delta`: the equation lemma that `rw` would derive evaluates the `decide`.
+  delta WinCfg.lazyOk at h
+  rw [Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨h0, h1⟩, h4⟩, h5⟩ := h
   rw [Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at h1
   obtain ⟨⟨⟨-, h1⟩, h2⟩, h3⟩ := h1
@@ -1411,84 +1393,11 @@ theorem madd_run {m : Nat} [NeZero m] (S : RcbSlots) (p q o : Pt) (E : Nat → F
     (hd : [S.t0, S.t1, S.t2, S.t3, S.t4, S.t5, p.x, p.y, p.z, q.x, q.y, o.x, o.y, o.z, w].Nodup) (hw : E w = 0) :
     (runs (maddOps S p q o w) E o.x, runs (maddOps S p q o w) E o.y, runs (maddOps S p q o w) E o.z) =
       maddJF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  obtain ⟨⟨h0_1, h0_2, h0_3, h0_4, h0_5, h0_6, h0_7, h0_8, h0_9, h0_10, h0_11, h0_12, h0_13, h0_14⟩, ⟨h1_2, h1_3, h1_4, h1_5, h1_6, h1_7, h1_8, h1_9, h1_10, h1_11, h1_12, h1_13, h1_14⟩, ⟨h2_3, h2_4, h2_5, h2_6, h2_7, h2_8, h2_9, h2_10, h2_11, h2_12, h2_13, h2_14⟩, ⟨h3_4, h3_5, h3_6, h3_7, h3_8, h3_9, h3_10, h3_11, h3_12, h3_13, h3_14⟩, ⟨h4_5, h4_6, h4_7, h4_8, h4_9, h4_10, h4_11, h4_12, h4_13, h4_14⟩, ⟨h5_6, h5_7, h5_8, h5_9, h5_10, h5_11, h5_12, h5_13, h5_14⟩, ⟨h6_7, h6_8, h6_9, h6_10, h6_11, h6_12, h6_13, h6_14⟩, ⟨h7_8, h7_9, h7_10, h7_11, h7_12, h7_13, h7_14⟩, ⟨h8_9, h8_10, h8_11, h8_12, h8_13, h8_14⟩, ⟨h9_10, h9_11, h9_12, h9_13, h9_14⟩, ⟨h10_11, h10_12, h10_13, h10_14⟩, ⟨h11_12, h11_13, h11_14⟩, ⟨h12_13, h12_14⟩, h13_14, -⟩ := hd
-  have s1_0 := Ne.symm h0_1
-  have s2_0 := Ne.symm h0_2
-  have s3_0 := Ne.symm h0_3
-  have s4_0 := Ne.symm h0_4
-  have s5_0 := Ne.symm h0_5
-  have s6_0 := Ne.symm h0_6
-  have s7_0 := Ne.symm h0_7
-  have s8_0 := Ne.symm h0_8
-  have s9_0 := Ne.symm h0_9
-  have s10_0 := Ne.symm h0_10
-  have s11_0 := Ne.symm h0_11
-  have s12_0 := Ne.symm h0_12
-  have s13_0 := Ne.symm h0_13
-  have s2_1 := Ne.symm h1_2
-  have s3_1 := Ne.symm h1_3
-  have s4_1 := Ne.symm h1_4
-  have s5_1 := Ne.symm h1_5
-  have s6_1 := Ne.symm h1_6
-  have s7_1 := Ne.symm h1_7
-  have s8_1 := Ne.symm h1_8
-  have s9_1 := Ne.symm h1_9
-  have s10_1 := Ne.symm h1_10
-  have s11_1 := Ne.symm h1_11
-  have s12_1 := Ne.symm h1_12
-  have s13_1 := Ne.symm h1_13
-  have s3_2 := Ne.symm h2_3
-  have s4_2 := Ne.symm h2_4
-  have s5_2 := Ne.symm h2_5
-  have s6_2 := Ne.symm h2_6
-  have s7_2 := Ne.symm h2_7
-  have s8_2 := Ne.symm h2_8
-  have s9_2 := Ne.symm h2_9
-  have s10_2 := Ne.symm h2_10
-  have s11_2 := Ne.symm h2_11
-  have s12_2 := Ne.symm h2_12
-  have s13_2 := Ne.symm h2_13
-  have s4_3 := Ne.symm h3_4
-  have s5_3 := Ne.symm h3_5
-  have s6_3 := Ne.symm h3_6
-  have s7_3 := Ne.symm h3_7
-  have s8_3 := Ne.symm h3_8
-  have s9_3 := Ne.symm h3_9
-  have s10_3 := Ne.symm h3_10
-  have s11_3 := Ne.symm h3_11
-  have s12_3 := Ne.symm h3_12
-  have s13_3 := Ne.symm h3_13
-  have s5_4 := Ne.symm h4_5
-  have s6_4 := Ne.symm h4_6
-  have s7_4 := Ne.symm h4_7
-  have s8_4 := Ne.symm h4_8
-  have s9_4 := Ne.symm h4_9
-  have s10_4 := Ne.symm h4_10
-  have s11_4 := Ne.symm h4_11
-  have s12_4 := Ne.symm h4_12
-  have s13_4 := Ne.symm h4_13
-  have s6_5 := Ne.symm h5_6
-  have s7_5 := Ne.symm h5_7
-  have s8_5 := Ne.symm h5_8
-  have s9_5 := Ne.symm h5_9
-  have s10_5 := Ne.symm h5_10
-  have s11_5 := Ne.symm h5_11
-  have s12_5 := Ne.symm h5_12
-  have s13_5 := Ne.symm h5_13
-  have s12_11 := Ne.symm h11_12
-  have s13_11 := Ne.symm h11_13
-  have s13_12 := Ne.symm h12_13
-  have s14_0 := Ne.symm h0_14
-  have s14_1 := Ne.symm h1_14
-  have s14_2 := Ne.symm h2_14
-  have s14_3 := Ne.symm h3_14
-  have s14_4 := Ne.symm h4_14
-  have s14_5 := Ne.symm h5_14
-  have s14_11 := Ne.symm h11_14
-  have s14_12 := Ne.symm h12_14
-  have s14_13 := Ne.symm h13_14
+  have hd' : (List.reverse _).Nodup := List.pairwise_reverse.mpr (hd.imp Ne.symm)
+  simp only [List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, List.nodup_cons, List.mem_cons,
+    List.not_mem_nil, or_false, not_or] at hd hd'
   simp only [maddOps, runs, List.foldl, run, Function.update_apply, maddJF, *, ite_true, ite_false, Prod.mk.injEq]
+  clear hd hd'
   refine ⟨?_, ?_, ?_⟩ <;> grind only
 
 /-- The lazy mixed addition into `D`. -/

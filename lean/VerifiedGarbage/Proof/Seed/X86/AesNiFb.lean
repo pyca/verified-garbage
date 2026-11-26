@@ -163,7 +163,8 @@ theorem data_eq (m : Mem) (s : State) :
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * core.bw) = ivAt m s := rfl
 theorem cipher_eq (s : State) :
-    coreSpec.cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
+    coreSpec.cipher (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := by
+  simp only [coreSpec]
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ofbPost).post s₀ s' :=

@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Impl.Argon2.X86.Derive
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Argon2.X86.CompressLit
 meta import VerifiedGarbage.Proof.Blake2.X86.LitB
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # Argon2 on x86 (32-bit), without secret residue
@@ -34,8 +35,9 @@ open VG VG.X86 VG.X86.Scrub
 /-- `vg_argon2`'s postcondition reads the memory on return only within `out`. -/
 theorem deriveOut (stack : Nat) :
     PostOut (Spec.Argon2.deriveContract X86.abi stack) (Spec.Argon2.deriveSig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
+  postOut_of_local ScrubAbi.plain (sig := Spec.Argon2.deriveSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ out outLen hb h
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb
       have ho := hb.2.2.2.2.2.2

@@ -345,7 +345,8 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     fifty side goals over literal lists by default `simp`: `decide`. Thirty
     nested `max` by `omega_arith` (3.7 s): `Nat.max_le` in a `simp only`. A
     `fun | [x₁, …, x₁₈], h => …` on a computed list refutes every other
-    length once per pattern: take the length as a numeral in a lemma.
+    length once per pattern: `revert l; refine forall_length (n := 18) ?_; intro
+    x₁ … x₁₈` (`Proof/Framework/ForallLength.lean`; 3.4 s to 0.2 s for 27).
   * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
     `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
     of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`
@@ -386,6 +387,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *Destructuring after the goal has grown.* An `obtain ⟨a₀, …, a₁₆⟩ := h`
     after `refine ⟨witness, ?_⟩` reduces the goal the witness made at every
     `cases` (0.5 s): take the hypothesis apart first.
+  * *The equation lemma of a conjunction of `Bool`s.* `rw [f]` and `simp [f]`
+    derive `f.eq_1`, for which the elaborator reduces `f`'s body; for
+    `decide l.Nodup && …` that evaluates the `decide` on symbolic elements
+    (`lazyOk_spec`, 11 s). `delta f` derives nothing.
   * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an
@@ -422,7 +427,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     theorem): closed code and code that is a `seq`, `ite` or `call` as it
     stands come first, and the lemmas are applied (`s16_xd`), or each is
     tried only where the code's head is its function (`code_head`,
-    `MlKem/AArch64/CallWipe`).
+    `MlKem/AArch64/CallWipe`). A relation between two codes that differ
+    only in what they call (`Fill`) is `fill_code`'s
+    (`Proof/Framework/FillCode.lean`), which unfolds the two together once
+    and stops where they are the same term (250 s of `refine`s to 5 s in
+    one module).
   * *`have`s kept in the context of every nested `by`.* A tactic
     `have x : T := proof` keeps the proof term in the local context (a
     non-dependent `let`), and every `by` nested in a term (`foo (by decide)

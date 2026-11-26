@@ -33,6 +33,7 @@ import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Front
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with the message first, on ARMv7
@@ -1578,8 +1579,9 @@ theorem writtenMsg_of {m₁ m₂ : Mem} {o l : Addr} {n : Nat} {r : BitVec 32} {
 theorem frontOut (stack : Nat) :
     PostOut (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi stack)
       (Spec.RsaPkcs1Enc.decryptPrecomputedSig.retBits 32) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [out, outLen, ml, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 25) ?_
+      intro out outLen ml _ nLen _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hp hb h
       simp only [Spec.RsaPkcs1Enc.decryptPrecomputedSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
       change @Curry.apply (Mem → Mem → BitVec _ → Prop)

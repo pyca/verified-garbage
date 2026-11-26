@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # RSA's key functions on PPC64LE, without secret residue
@@ -159,8 +160,9 @@ theorem privatePrecomputeOut (stack : Nat) :
 
 theorem crtValuesOut (stack : Nat) :
     PostOut (Spec.Rsa.crtValuesContract abi stack) (Spec.Rsa.crtValuesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun
-    | [dp, dpLen, dq, dqLen, qinv, qinvLen, _, _, _, pLen, _, qLen, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
+  postOut_of_local_pre (leak := some _) ScrubAbi.plain fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 16) ?_
+      intro dp dpLen dq dqLen qinv qinvLen _ _ _ pLen _ qLen _ _ _ _ hp hb h
       simp only [Spec.Rsa.crtValuesSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -185,8 +187,9 @@ theorem crtValuesOut (stack : Nat) :
 
 theorem checkKeyOut (stack : Nat) :
     PostOut (Spec.Rsa.checkKeyContract abi stack) (Spec.Rsa.checkKeySig.retBits 64) :=
-  postOut_of_local (leak := some _) ScrubAbi.plain fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
+  postOut_of_local (leak := some _) ScrubAbi.plain fun vs _ _ _ _ hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h; exact h
 
 theorem recoverPrimesDetOut (stack : Nat) :
     PostOut (Spec.Rsa.recoverPrimesDetContract abi stack) (Spec.Rsa.recoverPrimesDetSig.retBits 64) :=

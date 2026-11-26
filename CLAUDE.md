@@ -502,7 +502,8 @@ lemmas and tactics to use; read it before writing a proof:
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to
   unification, a rewrite or `linarith` of every hypothesis (`at *`), a
-  tactic for a discharger on a goal with binders. In a long proof, `obtain x : T := proof` rather than `have`
+  tactic for a discharger on a goal with binders, `rw` by a definition that
+  is a `&&` of `decide`s. In a long proof, `obtain x : T := proof` rather than `have`
   for a fact with a proof of its own: `have` keeps the proof in the
   context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep

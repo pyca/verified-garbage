@@ -14,11 +14,11 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyMessage
 public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.FillRefl
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 import VerifiedGarbage.Proof.Ed25519.WholeLocal
 
 /-!

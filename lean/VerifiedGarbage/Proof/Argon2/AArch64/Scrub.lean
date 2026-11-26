@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveVerified
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.ForallLength
 
 /-!
 # Argon2 on AArch64, without secret residue
@@ -24,8 +25,9 @@ open VG.AArch64 VG.AArch64.Scrub
 
 theorem deriveOk (stack : Nat) :
     ScrubAllOk (Spec.Argon2.deriveContract abi stack) stack (Spec.Argon2.deriveSig.retBits abi.ptrBits) :=
-  scrubAllOk_args_any (sig := Spec.Argon2.deriveSig) fun
-    | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, out, outLen], m, m₁, m₂, r, _, hb, h => by
+  scrubAllOk_args_any (sig := Spec.Argon2.deriveSig) fun vs m m₁ m₂ r hl => by
+      revert vs; refine forall_length (n := 18) ?_
+      intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ out outLen hb h
       simp only [Spec.Argon2.deriveSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hb
       have ho := hb.2.2.2.2.2.2

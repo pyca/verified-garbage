@@ -109,7 +109,7 @@ theorem xorEnds_ok (sz : Size) (s : State) (d : Addr)
     refine ⟨⟨?_, rfl, rfl, rfl⟩, ?_, ?_⟩
     · intro r hr
       simp only [endRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp_all only [gpr_write, ite_false]
+      simp only [gpr_write, hr, ite_false]
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> rfl
