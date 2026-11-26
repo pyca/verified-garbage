@@ -6,7 +6,27 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
 public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivScrub
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+meta import VerifiedGarbage.Impl.RsaPss.X86_64.Fn
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
@@ -68,6 +88,7 @@ theorem sign_scrubbed (h : OK vs) (c : CrtImpl) :
       (Proof.RsaPss.X86_64.pspec (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
   verifiedScrubbedOrUp (signPlain h c) (PrivScrub.level c) ts (Proof.RsaPss.X86_64.signPrecomputed_postOut _ _)
     (sign_eq c) (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl)
+    (hau := by rw [upStub, signStub]; lit_decide_lit)
 
 theorem sign_spSafe (h : OK vs) (c : CrtImpl) :
     (Impl.RsaPss.X86_64.Fn.signPrecomputed (PrivScrub.level c) F G (privNameP c) (privCodeP c)).all
@@ -100,6 +121,7 @@ theorem verify_scrubbed (h : OK vs) (c : PublicImpl) :
       (Proof.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.tables vs) (Proof.MdHashTable.X86_64.tables vs)) 32 :=
   verifiedScrubbedOrUp (verifyPlain h c) c.level ts (Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _) (verify_eq c)
     (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl)
+    (hau := by rw [upStub, verifyStub]; lit_decide_lit)
 
 theorem verify_spSafe (h : OK vs) (c : PublicImpl) :
     (Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code).all (fun i => !isa.writesSp i) = true :=

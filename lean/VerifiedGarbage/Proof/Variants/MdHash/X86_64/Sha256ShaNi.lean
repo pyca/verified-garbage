@@ -121,7 +121,7 @@ theorem update_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem update_side : VG.X86_64.Scrub.scrubSideG updF.code updF.stack updF.retBits .sse true
     (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA updF.stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def update : Proof.Pbkdf2.Md.X86_64.StreamFnS updF.api := ⟨updF, (updOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0), ⟨.sse, [], update_ok, update_side⟩, rfl⟩
 theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -133,7 +133,7 @@ theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem finalize_side : VG.X86_64.Scrub.scrubSideG finF.code finF.stack finF.retBits .sse true
     (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA finF.stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS finF.api := ⟨finF, (finOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0), ⟨.sse, [], finalize_ok, finalize_side⟩, rfl⟩
 theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -145,7 +145,7 @@ theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem digest_side : VG.X86_64.Scrub.scrubSideG digF.code digF.stack digF.retBits .sse true
     (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA digF.stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS digF.api := ⟨digF, (digOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0), ⟨.sse, [], digest_ok, digest_side⟩, rfl⟩
 
@@ -160,7 +160,7 @@ theorem finalize224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem finalize224_side : VG.X86_64.Scrub.scrubSideG fin224F.code fin224F.stack fin224F.retBits .sse true
     (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA fin224F.stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS fin224F.api := ⟨fin224F, (Sha224.finOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0), ⟨.sse, [], finalize224_ok, finalize224_side⟩, rfl⟩
 theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -172,7 +172,7 @@ theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem digest224_side : VG.X86_64.Scrub.scrubSideG dig224F.code dig224F.stack dig224F.retBits .sse true
     (Impl.Scrub.X86_64.runKs []) (Impl.Scrub.X86_64.chunksA dig224F.stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS dig224F.api := ⟨dig224F, (Sha224.digOutS compress (.inl rfl) Proof.Sha256.X86_64.Stream.shani_verified0), ⟨.sse, [], digest224_ok, digest224_side⟩, rfl⟩
 
@@ -198,7 +198,7 @@ theorem fin_side : VG.X86_64.Scrub.scrubSideG
     (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) ((Spec.Hmac.finalizeSig variant.I.S).retBits 64) .sse true
     (Impl.Scrub.X86_64.runKs [(112, 3)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 3)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 /-- HMAC's `finalize` over `variant`, with what its cleanup needs. -/
 def fin : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant, by decide, ⟨.sse, [(112, 3)], fin_ok, fin_side⟩⟩
@@ -225,7 +225,7 @@ theorem fin224_side : VG.X86_64.Scrub.scrubSideG
     (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant224.H) ((Spec.Hmac.finalizeSig variant224.I.S).retBits 64) .sse true
     (Impl.Scrub.X86_64.runKs [(112, 3)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant224.H))
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 3)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 /-- HMAC's `finalize` over `variant224`, with what its cleanup needs. -/
 def fin224 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant224, by decide, ⟨.sse, [(112, 3)], fin224_ok, fin224_side⟩⟩

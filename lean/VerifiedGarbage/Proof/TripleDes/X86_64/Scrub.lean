@@ -33,6 +33,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 meta import VerifiedGarbage.Spec.TripleDes.Contract
 meta import VerifiedGarbage.Spec.TripleDes.Cbc
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
@@ -62,6 +63,7 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 
 /-!
 # Triple DES on x86-64, without secret residue
@@ -161,22 +163,22 @@ abbrev ofbFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.ofbFinal
 
 /-- `vg_triple_des_ecb_encrypt_avx512`'s code. -/
-abbrev ecbEncryptAvx512Code : Prog isa := Batch.avx512.code .encrypt
+abbrev ecbEncryptAvx512Code : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.avx512Encrypt
 
 /-- `vg_triple_des_ecb_encrypt_avx2`'s code. -/
-abbrev ecbEncryptAvx2Code : Prog isa := Batch.avx2.code .encrypt
+abbrev ecbEncryptAvx2Code : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.avx2Encrypt
 
 /-- `vg_triple_des_ecb_encrypt`'s code. -/
-abbrev ecbEncryptSseCode : Prog isa := Batch.sse.code .encrypt
+abbrev ecbEncryptSseCode : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.sseEncrypt
 
 /-- `vg_triple_des_ecb_decrypt_avx512`'s code. -/
-abbrev ecbDecryptAvx512Code : Prog isa := Batch.avx512.code .decrypt
+abbrev ecbDecryptAvx512Code : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.avx512Decrypt
 
 /-- `vg_triple_des_ecb_decrypt_avx2`'s code. -/
-abbrev ecbDecryptAvx2Code : Prog isa := Batch.avx2.code .decrypt
+abbrev ecbDecryptAvx2Code : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.avx2Decrypt
 
 /-- `vg_triple_des_ecb_decrypt`'s code. -/
-abbrev ecbDecryptSseCode : Prog isa := Batch.sse.code .decrypt
+abbrev ecbDecryptSseCode : Prog isa := Batch.framed Impl.TripleDes.X86_64.EcbCall.sseDecrypt
 
 /-! ## The functions as emitted -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
@@ -22,9 +23,8 @@ What the cleanup needs of the code is one Boolean, `scrubSideG c stack rb v
 vec ks cs` (its depth, the level of its vector instructions, that it leaves
 MXCSR as two runs found it, that it calls indirectly only its tables'
 functions), for code `c` with `stack` bytes of stack and a result of `rb`
-bits, at the level `v`, with the granules `ks` of the chunks `cs` wiped: one
-pass over the instructions (`sideI`) and that two runs along a path leave
-the same MXCSR (`mxSameB`). The kernel evaluates it once when the theorem's
+bits, at the level `v`, with the granules `ks` of the chunks `cs` wiped
+(`sideB`, of the instructions). The kernel evaluates it once when the theorem's
 module is built (by default `lit_decide`), and `scrubSideG_ok` turns it into
 what `Verified.scrubWith` takes. `scrubAll` needs nothing else of the code
 but that its postcondition reads the memory on return only within its
@@ -78,6 +78,28 @@ theorem mxSame_ofB {c : Prog isa} (h : mxSameB c = true) : MxSame c := by
   · exact MxSame.of_fun (mxFun_of h)
   · exact RScrub.Mx.mxSame_of h
 
+/-- What the cleanup needs of the instructions of `c`: `sideI` of each, and
+that two runs along a path leave the same MXCSR (`mxSameB`). Most code
+writes none of the registers `kept` (there are none) and loads MXCSR
+nowhere, which one test of each instruction says (`lvAll`). -/
+noncomputable def sideB (c : Prog isa) (k : Nat) (vec : Bool) (kept : List Reg) : Bool :=
+  (vec && kept.isEmpty && lvAll k c) || (mxSameB c && c.allInstrs (sideI k vec kept))
+
+theorem sideB_ok {c : Prog isa} {k : Nat} {vec : Bool} {kept : List Reg} (h : sideB c k vec kept = true) :
+    MxSame c ∧ c.allInstrs (sideI k vec kept) = true := by
+  simp only [sideB, Bool.or_eq_true, Bool.and_eq_true, List.isEmpty_iff] at h
+  rcases h with ⟨⟨rfl, rfl⟩, h⟩ | ⟨h, h'⟩
+  · rw [lvAll_eq, Code.allInstrs_eq] at h
+    have hi : ∀ i ∈ instrs c, i.vecLevelR ≤ k ∧ loadsMxcsr i = false := fun i hi => by
+      have := List.all_eq_true.mp h i hi
+      simpa only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true'] using this
+    refine ⟨MxSame.of_fun ⟨id, fun _ _ _ e => Exec.mxcsr (fun i h => (hi i h).2) e⟩, ?_⟩
+    rw [Code.allInstrs_eq]
+    exact List.all_eq_true.mpr fun i h => by
+      simp only [sideI, Bool.true_or, Bool.and_true, List.all_nil, decide_eq_true_eq]
+      exact (hi i h).1
+  · exact ⟨mxSame_ofB h, h'⟩
+
 /-- What the tail needs of the registers it clears, from `sideI` of every
 instruction: `TailOk`, that it clears every SSE register unless the code
 writes none, that the code writes none of the registers it leaves, and the
@@ -126,15 +148,13 @@ theorem sideI_facts {c : Prog isa} {k : Nat} {vec : Bool} {ks : List Nat} {gs : 
 level, of code that leaves the same MXCSR along a path (`mxSameB`): what
 the cleanup needs of code `c` with `stack` bytes of stack and a result of
 `rb` bits, scrubbed at the level `v` with the granules `ks` wiped and the
-registers `gs` cleared, with the tables `ts`. One pass over the
-instructions, and `mxSameB`; only the kernel evaluates it. -/
+registers `gs` cleared, with the tables `ts`. Only the kernel evaluates it. -/
 noncomputable def scrubSideG (c : Prog isa) (stack rb : Nat) (v : VecLevel) (vec : Bool) (ks cs : List Nat)
     (gs : List Reg) (ts : List (String × List FnTable)) : Bool :=
   decide (c.x86_64Depth ≤ stack) && decide (stack + 8 < 2 ^ 64) && cs.sum == stack &&
   cs.all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) &&
   (decide (rb ≤ 32) || rb == 64) && gs.all (scratchRegs.contains ·) && !gs.isEmpty &&
-  mxSameB c && (decide (v ≠ .evex) || vec) &&
-  c.allInstrs (sideI v.level vec (keptG ks gs)) && tablesCall c ts
+  (decide (v ≠ .evex) || vec) && sideB c v.level vec (keptG ks gs) && tablesCall c ts
 
 /-- The chunks of `scrubSideG` sum to the stack, and each is one the wipe
 takes. -/
@@ -142,7 +162,7 @@ theorem scrubSideG_cs {c : Prog isa} {stack rb : Nat} {v : VecLevel} {vec : Bool
     {gs : List Reg} {ts : List (String × List FnTable)} (hs : scrubSideG c stack rb v vec ks cs gs ts = true) :
     cs.sum = stack ∧ ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0 := by
   simp only [scrubSideG, Bool.and_eq_true, beq_iff_eq] at hs
-  exact ⟨hs.1.1.1.1.1.1.1.1.2, fun b hb => of_decide_eq_true (List.all_eq_true.mp hs.1.1.1.1.1.1.1.2 b hb)⟩
+  exact ⟨hs.1.1.1.1.1.1.1.2, fun b hb => of_decide_eq_true (List.all_eq_true.mp hs.1.1.1.1.1.1.2 b hb)⟩
 
 /-- `r`'s code, scrubbed at the level `v` with the granules `ks` of the
 chunks `cs` wiped and the registers `xsFor vec ks` and `gs` cleared, without
@@ -157,7 +177,8 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
         (retBitsOf r) := by
   obtain ⟨hcs, hcv⟩ := scrubSideG_cs hs
   simp only [scrubSideG, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hd, hst⟩, -⟩, -⟩, hrb⟩, hgs⟩, hgne⟩, hmx⟩, hxv⟩, hall⟩, hic⟩ := hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hd, hst⟩, -⟩, -⟩, hrb⟩, hgs⟩, hgne⟩, hxv⟩, hside⟩, hic⟩ := hs
+  obtain ⟨hmx, hall⟩ := sideB_ok hside
   obtain ⟨ht, hxs, hgk, hlv⟩ := sideI_facts (retBitsOf r) hall hgs hgne
   have hxe : v = .evex → ∀ x, x ∈ xsFor vec ks := fun e x => by
     have hv : vec = true := hxv.resolve_left (fun h => h e)
@@ -170,7 +191,7 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
   unfold retBitsOf at hrb' hp ht ⊢
   rw [e] at hv hp hr ⊢
   have key := Verified.scrubM (f := f) (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
-    hcs hst hcv hlv (fun _ => mxSame_ofB hmx) hrb' hp hr ht hxs hxe (fun _ _ e => absurd e hne) hgk
+    hcs hst hcv hlv (fun _ => hmx) hrb' hp hr ht hxs hxe (fun _ _ e => absurd e hne) hgk
   exact ⟨key.1, key.2 (tablesCall_syms hic rfl)⟩
 
 /-! ## The cleanup as part of the code -/

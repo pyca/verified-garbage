@@ -7,7 +7,27 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
 public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivScrub
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+meta import VerifiedGarbage.Impl.RsaOaep.X86_64.Fn
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPrecomputed
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
@@ -65,7 +85,7 @@ theorem dec_scrubbed (h : OK vs) (c : CrtImpl) :
       (Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (PrivScrub.level c) (fnsOf vs) (privNameP c) (privCodeP c))
       (pdspec (tables vs)) 32 :=
   verifiedScrubbedOrUp (decPlain h c) (PrivScrub.level c) ts (decPrecomputed_postOut _) (dec_eq c)
-    (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl)
+    (fun hl => callSigma_up c hl) (fun hl => callSigma_side c hl) (hau := by rw [upStub, decStub]; lit_decide_lit)
 
 theorem dec_spSafe (c : CrtImpl) :
     (Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (PrivScrub.level c) (fnsOf vs) (privNameP c)
@@ -92,7 +112,7 @@ theorem enc_scrubbed (h : OK vs) (c : PublicImpl) :
     VerifiedScrubbed target (Impl.RsaOaep.X86_64.Fn.encrypt c.level (fnsOf vs) c.name c.code)
       (Pc.encC (tables vs)) 32 :=
   verifiedScrubbedOrUp (encPlain h c) c.level ts (Proof.Rsa.X86_64.Scrub.oaepEncryptOut _ _) (enc_eq c)
-    (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl)
+    (fun hl => pubSigma_up c hl) (fun hl => pubSigma_side c hl) (hau := by rw [upStub, encStub]; lit_decide_lit)
 
 theorem enc_spSafe (c : PublicImpl) :
     (Impl.RsaOaep.X86_64.Fn.encrypt c.level (fnsOf vs) c.name c.code).all (fun i => !isa.writesSp i) = true :=

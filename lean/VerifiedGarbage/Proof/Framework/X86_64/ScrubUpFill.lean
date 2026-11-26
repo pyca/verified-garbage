@@ -201,8 +201,8 @@ implementations' code), followed by `scrubAll v rb stack`, meets `r`'s
 contract in constant time and returns without secret residue: at the level
 `sse` from `upStub` of the stub and `upCallee` of what fills its holes (for
 code that runs AVX functions through its tables), at a higher level `v` from
-`stubSideG` of the stub at the level `avx` and `calleeSide` of what fills
-its holes at `v`. -/
+`upStub`, which is more than `stubSideG` of the stub at the level `avx`, and
+`calleeSide` of what fills its holes at `v`. -/
 theorem verifiedScrubbedOrUp {api : Api} (r : Unscrubbed api target) (v : VecLevel) {a : Prog isa}
     {σ : String → Option (String × Prog isa)} {n : String → Nat} {stack rb : Nat} (ts : List (String × List FnTable))
     (hpost : PostOut r.contract (retBitsOf r)) (he : r.code = fillCallsG σ a)
@@ -210,9 +210,12 @@ theorem verifiedScrubbedOrUp {api : Api} (r : Unscrubbed api target) (v : VecLev
     (hσc : v ≠ .sse → ∀ f g d, σ f = some (g, d) → calleeSide (.call g d) v.level (n f) = true)
     (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl) (htb : r.tables = ts := by rfl)
     (hau : upStub a n stack ts = true := by rw [upStub]; lit_decide)
-    (hac : stubSideG a VecLevel.avx.level n stack ts = true := by lit_decide)
     (hl : litSide stack rb = true := by decide) :
     VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
+  have hac : stubSideG a VecLevel.avx.level n stack ts = true := by
+    simp only [upStub, Bool.and_eq_true] at hau
+    simp only [stubSideG, Bool.and_eq_true]
+    exact ⟨hau.1.1, hau.2⟩
   cases v with
   | sse =>
     have hσ := hσu rfl

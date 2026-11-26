@@ -125,7 +125,7 @@ theorem update_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem update_side : VG.X86_64.Scrub.scrubSideG (updFn compress).code (updFn compress).stack (updFn compress).retBits .avx true
     (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (updFn compress).stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def update : Proof.Pbkdf2.Md.X86_64.StreamFnS (updFn compress).api := ⟨(updFn compress), (updOut compress), ⟨.avx, [(8, 33)], update_ok, update_side⟩, rfl⟩
 theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -137,7 +137,7 @@ theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem finalize_side : VG.X86_64.Scrub.scrubSideG (finFn compress).code (finFn compress).stack (finFn compress).retBits .avx true
     (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (finFn compress).stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS (finFn compress).api := ⟨(finFn compress), (finOut compress), ⟨.avx, [(8, 33)], finalize_ok, finalize_side⟩, rfl⟩
 theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -149,7 +149,7 @@ theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem digest_side : VG.X86_64.Scrub.scrubSideG (digFn compress).code (digFn compress).stack (digFn compress).retBits .avx true
     (Impl.Scrub.X86_64.runKs [(104, 33)]) (Impl.Scrub.X86_64.chunksA (digFn compress).stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS (digFn compress).api := ⟨(digFn compress), (digOut compress), ⟨.avx, [(104, 33)], digest_ok, digest_side⟩, rfl⟩
 
@@ -164,7 +164,7 @@ theorem finalize224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem finalize224_side : VG.X86_64.Scrub.scrubSideG (Sha224.finFn compress).code (Sha224.finFn compress).stack (Sha224.finFn compress).retBits .avx true
     (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (Sha224.finFn compress).stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS (Sha224.finFn compress).api := ⟨(Sha224.finFn compress), (Sha224.finOut compress), ⟨.avx, [(8, 33)], finalize224_ok, finalize224_side⟩, rfl⟩
 theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
@@ -176,7 +176,7 @@ theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
 theorem digest224_side : VG.X86_64.Scrub.scrubSideG (Sha224.digFn compress).code (Sha224.digFn compress).stack (Sha224.digFn compress).retBits .avx true
     (Impl.Scrub.X86_64.runKs [(104, 33)]) (Impl.Scrub.X86_64.chunksA (Sha224.digFn compress).stack)
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS (Sha224.digFn compress).api := ⟨(Sha224.digFn compress), (Sha224.digOut compress), ⟨.avx, [(104, 33)], digest224_ok, digest224_side⟩, rfl⟩
 
@@ -202,7 +202,7 @@ theorem fin_side : VG.X86_64.Scrub.scrubSideG
     (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) ((Spec.Hmac.finalizeSig variant.I.S).retBits 64) .avx true
     (Impl.Scrub.X86_64.runKs [(16, 33), (672, 3)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(16, 33), (672, 3)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 /-- HMAC's `finalize` over `variant`, with what its cleanup needs. -/
 def fin : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant, by decide, ⟨.avx, [(16, 33), (672, 3)], fin_ok, fin_side⟩⟩
@@ -229,7 +229,7 @@ theorem fin224_side : VG.X86_64.Scrub.scrubSideG
     (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant224.H) ((Spec.Hmac.finalizeSig variant224.I.S).retBits 64) .avx true
     (Impl.Scrub.X86_64.runKs [(16, 33), (672, 3)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant224.H))
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(16, 33), (672, 3)])) [] = true := by
-  lit_decide
+  lit_decide_lit
 
 /-- HMAC's `finalize` over `variant224`, with what its cleanup needs. -/
 def fin224 : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant224, by decide, ⟨.avx, [(16, 33), (672, 3)], fin224_ok, fin224_side⟩⟩

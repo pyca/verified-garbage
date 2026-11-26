@@ -2,10 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.TableFill
+import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.TableFill
+meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
@@ -33,7 +49,12 @@ def HmacUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop :=
 /-- `HmacUp` of every variant, evaluated once for every curve. -/
 theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
     upCallee w.H.hmacInitAny 24 && upCallee w.H.updC 24 && upCallee w.H.hmacFin 24) = true := by
-  lit_decide
+  simp only [Variants.MdHash.X86_64.variants, Variants.MdHash.X86_64.md5Variants,
+    Variants.MdHash.X86_64.sha1Variants, Variants.MdHash.X86_64.sha224Variants,
+    Variants.MdHash.X86_64.sha256Variants, Variants.MdHash.X86_64.sha384Variants,
+    Variants.MdHash.X86_64.sha512Variants, Variants.MdHash.X86_64.sha512_224Variants,
+    Variants.MdHash.X86_64.sha512_256Variants, List.cons_append, List.nil_append, List.all_cons, List.all_nil]
+  lit_decide_lit
 
 theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp w := fun w hw => by
   have h := List.all_eq_true.mp variants_hmacUp w hw
