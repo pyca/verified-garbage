@@ -288,11 +288,13 @@ theorem enter_ok (s : State) :
       fun j hj m v => byte_writeW m (K s) (by omega_using [hi]) hj v
     rw [add_add, b 88 (by decide), b 80 (by decide), b 72 (by decide), b 64 (by decide), b 56 (by decide),
       b 48 (by decide), b 40 (by decide), b 32 (by decide)]
-    repeat' split
-    all_goals first
-      | omega
-      | (rw [show 40 + i - 40 = i by omega_using []]; exact five_bytes i (by omega))
-      | (rw [zero_bytes i (by omega) hi]; simp)
+    rcases (by omega_using [hi] : i < 8 ∨ 8 ≤ i ∧ i < 16 ∨ 16 ≤ i ∧ i < 24 ∨ 24 ≤ i ∧ i < 32 ∨ 32 ≤ i ∧ i < 40 ∨
+        40 ≤ i ∧ i < 48 ∨ 48 ≤ i) with h | h | h | h | h | h | h
+    · simp (disch := omega_using [h]) only [↓ite_eq_left, ↓ite_eq_right]
+      rw [show 40 + i - 40 = i by omega_using []]; exact five_bytes i h
+    all_goals
+      simp (disch := omega_using [h, hi]) only [↓ite_eq_left, ↓ite_eq_right]
+      rw [zero_bytes i (by omega_using [h]) hi]; simp
 
 /-! ## The call -/
 
