@@ -355,6 +355,15 @@ theorem lshift_le (k : Nat) : lshift k ≤ 40 := by
 theorem setXmm_xk (s : State) (x : XReg) (v : BitVec 128) : Xk [x] s (s.setXmm x v) :=
   ⟨rfl, rfl, rfl, rfl, fun r hr => xmm_setXmm_of_ne _ _ (by simpa only [List.mem_singleton] using hr)⟩
 
+/-- One more write keeps what the writes before it do. -/
+theorem Xk.set {xs : List XReg} {s s' : State} {x : XReg} (h : Xk xs s s') (v : BitVec 128) (hx : x ∈ xs) :
+    Xk xs s (s'.setXmm x v) :=
+  (h.trans (setXmm_xk s' x v)).mono fun r hr => by
+    simp only [List.mem_append, List.mem_singleton] at hr
+    rcases hr with hr | rfl
+    · exact hr
+    · exact hx
+
 theorem and_mask (x : Nat) : x &&& (2 ^ 26 - 1) = x % 2 ^ 26 := Nat.and_two_pow_sub_one_eq_mod x 26
 
 /-- `limb`: 8 bytes (or twice 8 bytes), shifted and masked, into the lanes of `xmm6`. -/
@@ -382,9 +391,8 @@ theorem limb_ok (b : Reg) (d n : Nat) (hn : n ≤ 63) (two : Bool) (s : State)
         (show 0 < 2 by decide), (lane_movq _).1, hs, and_mask, show lane (s.xmm .xmm5) 0 = 2 ^ 26 - 1 from m0]
     · simp only [ln, xmm_setXmm_self, xmm_setXmm, reduceCtorEq, ↓reduceIte, lane_pand, lane_psrlq _ _ hsh
         (show 1 < 2 by decide), (lane_movq _).2, Nat.zero_and, Nat.zero_div]
-    · refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [xmm_setXmm, hr.1, hr.2, ↓reduceIte]
+    · repeat refine Xk.set ?_ _ (by decide)
+      exact Xk.refl _ _
   · have h1' := h1 rfl
     have e1 : ∀ v, (s.setXmm .xmm6 v).ea (at_ b (d + 16)) = addr (s.gpr b) (d + 16) := fun _ => rfl
     apply WP.of_runBlock
@@ -398,9 +406,8 @@ theorem limb_ok (b : Reg) (d n : Nat) (hn : n ≤ 63) (two : Bool) (s : State)
     · simp only [ln, xmm_setXmm_self, xmm_setXmm, reduceCtorEq, ↓reduceIte, lane_pand, lane_psrlq _ _ hsh
         (show 1 < 2 by decide), (lane_punpcklqdq _ _).2, (lane_movq _).1, hs, and_mask,
         show lane (s.xmm .xmm5) 1 = 2 ^ 26 - 1 from m1]
-    · refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [xmm_setXmm, hr.1, hr.2, ↓reduceIte]
+    · repeat refine Xk.set ?_ _ (by decide)
+      exact Xk.refl _ _
 
 /-! ### A block's limbs -/
 

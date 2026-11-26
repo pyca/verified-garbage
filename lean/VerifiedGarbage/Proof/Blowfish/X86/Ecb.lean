@@ -319,7 +319,7 @@ theorem pairs_run (s : State) {a b c d : Nat → BitVec 32} (h0 : s.xmm .xmm0 = 
       XKeep [.xmm0, .xmm2, .xmm4, .xmm5] s t := by
   unfold pairs
   vrun []
-  refine ⟨?_, ?_, ?_, ?_, fun x hx => ?_, rfl, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, fun x hx => ?_, by simp only [RegUpd.gpr_setXmm], by simp only [RegUpd.mem_setXmm]⟩
   · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, movdqa_L, h0, h1, punpckldq_L]
   · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, movdqa_L, h2, h3, punpckldq_L]
   · simp (disch := decide) only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, h0, h1, punpckhdq_L]

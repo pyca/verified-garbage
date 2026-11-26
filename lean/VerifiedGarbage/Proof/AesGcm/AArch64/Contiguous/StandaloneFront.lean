@@ -82,7 +82,12 @@ theorem pad_sub (St W : Addr) : ∀ r ∈ padFrame St W, ∃ q ∈ j0Frame St W,
   intro r h
   simp only [padFrame,absFrame,tFrame,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false] at h
   rcases h with rfl|rfl|rfl|rfl|rfl|rfl
-  all_goals first | exact ⟨⟨St,80⟩,.head _,Offset.sub_base _ (by decide)⟩ | exact ⟨_,by simp [j0Frame],fun _ h => h⟩
+  · exact ⟨⟨St, 80⟩, .head _, Offset.sub_base St (by decide)⟩
+  · exact ⟨⟨St, 80⟩, .head _, Offset.sub_base St (by decide)⟩
+  · exact ⟨_, .tail _ (.tail _ (.head _)), fun _ h => h⟩
+  · exact ⟨⟨St, 80⟩, .head _, Offset.sub_base St (by decide)⟩
+  · exact ⟨_, .tail _ (.head _), fun _ h => h⟩
+  · exact ⟨_, .tail _ (.tail _ (.head _)), fun _ h => h⟩
 
 theorem slot_jf {C St : Addr} (L : Lay wn C St W) {d : Nat} (lo : 112≤d) (hi : d+8≤512) :
     ∀ r ∈ j0Frame St W, (slotR W d).Disjoint r := by

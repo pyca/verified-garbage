@@ -62,15 +62,22 @@ private theorem writes_eq (base s t : State) (a b c d e f g h i j k l : BitVec 1
     · subst r; simp only [writes, v_setV, reduceCtorEq, ↓reduceIte]
     simp only [writes, v_setV, hv r h1 h2]
 
+private theorem ghIn_setV (s : State) (r : VReg) (x : BitVec 128) : GhIn (s.setV r x) ↔ GhIn s :=
+  ⟨fun h => h.of (gpr_setV ..).symm (rd_setV ..).symm (wr_setV ..).symm,
+    fun h => h.of (gpr_setV ..) (rd_setV ..) (wr_setV ..)⟩
+
+private theorem withoutV_base {base : State} (s : State) (h : withoutV s = withoutV base) :
+    s = {base with v := s.v} :=
+  stateEq h rfl
+
 local macro "prove_resident_pair" s:ident h:ident : tactic => `(tactic| (
-    have gh {t : State} (g : t.gpr = ($s).gpr) (rd : t.rd = ($s).rd) (wr : t.wr = ($s).wr) : GhIn t :=
-      ($h).of g rd wr
     dsimp only [residentPair, pairWith, forwardLd, pa, pb, pk, pl, cipherReg]
-    simp (disch := first | exact gh rfl rfl rfl | decide) only [show decide True = true by rfl, show ¬ (1:Nat) = 3 by decide, show ¬ (2:Nat) = 3 by decide, ↓reduceIte,
+    simp (disch := first | simp only [ghIn_setV, $h:ident] | decide) only [show decide True = true by rfl, show ¬ (1:Nat) = 3 by decide, show ¬ (2:Nat) = 3 by decide, ↓reduceIte,
       List.nil_append, List.cons_append, runBlock_cons, runStep_some, runBlock_nil, orSelf, swLoad, packedLoad,
       exec_trn, exec_eor, exec_pmull0, exec_pmull1, v_setV, gpr_setV, mem_setV, reduceCtorEq,
       Option.some.injEq]
-    apply writes_eq ($s) _ _ _ _ _ _ _ _ _ _ _ _ _ _ rfl rfl
+    apply writes_eq ($s) _ _ _ _ _ _ _ _ _ _ _ _ _ _ (withoutV_base _ (by simp only [withoutV_set]))
+      (withoutV_base _ (by simp only [withoutV_set]))
     intro r ha hb
     simp only [v_setV, ha, hb, ↓reduceIte]))
 
