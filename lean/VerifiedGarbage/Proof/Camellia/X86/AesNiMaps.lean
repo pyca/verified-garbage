@@ -6,6 +6,12 @@ public import VerifiedGarbage.Proof.Framework.X86.ByteMap
 meta import VerifiedGarbage.Proof.Framework.X86.ByteMap
 public import VerifiedGarbage.Spec.Camellia
 meta import VerifiedGarbage.Spec.Camellia
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+import VerifiedGarbage.Proof.Camellia.SboxTable
+meta import VerifiedGarbage.Proof.Camellia.SboxTable
+import VerifiedGarbage.Proof.Framework.AllBelow
+meta import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -79,14 +85,134 @@ def kOf : Bool → Nat → Nat
 /-- The constant of `sbox_ok`. -/
 def mc (ai : Bool) (j : Nat) : Byte := qT ai (sb j 0#8) ^^^ nmap (kOf ai j) (aesSbox (qT (j == 3) 0#8 ^^^ c5))
 
+/-! ### The maps as numbers
+
+`sbox_all` and `inv_all` are checked on tables of the maps, packed in
+numbers: evaluating the maps (and the AES S-box) as functions of bytes at
+each of the cases took the kernel a minute and a half. -/
+
+/-- The constant at `16 u` of the table, as a number. -/
+private def tN (u : Nat) : Nat := (tblAt (16 * u)).toNat
+
+/-- `qT a` (row `a`) and `qI a` (row `2 + a`) at byte `n`. -/
+private def qN (r n : Nat) : Nat :=
+  Nat.xor (nibs (tN (4 * Nat.div r 2 + 4)) (tN (4 * Nat.div r 2 + 5)) n)
+    (Nat.mul (Nat.mod r 2) (nibs (tN (4 * Nat.div r 2 + 6)) (tN (4 * Nat.div r 2 + 7)) n))
+
+/-- `nmap k` at byte `n`. -/
+private def nN (k n : Nat) : Nat := nibs (tN (2 * k + 12)) (tN (2 * k + 13)) (Nat.xor 15 n)
+
+/-- `SBOX1` at byte `n`, from its truth tables. -/
+private def s1N (n : Nat) : Nat := (Aes.row ((List.range 8).map Camellia.sbox1T) n).toNat
+
+/-- `sb j` at byte `n`. -/
+private def sN : Nat → Nat → Nat
+  | 0, n => s1N n
+  | 1, n => ((BitVec.ofNat 8 (s1N n)).rotateLeft 1).toNat
+  | 2, n => ((BitVec.ofNat 8 (s1N n)).rotateLeft 7).toNat
+  | _, n => s1N ((BitVec.ofNat 8 n).rotateLeft 1).toNat
+
+private theorem sbox1_eq (b : Byte) : Spec.Camellia.sbox1 b = BitVec.ofNat 8 (s1N b.toNat) := by
+  rw [s1N, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine (Aes.row_ext fun j hj => ?_).symm
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj, Option.map_some, Option.getD_some,
+    Camellia.testBit_sbox1T b.isLt, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+private theorem s1N_lt (n : Nat) : s1N n < 256 := BitVec.isLt _
+
+private theorem sb_eq {j : Nat} (hj : j < 4) (b : Byte) : sb j b = BitVec.ofNat 8 (sN j b.toNat) := by
+  have h (x : Byte) : BitVec.ofNat 8 x.toNat = x := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  match j, hj with
+  | 0, _ => exact sbox1_eq b
+  | 1, _ => rw [sN, h, ← sbox1_eq]; rfl
+  | 2, _ => rw [sN, h, ← sbox1_eq]; rfl
+  | 3, _ =>
+    show Spec.Camellia.sbox1 _ = BitVec.ofNat 8 (s1N ((BitVec.ofNat 8 b.toNat).rotateLeft 1).toNat)
+    rw [h, ← sbox1_eq]
+
+private theorem sN_lt (j n : Nat) : sN j n < 256 := by
+  unfold sN; split <;> exact BitVec.isLt _
+
+private theorem qN_lt (r n : Nat) : qN r n < 256 := by
+  refine Nat.xor_lt_two_pow (n := 8) (nibs_lt ..) ?_
+  rcases Nat.mod_two_eq_zero_or_one r with h | h
+  · rw [show Nat.mod r 2 = 0 from h, show Nat.mul 0 _ = 0 from Nat.zero_mul _]; decide
+  · rw [show Nat.mod r 2 = 1 from h, show Nat.mul 1 _ = _ from Nat.one_mul _]; exact nibs_lt ..
+
+private theorem qT_eq (a : Bool) (b : Byte) : qT a b = BitVec.ofNat 8 (qN a.toNat b.toNat) := by
+  cases a
+  · rw [qT, bmap, lk, lk, look_nibs, ite_eq_right Bool.false_ne_true, BitVec.xor_zero, qN]
+    exact congrArg _ ((Nat.xor_zero _).symm.trans (congrArg _ (Nat.zero_mul _).symm))
+  · rw [qT, bmap, lk, lk, look_nibs, ite_eq_left rfl, lk, lk, look_nibs, ← BitVec.ofNat_xor, qN]
+    exact congrArg _ (congrArg _ (Nat.one_mul _).symm)
+
+private theorem qI_eq (a : Bool) (b : Byte) : qI a b = BitVec.ofNat 8 (qN (2 + a.toNat) b.toNat) := by
+  cases a
+  · rw [qI, bmap, lk, lk, look_nibs, ite_eq_right Bool.false_ne_true, BitVec.xor_zero, qN]
+    exact congrArg _ ((Nat.xor_zero _).symm.trans (congrArg _ (Nat.zero_mul _).symm))
+  · rw [qI, bmap, lk, lk, look_nibs, ite_eq_left rfl, lk, lk, look_nibs, ← BitVec.ofNat_xor, qN]
+    exact congrArg _ (congrArg _ (Nat.one_mul _).symm)
+
+private theorem nmap_eq (k : Nat) (b : Byte) : nmap k b = BitVec.ofNat 8 (nN k b.toNat) := by
+  rw [nmap, lk, lk, look_nibs_flip, nN, tN, tN, oN, show 16 * (2 * k + 12) = 192 + 32 * k by omega_arith,
+    show 16 * (2 * k + 13) = 192 + 32 * k + 16 by omega_arith]
+  rfl
+
+materialize_table tN 20
+materialize_table s1N 256
+materialize_table sN 4 256
+materialize_table qN 4 256
+materialize_table nN 4 256
+
+/-- The map after the AES S-box of `sbox_all`, at byte `n`. -/
+private def fN (a j n : Nat) : Nat :=
+  nN (kOf (Nat.beq a 1) j) (Aes.sboxN (Nat.xor (qN (cond (Nat.beq j 3) 1 0) n) (qN 0 0xc5)))
+
+private theorem sbox_chk : allBelow (fun n => allBelow (fun a => allBelow (fun j =>
+    Nat.beq (Nat.xor (qN a (sN j n)) (fN a j n)) (Nat.xor (qN a (sN j 0)) (fN a j 0))) 4) 2) 256 = true := by
+  lit_decide
+
+private theorem inv_chk : allBelow (fun n => allBelow (fun a =>
+    Nat.beq (qN (2 + a) (qN a n)) n && Nat.beq (qN a (qN (2 + a) n)) n) 2) 256 = true := by
+  lit_decide
+
 theorem sbox_all : ((List.range 256).all fun n => [false, true].all fun ai => (List.range 4).all fun j =>
     qT ai (sb j (BitVec.ofNat 8 n)) ==
       nmap (kOf ai j) (aesSbox (qT (j == 3) (BitVec.ofNat 8 n) ^^^ c5)) ^^^ mc ai j) = true := by
-  lit_decide
+  have h8 {n : Nat} (hn : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  have hf (ai : Bool) {j n : Nat} (hj : j < 4) (hn : n < 256) :
+      nmap (kOf ai j) (aesSbox (qT (j == 3) (BitVec.ofNat 8 n) ^^^ c5)) = BitVec.ofNat 8 (fN ai.toNat j n) := by
+    have e₁ : (j == 3).toNat = cond (Nat.beq j 3) 1 0 := by
+      revert j; decide
+    have e₂ : kOf (Nat.beq ai.toNat 1) j = kOf ai j := by cases ai <;> rfl
+    rw [c5, qT_eq, qT_eq, ← BitVec.ofNat_xor, Aes.X86.AesNi.aesSbox_eq_sboxN, nmap_eq, h8 hn, e₁,
+      h8 (Nat.xor_lt_two_pow (n := 8) (qN_lt ..) (qN_lt ..)), h8 (Aes.sboxN_lt _), fN, e₂]
+    rfl
+  have hs (ai : Bool) {j n : Nat} (hj : j < 4) (hn : n < 256) :
+      qT ai (sb j (BitVec.ofNat 8 n)) = BitVec.ofNat 8 (qN ai.toNat (sN j n)) := by
+    rw [sb_eq hj, qT_eq, h8 hn, h8 (sN_lt ..)]
+  refine List.all_eq_true.mpr fun n hn => List.all_eq_true.mpr fun ai _ => List.all_eq_true.mpr fun j hj => ?_
+  have hn := List.mem_range.mp hn
+  have hj := List.mem_range.mp hj
+  have h := of_allBelow (of_allBelow (of_allBelow sbox_chk n hn) ai.toNat (by cases ai <;> decide)) j hj
+  have h : BitVec.ofNat 8 (qN ai.toNat (sN j n) ^^^ fN ai.toNat j n) =
+      BitVec.ofNat 8 (qN ai.toNat (sN j 0) ^^^ fN ai.toNat j 0) :=
+    congrArg (BitVec.ofNat 8) (Nat.eq_of_beq_eq_true h)
+  rw [mc, hs ai hj hn, hf ai hj hn, hs ai hj (by decide : 0 < 256), hf ai hj (by decide : 0 < 256), beq_iff_eq]
+  rw [BitVec.ofNat_xor, BitVec.ofNat_xor] at h
+  rw [← h, BitVec.xor_comm, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
 
 theorem inv_all : ((List.range 256).all fun n => [false, true].all fun a =>
     qI a (qT a (BitVec.ofNat 8 n)) == BitVec.ofNat 8 n && qT a (qI a (BitVec.ofNat 8 n)) == BitVec.ofNat 8 n) = true := by
-  lit_decide
+  have h8 {n : Nat} (hn : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  refine List.all_eq_true.mpr fun n hn => List.all_eq_true.mpr fun a _ => ?_
+  have hn := List.mem_range.mp hn
+  have h := of_allBelow (of_allBelow inv_chk n hn) a.toNat (by cases a <;> decide)
+  rw [Bool.and_eq_true] at h
+  rw [qT_eq, qI_eq, qI_eq, qT_eq, h8 hn, h8 (qN_lt ..), h8 (qN_lt ..), Nat.eq_of_beq_eq_true h.1,
+    Nat.eq_of_beq_eq_true h.2, beq_self_eq_true, Bool.and_self]
 
 /-- The nibble tables of the two byte maps are linear. -/
 theorem lin16_all : ((List.range 16).all fun x => (List.range 16).all fun y =>

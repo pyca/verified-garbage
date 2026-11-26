@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Framework.X86.ByteMap
 meta import VerifiedGarbage.Proof.Framework.X86.ByteMap
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 meta import VerifiedGarbage.Proof.Sm4.SboxTable
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+import VerifiedGarbage.Proof.Framework.AllBelow
+meta import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -79,10 +83,61 @@ theorem lm_all : ((List.range 256).all fun n => (List.range 8).all fun j =>
 /-- The constant of `H`. -/
 def ch : Byte := am oH (aesSbox (pk 0#8)) ^^^ pl (lm3 (Proof.Sm4.sboxB 0#8))
 
+/-! `sbox_all` is checked on numbers, which the kernel reads from the tables
+by shifts. -/
+
+/-- `nm` and `am` at byte `n`. -/
+private def nmN (t n : Nat) : Nat := nibs (tblAt t).toNat (tblAt (t + 16)).toNat n
+private def amN (t n : Nat) : Nat := nmN t (Nat.xor 15 n)
+
+private theorem nmN_lt (t n : Nat) : nmN t n < 256 := nibs_lt ..
+
+private theorem nm_eq (t : Nat) (b : Byte) : nm t b = BitVec.ofNat 8 (nmN t b.toNat) := look_nibs ..
+private theorem am_eq (t : Nat) (b : Byte) : am t b = BitVec.ofNat 8 (amN t b.toNat) := look_nibs_flip ..
+
+/-- `lm1` and `lm3` at byte `n`. -/
+private def lm1N (n : Nat) : Nat := Nat.xor (Nat.div n 64) (Nat.mod (Nat.mul n 4) 256)
+private def lm3N (n : Nat) : Nat := Nat.xor (Nat.div n 64) n
+
+private theorem lm1_eq (b : Byte) : (lm1 b).toNat = lm1N b.toNat := by
+  rw [lm1, BitVec.toNat_xor, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftRight_eq_div_pow,
+    Nat.shiftLeft_eq]; rfl
+private theorem lm3_eq (b : Byte) : (lm3 b).toNat = lm3N b.toNat := by
+  rw [lm3, BitVec.toNat_xor, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; rfl
+
+/-- The S-boxes between the two maps. -/
+private def zN (t n : Nat) : Nat := amN t (Aes.sboxN (nmN oK n))
+
+private theorem sbox_chk : allBelow (fun n =>
+    Nat.beq (zN oE n) (nmN oCV (lm1N (Sm4.sboxN n))) &&
+    Nat.beq (Nat.xor (zN oH n) (nmN oCV (lm3N (Sm4.sboxN n))))
+      (Nat.xor (zN oH 0) (nmN oCV (lm3N (Sm4.sboxN 0))))) 256 = true := by
+  lit_decide
+
 theorem sbox_all : ((List.range 256).all fun n =>
     am oE (aesSbox (pk (BitVec.ofNat 8 n))) == pl (lm1 (Proof.Sm4.sboxB (BitVec.ofNat 8 n))) &&
     am oH (aesSbox (pk (BitVec.ofNat 8 n))) == pl (lm3 (Proof.Sm4.sboxB (BitVec.ofNat 8 n))) ^^^ ch) = true := by
-  lit_decide
+  have h8 {n : Nat} (hn : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  have hz (t : Nat) {n : Nat} (hn : n < 256) : am t (aesSbox (pk (BitVec.ofNat 8 n))) = BitVec.ofNat 8 (zN t n) := by
+    rw [am_eq, Aes.X86.AesNi.aesSbox_eq_sboxN, pk, nm_eq, h8 hn, h8 (Aes.sboxN_lt _), h8 (nmN_lt ..)]; rfl
+  have h1 {n : Nat} (hn : n < 256) : pl (lm1 (Sm4.sboxB (BitVec.ofNat 8 n))) =
+      BitVec.ofNat 8 (nmN oCV (lm1N (Sm4.sboxN n))) := by
+    rw [pl, nm_eq, lm1_eq, Sm4.sboxN_eq hn]
+  have h3 {n : Nat} (hn : n < 256) : pl (lm3 (Sm4.sboxB (BitVec.ofNat 8 n))) =
+      BitVec.ofNat 8 (nmN oCV (lm3N (Sm4.sboxN n))) := by
+    rw [pl, nm_eq, lm3_eq, Sm4.sboxN_eq hn]
+  refine List.all_eq_true.mpr fun n hn => ?_
+  have hn := List.mem_range.mp hn
+  have h := of_allBelow sbox_chk n hn
+  rw [Bool.and_eq_true] at h
+  have hx (a b : Nat) : BitVec.ofNat 8 (Nat.xor a b) = BitVec.ofNat 8 a ^^^ BitVec.ofNat 8 b := BitVec.ofNat_xor ..
+  have e := congrArg (BitVec.ofNat 8) (Nat.eq_of_beq_eq_true h.2)
+  rw [hx, hx] at e
+  rw [ch, hz oE hn, hz oH hn, hz oH (by decide : 0 < 256), h1 hn, h3 hn, h3 (by decide : 0 < 256), Bool.and_eq_true,
+    beq_iff_eq, beq_iff_eq, ← e]
+  refine ⟨congrArg _ (Nat.eq_of_beq_eq_true h.1), ?_⟩
+  rw [BitVec.xor_comm (BitVec.ofNat 8 (zN oH n)), ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 theorem inv_all : ((List.range 256).all fun n =>
     pv (pl (BitVec.ofNat 8 n)) == BitVec.ofNat 8 n && pk (BitVec.ofNat 8 n) == pl (BitVec.ofNat 8 n) ^^^ pk 0#8) = true := by

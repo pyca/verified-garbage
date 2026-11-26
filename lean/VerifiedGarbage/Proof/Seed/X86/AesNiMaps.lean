@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Framework.X86.ByteMap
 meta import VerifiedGarbage.Proof.Framework.X86.ByteMap
 public import VerifiedGarbage.Proof.Seed.G
 meta import VerifiedGarbage.Proof.Seed.G
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Sbox
+import VerifiedGarbage.Proof.Framework.AllBelow
+meta import VerifiedGarbage.Proof.Framework.AllBelow
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -56,10 +60,36 @@ def am (t : Nat) (z : Byte) : Byte := lk t ((z &&& 0x0f#8) ^^^ 0x0f#8) ^^^ lk (t
 /-- The mask at byte `p` of the masks by position at `t` (`oKA` or `oKA + 16`). -/
 def ka (t p : Nat) : Byte := byte (tblAt t) p
 
+/-! `sbox_all` is checked on numbers, which the kernel reads from the tables
+by shifts. -/
+
+/-- `pre` and `am` at byte `n`. -/
+private def nmN (t n : Nat) : Nat := nibs (tblAt t).toNat (tblAt (t + 16)).toNat n
+private def amN (t n : Nat) : Nat := nmN t (Nat.xor 15 n)
+
+private theorem nmN_lt (t n : Nat) : nmN t n < 256 := nibs_lt ..
+
+private theorem pre_eq (b : Byte) : pre b = BitVec.ofNat 8 (nmN oPRE b.toNat) := look_nibs ..
+private theorem am_eq (t : Nat) (b : Byte) : am t b = BitVec.ofNat 8 (amN t b.toNat) := look_nibs_flip ..
+
+private theorem sbox_chk : allBelow (fun n =>
+    Nat.beq (amN oP0 (Aes.sboxN (nmN oPRE n))) (sNat false n) &&
+    Nat.beq (amN oP1 (Aes.sboxN (nmN oPRE n))) (sNat true n)) 256 = true := by
+  lit_decide
+
 theorem sbox_all : ((List.range 256).all fun n =>
     am oP0 (aesSbox (pre (BitVec.ofNat 8 n))) == BitVec.ofNat 8 (sNat false n) &&
     am oP1 (aesSbox (pre (BitVec.ofNat 8 n))) == BitVec.ofNat 8 (sNat true n)) = true := by
-  lit_decide
+  have h8 {n : Nat} (hn : n < 256) : (BitVec.ofNat 8 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn
+  refine List.all_eq_true.mpr fun n hn => ?_
+  have hn := List.mem_range.mp hn
+  have h := of_allBelow sbox_chk n hn
+  rw [Bool.and_eq_true] at h
+  have hz : aesSbox (pre (BitVec.ofNat 8 n)) = BitVec.ofNat 8 (Aes.sboxN (nmN oPRE n)) := by
+    rw [Aes.X86.AesNi.aesSbox_eq_sboxN, pre_eq, h8 hn, h8 (nmN_lt ..)]
+  rw [hz, am_eq, am_eq, h8 (Aes.sboxN_lt _), Bool.and_eq_true, beq_iff_eq, beq_iff_eq]
+  exact ⟨congrArg _ (Nat.eq_of_beq_eq_true h.1), congrArg _ (Nat.eq_of_beq_eq_true h.2)⟩
 
 theorem ka_all : ((List.range 16).all fun p =>
     ka oKA p == (if (p / 4 + p % 4) % 2 = 0 then maskOf ((2 * (p % 4) + p / 4) % 4) else 0#8) &&
