@@ -1,10 +1,20 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+
 public import VerifiedGarbage.Impl.P384.Linear
 public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Cms
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Field.Reduce
 public import VerifiedGarbage.Impl.P384.EcdhDouble
+meta import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -469,6 +479,10 @@ end VG.Proof.P384.Linear
 
 namespace VG.Proof.P384.EcdhDouble
 
+materialize_code VG.Impl.P384.EcdhDouble.doubleRDBody
+materialize_code VG.Impl.P384.EcdhDouble.doubleDRBody
+
+
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.P384.EcdhDouble
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass.Cms
 open VG.Proof.P384.Ops (clobX OpKeepX ProgKeepX)
@@ -662,12 +676,61 @@ theorem raw_ok {C : Curve} (hC : C.p = p384) {base : Addr} {size : Nat} (hL : Wi
     · exact Or.inl hx
   · exact steps_vals E h.apart _
 
+theorem callDouble_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
+    {body : Prog isa} {p o : Pt} {V : List Nat} (name : String) (hn : K.M.n = 6)
+    (hb : DblSpec K C base size body p o V)
+    (hv : ∀ i ∈ instrs body, vdstOf i ≠ some .v31) :
+    DblSpec K C base size (VG.Impl.P384.EcdhDouble.callDouble name body) p o V := by
+  intro E s hi
+  have h0 : Reg.x0 ∉ clob K.M.n ++ winSaved K.M.n := by rw [hn]; decide
+  have h30 : Reg.x30 ∉ clob K.M.n ++ winSaved K.M.n := by rw [hn]; decide
+  have links : ∀ r, r ≠ .x30 → r ∉ clob K.M.n ++ winSaved K.M.n → r ∉ linkRegs := by
+    intro r hr hcl
+    have : r ≠ .x16 ∧ r ≠ .x17 := by
+      rw [hn] at hcl
+      revert hcl; cases r <;> decide
+    simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨this.1, this.2, hr⟩
+  unfold VG.Impl.P384.EcdhDouble.callDouble
+  refine WP.seq (WP.mono (insOf_ok [(.x30, .v31, 1)] s (by simp) (by decide)) fun a ⟨ag, am, ard, awr, asp, alane, _⟩ => ?_)
+  have kas : KeepRegs [] s a := ⟨fun r _ => congrFun ag r, ard, awr, asp⟩
+  have ia := hi.of_mem (hi.scr.of_keepRegs kas (by decide)) am
+  have kc : KeepRegs linkRegs a a.callEntry := ⟨fun r hr => State.callEntry_gpr a hr, rfl, rfl, rfl⟩
+  have ic := ia.of_mem (ia.scr.of_keepRegs kc (by decide)) rfl
+  obtain ⟨tr, t, et, kt, ut, E', it, out⟩ := hb E a.callEntry ic
+  have keep31 := Exec.vec hv et
+  have ret : isa.ret a.callEntry t = some t := by
+    simp only [isa, VG.AArch64.ret, kt.gpr _ h30, ite_true]
+  refine WP.seq (show WP isa (.call name body) a _ from ⟨_, t, Exec.call (call_callEntry a) et ret, ?_⟩)
+  refine WP.mono (umovOf_ok [(.x30, .v31, 1)] t (by simp) (by decide)) fun z ⟨zm, zrd, zwr, zsp, zl, zg⟩ => ?_
+  have kz : KeepRegs (clob K.M.n ++ winSaved K.M.n) s z := by
+    refine ⟨fun r hr => ?_, zrd.trans (kt.rd.trans ard), zwr.trans (kt.wr.trans awr), zsp.trans (kt.sp.trans asp)⟩
+    by_cases heq : r = .x30
+    · subst r
+      rw [zl (.x30, .v31, 1) (by simp)]
+      change laneOf t .v31 1 = _
+      rw [laneOf, keep31]
+      exact alane (.x30, .v31, 1) (by simp)
+    · rw [zg r (by simpa using heq), kt.gpr r hr, State.callEntry_gpr a (links r heq hr), ag]
+  refine ⟨kz, ?_, E', it.of_mem ?_ zm, out⟩
+  · rw [zm]
+    simpa only [State.callEntry_mem, am] using ut
+  · exact it.scr.of_keepRegs (rs := [.x30]) ⟨fun r hr => zg r (by simpa using hr), zrd, zwr, zsp⟩ (by decide)
+
+
 /-- P-384's doublings, as the window's. -/
 theorem dblsOk {C : Curve} (hC : C.p = p384) (hL : WinLay K 8192) (hA : WinA K)
     (hm : UnitMod C.p (2 ^ (64 * K.M.n))) (base : Addr) :
-    DblsOk K C base 8192 (some (.block doubleRD, .block doubleDR)) := by
+    DblsOk K C base 8192 (some (callRD, callDR)) := by
   intro d hd
   cases hd
-  exact ⟨raw_ok hC hL hA hm rawSlots_RD (by simp [dblVR]), raw_ok hC hL hA hm rawSlots_DR (by simp)⟩
+  have vec : ∀ {body : Prog isa}, body.allInstrs (fun i => vdstOf i != some .v31) = true →
+      ∀ i ∈ instrs body, vdstOf i ≠ some .v31 := fun {body} h i hi => by
+    have h' := List.all_eq_true.mp (by rw [← Code.allInstrs_eq]; exact h) i hi
+    simpa using h'
+  exact ⟨callDouble_ok _ rfl (raw_ok hC hL hA hm rawSlots_RD (by simp [dblVR]))
+      (vec (by show doubleRDBody.allInstrs _ = true; lit_decide)),
+    callDouble_ok _ rfl (raw_ok hC hL hA hm rawSlots_DR (by simp))
+      (vec (by show doubleDRBody.allInstrs _ = true; lit_decide))⟩
 
 end VG.Proof.P384.EcdhDouble

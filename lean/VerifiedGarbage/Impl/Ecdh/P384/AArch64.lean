@@ -22,7 +22,7 @@ open VG.AArch64
 /-- `vg_ecdh_p384`. -/
 def exchangeP384 : Prog isa :=
   Cfg.exchangeJ4 Impl.Ecdsa.AArch64.p384
-    (some (.block Impl.P384.EcdhDouble.doubleRD, .block Impl.P384.EcdhDouble.doubleDR))
+    (some (Impl.P384.EcdhDouble.callRD, Impl.P384.EcdhDouble.callDR))
     (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)
 
 end VG.Impl.Ecdh.AArch64

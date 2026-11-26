@@ -46,7 +46,7 @@ def fixedDigit : Prog isa := .seq (.block (Joint.fixedRead cfg)) <|
  .ite (.nonzero .x .x2)
   (.seq fixedEntry <| .seq (jacMixedAdd K K.R K.E K.D) (.block (copyPt 6 K.R K.D))) (.block [])
 def digits : Prog isa := .seq (PubNaf.digit K) fixedDigit
-def double : Prog isa := .block Impl.P384.EcdhDouble.doubleRD
+def double : Prog isa := Impl.P384.EcdhDouble.callRD
 def step : Prog isa := .seq (.block [decCounter]) <| .seq double digits
 def window : Prog isa :=
  .seq (PubNaf.table K) <| .seq (PubNaf.cache K) <|
