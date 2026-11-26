@@ -93,7 +93,7 @@ theorem open_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
     1632 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17,
         .v18, .v19]⟩
-    (openOut _)
+    (@openOut _)
     (by dsimp only; lit_decide)
 
 end VG.Proof.AesGcmSiv.PPC64LE.Scrub

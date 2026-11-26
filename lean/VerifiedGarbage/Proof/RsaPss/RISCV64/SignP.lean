@@ -296,7 +296,7 @@ theorem sign_sat_of {v : MVar} (hv : v ∈ vs) {w : MVar} (hw : w ∈ gs) (hl : 
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdl]), hlen]
 
 theorem signSat_b : ∀ dl ∈ [16, 20, 28, 32, 48, 64], ∀ j < 16, stackArg (signSatBase dl) j = signArgs dl j := by
-  decide
+  decide +kernel
 
 theorem sign_sat (hok : OK vs gs) :
     ∃ s, (Sg.signSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre s := by
@@ -575,7 +575,7 @@ theorem signP_sat_of {v : MVar} (hv : v ∈ vs) {w : MVar} (hw : w ∈ gs) (hl :
 
 theorem signPSat_b : ∀ dl ∈ [16, 20, 28, 32, 48, 64], ∀ j < 18,
     stackArg (signPSatBase dl) j = signPArgs dl j := by
-  decide
+  decide +kernel
 
 theorem signP_sat (hok : OK vs gs) :
     ∃ s, (Sg.signPSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre s := by
