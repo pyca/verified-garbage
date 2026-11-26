@@ -241,30 +241,39 @@ elab "#assert_spec_apis " ts:(ppSpace colGt term:max)* : command => liftTermElab
         | (`VG.Api, #[]) => pure id
         | (`VG.Artifact, #[T]) => pure fun a => mkApp2 (mkConst `VG.Artifact.api) T a
         | _ => throwErrorAt t "not a list of artifacts or of `Api`s"
-      -- What must be proven, of the `Api`s `specs`: `P` of every element of `e`.
-      let predicate (specs : Expr) : MetaM Expr := Meta.withLocalDeclD `a α fun a => do
+      -- The `Api`s its elements have (`specs`), found as it is proven that each is one of them
+      -- (`hs`): both to be filled in once all are.
+      let specs ← Meta.mkFreshExprSyntheticOpaqueMVar (mkApp (mkConst ``List [1]) api)
+      -- What must be proven: `P` of every element of `e`.
+      let P ← Meta.withLocalDeclD `a α fun a => do
         Meta.mkLambdaFVars #[a] (← Meta.mkAppM ``Membership.mem #[specs, apiOf a])
-      -- The `Api`s its elements may have, found in a first run, whose proof is not used.
       let found ← IO.mkRef (#[] : Array Expr)
-      let P ← predicate (← Meta.mkListLit api [])
-      discard <| forallProof α P (leaf := fun a => do
+      let hs ← IO.mkRef (#[] : Array Expr)
+      let proof ← forallProof α P (leaf := fun a => do
         let x ← reduceApi (apiOf a)
-        found.modify fun xs => if xs.contains x then xs else xs.push x
-        return mkConst ``True.intro) e
+        if let some i := (← found.get).findIdx? (· == x) then return (← hs.get)[i]!
+        -- Any other is reported, and the proof not used.
+        let mut h := mkConst ``True.intro
+        if isSpecApi env x then
+          let t ← Meta.mkAppM ``Membership.mem #[specs, x]
+          h ← Meta.mkFreshExprMVarAt {} {} t .syntheticOpaque
+        found.modify (·.push x)
+        hs.modify (·.push h)
+        return h) e
       let xs ← found.get
       let b := xs.filter (!isSpecApi env ·)
       if b.isEmpty then
-        let specs ← Meta.mkListLit api xs.toList
-        let P ← predicate specs
-        let proof ← forallProof α P (leaf := fun a => do
-          let x ← reduceApi (apiOf a)
-          let some i := xs.findIdx? (· == x) | throwError "not found before:{indentExpr x}"
-          let mut p := mkApp3 (mkConst ``List.Mem.head [1]) api x
+        let list ← Meta.mkListLit api xs.toList
+        specs.mvarId!.assign list
+        for h : i in [:xs.size] do
+          let mut p := mkApp3 (mkConst ``List.Mem.head [1]) api xs[i]
             (← Meta.mkListLit api (xs.toList.drop (i + 1)))
           for j in (List.range i).reverse do
-            p := mkApp5 (mkConst ``List.Mem.tail [1]) api x xs[j]!
+            p := mkApp5 (mkConst ``List.Mem.tail [1]) api xs[i] xs[j]!
               (← Meta.mkListLit api (xs.toList.drop (j + 1))) p
-          return p) e
+          (← hs.get)[i]!.mvarId!.assign p
+        let proof ← instantiateMVars proof
+        let P ← instantiateMVars P
         let type ← Meta.withLocalDeclD `a α fun a => do
           let mem ← Meta.mkAppM ``Membership.mem #[e, a]
           Meta.mkForallFVars #[a] (← mkArrow mem (mkApp P a).headBeta)
