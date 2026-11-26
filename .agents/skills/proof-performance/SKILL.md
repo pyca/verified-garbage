@@ -139,7 +139,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   So a step function the kernel evaluates
   (`Proof/Framework/X86_64/Taint.lean` and `ResidueTaint.lean`,
   `Proof/Framework/Arm/Taint.lean`, `Proof/Framework/X86/Taint.lean` and
-  `SseTaint.lean`):
+  `SseTaint.lean`, `Proof/Framework/AArch64/ResidueWin.lean`):
   * gives a state that is evaluated: what it computed is forced before the
     state is built, in control flow, and the state built of the values
     (`Taint.forceT`: a set of registers by `RegSet.force`, which hands on
@@ -156,6 +156,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     read it through, since the kernel remembers the value of the term it
     was asked for and not of those it passed through (37 unfoldings of the
     slots for each store of that check);
+  * takes the state apart before the match on the instruction, outside the
+    function `inline_match%` closes: inside it, `match τ with | (a, b) => …`
+    becomes projections of `τ`, and a field it hands on a projection of the
+    state before. The function's alternatives are functions of the fields
+    (`| .add … => fun g v … => …`, or applications of named ones): with the
+    fields among the function's own arguments, its cases mention them, and
+    the kernel copies every case at every step to substitute them;
   * never rebuilds a list it does not change (`killK`, a filter of the
     known bases at every instruction, cost 0.25 ms of CI for each base at
     each instruction): test first (`noBase b d`, which the kernel
