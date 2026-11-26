@@ -104,7 +104,7 @@ theorem p224Sign_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstra
   Scrub.sign_scrubbed (R := p224 hL hI hT)
     (p224T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
     rfl p224_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_p224_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224`): it meets its contract in

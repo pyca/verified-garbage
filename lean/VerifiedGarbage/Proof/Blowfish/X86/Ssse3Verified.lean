@@ -30,6 +30,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Blowfish's functions over its block function by `pshufb` on x86 (32-bit) meet their contracts
@@ -169,6 +171,18 @@ theorem cbcEncryptChained_framed :
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Blowfish.cbcEncChainedPost_local _) (Proof.Blowfish.cbcEncChainedPostOut_local _) (frameSat_cbc _)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 460 0) Fn.cbcEncryptChained (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 460 0) Fn.ofb (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 460 0) Fn.cfbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 460 0) Fn.cfbEncryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 460 0) Fn.cfbDecryptFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 460 0) Fn.ofbFinal (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 424 0) Fn.expandKey (RTaint.done 0) := by
+  taint_decide_ct_all
+
 /-- `Spec.Blowfish.cbcEncryptChainedApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cbcEncryptChained`) meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
@@ -176,7 +190,7 @@ theorem cbcEncryptChained_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cbcEncryptChained
       verified := cbcEncryptChained_framed }
-    Fn.words (Scrub.cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.cbcEncryptOut _) (by decide) residue.1
 
 /-! ## `ofb` -/
 
@@ -229,7 +243,7 @@ theorem ofb_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.ofbApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofb
       verified := ofb_framed }
-    Fn.words (Scrub.ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.ofbOut _) (by decide) residue.2.1
 
 /-! ## `cfbEncrypt` -/
 
@@ -282,7 +296,7 @@ theorem cfbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncrypt
       verified := cfbEncrypt_framed }
-    Fn.words (Scrub.cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.cfbEncryptOut _) (by decide) residue.2.2.1
 
 /-! ## `cfbEncryptFinal` -/
 
@@ -341,7 +355,7 @@ theorem cfbEncryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncryptFinal
       verified := cfbEncryptFinal_framed }
-    Fn.words (Scrub.cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.cfbEncryptFinalOut _) (by decide) residue.2.2.2.1
 
 /-! ## `cfbDecryptFinal` -/
 
@@ -400,7 +414,7 @@ theorem cfbDecryptFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecryptFinal
       verified := cfbDecryptFinal_framed }
-    Fn.words (Scrub.cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.cfbDecryptFinalOut _) (by decide) residue.2.2.2.2.1
 
 /-! ## `ofbFinal` -/
 
@@ -459,7 +473,7 @@ theorem ofbFinal_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.ofbFinalApi) (W := 460)
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 ofbFinal
       verified := ofbFinal_framed }
-    Fn.words (Scrub.ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.words (Scrub.ofbFinalOut _) (by decide) residue.2.2.2.2.2.1
 
 /-! ## Key expansion -/
 
@@ -652,6 +666,6 @@ theorem expandKey_scrubbed :
   verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi) (W := 424)
     { code := Impl.StackScratch.X86.withStackScratchWiped 416 3 96 expandKey
       verified := expandKey_framed }
-    Fn.keyWords (Scrub.expandKeyOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    Fn.keyWords (Scrub.expandKeyOut _) (by decide) residue.2.2.2.2.2.2
 
 end VG.Proof.Blowfish.X86.Ssse3

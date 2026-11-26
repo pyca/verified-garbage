@@ -60,6 +60,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.TaintCTAll
+meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 /-!
 # SHA-256 on x86: the scalar compression function: the variant's code and proofs
 
@@ -112,36 +114,28 @@ theorem finalize224_ct : ConstantTime isa
 
 materialize_code digestCode := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream)
 
-/-- What the cleanup of `vg_sha256_digest` with this implementation needs of its
-code: the residue analysis, evaluated here once. -/
-theorem digest_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) 0
-    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) Impl.MdStream.X86.Digest.selWords
-    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream)) :=
-  ⟨by decide, _, by taint_decide_ct⟩
-
 materialize_code digest224Code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream)
-
-/-- What the cleanup of `vg_sha224_digest` with this implementation needs of its
-code: the residue analysis, evaluated here once. -/
-theorem digest224_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) 0
-    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) Impl.MdStream.X86.Digest.selWords
-    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream)) :=
-  ⟨by decide, _, by taint_decide_ct⟩
 
 materialize_code hmacInitCode := Impl.Hmac.X86.Fn.sha256InitBody (sha256M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns stream "vg_sha256_compress" Impl.Sha256.X86.compress)
 
-/-- What the cleanup of `vg_hmac_sha256_init` with this implementation needs of
-its code: the residue analysis of both its paths, evaluated here once. -/
-theorem hmacInit_sel : VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
-    (Impl.Hmac.X86.Fn.sha256InitBody (sha256M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns stream "vg_sha256_compress" Impl.Sha256.X86.compress)) :=
-  ⟨by decide, _, by taint_decide_ct⟩
-
 materialize_code hmacInit224Code := Impl.Hmac.X86.Fn.sha256InitBody (sha224M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns224 stream "vg_sha256_compress" Impl.Sha256.X86.compress)
 
-/-- The same of `vg_hmac_sha224_init`. -/
-theorem hmacInit224_sel : VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
-    (Impl.Hmac.X86.Fn.sha256InitBody (sha224M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns224 stream "vg_sha256_compress" Impl.Sha256.X86.compress)) :=
-  ⟨by decide, _, by taint_decide_ct⟩
+/-- What the cleanups of `vg_sha256_digest`, `vg_sha224_digest`,
+`vg_hmac_sha256_init` and `vg_hmac_sha224_init` with this implementation need of
+their code: the residue analyses, evaluated here once, together, as they
+analyse the same compression function. -/
+theorem sels :
+    (VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) 0
+      (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) Impl.MdStream.X86.Digest.selWords
+      (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream))) ∧
+    (VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) 0
+      (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) Impl.MdStream.X86.Digest.selWords
+      (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream))) ∧
+    (VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
+      (Impl.Hmac.X86.Fn.sha256InitBody (sha256M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns stream "vg_sha256_compress" Impl.Sha256.X86.compress))) ∧
+    (VG.X86.Scrub.SelScrub 1700 0 1700 Impl.Hmac.X86.Fn.sha256InitWords
+      (Impl.Hmac.X86.Fn.sha256InitBody (sha224M stream "vg_sha256_compress" Impl.Sha256.X86.compress) (pbkdf2Fns224 stream "vg_sha256_compress" Impl.Sha256.X86.compress))) := by
+  taint_decide_ct_all
 
 /-- The backend: its checks of the code (`spSafe`, `NoSp`, the stack) evaluated in one
 kernel evaluation (`taint_decide_all`), which evaluates the compression function they
@@ -197,10 +191,10 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     finalize224Stack := ?_,
     iter224NoSp := NoSp.of_all ?_,
     iter224Stack := ?_,
-    digestSel := digest_sel,
-    digest224Sel := digest224_sel,
-    hmacInitSel := hmacInit_sel,
-    hmacInit224Sel := hmacInit224_sel }
+    digestSel := sels.1,
+    digest224Sel := sels.2.1,
+    hmacInitSel := sels.2.2.1,
+    hmacInit224Sel := sels.2.2.2 }
   taint_decide_all
 
 end VG.Proof.Variants.Sha256.X86.Scalar

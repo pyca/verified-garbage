@@ -352,10 +352,73 @@ def BV.app (f : Fn) (v : BV) : Option BV :=
   | [t] => if v.raw = 0 then some ⟨0, [⟨f :: (cst? v.const ++ t.fs), t.vars⟩], 0#8⟩ else none
   | _ => none
 
-def BV.isConst (v : BV) : Bool := v.raw == 0 && v.terms.isEmpty
+def BV.isConst (v : BV) : Bool := bif Nat.beq v.raw 0 then v.terms.isEmpty else false
+
+/-- A function as a number, to compare two. -/
+def Fn.code : Fn → Nat
+  | .aes => 0
+  | .and c => Nat.add (Nat.mul 5 c.toNat) 1
+  | .hi4 => 2
+  | .xorc c => Nat.add (Nat.mul 5 c.toNat) 3
+  | .look t => Nat.add (Nat.mul 5 t.toNat) 4
+
+theorem Fn.code_inj {f g : Fn} (h : f.code = g.code) : f = g := by
+  cases f <;> cases g <;> simp only [code, Nat.add_eq, Nat.mul_eq] at h <;>
+    first
+    | rfl
+    | exact congrArg _ (BitVec.eq_of_toNat_eq (by omega_using [h]))
+    | exact absurd h (by omega_arith)
+
+def sameFns : List Fn → List Fn → Bool
+  | [], gs => gs.isEmpty
+  | f :: fs, gs => List.casesOn gs false fun g gs => bif Nat.beq f.code g.code then sameFns fs gs else false
+
+theorem sameFns_eq : ∀ {fs gs : List Fn}, sameFns fs gs = true → fs = gs
+  | [], gs, h => (List.isEmpty_iff.mp h).symm
+  | f :: fs, [], h => by cases h
+  | f :: fs, g :: gs, h => by
+    simp only [sameFns, cond_eq_ite, Bool.ite_false_right, Bool.and_eq_true, decide_eq_true_eq, Nat.beq_eq] at h
+    rw [Fn.code_inj h.1, sameFns_eq h.2]
+
+/-- `ts` without its first term that is `t`. -/
+def dropTerm (t : Term) : List Term → Option (List Term)
+  | [] => none
+  | u :: us =>
+    bif Nat.beq t.vars u.vars && sameFns t.fs u.fs then some us
+    else Option.casesOn (dropTerm t us) none fun us => some (u :: us)
+
+theorem dropTerm_perm {t : Term} : ∀ {us vs : List Term}, dropTerm t us = some vs → us.Perm (t :: vs)
+  | [], _, h => by cases h
+  | u :: us, vs, h => by
+    unfold dropTerm at h
+    cases hc : Nat.beq t.vars u.vars && sameFns t.fs u.fs with
+    | true =>
+      rw [hc] at h
+      simp only [Bool.and_eq_true, Nat.beq_eq] at hc
+      cases h
+      rw [show t = u by cases t; cases u; exact congr (congrArg Term.mk (sameFns_eq hc.2)) hc.1]
+    | false =>
+      rw [hc] at h
+      cases hd : dropTerm t us with
+      | none => rw [hd] at h; cases h
+      | some ws => rw [hd] at h; cases h; exact ((dropTerm_perm hd).cons u).trans (.swap ..)
+
+/-- The same terms, in any order. -/
+def sameTerms : List Term → List Term → Bool
+  | [], us => us.isEmpty
+  | t :: ts, us => Option.casesOn (dropTerm t us) false fun us => sameTerms ts us
+
+theorem sameTerms_perm : ∀ {ts us : List Term}, sameTerms ts us = true → ts.Perm us
+  | [], us, h => by rw [List.isEmpty_iff.mp h]
+  | t :: ts, us, h => by
+    simp only [sameTerms] at h
+    cases hd : dropTerm t us with
+    | none => rw [hd] at h; cases h
+    | some vs => rw [hd] at h; exact ((sameTerms_perm h).cons t).trans (dropTerm_perm hd).symm
 
 /-- The same value, up to the order of the terms. -/
-def BV.same (a b : BV) : Bool := a.raw == b.raw && a.const == b.const && a.terms.isPerm b.terms
+def BV.same (a b : BV) : Bool :=
+  bif Nat.beq a.raw b.raw then bif Nat.beq a.const.toNat b.const.toNat then sameTerms a.terms b.terms else false else false
 
 section
 variable (env : Nat → BitVec 8)
@@ -426,12 +489,13 @@ theorem BV.app_eval {f : Fn} {v w : BV} (h : v.app f = some w) : w.eval env = f.
   · cases h
 
 theorem BV.isConst_eval {v : BV} (h : v.isConst = true) : v.eval env = v.const := by
-  simp only [BV.isConst, Bool.and_eq_true, beq_iff_eq, List.isEmpty_iff] at h
+  simp only [BV.isConst, cond_eq_ite, Bool.ite_false_right, Bool.and_eq_true, decide_eq_true_eq, Nat.beq_eq,
+    List.isEmpty_iff] at h
   rw [BV.eval, h.1, h.2, mask_zero, sum, BitVec.zero_xor, BitVec.zero_xor]
 
 theorem BV.same_eval {a b : BV} (h : a.same b = true) : a.eval env = b.eval env := by
-  simp only [BV.same, Bool.and_eq_true, beq_iff_eq, List.isPerm_iff] at h
-  rw [BV.eval, BV.eval, h.1.1, h.1.2, sum_perm env h.2]
+  simp only [BV.same, cond_eq_ite, Bool.ite_false_right, Bool.and_eq_true, decide_eq_true_eq, Nat.beq_eq] at h
+  rw [BV.eval, BV.eval, h.1, BitVec.eq_of_toNat_eq h.2.1, sum_perm env (sameTerms_perm h.2.2)]
 
 end
 
@@ -505,32 +569,58 @@ structure RV where
   sh : Bool
   bs : List BV
 
-def get (bs : List BV) (i : Nat) : BV := bs.getD i .zero
-def bytes (f : Nat → BV) : List BV := (List.range 16).map f
+/-- `get`, for the compiler. -/
+def getC : List BV → Nat → BV
+  | [], _ => .zero
+  | b :: _, 0 => b
+  | _ :: bs, i + 1 => getC bs i
+
+/-- Byte `i` of `bs`, or zero. -/
+@[implemented_by getC] def get (bs : List BV) : Nat → BV :=
+  List.rec (motive := fun _ => Nat → BV) (fun _ => .zero)
+    (fun b _ ih i => Nat.casesOn (motive := fun _ => BV) i b ih) bs
+def bytes (f : Nat → BV) : List BV :=
+  [f 0, f 1, f 2, f 3, f 4, f 5, f 6, f 7, f 8, f 9, f 10, f 11, f 12, f 13, f 14, f 15]
+
+/-- `p` of every number below 16. -/
+def all16 (p : Nat → Bool) : Bool :=
+  p 0 && (p 1 && (p 2 && (p 3 && (p 4 && (p 5 && (p 6 && (p 7 && (p 8 && (p 9 && (p 10 && (p 11 && (p 12 &&
+    (p 13 && (p 14 && p 15))))))))))))))
+
+theorem all16_iff {p : Nat → Bool} (h : all16 p = true) {i : Nat} (hi : i < 16) : p i = true := by
+  simp only [all16, Bool.and_eq_true] at h
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩ := h
+  match i, hi with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ | 8, _ | 9, _ | 10, _ | 11, _ | 12, _ | 13, _ | 14, _ | 15, _ =>
+    assumption
+  | i + 16, hi => exact absurd hi (by omega_arith)
 
 theorem get_bytes (f : Nat → BV) {i : Nat} (hi : i < 16) : get (bytes f) i = f i := by
-  simp only [get, bytes, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hi, Option.map_some,
-    Option.getD_some]
+  match i, hi with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ | 8, _ | 9, _ | 10, _ | 11, _ | 12, _ | 13, _ | 14, _ | 15, _ =>
+    rfl
+  | i + 16, hi => exact absurd hi (by omega_arith)
 
 /-- Sixteen bytes, if each is defined. -/
 def bytes? (f : Nat → Option BV) : Option (List BV) :=
-  if (List.range 16).all (fun i => (f i).isSome) = true then some (bytes fun i => (f i).getD .zero) else none
+  bif all16 (fun i => (f i).isSome) then some (bytes fun i => (f i).getD .zero) else none
 
 theorem bytes?_some {f : Nat → Option BV} {l : List BV} (h : bytes? f = some l) {i : Nat} (hi : i < 16) :
     f i = some (get l i) := by
   unfold bytes? at h
+  rw [cond_eq_ite] at h
   split at h <;> [rename_i ha; cases h]
   cases h
   rw [get_bytes _ hi]
-  have := List.all_eq_true.mp ha i (List.mem_range.mpr hi)
+  have := all16_iff ha hi
   obtain ⟨v, hv⟩ := Option.isSome_iff_exists.mp this
   rw [hv]; rfl
 
-def allConst (bs : List BV) : Bool := (List.range 16).all fun i => (get bs i).isConst
+def allConst (bs : List BV) : Bool := all16 fun i => (get bs i).isConst
 
 theorem allConst_eval (env : Nat → BitVec 8) {bs : List BV} (h : allConst bs = true) {i : Nat} (hi : i < 16) :
     (get bs i).eval env = (get bs i).const :=
-  BV.isConst_eval env (List.all_eq_true.mp h i (List.mem_range.mpr hi))
+  BV.isConst_eval env (all16_iff h hi)
 
 /-- The eight registers. -/
 structure Regs where
@@ -590,12 +680,17 @@ def srow (i : Nat) : Nat := i % 4 + 4 * ((i / 4 + i % 4) % 4)
 /-- The 16 constants of `bs`, as a register. -/
 def tableOf (bs : List BV) : BitVec 128 := ofBytes fun i => (get bs i).const
 
+/-- The bytes of two words of a table. -/
+def tblBytes (w₀ w₁ : Nat) : List BV :=
+  bytes fun i => .cst (BitVec.ofNat 8 (bif Nat.blt i 8 then Nat.shiftRight w₀ (Nat.mul 8 i)
+    else Nat.shiftRight w₁ (Nat.mul 8 (Nat.sub i 8))))
+
 /-- What an instruction does to the registers' expressions; `none` for an
 instruction, or operands, this does not follow. -/
 def step (p : Params) (ρ : Regs) : Instr → Option Regs
   | .movdquTbl d m n ws =>
     if m.base = p.tb ∧ n = p.name ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then
-      some (ρ.set d ⟨false, bytes fun i => .cst ((ws.getD (m.disp / 8 + i / 8) 0).extractLsb' (8 * (i % 8)) 8)⟩)
+      some (ρ.set d ⟨false, tblBytes (ws.getD (m.disp / 8) 0).toNat (ws.getD (m.disp / 8 + 1) 0).toNat⟩)
     else none
   | .movdquLoad d m =>
     if m.base = p.kreg ∧ m.disp + 16 ≤ p.klen ∧ p.klen + 128 ≤ nvars then
@@ -612,7 +707,7 @@ def step (p : Params) (ρ : Regs) : Instr → Option Regs
   | .xop (.bin .pand a b) =>
     (plain ρ b).bind fun y =>
       if (ρ.get a).sh = true then
-        if (List.range 16).all (fun i => (get y i).isConst && (get y i).const == 0x0f#8) = true then
+        if all16 (fun i => (get y i).isConst && Nat.beq (get y i).const.toNat 15) = true then
           some (ρ.set a ⟨false, bytes fun i => (get (ρ.get a).bs i).lin .hi4⟩)
         else none
       else if allConst y = true then
@@ -629,7 +724,7 @@ def step (p : Params) (ρ : Regs) : Instr → Option Regs
     (plain ρ a).bind fun x => (plain ρ b).bind fun y =>
       if allConst y = true then
         some (ρ.set a ⟨false, bytes fun i =>
-          if (get y i).const.msb = true then .zero else get x ((get y i).const.extractLsb' 0 4).toNat⟩)
+          bif Nat.ble 128 (get y i).const.toNat then .zero else get x (Nat.mod (get y i).const.toNat 16)⟩)
       else if allConst x = true then
         (bytes? fun i => (get y i).app (.look (tableOf x))).map fun l => ρ.set a ⟨false, l⟩
       else none
@@ -738,10 +833,11 @@ theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i
     refine ⟨d, ws.getD (m.disp / 8 + 1) 0 ++ ws.getD (m.disp / 8) 0, ?_, hr.set d fun i hi => ?_⟩
     · show (if s.gpr m.base = s.syms n ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then _ else none) = _
       rw [ite_eq_left ⟨by rw [hb, hn]; exact hr.tb, h8, hl⟩]
-    · rw [get_bytes _ hi, BV.cst_eval, byte_append _ _ hi]
+    · rw [tblBytes, get_bytes _ hi, BV.cst_eval, byte_append _ _ hi]
       by_cases h : i < 8
-      · rw [ite_eq_left h, show i / 8 = 0 by omega_arith]; rfl
-      · rw [ite_eq_right h, show i / 8 = 1 by omega_arith]
+      · rw [ite_eq_left h, Nat.blt_eq.mpr h, Bool.cond_true, show i % 8 = i by omega_arith]; rfl
+      · rw [ite_eq_right h, Bool.eq_false_iff.mpr (mt Nat.blt_eq.mp h), Bool.cond_false,
+          show i % 8 = i - 8 by omega_arith]; rfl
   · -- movdquLoad
     rename_i d m
     split at hs <;> [rename_i hc; cases hs]
@@ -802,12 +898,12 @@ theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i
       rw [Holds, ite_eq_left hsh] at hA
       obtain ⟨A, hA, hb⟩ := hA
       refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
-      have hci := List.all_eq_true.mp hc i (List.mem_range.mpr hi)
-      simp only [Bool.and_eq_true, beq_iff_eq] at hci
+      have hci := all16_iff hc hi
+      simp only [Bool.and_eq_true, Nat.beq_eq] at hci
       rw [get_bytes _ hi, BV.lin_eval env rfl, ← hb i hi]
       show byte (s.xmm a &&& s.xmm b) i = _
       rw [hA]
-      exact byte_hi4 A _ hi (by rw [hY i hi, BV.isConst_eval env hci.1, hci.2]; rfl)
+      exact byte_hi4 A _ hi (by rw [hY i hi, BV.isConst_eval env hci.1, BitVec.eq_of_toNat_eq (y := 0x0f#8) hci.2]; rfl)
     · rename_i hsh
       have hX : ∀ i < 16, byte (s.xmm a) i = (get (ρ.get a).bs i).eval env := by
         have := hr.regs a
@@ -857,10 +953,12 @@ theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i
       rw [get_bytes _ hi]
       show byte (XBinOp.eval .pshufb (s.xmm a) (s.xmm b)) i = _
       rw [byte_pshufb _ _ hi, hY i hi, allConst_eval env hc hi]
-      by_cases hm : (get y i).const.msb = true
+      simp only [BitVec.msb_eq_decide, cond_eq_ite, decide_eq_true_eq, Nat.ble_eq, BitVec.extractLsb'_toNat,
+        Nat.shiftRight_zero, Nat.reduceSub, Nat.reducePow]
+      by_cases hm : 128 ≤ (get y i).const.toNat
       · rw [ite_eq_left hm, ite_eq_left hm, BV.zero_eval]
       · rw [ite_eq_right hm, ite_eq_right hm]
-        exact hX _ (BitVec.isLt _)
+        exact hX _ (Nat.mod_lt _ (by decide))
     · split at hs <;> [rename_i hc; cases hs]
       obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.mp hs
       refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩

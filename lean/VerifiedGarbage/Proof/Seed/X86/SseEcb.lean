@@ -44,6 +44,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SEED-ECB on x86 (32-bit) in XMM registers meets its contract
@@ -378,6 +380,13 @@ theorem ecbOut (d : Direction) (stack : Nat) :
     PostOut (Spec.Seed.ecbContract X86.abi d stack) (Spec.Seed.ecbSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.Seed.ecbPostOut_local _ d)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 1864 0) Impl.Seed.X86.Sse.Fn.ecbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 1864 0) Impl.Seed.X86.Sse.Fn.ecbDecrypt (RTaint.done 0) := by
+  taint_decide_ct_all
+
 open VG.X86.Scrub in
 /-- `Spec.Seed.ecbEncryptApi` as emitted (`Impl.Seed.X86.Sse.Fn.ecbEncrypt`) meets its contract in
 constant time and returns without secret residue. -/
@@ -387,7 +396,7 @@ theorem ecbEncrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Seed.ecbEncryptApi) (W := 1864)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1856 3 458 (ecb .encrypt)
       verified := ecb_framed .encrypt }
-    Impl.Seed.X86.Sse.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Seed.X86.Sse.Fn.ecbWords (ecbOut _ _) (by decide) residue.1
 
 open VG.X86.Scrub in
 /-- `Spec.Seed.ecbDecryptApi` as emitted (`Impl.Seed.X86.Sse.Fn.ecbDecrypt`) meets its contract in
@@ -398,6 +407,6 @@ theorem ecbDecrypt_scrubbed :
   verifiedScrubbedSel (api := Spec.Seed.ecbDecryptApi) (W := 1864)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1856 3 458 (ecb .decrypt)
       verified := ecb_framed .decrypt }
-    Impl.Seed.X86.Sse.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
+    Impl.Seed.X86.Sse.Fn.ecbWords (ecbOut _ _) (by decide) residue.2
 
 end VG.Proof.Seed.X86.Sse.Ecb

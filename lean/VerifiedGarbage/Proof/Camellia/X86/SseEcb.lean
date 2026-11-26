@@ -46,6 +46,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Camellia-ECB on x86 (32-bit) in XMM registers meets its contract
@@ -286,6 +288,13 @@ theorem ecb_framed (d : Dir) :
 
 /-! ## The functions as emitted -/
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 1576 0) Impl.Camellia.X86.Sse.Fn.ecbEncrypt (RTaint.done 0) ∧
+    rtaint.Ends (RTaint.init 1576 0) Impl.Camellia.X86.Sse.Fn.ecbDecrypt (RTaint.done 0) := by
+  taint_decide_ct_all
+
 open VG.X86.Scrub in
 /-- `Spec.Camellia.ecbEncryptApi` as emitted (`Impl.Camellia.X86.Sse.Fn.ecbEncrypt`) meets
 its contract in constant time and returns without secret residue. -/
@@ -296,7 +305,7 @@ theorem ecbEncrypt_scrubbed :
     { code := Impl.StackScratch.X86.withStackScratchWiped 1572 4 386 (ecb .encrypt)
       verified := ecb_framed .encrypt }
     Impl.Camellia.X86.Sse.Fn.ecbWords (Proof.Camellia.X86.Scrub.ecbOut _ _) (by decide)
-    ⟨_, by taint_decide_ct⟩
+    residue.1
 
 open VG.X86.Scrub in
 /-- `Spec.Camellia.ecbDecryptApi` as emitted (`Impl.Camellia.X86.Sse.Fn.ecbDecrypt`) meets
@@ -308,6 +317,6 @@ theorem ecbDecrypt_scrubbed :
     { code := Impl.StackScratch.X86.withStackScratchWiped 1572 4 386 (ecb .decrypt)
       verified := ecb_framed .decrypt }
     Impl.Camellia.X86.Sse.Fn.ecbWords (Proof.Camellia.X86.Scrub.ecbOut _ _) (by decide)
-    ⟨_, by taint_decide_ct⟩
+    residue.2
 
 end VG.Proof.Camellia.X86.Sse.Ecb

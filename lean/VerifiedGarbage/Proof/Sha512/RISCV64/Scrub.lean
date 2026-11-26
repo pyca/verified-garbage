@@ -38,6 +38,8 @@ meta import VerifiedGarbage.Impl.Sha512.RISCV64.Stream
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Call
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-! ### `Sha512.RISCV64.Shared`, which only this module used -/
 
@@ -308,6 +310,27 @@ theorem finalize512_224_scrubbed :
       (Proof.Sha512.finalizeDigestPost_out Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 64 (by decide)))
     (show scrubSide (Impl.Sha512.RISCV64.Stream.finalize512_224) 208 0 [] = true by lit_decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    rtaint.Ends (RTaint.init 448 [])
+      (Impl.Scrub.RISCV64.scrubSelBody [(448, [(0, 26), (50, 6)])]
+        (Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash384))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 448 [])
+      (Impl.Scrub.RISCV64.scrubSelBody [(448, [(0, 26), (50, 6)])]
+        (Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 448 [])
+      (Impl.Scrub.RISCV64.scrubSelBody [(448, [(0, 26), (50, 6)])]
+        (Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_224))
+      (RTaint.done 64) ∧
+    rtaint.Ends (RTaint.init 448 [])
+      (Impl.Scrub.RISCV64.scrubSelBody [(448, [(0, 26), (50, 6)])]
+        (Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_256))
+      (RTaint.done 64) := by
+  taint_decide_ct_all
+
 /-- `vg_sha384_digest` as emitted (`Impl.Sha512.RISCV64.Fn.digest384`) meets its contract in constant
 time and returns without secret residue. -/
 theorem digest384_scrubbed :
@@ -317,7 +340,7 @@ theorem digest384_scrubbed :
     { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash384,
       verified := Proof.Hmac.Stream.RISCV64.Sha384.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 48 Spec.Sha512.sha384 64 (by decide)))
-    (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (by lit_decide) (hbp_nil _) residue.1
 
 /-- `vg_sha512_digest` as emitted (`Impl.Sha512.RISCV64.Fn.digest512`) meets its contract in constant
 time and returns without secret residue. -/
@@ -328,7 +351,7 @@ theorem digest512_scrubbed :
     { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512,
       verified := Proof.Hmac.Stream.RISCV64.Sha512.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 64 Spec.Sha512.sha512 64 (by decide)))
-    (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (by lit_decide) (hbp_nil _) residue.2.1
 
 /-- `vg_sha512_224_digest` as emitted (`Impl.Sha512.RISCV64.Fn.digest512_224`) meets its contract in constant
 time and returns without secret residue. -/
@@ -339,7 +362,7 @@ theorem digest512_224_scrubbed :
     { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_224,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_224.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 28 Spec.Sha512.sha512_224 64 (by decide)))
-    (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (by lit_decide) (hbp_nil _) residue.2.2.1
 
 /-- `vg_sha512_256_digest` as emitted (`Impl.Sha512.RISCV64.Fn.digest512_256`) meets its contract in constant
 time and returns without secret residue. -/
@@ -350,6 +373,6 @@ theorem digest512_256_scrubbed :
     { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_256,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_256.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 32 Spec.Sha512.sha512_256 64 (by decide)))
-    (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
+    (by lit_decide) (hbp_nil _) residue.2.2.2
 
 end VG.Proof.Sha512.RISCV64

@@ -29,6 +29,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Blowfish's modes on AArch64 return without secret residue
@@ -67,15 +69,30 @@ theorem ecbDecryptCode_verified :
     Verified AArch64.target ecbDecryptCode (Spec.Blowfish.ecbContract AArch64.abi .decrypt 256) :=
   Clears.Verified.withClears (ecb_framed decrypt_verified) (by decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 256).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.ecbEncrypt (doneG 256 0 []) ∧
+    (rtaintG 256).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.ecbDecrypt (doneG 256 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cbcEncryptChained (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cbcDecryptChained (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cfbEncrypt (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cfbDecrypt (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cfbEncryptFinal (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.cfbDecryptFinal (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.ofb (doneG 224 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Blowfish.AArch64.Fn.ofbFinal (doneG 224 0 []) := by
+  taint_decide_ct_all
+
 theorem ecbEncryptCode_noResidue :
     NoResidue ecbEncryptCode (Spec.Blowfish.ecbContract AArch64.abi .encrypt 256) 0 :=
   noResidue_of_doneG ecbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.ecbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.ecbSig) (by decide) (by decide) (Nat.le_refl _)) residue.1
 
 theorem ecbDecryptCode_noResidue :
     NoResidue ecbDecryptCode (Spec.Blowfish.ecbContract AArch64.abi .decrypt 256) 0 :=
   noResidue_of_doneG ecbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.ecbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.ecbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.1
 
 /-! ## CBC, CFB64 and OFB -/
 
@@ -86,7 +103,7 @@ theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChain
 
 theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.Blowfish.cbcEncryptChainedContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.1
 
 abbrev cbcDecryptChainedCode : Prog isa := Impl.Blowfish.AArch64.Fn.cbcDecryptChained
 
@@ -95,7 +112,7 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.Blowfish.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.1
 
 abbrev cfbEncryptCode : Prog isa := Impl.Blowfish.AArch64.Fn.cfbEncrypt
 
@@ -104,7 +121,7 @@ theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.B
 
 theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Blowfish.cfbEncryptContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cfbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.1
 
 abbrev cfbDecryptCode : Prog isa := Impl.Blowfish.AArch64.Fn.cfbDecrypt
 
@@ -113,7 +130,7 @@ theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.B
 
 theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.Blowfish.cfbDecryptContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cfbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.1
 
 abbrev cfbEncryptFinalCode : Prog isa := Impl.Blowfish.AArch64.Fn.cfbEncryptFinal
 
@@ -122,7 +139,7 @@ theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCo
 
 theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Blowfish.cfbEncryptFinalContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.1
 
 abbrev cfbDecryptFinalCode : Prog isa := Impl.Blowfish.AArch64.Fn.cfbDecryptFinal
 
@@ -131,7 +148,7 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Blowfish.cfbDecryptFinalContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.1
 
 abbrev ofbCode : Prog isa := Impl.Blowfish.AArch64.Fn.ofb
 
@@ -140,7 +157,7 @@ theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.Blowfish.ofbCon
 
 theorem ofbCode_noResidue : NoResidue ofbCode (Spec.Blowfish.ofbContract AArch64.abi 224) 0 :=
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.ofbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.ofbSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.1
 
 abbrev ofbFinalCode : Prog isa := Impl.Blowfish.AArch64.Fn.ofbFinal
 
@@ -149,7 +166,7 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Blowf
 
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Blowfish.ofbFinalContract AArch64.abi 224) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Blowfish.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Blowfish.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/

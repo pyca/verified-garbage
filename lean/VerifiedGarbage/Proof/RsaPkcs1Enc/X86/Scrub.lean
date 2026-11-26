@@ -133,8 +133,6 @@ theorem decrypt_fill (v : Backend) (c : CrtImpl) (hm : calleeSide v.cmpC 0 = tru
     FillB decryptStub (Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c crtPBaseline) := by
   unfold decryptStub
   fillB_calls
-  -- SHA-256's blocks of instructions, the same whatever its implementation:
-  all_goals exact FillB.refl _
 
 /-- `scrubFSide` of `vg_rsa_pkcs1_decrypt_precomputed_body`, whatever the
 implementations of SHA-256 and the private-key operation. -/

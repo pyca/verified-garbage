@@ -114,7 +114,7 @@ theorem secp256k1Sign_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI :
       32 :=
   Scrub.sign_scrubbed (R := secp256k1 hL hI)
     (secp256k1T_verified hL hI _ Scrub.variants_ok) rfl secp256k1_core_side
-    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_secp256k1_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash`): it meets its contract in

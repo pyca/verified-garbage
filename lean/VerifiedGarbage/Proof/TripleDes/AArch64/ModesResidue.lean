@@ -77,6 +77,8 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # Triple DES on AArch64 returns without secret residue
@@ -101,9 +103,27 @@ abbrev ecbEncryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.ecbEncrypt
 theorem ecbEncryptCode_verified : Verified AArch64.target ecbEncryptCode (Spec.TripleDes.ecbContract AArch64.abi .encrypt 1024) :=
   Clears.Verified.withClears (Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.Short.ecbEncrypt_verified) (by decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 1024).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.ecbEncrypt (doneG 1024 0 []) ∧
+    (rtaintG 1024).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.ecbDecrypt (doneG 1024 0 []) ∧
+    (rtaintG 464).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cbcEncryptChained (doneG 464 0 []) ∧
+    (rtaintG 1120).Ends (RTaintB.init, some (0, 0, []))
+      Impl.TripleDes.AArch64.Fn.cbcDecryptChained (doneG 1120 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfbEncrypt (doneG 560 0 []) ∧
+    (rtaintG 1120).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfbDecrypt (doneG 1120 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfbEncryptFinal (doneG 560 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfbDecryptFinal (doneG 560 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfb8Encrypt (doneG 560 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.cfb8Decrypt (doneG 560 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.ofb (doneG 560 0 []) ∧
+    (rtaintG 560).Ends (RTaintB.init, some (0, 0, [])) Impl.TripleDes.AArch64.Fn.ofbFinal (doneG 560 0 []) := by
+  taint_decide_ct_all
+
 theorem ecbEncryptCode_noResidue : NoResidue ecbEncryptCode (Spec.TripleDes.ecbContract AArch64.abi .encrypt 1024) 0 :=
   noResidue_of_doneG ecbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.ecbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.ecbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.1
 
 /-- `vg_triple_des_ecb_decrypt`. -/
 abbrev ecbDecryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.ecbDecrypt
@@ -113,7 +133,7 @@ theorem ecbDecryptCode_verified : Verified AArch64.target ecbDecryptCode (Spec.T
 
 theorem ecbDecryptCode_noResidue : NoResidue ecbDecryptCode (Spec.TripleDes.ecbContract AArch64.abi .decrypt 1024) 0 :=
   noResidue_of_doneG ecbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.ecbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.ecbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.1
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 abbrev cbcEncryptChainedCode : Prog isa := Impl.TripleDes.AArch64.Fn.cbcEncryptChained
@@ -123,7 +143,7 @@ theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChain
 
 theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.TripleDes.cbcEncryptChainedContract AArch64.abi 464) 0 :=
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.1
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 abbrev cbcDecryptChainedCode : Prog isa := Impl.TripleDes.AArch64.Fn.cbcDecryptChained
@@ -133,7 +153,7 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.TripleDes.cbcDecryptChainedContract AArch64.abi 1120) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.1
 
 /-- `vg_triple_des_cfb64_encrypt`. -/
 abbrev cfbEncryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfbEncrypt
@@ -143,7 +163,7 @@ theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.T
 
 theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.TripleDes.cfbEncryptContract AArch64.abi 560) 0 :=
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.1
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
 abbrev cfbDecryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfbDecrypt
@@ -153,7 +173,7 @@ theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.T
 
 theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.TripleDes.cfbDecryptContract AArch64.abi 1120) 0 :=
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.1
 
 /-- `vg_triple_des_cfb64_encrypt_final`. -/
 abbrev cfbEncryptFinalCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfbEncryptFinal
@@ -163,7 +183,7 @@ theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCo
 
 theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.TripleDes.cfbEncryptFinalContract AArch64.abi 560) 0 :=
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.1
 
 /-- `vg_triple_des_cfb64_decrypt_final`. -/
 abbrev cfbDecryptFinalCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfbDecryptFinal
@@ -173,7 +193,7 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.TripleDes.cfbDecryptFinalContract AArch64.abi 560) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.1
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
 abbrev cfb8EncryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfb8Encrypt
@@ -183,7 +203,7 @@ theorem cfb8EncryptCode_verified : Verified AArch64.target cfb8EncryptCode (Spec
 
 theorem cfb8EncryptCode_noResidue : NoResidue cfb8EncryptCode (Spec.TripleDes.cfb8EncryptContract AArch64.abi 560) 0 :=
   noResidue_of_doneG cfb8EncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfb8EncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfb8EncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.1
 
 /-- `vg_triple_des_cfb8_decrypt`. -/
 abbrev cfb8DecryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.cfb8Decrypt
@@ -193,7 +213,7 @@ theorem cfb8DecryptCode_verified : Verified AArch64.target cfb8DecryptCode (Spec
 
 theorem cfb8DecryptCode_noResidue : NoResidue cfb8DecryptCode (Spec.TripleDes.cfb8DecryptContract AArch64.abi 560) 0 :=
   noResidue_of_doneG cfb8DecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.cfb8DecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.cfb8DecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_triple_des_ofb`. -/
 abbrev ofbCode : Prog isa := Impl.TripleDes.AArch64.Fn.ofb
@@ -203,7 +223,7 @@ theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.TripleDes.ofbCo
 
 theorem ofbCode_noResidue : NoResidue ofbCode (Spec.TripleDes.ofbContract AArch64.abi 560) 0 :=
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_triple_des_ofb_final`. -/
 abbrev ofbFinalCode : Prog isa := Impl.TripleDes.AArch64.Fn.ofbFinal
@@ -213,7 +233,7 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Tripl
 
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.TripleDes.ofbFinalContract AArch64.abi 560) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.TripleDes.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.TripleDes.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/

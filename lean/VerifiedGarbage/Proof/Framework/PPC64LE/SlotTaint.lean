@@ -192,9 +192,49 @@ def meet (τ₁ τ₂ : T) : T where
   bases := τ₁.bases.filter (τ₂.bases.contains ·)
   slots := if τ₁.lens = τ₂.lens then τ₁.slots.filter (τ₂.slots.contains ·) else []
 
+/-- `a = b`, for the kernel. -/
+def eq3 (a b : Nat × Nat × Nat) : Bool := Nat.beq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
+
+theorem eq3_iff {a b : Nat × Nat × Nat} : eq3 a b = true ↔ a = b := by
+  obtain ⟨a1, a2, a3⟩ := a; obtain ⟨b1, b2, b3⟩ := b
+  simp only [eq3, Bool.and_eq_true, Nat.beq_eq, Prod.mk.injEq, and_assoc]
+
+def sublC : List (Nat × Nat × Nat) → List (Nat × Nat × Nat) → Bool
+  | [], _ => true
+  | _ :: _, [] => false
+  | a :: as, b :: bs => if eq3 a b then sublC as bs else sublC (a :: as) bs
+
+/-- `as` is a sublist of `bs` (in order), in one pass over both. -/
+@[implemented_by sublC] def subl (as bs : List (Nat × Nat × Nat)) : Bool :=
+  List.rec (motive := fun _ => List (Nat × Nat × Nat) → Bool)
+    (fun as => List.casesOn (motive := fun _ => Bool) as true fun _ _ => false)
+    (fun b _ ih as => List.casesOn (motive := fun _ => Bool) as true fun a as' =>
+      bif eq3 a b then ih as' else ih as) bs as
+
+theorem subl_sublist : ∀ {as bs : List (Nat × Nat × Nat)}, subl as bs = true → as.Sublist bs
+  | [], _, _ => List.nil_sublist _
+  | _ :: _, [], h => by cases h
+  | a :: as, b :: bs, h => by
+    change (bif eq3 a b then subl as bs else subl (a :: as) bs) = true at h
+    cases he : eq3 a b
+    · rw [he] at h; exact (subl_sublist h).cons b
+    · rw [he] at h; rw [eq3_iff.mp he]; exact (subl_sublist h).cons_cons b
+
+/-- Every slot of `as` is one of `bs`: in one pass if they are in the same
+order, as they are where a loop's body adds none. -/
+def slotsLe (as bs : List (Nat × Nat × Nat)) : Bool := subl as bs || as.all (bs.contains ·)
+
+theorem slotsLe_eq (as bs : List (Nat × Nat × Nat)) : slotsLe as bs = as.all (bs.contains ·) := by
+  unfold slotsLe
+  cases h : subl as bs
+  · rw [Bool.false_or]
+  · rw [Bool.true_or]
+    symm
+    simp only [List.all_eq_true, List.contains_iff_mem]
+    exact fun x hx => (subl_sublist h).subset hx
+
 def le (τ σ : T) : Bool :=
-  τ.regs.subset σ.regs && τ.lens == σ.lens && τ.bases.all (σ.bases.contains ·) &&
-    τ.slots.all (σ.slots.contains ·)
+  τ.regs.subset σ.regs && τ.lens == σ.lens && τ.bases.all (σ.bases.contains ·) && slotsLe τ.slots σ.slots
 
 /-! ## Soundness -/
 
@@ -787,7 +827,7 @@ theorem meet_right {τ₁ τ₂ : T} {s₁ s₂ : State} (h : Agree τ₂ s₁ s
 
 theorem le_sound {τ σ : T} {s₁ s₂ : State} (hle : le τ σ = true) (h : Agree σ s₁ s₂) :
     Agree τ s₁ s₂ := by
-  simp only [le, Bool.and_eq_true, List.all_eq_true, beq_iff_eq, List.contains_iff_mem] at hle
+  simp only [le, slotsLe_eq, Bool.and_eq_true, List.all_eq_true, beq_iff_eq, List.contains_iff_mem] at hle
   obtain ⟨⟨⟨hr, hl⟩, hb⟩, hs⟩ := hle
   exact ⟨h.sp, fun r h' => h.regs r (RegSet.mem_of_subset hr h'), fun hne => h.wr (hl ▸ hne),
     ⟨fun hne => hl ▸ h.wf₁.1 (hl ▸ hne), fun p hp => h.wf₁.2 p (hb p hp)⟩,

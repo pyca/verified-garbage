@@ -47,6 +47,8 @@ import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.TaintCTAll
+public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 
 /-!
 # SM4's modes on AArch64 return without secret residue
@@ -73,9 +75,30 @@ abbrev cbcEncryptChainedSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cbcEncryptChai
 theorem cbcEncryptChainedSm4Code_verified : Verified AArch64.target cbcEncryptChainedSm4Code (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 112) :=
   Clears.Verified.withClears (Proof.Sm4.AArch64.Sm4e.cbcEncryptChained_framed) (by decide)
 
+/-- The residue analyses of the functions' code, in one kernel evaluation
+(`taint_decide_ct_all`), which analyses the code they share once. -/
+theorem residue :
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cbcEncryptChainedSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cbcEncryptChained (doneG 3264 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cbcDecryptChainedSm4 (doneG 224 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cbcDecryptChained (doneG 3264 0 []) ∧
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbEncryptSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbEncrypt (doneG 3264 0 []) ∧
+    (rtaintG 224).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbDecryptSm4 (doneG 224 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbDecrypt (doneG 3264 0 []) ∧
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbEncryptFinalSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbEncryptFinal (doneG 3264 0 []) ∧
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbDecryptFinalSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.cfbDecryptFinal (doneG 3264 0 []) ∧
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.ofbSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.ofb (doneG 3264 0 []) ∧
+    (rtaintG 112).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.ofbFinalSm4 (doneG 112 0 []) ∧
+    (rtaintG 3264).Ends (RTaintB.init, some (0, 0, [])) Impl.Sm4.AArch64.Fn.ofbFinal (doneG 3264 0 []) := by
+  taint_decide_ct_all
+
 theorem cbcEncryptChainedSm4Code_noResidue : NoResidue cbcEncryptChainedSm4Code (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 112) 0 :=
   noResidue_of_doneG cbcEncryptChainedSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.1
 
 /-- `vg_sm4_cbc_encrypt_chained`. -/
 abbrev cbcEncryptChainedCode : Prog isa := Impl.Sm4.AArch64.Fn.cbcEncryptChained
@@ -85,7 +108,7 @@ theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChain
 
 theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.Sm4.cbcEncryptChainedContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cbcEncryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.1
 
 /-- `vg_sm4_cbc_decrypt_chained_sm4`. -/
 abbrev cbcDecryptChainedSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cbcDecryptChainedSm4
@@ -95,7 +118,7 @@ theorem cbcDecryptChainedSm4Code_verified : Verified AArch64.target cbcDecryptCh
 
 theorem cbcDecryptChainedSm4Code_noResidue : NoResidue cbcDecryptChainedSm4Code (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cbcDecryptChainedSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.1
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
 abbrev cbcDecryptChainedCode : Prog isa := Impl.Sm4.AArch64.Fn.cbcDecryptChained
@@ -105,7 +128,7 @@ theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChain
 
 theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.Sm4.cbcDecryptChainedContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cbcDecryptChainedApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.1
 
 /-- `vg_sm4_cfb128_encrypt_sm4`. -/
 abbrev cfbEncryptSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cfbEncryptSm4
@@ -115,7 +138,7 @@ theorem cfbEncryptSm4Code_verified : Verified AArch64.target cfbEncryptSm4Code (
 
 theorem cfbEncryptSm4Code_noResidue : NoResidue cfbEncryptSm4Code (Spec.Sm4.cfbEncryptContract AArch64.abi 112) 0 :=
   noResidue_of_doneG cfbEncryptSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_encrypt`. -/
 abbrev cfbEncryptCode : Prog isa := Impl.Sm4.AArch64.Fn.cfbEncrypt
@@ -125,7 +148,7 @@ theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.S
 
 theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Sm4.cfbEncryptContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbEncryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_decrypt_sm4`. -/
 abbrev cfbDecryptSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cfbDecryptSm4
@@ -135,7 +158,7 @@ theorem cfbDecryptSm4Code_verified : Verified AArch64.target cfbDecryptSm4Code (
 
 theorem cfbDecryptSm4Code_noResidue : NoResidue cfbDecryptSm4Code (Spec.Sm4.cfbDecryptContract AArch64.abi 224) 0 :=
   noResidue_of_doneG cfbDecryptSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_decrypt`. -/
 abbrev cfbDecryptCode : Prog isa := Impl.Sm4.AArch64.Fn.cfbDecrypt
@@ -145,7 +168,7 @@ theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.S
 
 theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.Sm4.cfbDecryptContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbDecryptApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_encrypt_final_sm4`. -/
 abbrev cfbEncryptFinalSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cfbEncryptFinalSm4
@@ -155,7 +178,7 @@ theorem cfbEncryptFinalSm4Code_verified : Verified AArch64.target cfbEncryptFina
 
 theorem cfbEncryptFinalSm4Code_noResidue : NoResidue cfbEncryptFinalSm4Code (Spec.Sm4.cfbEncryptFinalContract AArch64.abi 112) 0 :=
   noResidue_of_doneG cfbEncryptFinalSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_encrypt_final`. -/
 abbrev cfbEncryptFinalCode : Prog isa := Impl.Sm4.AArch64.Fn.cfbEncryptFinal
@@ -165,7 +188,7 @@ theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCo
 
 theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Sm4.cfbEncryptFinalContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbEncryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_decrypt_final_sm4`. -/
 abbrev cfbDecryptFinalSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cfbDecryptFinalSm4
@@ -175,7 +198,7 @@ theorem cfbDecryptFinalSm4Code_verified : Verified AArch64.target cfbDecryptFina
 
 theorem cfbDecryptFinalSm4Code_noResidue : NoResidue cfbDecryptFinalSm4Code (Spec.Sm4.cfbDecryptFinalContract AArch64.abi 112) 0 :=
   noResidue_of_doneG cfbDecryptFinalSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_cfb128_decrypt_final`. -/
 abbrev cfbDecryptFinalCode : Prog isa := Impl.Sm4.AArch64.Fn.cfbDecryptFinal
@@ -185,7 +208,7 @@ theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCo
 
 theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Sm4.cfbDecryptFinalContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.cfbDecryptFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_ofb_sm4`. -/
 abbrev ofbSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.ofbSm4
@@ -195,7 +218,7 @@ theorem ofbSm4Code_verified : Verified AArch64.target ofbSm4Code (Spec.Sm4.ofbCo
 
 theorem ofbSm4Code_noResidue : NoResidue ofbSm4Code (Spec.Sm4.ofbContract AArch64.abi 112) 0 :=
   noResidue_of_doneG ofbSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_ofb`. -/
 abbrev ofbCode : Prog isa := Impl.Sm4.AArch64.Fn.ofb
@@ -205,7 +228,7 @@ theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.Sm4.ofbContract
 
 theorem ofbCode_noResidue : NoResidue ofbCode (Spec.Sm4.ofbContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.ofbApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_ofb_final_sm4`. -/
 abbrev ofbFinalSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.ofbFinalSm4
@@ -215,7 +238,7 @@ theorem ofbFinalSm4Code_verified : Verified AArch64.target ofbFinalSm4Code (Spec
 
 theorem ofbFinalSm4Code_noResidue : NoResidue ofbFinalSm4Code (Spec.Sm4.ofbFinalContract AArch64.abi 112) 0 :=
   noResidue_of_doneG ofbFinalSm4Code_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- `vg_sm4_ofb_final`. -/
 abbrev ofbFinalCode : Prog isa := Impl.Sm4.AArch64.Fn.ofbFinal
@@ -225,7 +248,7 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Sm4.o
 
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Sm4.ofbFinalContract AArch64.abi 3264) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
-    (sp_of_pre (sig := Spec.Sm4.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+    (sp_of_pre (sig := Spec.Sm4.ofbFinalApi.sig) (by decide) (by decide) (Nat.le_refl _)) residue.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
