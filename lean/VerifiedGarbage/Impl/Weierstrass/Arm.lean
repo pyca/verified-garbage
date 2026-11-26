@@ -38,11 +38,17 @@ namespace VG.Impl.Weierstrass.Arm
 open VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass
 
 /-- The code of a field operation modulo `S`: a call of its function (with
+`u`, of its `_umaal` variant), whose code is `mul`, `add` or `sub`. (Each list of operations
+computes the three once: `fprog`.) -/
+def opCodeOf (S : Impl.Weierstrass.Mont.Modulus) (u : Bool) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => Mont.callOp (Mont.mulName u S) mul o a b
+  | .add o a b => Mont.callOp (Mont.addName u S) add o a b
+  | .sub o a b => Mont.callOp (Mont.subName u S) sub o a b
+
+/-- The code of a field operation modulo `S`: a call of its function (with
 `u`, of its `_umaal` variant). -/
-def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) : FOp → Prog isa
-  | .mul o a b => Mont.mulCall S o a b u
-  | .add o a b => Mont.addCall S o a b u
-  | .sub o a b => Mont.subCall S o a b u
+def opCode (S : Impl.Weierstrass.Mont.Modulus) (u : Bool := false) (op : FOp) : Prog isa :=
+  opCodeOf S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m) (Mont.subFnWith u S.k S.m) op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -52,7 +58,8 @@ def progs : List (Prog isa) → Prog isa
 
 /-- A straight-line sequence of field operations. -/
 def fprog (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) (u : Bool := false) : Prog isa :=
-  progs (ops.map (opCode S u))
+  progs (ops.map (opCodeOf S u (Mont.mulFnWith u S.k S.m) (Mont.addFnWith u S.k S.m)
+    (Mont.subFnWith u S.k S.m)))
 
 /-- `[o] = [a]` if the mask `r10` is zero, `[b]` if it is all ones, `k`
 32-bit words, through `r4` and `r5`. -/

@@ -39,15 +39,20 @@ open VG.PPC64LE VG.Impl.Weierstrass VG.Impl.Weierstrass.PPC64LE
 open Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 
 /-- The code of a field operation modulo `S` on slots named by number, each
+slot `x` at offset `σ x`, where the codes of the functions are `mul`, `add` and `sub`. -/
+def opCodeOf (σ : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => callOp (S.fn "mul") mul (σ o) (σ a) (σ b)
+  | .add o a b => callOp (S.fn "add") add (σ o) (σ a) (σ b)
+  | .sub o a b => callOp (S.fn "sub") sub (σ o) (σ a) (σ b)
+
+/-- The code of a field operation modulo `S` on slots named by number, each
 slot `x` at offset `σ x`. -/
-def opCodeR (σ : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
-  | .mul o a b => mulCall S (σ o) (σ a) (σ b)
-  | .add o a b => addCall S (σ o) (σ a) (σ b)
-  | .sub o a b => subCall S (σ o) (σ a) (σ b)
+def opCodeR (σ : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (op : FOp) : Prog isa :=
+  opCodeOf σ S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m) op
 
 /-- The field operations `ops` on slots named by number. -/
 def fprogR (σ : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
-  progs (ops.map (opCodeR σ S))
+  progs (ops.map (opCodeOf σ S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m)))
 
 /-! ## The slots, by number -/
 

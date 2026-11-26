@@ -49,15 +49,20 @@ open Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 def callB (enc : Nat → Nat) (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
   Mont.callOp f body (enc o) (enc a) (enc b)
 
+/-- The code of a field operation modulo `S` on the slots `enc` gives: a call of its function, whose code is `mul`,
+`add` or `sub`. (Each list of operations computes the three once: `fprogB`.) -/
+def opCodeOf (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => callB enc (S.fn "mul") mul o a b
+  | .add o a b => callB enc (S.fn "add") add o a b
+  | .sub o a b => callB enc (S.fn "sub") sub o a b
+
 /-- The code of a field operation modulo `S` on the slots `enc` gives. -/
-def opCodeB (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
-  | .mul o a b => callB enc (S.fn "mul") (Mont.mulFn S.k S.m) o a b
-  | .add o a b => callB enc (S.fn "add") (Mont.addFn S.k S.m) o a b
-  | .sub o a b => callB enc (S.fn "sub") (Mont.subFn S.k S.m) o a b
+def opCodeB (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (op : FOp) : Prog isa :=
+  opCodeOf enc S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m) op
 
 /-- A straight-line sequence of field operations on the slots `enc` gives. -/
 def fprogB (enc : Nat → Nat) (S : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
-  progs (ops.map (opCodeB enc S))
+  progs (ops.map (opCodeOf enc S (Mont.mulFn S.k S.m) (Mont.addFn S.k S.m) (Mont.subFn S.k S.m)))
 
 /-! ## The slots, by number -/
 

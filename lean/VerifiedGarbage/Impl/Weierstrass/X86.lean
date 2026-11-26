@@ -37,11 +37,16 @@ namespace VG.Impl.Weierstrass.X86
 
 open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 
+/-- The code of a field operation modulo `F`: a call of its function, whose code is `mul`,
+`add` or `sub`. (Each list of operations computes the three once: `fprog`.) -/
+def opCodeOf (F : Impl.Weierstrass.Mont.Modulus) (mul add sub : Prog isa) : FOp → Prog isa
+  | .mul o a b => Mont.callOp (F.fn "mul") mul o a b
+  | .add o a b => Mont.callOp (F.fn "add") add o a b
+  | .sub o a b => Mont.callOp (F.fn "sub") sub o a b
+
 /-- The code of a field operation modulo `F`: a call of its function. -/
-def opCode (F : Impl.Weierstrass.Mont.Modulus) : FOp → Prog isa
-  | .mul o a b => Mont.mulCall F o a b
-  | .add o a b => Mont.addCall F o a b
-  | .sub o a b => Mont.subCall F o a b
+def opCode (F : Impl.Weierstrass.Mont.Modulus) (op : FOp) : Prog isa :=
+  opCodeOf F (Mont.mulFn F.k F.m) (Mont.addFn F.k F.m) (Mont.subFn F.k F.m) op
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -50,7 +55,8 @@ def progs : List (Prog isa) → Prog isa
   | p :: ps => .seq p (progs ps)
 
 /-- A straight-line sequence of field operations. -/
-def fprog (F : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa := progs (ops.map (opCode F))
+def fprog (F : Impl.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa :=
+  progs (ops.map (opCodeOf F (Mont.mulFn F.k F.m) (Mont.addFn F.k F.m) (Mont.subFn F.k F.m)))
 
 /-- `[o] = [a]` if the mask `ecx` is zero, `[b]` if it is all ones, `k`
 32-bit words, through `eax` and `edx`. -/

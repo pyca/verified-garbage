@@ -189,7 +189,7 @@ theorem odds_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay 
         ChainSt P k base s₀ s' ∧ TblC P k base m (bv P k base m s₀) (j + 1) s'
   | 0, _, _, St, Tt => WP.block_nil ⟨St, Tt⟩
   | j + 1, hj, s, St, Tt => by
-    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.odds]
+    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.odds, VG.Impl.Weierstrass.PPC64LE.ChainCfg.oddsOf]
     refine WP.seq (WP.mono (odds_ok hkS hmS hM hL hm j (by omega_using [hj]) St Tt) fun t ⟨St', Tt'⟩ => ?_)
     have hn := St'.ws.nowrap
     have Ti := Tt'.1 j (by omega_using [])
@@ -260,7 +260,7 @@ theorem squares_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainL
       TblC P k base m (bv P k base m s₀) 8 s' ∧ wordsVal s'.mem base P.acc k < m ∧
       toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) = bv P k base m s₀ ^ (v * 2 ^ j) := by
   have hn := h.ws.nowrap
-  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.squares]
+  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.squares, VG.Impl.Weierstrass.PPC64LE.ChainCfg.squaresOf]
   refine WP.seq (wp_step (exec_li hj) (WP.block_nil ?_))
   generalize hs₁ : s.write .r31 (BitVec.ofNat 64 j) = s₁
   have K₁ : Kp [.r31] s s₁ := by rw [← hs₁]; exact Kp.write _ _ (by decide)
@@ -306,7 +306,7 @@ theorem step_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay 
       TblC P k base m (bv P k base m s₀) 8 s' ∧ wordsVal s'.mem base P.acc k < m ∧
       toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) = bv P k base m s₀ ^ (v * 2 ^ j + d) := by
   have hn := h.ws.nowrap
-  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.step]
+  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.step, VG.Impl.Weierstrass.PPC64LE.ChainCfg.stepOf]
   have hsq : WP isa (if j = 0 then .block [] else VG.Impl.Weierstrass.PPC64LE.ChainCfg.squares P S j) s fun s' =>
       ChainSt P k base s₀ s' ∧ TblC P k base m (bv P k base m s₀) 8 s' ∧
       wordsVal s'.mem base P.acc k < m ∧
@@ -345,7 +345,7 @@ theorem steps_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay
         toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) = bv P k base m s₀ ^ chainVal v sts
   | [], _, _, _, h, _, hlt, hv => WP.block_nil ⟨h, hlt, hv⟩
   | (j, d) :: rest, s, v, hst, h, hT, hlt, hv => by
-    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.steps]
+    rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.steps, VG.Impl.Weierstrass.PPC64LE.ChainCfg.stepsOf]
     have h1 := hst (j, d) (List.mem_cons_self ..)
     exact WP.seq (WP.mono (step_ok hkS hmS hM hL hm h1.1 h1.2 h hT hlt hv) fun s₁ ⟨S₁, T₁, lt₁, v₁⟩ =>
       steps_ok hkS hmS hM hL hm rest (fun st hs => hst st (List.mem_cons_of_mem _ hs)) S₁ T₁ lt₁ v₁)
