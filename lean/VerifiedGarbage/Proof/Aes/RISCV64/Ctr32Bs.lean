@@ -54,7 +54,7 @@ theorem cipher_congr {nr : Nat} {w w' : List Byte}
           (Spec.Aes.subBytes s))) (roundKey w' (j + 1))) s := by
     intro l
     induction l with
-    | nil => intro _ _; rfl
+    | nil => intro _ _; rw [List.foldl_nil, List.foldl_nil]
     | cons a l ih =>
       intro hl s
       simp only [List.foldl_cons]
