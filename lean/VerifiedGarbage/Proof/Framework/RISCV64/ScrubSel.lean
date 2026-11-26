@@ -149,10 +149,10 @@ theorem wipeSel_run : ∀ (fs : List (Nat × List (Nat × Nat))) (u : State), Fr
     · have hx' : ¬ (x - (u.sp - BitVec.ofNat 64 (b + sizeOf bs))).toNat < b + sizeOf bs := hx
       have e1 : u.sp - BitVec.ofNat 64 b - BitVec.ofNat 64 (sizeOf bs) =
           u.sp - BitVec.ofNat 64 (b + sizeOf bs) := by
-        rw [BitVec.ofNat_add]; bv_omega
+        rw [BitVec.ofNat_add, BitVec.sub_sub]
       have e2 : u.sp - BitVec.ofNat 64 b = u.sp - BitVec.ofNat 64 (b + sizeOf bs) +
           BitVec.ofNat 64 (sizeOf bs) := by
-        rw [BitVec.ofNat_add]; bv_omega
+        rw [← e1, BitVec.sub_add_cancel]
       have ho := off_lt x (u.sp - BitVec.ofNat 64 (b + sizeOf bs)) (sizeOf bs) b
         (by omega_using [hs, hp, hS])
       have hin : ¬ (x - (u.sp - BitVec.ofNat 64 b)).toNat < b := by

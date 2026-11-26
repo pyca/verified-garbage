@@ -265,9 +265,9 @@ theorem wipeMem_cons (p : Addr) (b : Nat) (bs : List Nat) (U : Nat → BitVec 64
     lose (wipeMem bs (p - BitVec.ofNat 64 b) U (zeroOn (p - BitVec.ofNat 64 b) 0 b m))
       (p - BitVec.ofNat 64 b) b (fun n => U (n + wipeK bs)) = wipeMem (b :: bs) p U m := by
   have e1 : p - BitVec.ofNat 64 b - BitVec.ofNat 64 bs.sum = p - BitVec.ofNat 64 (b + bs.sum) := by
-    rw [BitVec.ofNat_add]; bv_omega
+    rw [BitVec.ofNat_add, BitVec.sub_sub]
   have e2 : p - BitVec.ofNat 64 b = p - BitVec.ofNat 64 (b + bs.sum) + BitVec.ofNat 64 bs.sum := by
-    rw [BitVec.ofNat_add]; bv_omega
+    rw [← e1, BitVec.sub_add_cancel]
   funext x
   have e := off_lt x (p - BitVec.ofNat 64 (b + bs.sum)) bs.sum b (by omega_using [h])
   simp only [wipeMem, wipeZ, lose, zeroOn, List.sum_cons, Nat.zero_le, true_and, e1]
@@ -882,9 +882,11 @@ the address it calls. -/
 theorem icall_trace {i : Instr} {n : String} {b nx : Prog isa} {s s' : State} {t : List Leak}
     (e : Exec isa (.icall i n b nx) s t s') :
     ∃ a rest, isa.icall i s = some a ∧ t = (isa.addrs i s).map .addr ++ .addr a :: rest := by
-  cases e with
-  | icall h₁ _ _ _ => exact ⟨_, _, h₁, rfl⟩
-  | icallNext _ _ e' => exact icall_trace e'
+  generalize hc : (Code.icall i n b nx : Prog isa) = c at e
+  induction e generalizing n b nx with
+  | icall h₁ _ _ _ => cases hc; exact ⟨_, _, h₁, rfl⟩
+  | icallNext _ _ _ ih => cases hc; exact ih rfl
+  | _ => cases hc
 
 /-- Two runs of code from the same unknowns, whose functions called
 indirectly have the same addresses (`inames`), one of whose traces is a
