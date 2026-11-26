@@ -113,6 +113,56 @@ partial def emptyBlock (e : Expr) : MetaM Bool := do
   | "call" => emptyBlock e.appArg!
   | _ => return false
 
+/-- `e` with the functions applied to variables unfolded, where that leaves
+no variable in them. -/
+partial def unfoldVars (fuel : Nat) (e : Expr) : MetaM Expr := do
+  if !e.hasFVar then return e
+  let e ← norm e
+  if !e.hasFVar || fuel == 0 then return e
+  transform e (pre := fun e => do
+    unless e.isApp && e.hasFVar && !e.hasLooseBVars && e.getAppFn.isConst do return .continue
+    let some e' ← unfoldDefinition? e | return .continue
+    let e' ← unfoldVars (fuel - 1) e'
+    return if e'.hasFVar then .continue else .done e')
+
+/-- The elements of the list `e`, if it can be evaluated. -/
+partial def elems? (e : Expr) : MetaM (Option (Array Expr)) := do
+  let e ← norm (← whnfCore e)
+  let args := e.getAppArgs
+  match e.getAppFn.constName?, args.size with
+  | some ``List.nil, 1 => return some #[]
+  | some ``List.cons, 3 =>
+    let some l ← elems? args[2]! | return none
+    return some (#[args[1]!] ++ l)
+  | some ``HAppend.hAppend, 6 | some ``List.append, 3 =>
+    let some l ← elems? args[args.size - 2]! | return none
+    let some l' ← elems? args.back! | return none
+    return some (l ++ l')
+  | some ``List.range, 1 =>
+    let .ok (.lit (.natVal n)) := Kernel.whnf (← getEnv) (← getLCtx) (← unfoldVars 4 args[0]!) | return none
+    return some ((Array.range n).map mkNatLit)
+  | some ``List.flatMap, 4 =>
+    let some l ← elems? args[3]! | return none
+    let mut r := #[]
+    for x in l do
+      let some l ← elems? (args[2]!.beta #[x]) | return none
+      r := r ++ l
+    return some r
+  | some ``List.map, 4 =>
+    let some l ← elems? args[3]! | return none
+    return some (l.map fun x => args[2]!.beta #[x])
+  | _, _ =>
+    let some e ← step? e | return none
+    elems? e
+
+/-- The instructions `is` written out, if that leaves no variable in them. -/
+def instrs? (is : Expr) : MetaM (Option Expr) := do
+  let some l ← elems? is | return none
+  if l.isEmpty then return none
+  let l ← l.mapM fun i => do unfoldVars 4 (← whnf (← norm i))
+  if l.any fun i => i.hasFVar || i.hasMVar then return none
+  some <$> mkListLit (← inferType l[0]!) l.toList
+
 /-- The rules of a relation, by name, that fill a hole. -/
 def holeRules : List String := ["hole", "budget", "icalls"]
 
@@ -176,6 +226,16 @@ partial def prove' (rel a b : Expr) : M Expr := do
   let hole ← (do
     if a'.getAppFn.constName?.any (·.getString! == "holeStub") then return true
     emptyBlock a')
+  -- The instructions of two blocks are the same: written out, so that the
+  -- kernel compares each block with them, and not one with the other, which,
+  -- where the two are a function of different arguments (the stub and the
+  -- implementation), compares those arguments first, down to the names in
+  -- them, in vain, and then those of the function's every call.
+  if !hole && !a'.hasFVar && (← ctor? a').any (·.getString! == "block") && (← ctor? b').any (·.getString! == "block") then
+    let rule := if env.contains (R ++ `block) then R ++ `block else R ++ `refl
+    if let some is := ← (if env.contains rule then instrs? b'.appArg! else pure none) then
+      if let some (p, #[]) ← apply? rule (mkApp2 rel (mkApp a'.appFn! is) (mkApp b'.appFn! is)) then
+        return ← instantiateMVars p
   let mut rules : Array Name := #[]
   if hole then rules := holeRules.toArray.map (R ++ .mkSimple ·)
   if b'.getAppFn.constName?.any (·.getString! == "icalls") then rules := rules.push (R ++ `tab)
