@@ -119,8 +119,9 @@ def nArr : Nat := 56
 
 /-! ## The header
 
-Bytes 0–95 hold the caller's `s0`–`s11`, 128–144 the shared routines'
-slots; the flags are in `X0`–`X8`. -/
+Bytes 0–95 hold the caller's `s0`–`s11`, 96–103 the link across shared
+inverse calls, and 128–144 the shared routines' slots; the flags are in
+`X0`–`X8`. -/
 
 def X0 : Nat := 152
 def X1 : Nat := 160

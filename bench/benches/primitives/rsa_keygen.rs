@@ -18,6 +18,7 @@ pub fn bench(c: &mut Criterion) {
 
     use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
+    use openssl::bn::BigNum;
     use openssl::rsa::Rsa;
     use verified_garbage::rsa::BigUint;
     use verified_garbage::rsa::keygen::generate_with_rng;
@@ -49,12 +50,20 @@ pub fn bench(c: &mut Criterion) {
                     .map(|i| {
                         let mut next = splitmix64(bits + i);
                         let mut tape = Vec::new();
-                        generate_with_rng(bits, BigUint::from_be_bytes(&[1, 0, 1]), |buf| {
-                            buf.fill_with(&mut next);
-                            tape.extend_from_slice(buf);
-                            Ok(())
-                        })
-                        .unwrap();
+                        let generated =
+                            generate_with_rng(bits, BigUint::from_be_bytes(&[1, 0, 1]), |buf| {
+                                buf.fill_with(&mut next);
+                                tape.extend_from_slice(buf);
+                                Ok(())
+                            })
+                            .unwrap();
+                        // Independently validate each prototype key outside timing.
+                        let [n, e, d, p, q, dp, dq, qinv] = generated
+                            .components()
+                            .map(|part| BigNum::from_slice(part.as_be_bytes()).unwrap());
+                        let oracle =
+                            Rsa::from_private_components(n, e, d, p, q, dp, dq, qinv).unwrap();
+                        assert!(oracle.check_key().unwrap());
                         tape
                     })
                     .collect();
