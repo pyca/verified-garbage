@@ -172,13 +172,13 @@ theorem checkBlock_dom (names : List String) {is : List Instr} {τ σ τ' : T}
     change some τ = some τ' at h
     cases h; exact ⟨σ, rfl, hle⟩
   | cons i is ih =>
-    change (VectorTaint.taint.step τ i).bind (VectorTaint.taint.checkBlock · is) = some τ' at h
+    have h := (VG.Taint.checkBlock_cons (A := VectorTaint.taint) τ i is).symm.trans h
     obtain ⟨τ₁, hs, hr⟩ := Option.bind_eq_some_iff.mp h
     obtain ⟨σ₀, hs₀, hle₀⟩ := VectorTaint.step_mono i hle ((VectorTaint.taint_step τ i).symm.trans hs)
     obtain ⟨σ₁, hs₁, hle₁⟩ := step_dom names i hs₀
     obtain ⟨σ', h', hle'⟩ := ih hr (LeFrame.le_trans (A := VectorTaint.taint) hle₀ hle₁)
     refine ⟨σ', ?_, hle'⟩
-    change ((analysis names).step σ i).bind ((analysis names).checkBlock · is) = some σ'
+    refine (VG.Taint.checkBlock_cons (A := analysis names) σ i is).trans ?_
     exact Option.bind_eq_some_iff.mpr ⟨σ₁, (analysis_step names σ i).trans hs₁, h'⟩
 
 theorem checkChunks_dom (names : List String) {chunkSize : Nat} {ms : List T} {is : List Instr}

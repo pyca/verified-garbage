@@ -51,7 +51,7 @@ theorem checkBlockU_noBase {τ τ' : T} (h : NoBase τ) {is : List Instr}
   induction is generalizing τ with
   | nil => cases hc; exact h
   | cons i is ih =>
-    have hc : (taintU.step τ i).bind (taintU.checkBlock · is) = some τ' := hc
+    have hc : (taintU.step τ i).bind (taintU.checkBlock · is) = some τ' := (VG.Taint.checkBlock_cons (A := taintU) τ i is).symm.trans hc
     rw [taintU_step] at hc
     obtain ⟨σ, hσ, hc⟩ := Option.bind_eq_some_iff.mp hc
     exact ih (stepU_noBase h hσ) hc
@@ -61,7 +61,7 @@ theorem checkBlockU_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (taintU.step τ i.eraseOff).bind (taintU.checkBlock · _) = (taintU.step τ i).bind (taintU.checkBlock · _)
+    refine (VG.Taint.checkBlock_cons (A := taintU) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taintU) τ i is).symm)
     rw [taintU_step, taintU_step, stepU_eraseOff h]
     exact bind_congr fun σ hσ => ih (stepU_noBase h hσ)
 
