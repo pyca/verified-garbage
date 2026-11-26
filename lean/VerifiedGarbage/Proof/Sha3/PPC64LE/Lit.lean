@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.PPC64LE
+import VerifiedGarbage.Proof.Sha3.RcLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.Sha3.PPC64LE
+meta import VerifiedGarbage.Proof.Sha3.RcLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit

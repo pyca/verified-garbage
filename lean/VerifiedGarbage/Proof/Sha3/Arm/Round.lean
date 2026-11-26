@@ -6,7 +6,9 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Anf32
 public import VerifiedGarbage.Proof.Sha3.Spec
 public import VerifiedGarbage.Proof.Sha3.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Sha3.RcLit
 import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Arm.StraightNot
 meta import VerifiedGarbage.Proof.Framework.Arm.Linear
@@ -14,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Bitslice.Anf32
 meta import VerifiedGarbage.Proof.Sha3.Spec
 meta import VerifiedGarbage.Proof.Sha3.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Sha3.RcLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
@@ -158,6 +161,13 @@ def sOut (x y h : Nat) : Poly :=
 
 /-- Word `m` (half `m % 2` of lane `m / 2`) of the round's output before ι, as stored. -/
 def specP (m : Nat) : Poly := pror32 (sub32 0 (rot (m / 2) (m % 2))) (sOut (m / 2 % 5) (m / 2 / 5) (m % 2))
+
+deriving instance Lean.ToExpr for Poly
+
+-- The kernel evaluates each value once, here, not in each check and for each word that uses it.
+materialize_table sC 5 2
+materialize_table sD 5 2
+materialize_table specP 50
 
 /-! ## The checks -/
 
