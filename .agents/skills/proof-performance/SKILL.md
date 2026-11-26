@@ -114,7 +114,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   match that is left still costs a third of a millisecond: Lean compiles
   it to a matcher, a function of the instruction and of the alternatives,
   and unfolding it builds a term of every case around the alternatives to
-  keep one. `inline_match% f g …` (`Proof/Framework/Taint.lean`) is
+  keep one. `inline_match% f g …` (`Proof/Framework/InlineMatch.lean`) is
   `f` as a `casesOn` whose cases are closed terms, with the matches of `f`
   and of the functions `g …` it applies to the instruction resolved in
   each (`stepKeepFnK`, `RTaint.stepFn1K`; equal to `f` by cases and
