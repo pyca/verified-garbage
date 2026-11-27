@@ -692,6 +692,14 @@ pub(crate) mod vg_mlkem1024_kpke_keygen;
 pub(crate) mod vg_mlkem16_cbd2_avx2;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mlkem16_sample_hash_avx2.rs"]
+pub(crate) mod vg_mlkem16_sample_hash_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem16_sample_hash_avx512.rs"]
+pub(crate) mod vg_mlkem16_sample_hash_avx512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mlkem16_sample_ntt4_avx2.rs"]
 pub(crate) mod vg_mlkem16_sample_ntt4_avx2;
 

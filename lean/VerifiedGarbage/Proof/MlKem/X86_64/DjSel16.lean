@@ -1100,8 +1100,8 @@ end
 abbrev FIρ16 (K : Kem16) (ρ : List Byte) (i : Nat) (s : State) : Prop :=
   ∃ σ, (encK K.L).pre σ ∧ FI16 K σ i s ∧ Enc.rhoE K.L (ekE K.L σ) = ρ
 
-theorem frag16_tr (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) {i : Nat} (hi : i < nb K.L) :
-    RelCT isa (R K.L fun σ s => FI16 K σ i s) (frag K b i) fun _ _ => True := by
+theorem frag16_tr {callName : Option String} (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) {i : Nat} (hi : i < nb K.L) :
+    RelCT isa (R K.L fun σ s => FI16 K σ i s) (frag K b i callName) fun _ _ => True := by
   have W := F.toEcWfB
   obtain ⟨_, t⟩ := T.hT i hi
   have hsd := F.sd i hi
@@ -1143,10 +1143,10 @@ theorem frag16_tr (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk1
     exact ⟨Enc.rhoE K.L (ekE K.L σ₁), ek_lrel W p₁ p₂ pub h₁.ec h₂.ec, ⟨σ₁, p₁, h₁, rfl⟩,
       ⟨σ₂, p₂, h₂, (rho_pub pub).symm⟩⟩
 
-theorem frags16_tr (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) :
-    RelCT isa (R K.L fun σ s => FI16 K σ 0 s) (seqR (frag K b) 0 (nb K.L)) (R K.L fun σ s => FI16 K σ (nb K.L) s) := by
+theorem frags16_tr {callName : Option String} (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) :
+    RelCT isa (R K.L fun σ s => FI16 K σ 0 s) (seqR (fun i => frag K b i callName) 0 (nb K.L)) (R K.L fun σ s => FI16 K σ (nb K.L) s) := by
   have := seqR_tr (R := fun i => R K.L fun σ s => FI16 K σ i s) (nb K.L) 0 fun k _ hk =>
-    relInv (fun σ s hp h => frag16_ok F.toEk16FWf hB hp (by omega_using [hk]) h) (frag16_tr F T hB (by omega_using [hk]))
+    relInv (fun σ s hp h => frag16_ok (callName := callName) F.toEk16FWf hB hp (by omega_using [hk]) h) (frag16_tr (callName := callName) F T hB (by omega_using [hk]))
   rwa [Nat.zero_add] at this
 
 theorem quadM16_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) {q : Nat} (hq : q < K.L.k * K.L.k / 4) (h3 : 3 * nb K.L ≤ 4 * q) :
@@ -1181,12 +1181,12 @@ theorem entsM16_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) :
   exact RelCT.mono this (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨Nat.le_refl _, h₁⟩,
     ⟨Nat.le_refl _, h₂⟩⟩) fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.2, h₂.2⟩
 
-theorem matH16_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) :
-    RelCT isa (R K.L (ProOut K.L)) (matH K (n, c) b) (R K.L fun σ s => MI16 K σ (K.L.k * K.L.k) s) := by
+theorem matH16_tr {callName : Option String} {n : String} {c : Prog isa} (v : S16Ok c) (F : Ek16HWf K) (T : EkT16Wf K) {b : Prog isa} (hB : BatchHOk16 b) :
+    RelCT isa (R K.L (ProOut K.L)) (matH K (n, c) b callName) (R K.L fun σ s => MI16 K σ (K.L.k * K.L.k) s) := by
   unfold matH
   exact RelCT.seq (relInv (I' := RI16 K) (fun σ s hp h => rho16_ok F hp h) (rho16_tr F T))
     (RelCT.seq (relInv (I' := fun σ s => FI16 K σ 0 s) (fun σ s hp h => hz16_ok F hp h) (hz16_tr F T))
-      (RelCT.seq (frags16_tr F T hB)
+      (RelCT.seq (frags16_tr (callName := callName) F T hB)
         (RelCT.seq (relInv (I' := fun σ s => MI16 K σ (3 * nb K.L) s) (fun σ s hp h => hcopy16_ok F hp h) (hcopy16_tr F T))
           (entsM16_tr v F))))
 
@@ -1240,7 +1240,7 @@ theorem kemEncaps16_ct {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F : Ek16
   refine relStart (Q := fun _ _ => True) ?_
   unfold kemEncaps16
   refine RelCT.seq (relInv (I' := ProOut K.L) (fun σ s hp hs => by subst hs; exact pro_ok F.toEcWfB hp) pro_tr) ?_
-  refine RelCT.seq (matH16_tr hS F T hB) ?_
+  refine RelCT.seq (matH16_tr (callName := some v.callee.hashName) hS F T hB) ?_
   refine RelCT.seq (relInv (I' := fun σ s => Enc16.EB16 K (ekC F.toEcWfB σ) (.r14, 0) (ekE K.L σ) (ekMs σ)
     (ekG K.L σ).2 (K.L.k * K.L.k) s) (fun σ s hp hs => hashesF16_ok F hp hs) (hashesF16_tr F)) ?_
   refine RelCT.seq (relInv (I' := EncO16 F) (fun σ s _ hs => ifRest16_ok hK v F hs) (ifRest16_tr hK v F)) ?_
@@ -1566,8 +1566,8 @@ theorem blocksJ_eq (F : DjFWf K) {σ : State} {i : Nat} (hi : i < nb K.L) {s : S
     bytesAt _ (s.gpr .rbx + BitVec.ofNat 64 (K.oW + Sample4.oHB) + BitVec.ofNat 64 (136 * j)) 136
   rw [off_add, off_add, Nat.add_assoc]
 
-theorem fragJ_ok (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {i : Nat} (hi : i < nb K.L)
-    {s : State} (h : FJ F.toDcWfB σ i s) : WP isa (frag K b i) s (FJ F.toDcWfB σ (i + 1)) := by
+theorem fragJ_ok {callName : Option String} (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {i : Nat} (hi : i < nb K.L)
+    {s : State} (h : FJ F.toDcWfB σ i s) : WP isa (frag K b i callName) s (FJ F.toDcWfB σ (i + 1)) := by
   have hsm := F.sm i hi
   simp only [smChk, Bool.and_eq_true] at hsm
   have hc := F.jb i hi
@@ -1602,9 +1602,9 @@ theorem fragJ_ok (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {
       habs_congr _ 3 fun j hj => blocksJ_eq F hi i₅.hb hj, show 3 * (i + 1) = 3 * i + 3 by omega_using []]
     exact habs_blk hpart (by rw [hlen]; omega_using [hi, hl])
 
-theorem fragsJ_ok (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {s : State}
-    (h : FJ F.toDcWfB σ 0 s) : WP isa (seqR (frag K b) 0 (nb K.L)) s (FJ F.toDcWfB σ (nb K.L)) := by
-  have := seqR_ok (I := FJ F.toDcWfB σ) (nb K.L) 0 (fun k _ hk s hs => fragJ_ok F hb (by omega_using [hk]) hs) s h
+theorem fragsJ_ok {callName : Option String} (F : DjFWf K) {b : Prog isa} (hb : BatchHOk16 b) {σ : State} {s : State}
+    (h : FJ F.toDcWfB σ 0 s) : WP isa (seqR (fun i => frag K b i callName) 0 (nb K.L)) s (FJ F.toDcWfB σ (nb K.L)) := by
+  have := seqR_ok (I := FJ F.toDcWfB σ) (nb K.L) 0 (fun k _ hk s hs => fragJ_ok (callName := callName) F hb (by omega_using [hk]) hs) s h
   rwa [Nat.zero_add] at this
 
 end VG.Proof.MlKem.X86_64.DjF16
@@ -1738,12 +1738,12 @@ theorem entsJ_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {σ : S
   exact WP.mono this fun _ h => h.2
 
 /-- `ρ` to `SB`, the fragments, `J(z ‖ c)` to `KB`, and the remaining entries of `Â`. -/
-theorem matJ_ok {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {b : Prog isa} (hb : BatchHOk16 b)
+theorem matJ_ok {callName : Option String} {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {b : Prog isa} (hb : BatchHOk16 b)
     {σ : State} {s : State} (h : GI F.toDcWfB σ s) :
-    WP isa (matJ K (n, c) b) s (EBX F.toDcWfB σ (K.L.k * K.L.k)) := by
+    WP isa (matJ K (n, c) b callName) s (EBX F.toDcWfB σ (K.L.k * K.L.k)) := by
   unfold matJ
   exact WP.seq (WP.mono (rhoJ_ok F h) fun _ h₁ => WP.seq (WP.mono (hzJ_ok F h₁) fun _ h₂ =>
-    WP.seq (WP.mono (fragsJ_ok F.toDjFWf hb h₂) fun _ h₃ => WP.seq (WP.mono (kbJ_ok F h₃) fun _ h₄ =>
+    WP.seq (WP.mono (fragsJ_ok (callName := callName) F.toDjFWf hb h₂) fun _ h₃ => WP.seq (WP.mono (kbJ_ok F h₃) fun _ h₄ =>
       entsJ_ok v F h₄))))
 
 /-- The rest of the re-encryption, if every `SampleNTT` succeeded. -/
@@ -1767,7 +1767,7 @@ theorem kemDecapsJ16_correct {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F 
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok F.toDcWfB hp) fun s₁ ⟨h₁, h15⟩ =>
     WP.seq (WP.mono (dec_ok hK F.toDc16Wf hp h₁ h15) fun s₂ h₂ =>
       WP.seq (WP.mono (hashG_ok F.toDcWfB hp h₂) fun s₃ h₃ =>
-        WP.seq (WP.mono (matJ_ok hS F hB h₃) fun s₄ h₄ =>
+        WP.seq (WP.mono (matJ_ok (callName := some v.callee.hashName) hS F hB h₃) fun s₄ h₄ =>
           WP.seq (WP.mono (ifRestJ_ok hK v F h₄) fun s₅ h₅ =>
             WP.seq (WP.mono (select_okD F.toDcWfB (EncO16.sel (W := F.toDc16Wf) h₅)) fun s₆ h₆ =>
               WP.mono (topEpi_ok h₆.dc.top (h₆.hin F.toDcWfB hp)) fun s₇ ⟨hr, hg, hm⟩ =>
@@ -1863,8 +1863,8 @@ theorem hashG_tr (W : DcWfB K.L oCT16) : RelCT isa (R K.L (DM K.L)) (hashG K) fu
 abbrev FJρ (W : DcWfB K.L oCT16) (ρ : List Byte) (i : Nat) (s : State) : Prop :=
   ∃ σ, (decapsK K.L).pre σ ∧ FJ W σ i s ∧ Enc.rhoE K.L (dcEk K.L σ) = ρ
 
-theorem fragJ_tr (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) {i : Nat} (hi : i < nb K.L) :
-    RelCT isa (R K.L fun σ s => FJ F.toDcWfB σ i s) (frag K b i) fun _ _ => True := by
+theorem fragJ_tr {callName : Option String} (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) {i : Nat} (hi : i < nb K.L) :
+    RelCT isa (R K.L fun σ s => FJ F.toDcWfB σ i s) (frag K b i callName) fun _ _ => True := by
   obtain ⟨_, t⟩ := T.jT i hi
   have hsd := F.sd i hi
   simp only [sdChk, List.all_eq_true, List.mem_range, Bool.and_eq_true] at hsd
@@ -1903,11 +1903,11 @@ theorem fragJ_tr (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) 
     exact ⟨Enc.rhoE K.L (dcEk K.L σ₁), dc_lrel F.toDcWfB p₁ p₂ pub h₁.eb.i.out.2.dc h₂.eb.i.out.2.dc,
       ⟨σ₁, p₁, h₁, rfl⟩, ⟨σ₂, p₂, h₂, (rho_pub pub).symm⟩⟩
 
-theorem fragsJ_tr (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) :
-    RelCT isa (R K.L fun σ s => FJ F.toDcWfB σ 0 s) (seqR (frag K b) 0 (nb K.L))
+theorem fragsJ_tr {callName : Option String} (F : DjHWf K) (T : DjTWf K) {b : Prog isa} (hB : BatchHOk16 b) :
+    RelCT isa (R K.L fun σ s => FJ F.toDcWfB σ 0 s) (seqR (fun i => frag K b i callName) 0 (nb K.L))
       (R K.L fun σ s => FJ F.toDcWfB σ (nb K.L) s) := by
   have := seqR_tr (R := fun i => R K.L fun σ s => FJ F.toDcWfB σ i s) (nb K.L) 0 fun k _ hk =>
-    relInv (fun σ s hp h => fragJ_ok F.toDjFWf hB (by omega_using [hk]) h) (fragJ_tr F T hB (by omega_using [hk]))
+    relInv (fun σ s hp h => fragJ_ok (callName := callName) F.toDjFWf hB (by omega_using [hk]) h) (fragJ_tr (callName := callName) F T hB (by omega_using [hk]))
   rwa [Nat.zero_add] at this
 
 theorem quadJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) {q : Nat} (hq : q < K.L.k * K.L.k / 4) :
@@ -1943,13 +1943,13 @@ theorem entsJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) :
   exact RelCT.mono this (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, ⟨Nat.le_refl _, h₁⟩,
     ⟨Nat.le_refl _, h₂⟩⟩) fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, h₁.2, h₂.2⟩
 
-theorem matJ_tr {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) (T : DjTWf K) {b : Prog isa}
+theorem matJ_tr {callName : Option String} {n : String} {c : Prog isa} (v : S16Ok c) (F : DjHWf K) (T : DjTWf K) {b : Prog isa}
     (hB : BatchHOk16 b) :
-    RelCT isa (R K.L (GI F.toDcWfB)) (matJ K (n, c) b) (R K.L fun σ s => EBX F.toDcWfB σ (K.L.k * K.L.k) s) := by
+    RelCT isa (R K.L (GI F.toDcWfB)) (matJ K (n, c) b callName) (R K.L fun σ s => EBX F.toDcWfB σ (K.L.k * K.L.k) s) := by
   unfold matJ
   exact RelCT.seq (relInv (I' := fun σ s => EBG F.toDcWfB σ 0 s) (fun σ s hp h => rhoJ_ok F h) (rhoJ_tr F T))
     (RelCT.seq (relInv (I' := fun σ s => FJ F.toDcWfB σ 0 s) (fun σ s hp h => hzJ_ok F h) (hzJ_tr F T))
-      (RelCT.seq (fragsJ_tr F T hB)
+      (RelCT.seq (fragsJ_tr (callName := callName) F T hB)
         (RelCT.seq (relInv (I' := fun σ s => EBX F.toDcWfB σ (3 * nb K.L) s) (fun σ s hp h => kbJ_ok F h)
           (kbJ_tr F T)) (entsJ_tr v F))))
 
@@ -1990,7 +1990,7 @@ theorem kemDecapsJ16_ct {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (F : DjH
     (dec_tr hK F.toDc16Wf)) ?_
   refine RelCT.seq (relInv (I' := GI F.toDcWfB) (fun σ s hp hs => hashG_ok F.toDcWfB hp hs)
     (hashG_tr F.toDcWfB)) ?_
-  refine RelCT.seq (matJ_tr hS F T hB) ?_
+  refine RelCT.seq (matJ_tr (callName := some v.callee.hashName) hS F T hB) ?_
   refine RelCT.seq (relInv (I' := EncO16 F.toDc16Wf) (fun σ s _ hs => ifRestJ_ok hK v F hs) (ifRestJ_tr hK v F)) ?_
   refine RelCT.seq (relInv (I' := DEnd K.L) (fun σ s _ hs => select_okD F.toDcWfB hs.sel)
     (RelCT.mono (select_tr F.toDcWfB) (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
@@ -2025,19 +2025,27 @@ namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 
+/-- A shared fragment keeps the control state of its unchanged body. -/
+theorem batchH_call_ctl {name : String} {b : Prog isa} (B : BatchHOk16 b) :
+    ctlOk (.call name b) = true := B.ctl
+
+/-- The fragment's instructions do not change the stack pointer. -/
+theorem batchH_call_sp {name : String} {b : Prog isa} (B : BatchHOk16 b) :
+    (Code.call name b).all (fun i => !isa.writesSp i) = true := B.sp
+
 /-- `ctlOk` of code that calls the 16-bit sampler `c` of the implementation
 `v` (`S : S16Ok c`) and the K-PKE functions (`hK`), and inlines the fragment
 `b` (`B : BatchHOk16 b`). -/
 tactic_template "ek16_ctl " v:ident c:ident b:ident S:ident B:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact ($B).ctl | (closed_in $b; s16_ctl $v $c $S $hK; done)
+    | with_reducible exact ($B).ctl | with_reducible exact batchH_call_ctl $B | (closed_in $b; s16_ctl $v $c $S $hK; done)
     | (code_whnf; with_reducible apply ctlOk_seq) | (code_whnf; with_reducible apply ctlOk_ite) | rfl))
 
 /-- That code that calls the 16-bit sampler `c` of the implementation `v` and
 the K-PKE functions, and inlines the fragment `b`, never writes the stack pointer. -/
 tactic_template "ek16_sp " v:ident c:ident b:ident S:ident B:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact ($B).sp | (closed_in $b; s16_sp $v $c $S $hK; done)
+    | with_reducible exact ($B).sp | with_reducible exact batchH_call_sp $B | (closed_in $b; s16_sp $v $c $S $hK; done)
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite) | rfl))
 
 /-- Encapsulation with 16-bit polynomials, against the contract of `K` with
@@ -2045,12 +2053,18 @@ the first `n` bytes of `scratch`. -/
 theorem xdLe_batch {k : Nat} {b : Prog isa} (B : BatchHOk16 b) : xdLe k b = true :=
   xdLe_of_le (by rw [B.xd]; exact Nat.zero_le _)
 
+/-- Sharing a leaf fragment needs only its return-address slot. -/
+theorem xdLe_batch_call {k : Nat} {name : String} {b : Prog isa} (B : BatchHOk16 b) (hk : 8 ≤ k) :
+    xdLe k (.call name b) = true := by
+  apply xdLe_of_le
+  simpa only [Code.x86_64Depth, B.xd, Nat.add_zero, Nat.zero_add] using hk
+
 /-- That the calls of code that calls the 16-bit sampler `c` of the
 implementation `v` and the K-PKE functions, and inlines the fragment `b`, use
 at most `k` bytes of stack (a goal `xdLe k _ = true`). -/
 tactic_template "ek16_xd " v:ident c:ident b:ident S:ident B:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible apply xdLe_batch $B | (closed_in $b; s16_xd $v $c $S $hK; done)
+    | with_reducible apply xdLe_batch $B | with_reducible exact xdLe_batch_call $B (by decide) | (closed_in $b; s16_xd $v $c $S $hK; done)
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite) | rfl))
 
 theorem encaps16_narrow {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk K.L) (v : Sample4Impl)

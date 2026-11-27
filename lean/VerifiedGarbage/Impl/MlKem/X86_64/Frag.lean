@@ -380,6 +380,12 @@ structure Callee4 where
   (`Sample4.samplePN fast N₀ m`), if the implementation has one. -/
   batchP16 : Option (Nat → Nat → Prog isa)
 
+/-- A distinct internal symbol for this implementation's matrix/hash fragment. -/
+def Callee4.hashName (c : Callee4) : String :=
+  match c.s16 with
+  | some (name, _) => name.replace "vg_mlkem16_sample_ntt4" "vg_mlkem16_sample_hash"
+  | none => c.name ++ "_hash"
+
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
   none, none, none⟩
 /-- Four-way sampling with AVX2, with 16-bit coefficients; the functions of
