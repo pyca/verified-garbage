@@ -97,12 +97,11 @@ mod 2⁶⁴ + u mⱼ + d` (`mⱼ` in `a7`), `d` := its high word, and its low wo
 stored at `t3 + k`: word `j - 1` of `(T + aᵢ b + u m) / 2⁶⁴`; `bⱼ₊₁` and
 `mⱼ₊₁` (at `t4 + k + 16` and `a0 + k + 16`) into `a6` and `a7`. -/
 def fiosStep (k : Nat) : List Instr :=
-  [.load .d .s2 .t3 (k + 8), .add .s0 .s0 .s2, .sltu .s4 .s0 .s2,
-    .mulhu .s3 .t6 .a6, .mul .s2 .t6 .a6, .load .d .a6 .t4 (k + 16), .add .s3 .s3 .s4,
-    .add .s2 .s2 .s0, .sltu .s4 .s2 .s0, .add .s0 .s3 .s4,
-    .add .s1 .s1 .s2, .sltu .s4 .s1 .s2,
-    .mulhu .s3 .t2 .a7, .mul .s2 .t2 .a7, .load .d .a7 .a0 (k + 16), .add .s3 .s3 .s4,
-    .add .s2 .s2 .s1, .sltu .s4 .s2 .s1, .add .s1 .s3 .s4, .store .d .s2 .t3 k]
+  [.mul .s2 .t6 .a6, .mulhu .s3 .t6 .a6, .mul .s4 .t2 .a7, .load .d .a6 .t3 (k + 8),
+    .add .s0 .s0 .a6, .sltu .a6 .s0 .a6, .add .s2 .s2 .s0, .mulhu .a7 .t2 .a7, .add .s1 .s1 .s2,
+    .sltu .s0 .s2 .s0, .add .s4 .s4 .s1, .add .s3 .s3 .a6, .add .s0 .s3 .s0, .load .d .a6 .t4 (k + 16),
+    .sltu .s2 .s1 .s2, .add .s2 .a7 .s2, .load .d .a7 .a0 (k + 16), .sltu .s3 .s4 .s1,
+    .add .s1 .s2 .s3, .store .d .s4 .t3 k]
 
 /-- `U` words of a round, and the pointers advanced past them. -/
 def fiosGroup (U : Nat) : List Instr :=

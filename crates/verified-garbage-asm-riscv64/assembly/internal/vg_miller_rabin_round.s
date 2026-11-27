@@ -200,26 +200,26 @@ vg_miller_rabin_round:
 	andi t5, t5, 3
 	beqz t5, 26f
 28:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
 	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 8(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
 	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
+	mulhu a7, t2, a7
 	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
+	ld a6, 16(t4)
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
@@ -232,86 +232,86 @@ vg_miller_rabin_round:
 	srli t5, t5, 2
 	beqz t5, 29f
 211:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 8(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	ld s2, 16(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 0(t3)
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 16(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 24(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 24(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 8(t3)
-	ld s2, 24(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 8(t3)
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 24(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 32(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 32(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 16(t3)
-	ld s2, 32(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 16(t3)
 	mul s2, t6, a6
-	ld a6, 40(t4)
-	add s3, s3, s4
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 32(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
 	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
+	mulhu a7, t2, a7
 	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
+	ld a6, 40(t4)
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 40(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 24(t3)
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 24(t3)
 	addi t3, t3, 32
 	addi t4, t4, 32
 	addi a0, a0, 32
@@ -541,94 +541,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 220f
 222:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -710,94 +710,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 228f
 230:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -983,94 +983,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 239f
 241:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -1152,94 +1152,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 247f
 249:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -1425,94 +1425,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 258f
 260:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -1594,94 +1594,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 266f
 268:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -1867,94 +1867,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 277f
 279:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -2036,94 +2036,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 285f
 287:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -2491,26 +2491,26 @@ vg_miller_rabin_round:
 	andi t5, t5, 3
 	beqz t5, 297f
 299:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
 	mul s2, t6, a6
-	ld a6, 16(t4)
-	add s3, s3, s4
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 8(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
 	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
+	mulhu a7, t2, a7
 	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
+	ld a6, 16(t4)
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 0(t3)
 	addi t3, t3, 8
 	addi t4, t4, 8
 	addi a0, a0, 8
@@ -2523,86 +2523,86 @@ vg_miller_rabin_round:
 	srli t5, t5, 2
 	beqz t5, 2100f
 2102:
-	ld s2, 8(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 8(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 16(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 16(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 0(t3)
-	ld s2, 16(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 0(t3)
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 16(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 24(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 24(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 8(t3)
-	ld s2, 24(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 8(t3)
 	mul s2, t6, a6
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 24(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
+	add s2, s2, s0
+	mulhu a7, t2, a7
+	add s1, s1, s2
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
 	ld a6, 32(t4)
-	add s3, s3, s4
-	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
-	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 32(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 16(t3)
-	ld s2, 32(t3)
-	add s0, s0, s2
-	sltu s4, s0, s2
-	mulhu s3, t6, a6
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 16(t3)
 	mul s2, t6, a6
-	ld a6, 40(t4)
-	add s3, s3, s4
+	mulhu s3, t6, a6
+	mul s4, t2, a7
+	ld a6, 32(t3)
+	add s0, s0, a6
+	sltu a6, s0, a6
 	add s2, s2, s0
-	sltu s4, s2, s0
-	add s0, s3, s4
+	mulhu a7, t2, a7
 	add s1, s1, s2
-	sltu s4, s1, s2
-	mulhu s3, t2, a7
-	mul s2, t2, a7
+	sltu s0, s2, s0
+	add s4, s4, s1
+	add s3, s3, a6
+	add s0, s3, s0
+	ld a6, 40(t4)
+	sltu s2, s1, s2
+	add s2, a7, s2
 	ld a7, 40(a0)
-	add s3, s3, s4
-	add s2, s2, s1
-	sltu s4, s2, s1
-	add s1, s3, s4
-	sd s2, 24(t3)
+	sltu s3, s4, s1
+	add s1, s2, s3
+	sd s4, 24(t3)
 	addi t3, t3, 32
 	addi t4, t4, 32
 	addi a0, a0, 32
@@ -2825,94 +2825,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2109f
 2111:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -2994,94 +2994,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2117f
 2119:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -3309,94 +3309,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2128f
 2130:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -3478,94 +3478,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2136f
 2138:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -3793,94 +3793,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2147f
 2149:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
@@ -3962,94 +3962,94 @@ vg_miller_rabin_round:
 	ld a7, 0(a0)
 	beqz t5, 2155f
 2157:
-	ld s4, 0(t4)
+	ld s2, 0(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 8(a0)
+	sltu s1, a4, s1
+	sd a4, 0(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 8(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 16(a0)
-	ld s4, 8(t4)
-	sd s3, 0(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 8(t4)
-	ld s4, 16(t4)
+	add s3, a4, s3
+	sd s4, 8(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 16(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 24(a0)
+	sltu s1, a4, s1
+	sd a4, 16(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 24(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 32(a0)
-	ld s4, 24(t4)
-	sd s3, 16(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 24(t4)
-	ld s4, 32(t4)
+	add s3, a4, s3
+	sd s4, 24(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 32(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 40(a0)
+	sltu s1, a4, s1
+	sd a4, 32(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 40(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 48(a0)
-	ld s4, 40(t4)
-	sd s3, 32(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 40(t4)
-	ld s4, 48(t4)
+	add s3, a4, s3
+	sd s4, 40(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
+	ld s2, 48(t4)
 	mul s3, s0, a7
-	mulhu s2, s0, a7
+	mulhu s4, s0, a7
+	add s3, s3, s2
+	add a4, s3, s1
 	ld a7, 56(a0)
+	sltu s1, a4, s1
+	sd a4, 48(t4)
 	mul a4, s0, a7
-	add s3, s3, s4
-	sltu s4, s3, s4
-	add s2, s2, s4
-	add s3, s3, s1
-	sltu s4, s3, s1
-	add s1, s2, s4
-	mulhu s2, s0, a7
+	sltu s2, s3, s2
+	add s2, s4, s2
+	add s2, s2, s1
+	ld s3, 56(t4)
+	add s4, a4, s3
+	mulhu a4, s0, a7
+	sltu s3, s4, s3
+	add s4, s4, s2
 	ld a7, 64(a0)
-	ld s4, 56(t4)
-	sd s3, 48(t4)
-	add a4, a4, s4
-	sltu s4, a4, s4
-	add s2, s2, s4
-	add a4, a4, s1
-	sltu s4, a4, s1
-	add s1, s2, s4
-	sd a4, 56(t4)
+	add s3, a4, s3
+	sd s4, 56(t4)
+	sltu s2, s4, s2
+	add s1, s3, s2
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
