@@ -90,7 +90,7 @@ theorem fn_rv {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat 
 /-- `fnA core` meets a contract by register for offsets as the calls set
 them, from `fnA_ok`, for any six-word modulus. -/
 theorem fnA_rv {S : Impl.Weierstrass.Mont.Modulus} (hk : S.k = 6) {core : Prog isa} {pre : Nat → Nat → Prop}
-    {res : Nat → Nat → Nat → Prop} (hcore : CoreOk core pre res) {s : State} (hs : rvPre S s)
+    {res : Nat → Nat → Nat → Prop} (hcore : CoreOkA core pre res) {s : State} (hs : rvPre S s)
     (hoff : VG.Proof.Weierstrass.RISCV64.OffsOk s) (hp : pre (arg S s .a2) (arg S s .a3)) :
     ∃ t s', Exec isa (fnA core) s t s' ∧ abiPreserved s s' ∧
       res (arg S s .a2) (arg S s .a3) (numAt s'.mem (s.gpr .a0) (offArg s .a1) 6) ∧
@@ -106,17 +106,17 @@ theorem fnA_rv {S : Impl.Weierstrass.Mont.Modulus} (hk : S.k = 6) {core : Prog i
 
 theorem mulA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV p384p)).pre s) :
     ∃ t s', Exec isa mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV p384p).post s s' := by
-  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv rfl (@mulCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := fnA_rv rfl (@CoreOk.toA _ _ _ (@mulCore_core)) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v1, by rw [p_eq]; exact v2, k⟩
 
 theorem addA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV p384p)).pre s) :
     ∃ t s', Exec isa addFnA s t s' ∧ abiPreserved s s' ∧ (addRV p384p).post s s' := by
-  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@addCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@CoreOk.toA _ _ _ (@addCore_core)) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
 
 theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p384p)).pre s) :
     ∃ t s', Exec isa subFnA s t s' ∧ abiPreserved s s' ∧ (subRV p384p).post s s' := by
-  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@subCore_core) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
+  obtain ⟨t, s', he, a, v, k⟩ := fnA_rv rfl (@CoreOk.toA _ _ _ (@subCore_core)) hs.1.1 hs.2 (by rw [← p_eq]; exact hs.1.2)
   exact ⟨t, s', he, a, by rw [p_eq]; exact v, k⟩
 
 theorem mul_rv (s : State) (hs : (mulRV p384p).pre s) :
