@@ -115,6 +115,26 @@ theorem variants_ok : OK variants := ⟨variants_coh, of_decide_eq_true (by kern
 theorem fnsOf_hashes : Proof.HashTable.AArch64.fnsOf variants = Impl.RsaOaep.AArch64.Fn.fnsOf hashes := by
   kernel_rfl
 
+/-- Decryption's code with nothing in the place of the RSA operation. -/
+abbrev decryptStub : Prog isa :=
+  Impl.RsaOaep.AArch64.decryptP (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])
+
+/-- Encryption's code with nothing in the place of the RSA operation. -/
+abbrev encryptStub : Prog isa :=
+  Impl.RsaOaep.AArch64.Precomputed.encrypt (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])
+
+/-- What the cleanups need of the functions' own code and their hash functions', with
+nothing in the place of the RSA operation: in one declaration, so that the kernel walks the hash
+functions' code once. -/
+private theorem stubs_side :
+    (decryptStub.all (fun i => !i.writesDit) = true ∧
+      tablesCall decryptStub [("hash", tables variants), ("mgf1", tables variants)] = true ∧
+      Code.aarch64Depth2 203 0 decryptStub ≤ 221) ∧
+    (encryptStub.all (fun i => !i.writesDit) = true ∧
+      tablesCall encryptStub [("hash", tables variants), ("mgf1", tables variants)] = true ∧
+      Code.aarch64Depth2 0 0 encryptStub ≤ 19) := by
+  lit_decide
+
 /-- `vg_rsa_oaep_decrypt_precomputed` as emitted, cleanup included. -/
 theorem decryptP_scrubbed (c : Proof.Rsa.AArch64.CrtImpl) :
     VerifiedScrubbed target (Impl.RsaOaep.AArch64.Fn.decryptP hashes c.toCrt)
@@ -125,9 +145,8 @@ theorem decryptP_scrubbed (c : Proof.Rsa.AArch64.CrtImpl) :
     (c := Impl.RsaOaep.AArch64.decryptP (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.privPName c.privP)
     (ts := [("hash", tables variants), ("mgf1", tables variants)])
     (a := .call c.privPName c.privP) (b := .block []) (da := 203) (db := 0) (d := 221)
-    (e := Impl.RsaOaep.AArch64.decryptP (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])) (by kernel_rfl)
-    (privP_side c) (privP_depth c) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (e := decryptStub) (by kernel_rfl)
+    (privP_side c) (privP_depth c) (by kernel_rfl) (Nat.le_refl _) stubs_side.1.1 stubs_side.1.2.1 stubs_side.1.2.2
   have hv := decP_ok variants variants_ok c
   rw [fnsOf_hashes] at hv
   exact verifiedScrubbedOfT (W := 3536) hv (decryptOk _ _) (by decide)
@@ -143,9 +162,7 @@ theorem encrypt_scrubbed (c : Proof.Rsa.AArch64.PublicImpl) :
     (c := Impl.RsaOaep.AArch64.Precomputed.encrypt (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.name c.code)
     (ts := [("hash", tables variants), ("mgf1", tables variants)])
     (a := .call c.name c.code) (b := .block []) (da := 0) (db := 0) (d := 19)
-    (e := Impl.RsaOaep.AArch64.Precomputed.encrypt (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block []))
-    (by kernel_rfl) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (e := encryptStub) (by kernel_rfl) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_refl _) stubs_side.2.1 stubs_side.2.2.1 stubs_side.2.2.2
   have hv := enc_ok variants variants_ok c
   rw [fnsOf_hashes] at hv
   exact verifiedScrubbedOfT (W := 304) hv (encryptOk _ _) (by decide)

@@ -110,6 +110,28 @@ are those `Impl/` states of `hashes`. -/
 theorem mdFns_hashes : fnsOf variants = Impl.RsaPss.AArch64.Fn.mdFns hashes := by
   kernel_rfl
 
+/-- Signing's code with nothing in the place of the RSA operation. -/
+abbrev signStub : Prog isa :=
+  Impl.RsaPss.AArch64.signCP (Impl.RsaPss.AArch64.Fn.mdFns hashes)
+    (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])
+
+/-- Verification's code with nothing in the place of the RSA operation. -/
+abbrev verifyStub : Prog isa :=
+  Impl.RsaPss.AArch64.verifyC (Impl.RsaPss.AArch64.Fn.mdFns hashes)
+    (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])
+
+/-- What the cleanups need of the functions' own code and their hash functions', with
+nothing in the place of the RSA operation: in one declaration, so that the kernel walks the hash
+functions' code once. -/
+private theorem stubs_side :
+    (signStub.all (fun i => !i.writesDit) = true ∧
+      tablesCall signStub [("hash", tables variants), ("mgf1", tables variants)] = true ∧
+      Code.aarch64Depth2 203 0 signStub ≤ 224) ∧
+    (verifyStub.all (fun i => !i.writesDit) = true ∧
+      tablesCall verifyStub [("hash", tables variants), ("mgf1", tables variants)] = true ∧
+      Code.aarch64Depth2 0 0 verifyStub ≤ 60) := by
+  lit_decide
+
 /-- `vg_rsa_pss_sign_precomputed` as emitted, cleanup included. -/
 theorem signCP_scrubbed (c : Proof.Rsa.AArch64.CrtImpl) :
     VerifiedScrubbed target (Impl.RsaPss.AArch64.Fn.signCP hashes c.toCrt)
@@ -121,10 +143,7 @@ theorem signCP_scrubbed (c : Proof.Rsa.AArch64.CrtImpl) :
       (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.privPName c.privP)
     (ts := [("hash", tables variants), ("mgf1", tables variants)])
     (a := .call c.privPName c.privP) (b := .block []) (da := 203) (db := 0) (d := 224)
-    (e := Impl.RsaPss.AArch64.signCP (Impl.RsaPss.AArch64.Fn.mdFns hashes)
-      (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block []))
-    (by kernel_rfl) (privP_side c) (privP_depth c) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (e := signStub) (by kernel_rfl) (privP_side c) (privP_depth c) (by kernel_rfl) (Nat.le_refl _) stubs_side.1.1 stubs_side.1.2.1 stubs_side.1.2.2
   have hv := Proof.RsaPss.AArch64.signP_ok variants_ok c
   rw [fnsOf_hashes, mdFns_hashes] at hv
   exact verifiedScrubbedOfT (W := 3584) hv (signOk _ _ _) (by decide)
@@ -141,10 +160,7 @@ theorem verifyC_scrubbed (c : Proof.Rsa.AArch64.PublicImpl) :
       (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.name c.code)
     (ts := [("hash", tables variants), ("mgf1", tables variants)])
     (a := .call c.name c.code) (b := .block []) (da := 0) (db := 0) (d := 60)
-    (e := Impl.RsaPss.AArch64.verifyC (Impl.RsaPss.AArch64.Fn.mdFns hashes)
-      (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block []))
-    (by kernel_rfl) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+    (e := verifyStub) (by kernel_rfl) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_refl _) stubs_side.2.1 stubs_side.2.2.1 stubs_side.2.2.2
   have hv := Proof.RsaPss.AArch64.verify_ok variants_ok c
   rw [fnsOf_hashes, mdFns_hashes] at hv
   exact verifiedScrubbedOfT (W := 960) hv (verifyOk _ _ _) (by decide)
