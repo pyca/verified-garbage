@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.RISCV64.R64.Reduce
+import VerifiedGarbage.Proof.Framework.RISCV64.Sched
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -828,19 +829,19 @@ theorem mul_ok {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC) (hy : y
   obtain fin : ∀ s1, Ctx b s1 → Rest clob64 s s1 →
       Frame [⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s1.mem →
       accW s1.mem b 14 = V s.mem b x * V s.mem b y →
-      WP isa (.block (reduce o)) s1 fun s' =>
+      WP isa (.block (Impl.Words.RISCV64.sched redOrder (reduce o))) s1 fun s' =>
         Rest clob64 s s' ∧
         Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem ∧
         V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := fun s1 hc1 hr1 hf1 ha1 =>
-    WP.mono (reduce_ok ho ho8 hc1) fun s' ⟨_, hr2, hf2, hv2⟩ =>
+    WP.mono (WP.sched (reduce_ok ho ho8 hc1)) fun s' ⟨_, hr2, hf2, hv2⟩ =>
       ⟨hr1.trans hr2, (hf1.mono (by simp)).trans (hf2.mono (by simp)), by rw [hv2, ha1]⟩
   unfold mul
   by_cases hxy : x = y
   · subst hxy
     rw [ite_eq_left rfl]
-    exact WP.append (square_ok hx hx8 hc) fun s1 ⟨hc1, hr1, hf1, ha1⟩ => fin s1 hc1 hr1 hf1 ha1
+    exact WP.append (WP.sched (square_ok hx hx8 hc)) fun s1 ⟨hc1, hr1, hf1, ha1⟩ => fin s1 hc1 hr1 hf1 ha1
   · rw [ite_eq_right hxy]
-    exact WP.append (product_ok hx hx8 hy hy8 hc) fun s1 ⟨hc1, hr1, hf1, ha1⟩ => fin s1 hc1 hr1 hf1 ha1
+    exact WP.append (WP.sched (product_ok hx hx8 hy hy8 hc)) fun s1 ⟨hc1, hr1, hf1, ha1⟩ => fin s1 hc1 hr1 hf1 ha1
 
 end
 
