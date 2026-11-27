@@ -188,7 +188,13 @@ def elabNumFast : TermElab := fun stx expectedType? => do
   let some val := stx.isNatLit? | throwUnsupportedSyntax
   let n := mkRawNatLit val
   let type ← match expectedType? with
-    | some t => instantiateMVars t
+    | some t =>
+      let t ← instantiateMVars t
+      if t.isMVar then
+        let t' ← mkFreshTypeMVar .synthetic
+        discard <| isDefEq t t'
+        instantiateMVars t'
+      else pure t
     | none => mkFreshTypeMVar .synthetic
   match type with
   | .const ``Nat _ => return mkApp3 (.const ``OfNat.ofNat [0]) type n (.app (.const ``instOfNatNat []) n)

@@ -22,6 +22,11 @@ numbers are cast), the numerals are elaborated with that type and the operators 
 the instances that Lean finds for that type.
 Otherwise (and where an operator is not one of the known ones) Lean's elaborator goes on
 with the operands, already elaborated.
+
+Elaborating an operand may give every numeral whose type is not known yet its default type, `Nat`:
+in `x &&& 0xFFFF ||| y <<< 16` the shift does so (its result's type is an output of its instance),
+and `0xFFFF` is a `Nat`, cast. A numeral that comes before such an operand is left to Lean's elaborator,
+with the whole expression (`mkProbe`).
 -/
 
 public meta section
@@ -49,11 +54,19 @@ def opName? (stx : Syntax) : Option Name :=
   | .ident _ _ _ [.decl c []] => some c
   | _ => none
 
-/-- The tree of `stx`, with its operands, and `stx` with a hole for each of them. None if it has an
-operator that is not known. -/
-partial def toTree (stx : Syntax) : StateRefT (Array Syntax) (OptionT TermElabM) Tree := do
+/-- The operands of a tree that are not numerals, in their order, and how many of them come before the
+first numeral, if there is one. -/
+structure Operands where
+  stxs : Array Syntax := #[]
+  num? : Option Nat := none
+
+/-- The tree of `stx`, whose operands are added to those found so far. None if it has an operator that
+is not known. -/
+partial def toTree (stx : Syntax) : StateRefT Operands (OptionT TermElabM) Tree := do
   let k := stx.getKind
-  if k == numLitKind then return .num stx
+  if k == numLitKind then
+    modify fun s => { s with num? := s.num? <|> some s.stxs.size }
+    return .num stx
   if k == ``Lean.Parser.Term.binop then
     let some f := opName? stx[1] | failure
     unless isOp f do failure
@@ -74,11 +87,11 @@ partial def toTree (stx : Syntax) : StateRefT (Array Syntax) (OptionT TermElabM)
     | some (_, .error _) => failure
     | none => leaf stx
 where
-  operand (stx : Syntax) : StateRefT (Array Syntax) (OptionT TermElabM) Nat := do
-    let i := (← get).size
-    modify (·.push stx)
+  operand (stx : Syntax) : StateRefT Operands (OptionT TermElabM) Nat := do
+    let i := (← get).stxs.size
+    modify fun s => { s with stxs := s.stxs.push stx }
     return i
-  leaf (stx : Syntax) : StateRefT (Array Syntax) (OptionT TermElabM) Tree := return .leaf (← operand stx)
+  leaf (stx : Syntax) : StateRefT Operands (OptionT TermElabM) Tree := return .leaf (← operand stx)
 
 /-- The operands `es` in the tree's place, in Lean's own syntax. -/
 partial def Tree.toSyntax (es : Array Syntax) : Tree → Syntax
@@ -163,11 +176,32 @@ partial def Tree.build (es ts : Array Expr) (T : Expr) (t : Tree) : StateRefT Fn
     let (fn, R) ← opFn ``HPow.hPow Tl ts[i]!
     return (mkApp2 fn l es[i]!, R)
 
-/-- The operands `stxs`, elaborated without a type, and their types. -/
-def operands (stxs : Array Syntax) : TermElabM (Array Expr × Array Expr) := do
-  let es ← stxs.mapM fun stx => elabTerm stx none
+/-- A metavariable for an instance of `OfScientific ?α`, which is found when the numerals whose type is
+not known are given their default type: it is a class with a default instance, as `OfNat` is, but
+with few instances to try before that. -/
+def mkProbe : TermElabM MVarId := do
+  let type ← mkFreshTypeMVar .synthetic
+  let u ← getDecLevel type
+  let m ← mkFreshExprMVar (mkApp (.const ``OfScientific [u]) type) .synthetic
+  registerSyntheticMVarWithCurrRef m.mvarId! (.typeClass none)
+  return m.mvarId!
+
+/-- The operands `o`, elaborated without a type, the first `n` before the others, and their types. None
+if Lean's elaborator would have given a numeral its default type meanwhile. -/
+def elabOperands? (o : Operands) (n : Nat) : TermElabM (Option (Array Expr × Array Expr)) := do
+  let mut probe? : Option MVarId := none
+  let mut es := #[]
+  for h : i in [0:o.stxs.size] do
+    if i == n then synthesizeSyntheticMVars (postpone := .yes)
+    if o.num? == some i then probe? := some (← mkProbe)
+    es := es.push (← elabTerm o.stxs[i] none)
   synthesizeSyntheticMVars (postpone := .yes)
-  return (es, ← es.mapM fun e => do instantiateMVars (← inferType e))
+  if let some m := probe? then
+    if ← m.isAssigned then return none
+    modify fun s => { s with
+      pendingMVars := s.pendingMVars.filter (· != m)
+      syntheticMVars := s.syntheticMVars.erase m }
+  return some (es, ← es.mapM fun e => do instantiateMVars (← inferType e))
 
 /-- The term of the trees `ts`, if their operands coerce to one type and the operators have an instance
 for it, with `k` to apply to them. -/
@@ -195,9 +229,9 @@ def holes (es : Array Expr) : TermElabM (Array Syntax) :=
 def elabOpFast : TermElab := fun stx expectedType? => do
   unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
   if (← read).inPattern then throwUnsupportedSyntax
-  let some (t, stxs) ← ((toTree stx).run #[]).run | throwUnsupportedSyntax
-  if stxs.isEmpty then throwUnsupportedSyntax
-  let (es, ts) ← operands stxs
+  let some (t, o) ← ((toTree stx).run {}).run | throwUnsupportedSyntax
+  if o.stxs.isEmpty then throwUnsupportedSyntax
+  let some (es, ts) ← elabOperands? o 0 | throwUnsupportedSyntax
   let T0? ← expectedType?.mapM fun T => return (← instantiateMVars T).cleanupAnnotations
   let T0? := T0?.filter (!·.getAppFn.isMVar)
   match ← build? es ts [t] T0? fun rs => return rs.head!.1 with
@@ -213,10 +247,13 @@ def elabRelFast : TermElab := fun stx expectedType? => do
     else if f == ``LT.lt || f == ``GT.gt then pure (some ``LT)
     else if f == ``LE.le || f == ``GE.ge then pure (some ``LE)
     else throwUnsupportedSyntax
-  let some ((l, r), stxs) ← ((do return (← toTree stx[2], ← toTree stx[3])).run #[]).run | throwUnsupportedSyntax
-  if stxs.isEmpty then throwUnsupportedSyntax
+  let some ((l, r, n), o) ← ((do
+      let l ← toTree stx[2]
+      let n := (← get).stxs.size
+      return (l, ← toTree stx[3], n)).run {}).run | throwUnsupportedSyntax
+  if o.stxs.isEmpty then throwUnsupportedSyntax
   withSynthesizeLight do
-    let (es, ts) ← operands stxs
+    let some (es, ts) ← elabOperands? o n | throwUnsupportedSyntax
     let r? ← build? es ts [l, r] none fun rs => do
       let [(l, T), (r, _)] := rs | failure
       let hd ← match cls? with
