@@ -27,9 +27,9 @@ theorem byte_packed (t : Nat → Byte) (j : Nat) (hj : j < 8) :
   all_goals
     simp only [byte, packed, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
       BitVec.getLsbD_append]
-    simp +arith (disch := omega) only [Nat.reduceMul, Nat.reduceSub,
+    simp +arith (disch := omega_arith) only [Nat.reduceMul, Nat.reduceSub,
       ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and,
-      Nat.add_sub_cancel, Nat.add_sub_assoc, ite_false]
+      Nat.add_sub_cancel, Nat.add_sub_assoc]
 
 def substitutedByte (x : BitVec 64) (j : Nat) : Byte :=
   match j with
@@ -70,7 +70,7 @@ theorem linearWord_byte (x : BitVec 64) (j : Nat) (hj : j < 8) :
     simp only [linearWord, permuted, byte,
       BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
       BitVec.getLsbD_append, BitVec.getLsbD_xor, BitVec.getLsbD_rotateRight]
-    <;> simp +arith (disch := omega) only [Nat.reduceMul, Nat.reduceSub,
+    <;> simp +arith (disch := omega_arith) only [Nat.reduceMul, Nat.reduceSub,
       Nat.reduceMod, ↓ite_eq_left, ↓ite_eq_right, decide_eq_true,
       Bool.true_and, Nat.add_sub_cancel, Nat.add_sub_assoc]
     <;> simp +arith only [Bool.xor_assoc, Bool.xor_comm, Bool.xor_left_comm]

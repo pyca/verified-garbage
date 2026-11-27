@@ -75,7 +75,7 @@ theorem index_val (x : BitVec 32) {j : Nat} (hj : j < 4) :
   rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
   simp only [ite_true, ite_false, Nat.reduceLT, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_and, h255,
     Nat.reduceMul, Nat.reduceSub, hi, decide_true, Bool.true_and] <;>
-  by_cases h8 : i < 8 <;> simp (disch := omega) [h8, BitVec.getLsbD_of_ge, Nat.add_comm]
+  by_cases h8 : i < 8 <;> simp (disch := omega_arith) [h8, BitVec.getLsbD_of_ge, Nat.add_comm]
 
 theorem index_run (s : State) {j : Nat} (hj : j < 4) {x : BitVec 32}
     (hr : InRegions (s.rd ++ s.wr) (addr (s.gpr .ebp) xlOff) 4)
@@ -366,12 +366,12 @@ theorem join_byte (v : Nat → BitVec 32) {c : Nat} (hc : c < 4) :
         ((v 2 <<< 24 >>> 24) ||| (v 3 <<< 24 >>> 24) <<< 8) <<< 16).extractLsb' (8 * c) 8 = (v c).extractLsb' 0 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   rcases cases4 hc with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
+    simp (disch := omega_arith) only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add, Nat.reduceMul]
   all_goals
     first
     | rfl
-    | (simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.not_true,
+    | (simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.not_true,
         Bool.not_false, Bool.false_and, Bool.true_and, Bool.and_false, Bool.or_false, Bool.false_or]
        congr 1; omega_using [hi])
 

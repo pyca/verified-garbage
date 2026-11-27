@@ -903,7 +903,7 @@ theorem seed_byte (s : State) {k : Nat} (hk : k < 12) :
     simp only [vbyte, seedVec, setLane, Mem.readW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or,
       BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_allOnes, Nat.mul_zero, BitVec.shiftLeft_zero]
-    simp (disch := omega) only [decide_eq_true, Bool.not_true, Bool.not_false,
+    simp (disch := omega_arith) only [decide_eq_true, Bool.not_true, Bool.not_false,
       Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, Bool.false_or, Bool.or_false]
   · have e : s.gpr .x23 + BitVec.ofNat 64 k =
         s.gpr .x23 + BitVec.ofNat 64 8 + BitVec.ofNat 64 (k-8) := by
@@ -913,7 +913,7 @@ theorem seed_byte (s : State) {k : Nat} (hk : k < 12) :
     simp only [vbyte, seedVec, setLane, Mem.readW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or,
       BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
       BitVec.getLsbD_allOnes]
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.not_true, Bool.not_false,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.not_true, Bool.not_false,
       Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, Bool.false_or, Bool.or_false]
     congr 1
     omega

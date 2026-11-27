@@ -139,7 +139,7 @@ theorem emPre_of {m m₁ m₂ m₃ : Mem} {S : Addr} {k D sl : Nat} {salt h : Li
   simp only [emPre, hs, hh, List.length_replicate, getD_rep0]
   rcases (by omega_using [ho] : o = k - 1 ∨ (k - D - 1 ≤ o ∧ o < k - 1) ∨ (k - sl - D - 1 ≤ o ∧ o < k - D - 1) ∨
       o = k - sl - D - 2 ∨ o < k - sl - D - 2) with h | h | h | h | h <;>
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
 
 /-- `EM` after the mask with `mk` on `DB` (at `lo`, `db` bytes) and its first
 byte ANDed with `c`: `emT`. -/
@@ -149,7 +149,7 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
     (if o = lo then mixV V mk lo db o &&& c else mixV V mk lo db o) = RsaPss.emT lo db sl salt h mk c o := by
   simp only [RsaPss.emT, mixV, hV o ho, emPre, hh]
   by_cases hol : o < lo
-  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
   -- `k` and `o` by what they exceed, and the bounds as sums: `omega` then splits on no
   -- truncated subtraction.
   obtain ⟨e, rfl⟩ : ∃ e, k = lo + (sl + D + 2 + e) := ⟨k - lo - (sl + D + 2), by omega_using [hfit]⟩
@@ -168,11 +168,11 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
   clear hfit hV ho hol e1 e2 e3 e4 e5 e7
   rcases (by omega_using [ht] : t < e ∨ t = e ∨ (e < t ∧ t < sl + 1 + e) ∨
       (sl + 1 + e ≤ t ∧ t < sl + 1 + e + D) ∨ t = sl + D + 1 + e) with h | h | h | h | h
-  · by_cases h0 : t = 0 <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · by_cases h0 : t = 0 <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · by_cases h0 : t = 0 <;> simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
+  · by_cases h0 : t = 0 <;> simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
 
 /-! ## The writes -/
 

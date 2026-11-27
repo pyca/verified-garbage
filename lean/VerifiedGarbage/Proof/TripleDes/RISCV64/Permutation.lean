@@ -66,7 +66,7 @@ theorem lowerHalf_extend (x : BitVec 64) :
   intro j hj
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft]
   by_cases h : j < 32
-  · simp (disch := omega) only [h, hj, decide_true, Bool.true_and, show 32 + j < 64 by omega_using [h],
+  · simp (disch := omega_arith) only [h, hj, decide_true, Bool.true_and, show 32 + j < 64 by omega_using [h],
       show ¬ 32 + j < 32 by omega_using [], decide_false, Bool.not_false, show 32 + j - 32 = j by omega_using []]
   · simp only [h, decide_false, Bool.false_and, show ¬ 32 + j < 64 by omega_using [h], Bool.and_false]
 
@@ -78,7 +78,7 @@ theorem join_halves (x : BitVec 64) :
     BitVec.getLsbD_ushiftRight, hj, decide_true, Bool.true_and]
   by_cases h : j < 32
   · simp [h]
-  · simp (disch := omega) [h, show j - 32 < 32 by omega_using [hj], show 32 + (j - 32) = j by omega_using [h],
+  · simp (disch := omega_arith) [h, show j - 32 < 32 by omega_using [hj], show 32 + (j - 32) = j by omega_using [h],
       show j - 32 < 64 by omega_using [hj]]
 
 end VG.Proof.TripleDes.RISCV64

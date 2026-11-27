@@ -69,7 +69,7 @@ theorem movzk32 (x : BitVec 32) :
     BitVec.getLsbD_extractLsb', BitVec.ofNat_eq_ofNat, BitVec.getLsbD_ofNat,
     VG.AArch64.testBit_65535, hi, decide_true, Bool.true_and, Nat.zero_add]
   rcases (by omega_using [] : i < 16 ∨ 16 ≤ i) with h | h <;>
-  simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
+  simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and,
     Bool.and_false, Bool.or_false, Bool.false_or, Bool.and_true, Bool.not_true, Bool.not_false]
   all_goals exact congrArg _ (by omega_using [h])
 

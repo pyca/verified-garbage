@@ -27,7 +27,7 @@ theorem low_setLane (v : BitVec 128) (a : BitVec 64) : vdword (setLane v 64 0 a)
   simp only [vdword,setLane,BitVec.getLsbD_extractLsb',BitVec.getLsbD_or,
     BitVec.getLsbD_and,BitVec.getLsbD_not,BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_setWidth,BitVec.getLsbD_allOnes]
-  simp (disch := omega) [hi,decide_eq_true]
+  simp (disch := omega_arith) [hi,decide_eq_true]
 
 theorem restoreV_step {s : State} {p : Addr} {i : Nat} (hi : i < 8) (hp : s.gpr .x19 = p)
     (hin : InRegions (s.rd++s.wr) (p+BitVec.ofNat 64 (oSave+80+8*i)) 8) :

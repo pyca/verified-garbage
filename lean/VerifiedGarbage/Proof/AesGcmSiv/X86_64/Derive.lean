@@ -130,7 +130,7 @@ theorem le8_join (x y : BitVec 32) :
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> ext j hj <;>
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
       BitVec.getLsbD_setWidth, Nat.reduceMul, Nat.zero_add] <;>
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true,
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Bool.true_and, Bool.false_and, Bool.not_true,
       Bool.not_false, Bool.or_false, Bool.false_or, Bool.and_true, Bool.and_false, BitVec.getLsbD_of_ge] <;>
     (try (congr 1; omega_using []))
 

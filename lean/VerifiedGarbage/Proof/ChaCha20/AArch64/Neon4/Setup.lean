@@ -27,10 +27,10 @@ theorem vword_insert (v : BitVec 128) (w : Word) {i j : Nat} (hi : i < 4) (hj : 
     BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, hb, decide_true, Bool.true_and]
   by_cases h : j = i
   · subst h
-    simp (disch := omega) [Nat.add_sub_cancel_left, decide_eq_true, decide_eq_false]
+    simp (disch := omega_arith) [Nat.add_sub_cancel_left, decide_eq_true, decide_eq_false]
   · by_cases hlt : j < i
-    · simp (disch := omega) [h, decide_eq_true]
-    · simp (disch := omega) [h, decide_eq_true, decide_eq_false,
+    · simp (disch := omega_arith) [h, decide_eq_true]
+    · simp (disch := omega_arith) [h, decide_eq_true, decide_eq_false,
         BitVec.getLsbD_of_ge]
 
 structure LoadSame (s s' : State) : Prop where

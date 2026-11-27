@@ -147,7 +147,7 @@ theorem bytes_cat (x : BitVec 32) :
   have hi' : i < 32 := hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   rcases (by omega_using [] : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right] <;>
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right] <;>
     (rw [decide_eq_true (by omega_arith), Bool.true_and]; exact congrArg _ (by omega_arith))
 
 

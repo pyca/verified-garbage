@@ -97,7 +97,7 @@ tactic_template "run_block " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic 
 /-- Resolves the `if`s on indices whose ranges `omega` knows. -/
 macro "resolve_ifs" : tactic => `(tactic| plain_simp_names (
                    set_option linter.unusedSimpArgs false in
-                   simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, ite_true, ite_false]))
+                   simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, ite_true, ite_false]))
 
 /-! ## Addresses -/
 

@@ -627,7 +627,7 @@ theorem low_setLane (v : BitVec 128) (a : BitVec 64) : (setLane v 64 0 a).extrac
   intro i hi
   simp only [setLane, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_and,
     BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes]
-  simp (disch := omega) [hi, decide_eq_true]
+  simp (disch := omega_arith) [hi, decide_eq_true]
 
 theorem i_byte (x : BitVec 64) : (x.setWidth 32).setWidth 8 = x.setWidth 8 :=
   BitVec.setWidth_setWidth (by decide)
