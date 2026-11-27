@@ -81,18 +81,18 @@ def sqrMac (k : Nat) : List Instr :=
     .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
     .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4, .store .d .s3 .t4 k]
 
-/-- Two row steps, overlapping the second low multiplication with the first
-carry chain. Only `a4` is added to the scalar step's temporaries. -/
+/-- Two row steps, interleaved: the second step's low product starts before
+the first step's carries are done. Only `a4` is added to the scalar step's
+temporaries. On the C910, whose multiplications share their issue queue with
+one of its two ALUs, the order matters: this one was found by searching for
+the fastest on it. -/
 def sqrMacPair (k : Nat) : List Instr :=
-  [.load .d .s4 .t4 k, .mul .s3 .s0 .a7, .mulhu .s2 .s0 .a7,
-    .load .d .a7 .a0 (k + 8), .mul .a4 .s0 .a7,
-    .add .s3 .s3 .s4, .sltu .s4 .s3 .s4, .add .s2 .s2 .s4,
-    .add .s3 .s3 .s1, .sltu .s4 .s3 .s1, .add .s1 .s2 .s4,
-    .mulhu .s2 .s0 .a7, .load .d .a7 .a0 (k + 16), .load .d .s4 .t4 (k + 8),
-    .store .d .s3 .t4 k,
-    .add .a4 .a4 .s4, .sltu .s4 .a4 .s4, .add .s2 .s2 .s4,
-    .add .a4 .a4 .s1, .sltu .s4 .a4 .s1, .add .s1 .s2 .s4,
-    .store .d .a4 .t4 (k + 8)]
+  [.load .d .s2 .t4 k, .mul .s3 .s0 .a7, .mulhu .s4 .s0 .a7, .add .s3 .s3 .s2, .add .a4 .s3 .s1,
+    .load .d .a7 .a0 (k + 8), .sltu .s1 .a4 .s1, .store .d .a4 .t4 k, .mul .a4 .s0 .a7,
+    .sltu .s2 .s3 .s2, .add .s2 .s4 .s2, .add .s2 .s2 .s1, .load .d .s3 .t4 (k + 8),
+    .add .s4 .a4 .s3, .mulhu .a4 .s0 .a7, .sltu .s3 .s4 .s3, .add .s4 .s4 .s2,
+    .load .d .a7 .a0 (k + 16), .add .s3 .a4 .s3, .store .d .s4 .t4 (k + 8), .sltu .s2 .s4 .s2,
+    .add .s1 .s3 .s2]
 
 /-- Four pipelined pairs in an eight-word group; scalar steps otherwise. -/
 def macGroupSteps (U : Nat) : List Instr :=

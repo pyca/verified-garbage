@@ -148,7 +148,8 @@ theorem mac_sum_group {W T S C₀ C₁ C₂ a G T' S' P Q : Nat}
 theorem sqrMacPair_ok {s : State} {B : Addr} {Z dT dY k : Nat} (hs : Scr s B Z)
     (h4 : s.gpr .t4 = off B dT) (h0 : s.gpr .a0 = off B dY) (h7 : s.gpr .a7 = word s.mem B (dY + k))
     (hk : k + 16 < 2048) (hk8 : k % 8 = 0) (hT8 : dT % 8 = 0) (hY8 : dY % 8 = 0)
-    (hT : dT + k + 16 ≤ Z) (hY : dY + (k + 16) + 8 ≤ Z) :
+    (hT : dT + k + 16 ≤ Z) (hY : dY + (k + 16) + 8 ≤ Z)
+    (sY : dY + (k + 16) + 8 ≤ dT + k ∨ dT + k + 16 ≤ dY + (k + 16)) :
     WP isa (.block (sqrMacPair k)) s fun t =>
       (∃ v₀ v₁ : BitVec 64, t.mem = (s.mem.writeW (off B (dT + k)) v₀).writeW (off B (dT + k + 8)) v₁ ∧
         v₀.toNat + 2 ^ 64 * v₁.toNat + 2 ^ 128 * (t.gpr .s1).toNat =
@@ -156,8 +157,15 @@ theorem sqrMacPair_ok {s : State} {B : Addr} {Z dT dY k : Nat} (hs : Scr s B Z)
           (s.gpr .s0).toNat * ((word s.mem B (dY + k)).toNat + 2 ^ 64 * (word s.mem B (dY + k + 8)).toNat) +
           (s.gpr .s1).toNat ∧ t.gpr .a7 = word s.mem B (dY + (k + 16))) ∧ Keep macRegs s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
+  have hnw := hs.nowrap
+  -- The loads after the first store read what they did before it.
+  obtain rT : ∀ v, word (s.mem.writeW (off B (dT + k)) v) B (dT + (k + 8)) = word s.mem B (dT + (k + 8)) := fun v =>
+    (writeW_outside s.mem B v (by omega_arith)).word (by omega_arith) (by omega_arith)
+  obtain rY : ∀ v, word (s.mem.writeW (off B (dT + k)) v) B (dY + (k + 16)) = word s.mem B (dY + (k + 16)) := fun v =>
+    (writeW_outside s.mem B v (by omega_arith)).word (by omega_arith) (by omega_arith)
+  simp only [word] at rT rY
   unfold sqrMacPair
-  brun [h4, h0, h7, hk, show k < 2048 by omega_arith, show k + 8 < 2048 by omega_arith,
+  brun [rT, rY, h4, h0, h7, hk, show k < 2048 by omega_arith, show k + 8 < 2048 by omega_arith,
     hs.ld (show dT + k + 8 ≤ Z by omega_arith), hs.ld (show dT + (k + 8) + 8 ≤ Z by omega_arith),
     hs.ld (show dY + (k + 8) + 8 ≤ Z by omega_arith), hs.ld hY,
     hs.st (show dT + k + 8 ≤ Z by omega_arith), hs.st (show dT + (k + 8) + 8 ≤ Z by omega_arith),
@@ -196,7 +204,7 @@ theorem macPairs_ok {B : Addr} {Z dT dY : Nat} (hT8 : dT % 8 = 0) (hY8 : dY % 8 
     refine WP.mono (sqrMacPair_ok (dT := dT) (dY := dY) (k := 16 * K) (hs.congr ku.2.2)
       (by rw [g .t4 (by decide), h4]) (by rw [g .a0 (by decide), h0])
       (by rw [au, ou.word (by omega_arith) (by omega_arith)])
-      (by omega_arith) (by omega_arith) hT8 hY8 (by omega_arith) (by omega_arith))
+      (by omega_arith) (by omega_arith) hT8 hY8 (by omega_arith) (by omega_arith) (by omega_arith))
       fun v ⟨⟨v₀, v₁, mv, ev, av⟩, kv⟩ => ⟨⟨?_, ?_, ?_⟩, (ku.trans kv).mono (by decide)⟩
     · rw [mv]
       exact (ou.mono (Nat.le_refl _) (by omega_arith)).trans
