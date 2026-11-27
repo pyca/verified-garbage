@@ -410,7 +410,7 @@ end VG.Proof.Ffdh.RISCV64
 ## FFDH's exchange on RISC-V: p, its check and `R² mod p`
 
 `loadN_X`, `check1_X`, `check2_X`: p into array 0 (`X2`), then whether it
-is a valid modulus, in `s0` (`X4`). `r2t_ok`: `Precompute.r2`, `R² mod p`
+is a valid modulus, in `s0` (`X4`). `r2t_ok`: `Precompute.r2Loop`, `R² mod p`
 in array 1, also leaving `-p⁻¹ mod 2⁶⁴` in `t1`.
 -/
 
@@ -495,7 +495,7 @@ theorem loadP_X {x : XD} {s : State} (h : Base x s) : WP isa loadP s fun t => X4
   refine WP.mono (check2_X h2) fun t ⟨h4, m4⟩ => ⟨h4, ?_⟩
   rw [m4, m2]; exact a1
 
-/-- `Precompute.r2`: `x := R² mod n = 2^(128 w) mod n` in array 1, for an odd
+/-- `Precompute.r2Loop`: `x := R² mod n = 2^(128 w) mod n` in array 1, for an odd
 `n` of `w` words, at least `2^(64 (w − 1))`, in array 0, changing only arrays
 1–3, with `-n⁻¹ mod 2⁶⁴` in `t1`. -/
 theorem r2t_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
@@ -503,10 +503,10 @@ theorem r2t_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     (h7 : s.gpr .a7 = off B (slot w 0)) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
     (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
     (hN : 2 ^ (64 * (w - 1)) ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1) :
-    WP isa Impl.Bignum.RISCV64.Precompute.r2 s fun t =>
+    WP isa Impl.Bignum.RISCV64.Precompute.r2Loop s fun t =>
       (wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % wordsVal s.mem B (slot w 0) w ∧
         ((Mont.word s.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0 ∧
-        Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep r2Regs s t := by
+        Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem) ∧ Keep (.s8 :: r2Regs) s t := by
   have hnw := hs.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e4 := e 4; have e8 := e 8
@@ -519,7 +519,7 @@ theorem r2t_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     rw [← h, show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ, Nat.mul_mod_left] at hodd
     exact absurd hodd (by decide)
   have hN0 : 0 < N := by omega
-  unfold Impl.Bignum.RISCV64.Precompute.r2
+  unfold Impl.Bignum.RISCV64.Precompute.r2Loop
   refine WP.seq (WP.mono (r2HiDbl_ok hs h5 h6 h7 h2 ht0 hw hw' (by omega) hNd hN) fun s₃ ⟨x3, o3, k3⟩ => ?_)
   have n3 : wordsVal s₃.mem B (slot w 0) w = N := by rw [Outside.wordsVal o3 (by omega) (by omega), hNd]
   have w3 : Mont.word s₃.mem B (slot w 0) = Mont.word s.mem B (slot w 0) := Outside.word o3 (by omega) (by omega)
@@ -529,7 +529,7 @@ theorem r2t_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     rw [← w3]; exact i4
   have k34 := k3.trans k4
   rw [← m4] at x3 n3 w3
-  refine WP.mono (r2Squares_ok (N := N) (hs.congr k34.2.2) hw hw' hZ ((k34.gpr (by decide)).trans h2)
+  refine WP.mono (r2SquaresLoop_ok (N := N) (hs.congr k34.2.2) hw hw' hZ ((k34.gpr (by decide)).trans h2)
     ((k34.gpr (by decide)).trans h5) ((k34.gpr (by decide)).trans h6) ((k34.gpr (by decide)).trans h7)
     ((k34.gpr (by decide)).trans ht0) (by rw [m4]; exact i4) n3 hodd
     (by rw [x3]; exact Nat.mod_lt _ hN0) (by rw [x3, Nat.mod_mod, Nat.pow_add]))

@@ -315,7 +315,7 @@ theorem sq_step {A S X c R N : Nat} (hR : Nat.Coprime R N) (hA : A % N = X ^ c *
   grind
 
 /-- What holds between the squares, with `x ≡ 2^e R (mod N)`. -/
-structure SqI (s : State) (B : Addr) (Z w N e : Nat) (t : State) : Prop where
+structure SqFrame (extra : List Reg) (s : State) (B : Addr) (Z w N e : Nat) (t : State) : Prop where
   scr : Scr t B Z
   a2 : t.gpr .a2 = off B (slot w 1)
   a5 : t.gpr .a5 = off B (slot w 2)
@@ -327,10 +327,11 @@ structure SqI (s : State) (B : Addr) (Z w N e : Nat) (t : State) : Prop where
   lt : wordsVal t.mem B (slot w 1) w < N
   x : wordsVal t.mem B (slot w 1) w % N = 2 ^ e * 2 ^ (64 * w) % N
   out : Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem
-  keep : Keep sqRegs s t
+  keep : Keep (extra ++ sqRegs) s t
 
-theorem sqI_step {s t : State} {B : Addr} {Z w N e : Nat} (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
-    (hodd : N % 2 = 1) (h : SqI s B Z w N e t) : WP isa r2Sq t (SqI s B Z w N (2 * e)) := by
+private theorem sqFrame_step {extra : List Reg} {s t : State} {B : Addr} {Z w N e : Nat} (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (hodd : N % 2 = 1) (h : SqFrame extra s B Z w N e t) :
+    WP isa r2Sq t fun u => SqFrame extra s B Z w N (2 * e) u ∧ u.gpr .s8 = t.gpr .s8 := by
   have hnw := h.scr.nowrap
   have e : ∀ j, slot w j = hdrBytes + j * (8 * (w + 2)) := fun _ => rfl
   have e0 := e 0; have e1 := e 1; have e8 := e 8
@@ -344,10 +345,17 @@ theorem sqI_step {s t : State} {B : Addr} {Z w N e : Nat} (hw2 : 2 ≤ w) (hw' :
   have w0 : Mont.word u.mem B (slot w 0) = Mont.word t.mem B (slot w 0) := Outside.word uo' (by omega_using [e0, e1]) (by omega_using [e0, hh])
   have g : ∀ r ∈ [Reg.a2, .a5, .a6, .a7, .t0, .t1], u.gpr r = t.gpr r := fun r hr =>
     k.gpr (by revert r hr; decide)
-  exact ⟨h.scr.congr k.2.2, (g .a2 (by decide)).trans h.a2, (g .a5 (by decide)).trans h.a5,
+  exact ⟨⟨h.scr.congr k.2.2, (g .a2 (by decide)).trans h.a2, (g .a5 (by decide)).trans h.a5,
     (g .a6 (by decide)).trans h.a6, (g .a7 (by decide)).trans h.a7, (g .t0 (by decide)).trans h.t0,
     by rw [g .t1 (by decide), w0]; exact h.inv, n0, ul, sq_step hR h.x ue, Outside.trans h.out uo',
-    Keep.trans' h.keep (k.mono (by decide))⟩
+    Keep.trans' h.keep (k.mono (fun _ hr => List.mem_append_right extra hr))⟩, k.gpr (by decide)⟩
+
+/-- The square invariant with just the registers written by `r2Sq`. -/
+abbrev SqI := SqFrame []
+
+theorem sqI_step {s t : State} {B : Addr} {Z w N e : Nat} (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31) (hZ : slot w 8 ≤ Z)
+    (hodd : N % 2 = 1) (h : SqI s B Z w N e t) : WP isa r2Sq t (SqI s B Z w N (2 * e)) :=
+  WP.mono (sqFrame_step hw2 hw' hZ hodd h) fun _ h' => h'.1
 
 /-- `r2Squares`, with an odd `N` in array 0, `-N⁻¹ mod 2⁶⁴` in `t1` and `x ≡
 2^w R (mod N)` below `N` in array 1: `x := 2^(128 w) mod N`, changing only
@@ -371,6 +379,55 @@ theorem r2Squares_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z) (hw2 
   refine ⟨?_, I6.out, I6.keep⟩
   rw [← Nat.mod_eq_of_lt I6.lt, I6.x, show 2 * (2 * (2 * (2 * (2 * (2 * w))))) = 64 * w by omega_using [],
     ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
+
+private theorem r2_exec_li_six {s : State} {d : Reg} :
+    exec (.li d 6) s = some (s.write d (BitVec.ofNat 64 6)) := by
+  rw [exec_li (by decide)]; rfl
+
+private theorem SqFrame.of_keep {s t u : State} {B : Addr} {Z w N e : Nat} (h : SqFrame [.s8] s B Z w N e t)
+    (k : Keep [.s8] t u) (hm : u.mem = t.mem) : SqFrame [.s8] s B Z w N e u :=
+  ⟨h.scr.congr k.2.2, (k.gpr (by decide)).trans h.a2, (k.gpr (by decide)).trans h.a5,
+    (k.gpr (by decide)).trans h.a6, (k.gpr (by decide)).trans h.a7, (k.gpr (by decide)).trans h.t0,
+    by rw [k.gpr (r := .t1) (by decide), hm]; exact h.inv,
+    by rw [hm]; exact h.n, by rw [hm]; exact h.lt, by rw [hm]; exact h.x, by rw [hm]; exact h.out,
+    Keep.trans' h.keep (k.mono (by decide))⟩
+
+/-- `r2SquaresLoop`, with an odd `N` in array 0, `-N⁻¹ mod 2⁶⁴` in `t1` and `x ≡
+2^w R (mod N)` below `N` in array 1: `x := 2^(128 w) mod N`, changing only
+arrays 1–3. -/
+theorem r2SquaresLoop_ok {s : State} {B : Addr} {Z w N : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hZ : slot w 8 ≤ Z) (h2 : s.gpr .a2 = off B (slot w 1)) (h5 : s.gpr .a5 = off B (slot w 2))
+    (h6 : s.gpr .a6 = off B (slot w 3)) (h7 : s.gpr .a7 = off B (slot w 0))
+    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hinv : ((Mont.word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hN : wordsVal s.mem B (slot w 0) w = N) (hodd : N % 2 = 1)
+    (hlt : wordsVal s.mem B (slot w 1) w < N)
+    (hx : wordsVal s.mem B (slot w 1) w % N = 2 ^ w * 2 ^ (64 * w) % N) :
+    WP isa r2SquaresLoop s fun t =>
+      wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % N ∧
+      Outside B (slot w 1) (24 * (w + 2)) s.mem t.mem ∧ Keep (.s8 :: sqRegs) s t := by
+  have I0 : SqFrame [.s8] s B Z w N w s :=
+    ⟨hs, h2, h5, h6, h7, ht0, hinv, hN, hlt, hx, Outside.refl _ _ _ _, Keep.refl _ _⟩
+  unfold r2SquaresLoop
+  refine WP.seq (WP.mono (WP.keep [.s8] (Q := fun u =>
+    u.gpr .s8 = BitVec.ofNat 64 6 ∧ u.mem = s.mem)
+    (by brun [r2_exec_li_six]) (by rfl) (by rfl)) fun u ⟨⟨hc, hm⟩, k⟩ => ?_)
+  let Inv : Nat → State → Prop := fun j u => SqFrame [.s8] s B Z w N (w * 2 ^ j) u
+  refine WP.mono (wp_countdown (cnt := .s8) (N := 6) (by decide) (by decide) Inv
+    (fun j _ t I _ => ?_) (by simp only [Inv, Nat.pow_zero, Nat.mul_one]; exact I0.of_keep k hm) hc)
+    fun t I6 => ?_
+  · refine WP.seq (WP.mono (sqFrame_step hw2 hw' hZ hodd I) fun u₁ ⟨I1, g⟩ => ?_)
+    refine WP.mono (dec_ok u₁ .s8) fun u₂ e2 => ?_
+    subst e2
+    have he : w * 2 ^ (j + 1) = 2 * (w * 2 ^ j) := by rw [Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_comm _ 2]
+    refine ⟨?_, ?_⟩
+    · show SqFrame [.s8] s B Z w N (w * 2 ^ (j + 1)) _
+      rw [he]
+      exact I1.of_keep (Keep.write _ _ _) (mem_write _ _ _)
+    · gsimp; rw [g]
+  · refine ⟨?_, I6.out, I6.keep⟩
+    have h6 : w * 2 ^ 6 = 64 * w := by rw [show (2 : Nat) ^ 6 = 64 from rfl, Nat.mul_comm]
+    rw [← Nat.mod_eq_of_lt I6.lt, I6.x, h6, ← Nat.pow_add, show 64 * w + 64 * w = 128 * w by omega_using []]
 
 /-! ## `R² mod n` -/
 
