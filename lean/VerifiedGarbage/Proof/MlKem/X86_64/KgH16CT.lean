@@ -1294,6 +1294,21 @@ theorem sampleHAtM16_ok {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz :
   · rw [hm3]; exact hres j hj f hf
   · rw [hm3]; exact hhs
 
+/-- The three-block row may call the existing matrix/hash helper. -/
+theorem sampleHAtBlocks16_ok (v : Sample4Impl) {b : Nat → Prog isa}
+    (hb : v.callee.batchHM16 = some b) {m : Nat} (hm : m ≤ 3) {oa oz : Nat} {s : State}
+    (h : SHH16 oa oz s) :
+    WP isa (Encaps.sampleHAt (v.callee.hashBlocks b m) (sc oa) (sc oz)) s (SHPostM16 m oa oz s) := by
+  by_cases h3 : m = 3
+  · subst m
+    cases hh : v.callee.batchH16 with
+    | none => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using sampleHAtM16_ok (v.batchHM16 b hb 3 hm) h
+    | some hB =>
+      simp only [Callee4.hashBlocks, ↓ite_eq_left, hh]
+      exact WP.mono (sampleHAt16_ok (callName := some v.callee.hashName) (v.batchH16 hB hh) h)
+        fun _ h => ⟨h.rd, h.wr, h.cs, h.frame, h.r15, h.res, h.hs⟩
+  · simpa only [Callee4.hashBlocks, ite_eq_right h3] using sampleHAtM16_ok (v.batchHM16 b hb m hm) h
+
 /-- What the fragment computing `m` outputs of `PRF₂`, from `PRF₂(σ, N₀)`, leaves. -/
 structure SHPostP16 (N₀ m oa oz : Nat) (s s' : State) : Prop where
   rd : s'.rd = s.rd
@@ -1437,14 +1452,14 @@ include W hp
 and the blocks of `ek` absorbed. -/
 theorem sm_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {i : Nat} (hi : i < 3)
     {s : State} (h : SI K σ i 4 s) :
-    WP isa (Encaps.sampleHAt (b (hm i).1) (sc (K.oA + 512 * (3 * i))) (sc K.oW)) s (KH K σ i (3 * i + 3)) := by
+    WP isa (Encaps.sampleHAt (v.callee.hashBlocks b (hm i).1) (sc (K.oA + 512 * (3 * i))) (sc K.oW)) s (KH K σ i (3 * i + 3)) := by
   obtain ⟨e2, e21, hbd, hm3⟩ := hm_spec i hi
   obtain hsm := W.sm i hi
   simp only [smChk, Bool.and_eq_true] at hsm
   obtain ⟨hkc, hr⟩ := keepAll_spec hsm.2
   obtain L₅ := h.kh.kc.lay W.toKgWfB hp
   obtain hE : (ekK K.L σ).length = 1184 := by rw [ekK_length, W.ek]
-  refine WP.mono (sampleHAtM16_ok (v.batchHM16 b hb _ hm3) (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
+  refine WP.mono (sampleHAtBlocks16_ok v hb hm3 (SHH16.of L₅ hsm.1)) fun s₆ h₆ => ?_
   obtain ha : ∀ e' < 3 * i, keepB (kgR ++ kgW K.L) (smW K i) (aP K e') 512 = true := fun e' he' =>
     hr (aP K e', 512) (List.mem_append_right _ (List.mem_map.2 ⟨e', List.mem_range.2 he', rfl⟩))
   refine KH.of (h.kh.ks.keep W hp (Nat.le_refl _) h₆.b hkc fun r hr' =>
@@ -1565,7 +1580,7 @@ include W hp
 /-- The fragment of row `i`: entries `3i` to `3i + 2` of `Â`, and the blocks
 of `ek` that the rows before it wrote absorbed. -/
 theorem frag_ok (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {i : Nat} (hi : i < 3)
-    {s : State} (h : KH K σ i (3 * i) s) : WP isa (frag K b i) s (KH K σ i (3 * i + 3)) := by
+    {s : State} (h : KH K σ i (3 * i) s) : WP isa (frag K v.callee b i) s (KH K σ i (3 * i + 3)) := by
   have k3 := W.k3
   obtain sd : ∀ J < 4, ∀ t, SI K σ i J t → WP isa (seedAt J ((3 * i + J) / 3) ((3 * i + J) % 3)) t (SI K σ i (J + 1)) :=
     fun J hJ t ht => by have := seedI_ok W hp hi hJ ht; rwa [k3] at this
@@ -1929,7 +1944,7 @@ theorem nttG_ok (hK : KgRowsOk K.L) {s : State} (h : KG K σ 2 true s) : WP isa 
 /-- The rows, and the tail if every `SampleNTT` succeeded. -/
 theorem rows_ok (hK : KgRowsOk K.L) (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b)
     {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) {s : State} (h : KN K 6 σ s) :
-    WP isa (rows K b p v.callee.arith) s (KEnd K.L σ) := by
+    WP isa (rows K v.callee b p) s (KEnd K.L σ) := by
   unfold rows
   refine WP.seq (WP.mono (frag0_ok W hp v hpb h) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (hzG_ok W hp h₁) fun s₂ h₂ => ?_)
@@ -2011,6 +2026,21 @@ theorem sampleHAtM16_tr {m : Nat} {b : Prog isa} (hb : BatchHMOk16 m b) {oa oz :
   simp only [sample4K, State.withRegions_gpr, State.withRegions_mem, hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1,
     hv2.2.2, hm1, hm2, e4, hs1, hs2, e3]
   simp only [pa, e1, and_self]
+
+/-- Sharing the three-block row preserves the same public leakage. -/
+theorem sampleHAtBlocks16_tr (v : Sample4Impl) {b : Nat → Prog isa}
+    (hb : v.callee.batchHM16 = some b) {m : Nat} (hm : m ≤ 3) {oa oz : Nat} :
+    RelCT isa (fun x y => SHH16 oa oz x ∧ SHH16 oa oz y ∧ x.gpr .rbx = y.gpr .rbx ∧ x.gpr .rsp = y.gpr .rsp ∧
+      bytesAt x.mem (pa x (sc 0)) 136 = bytesAt y.mem (pa y (sc 0)) 136)
+      (Encaps.sampleHAt (v.callee.hashBlocks b m) (sc oa) (sc oz)) fun _ _ => True := by
+  by_cases h3 : m = 3
+  · subst m
+    cases hh : v.callee.batchH16 with
+    | none => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using sampleHAtM16_tr (v.batchHM16 b hb 3 hm)
+    | some hB =>
+      simp only [Callee4.hashBlocks, ↓ite_eq_left, hh]
+      exact sampleHAt16_tr (callName := some v.callee.hashName) (v.batchH16 hB hh) (oa := oa) (oz := oz)
+  · simpa only [Callee4.hashBlocks, ite_eq_right h3] using sampleHAtM16_tr (v.batchHM16 b hb m hm)
 
 /-- Two runs of the fragment computing outputs of `PRF₂` inlined, from the same seeds and pointers. -/
 theorem sampleHAtP16_tr {N₀ m : Nat} {b : Prog isa} (hb : BatchPOk16 N₀ m b) {oa oz : Nat} :
@@ -2184,7 +2214,7 @@ variable (W : KgH16Wf K) (T : KgH16T K)
 include W T
 
 theorem frag_tr (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM16 = some b) {i : Nat} (hi : i < 3) :
-    RelCT isa (R K.L fun σ s => KH K σ i (3 * i) s) (frag K b i) fun _ _ => True := by
+    RelCT isa (R K.L fun σ s => KH K σ i (3 * i) s) (frag K v.callee b i) fun _ _ => True := by
   have Wb := W.toKgWfB
   have k3 := W.k3
   obtain ⟨e2, e21, hbd, hm3⟩ := hm_spec i hi
@@ -2193,7 +2223,6 @@ theorem frag_tr (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM1
   have hsm := W.sm i hi
   simp only [smChk, Bool.and_eq_true] at hsm
   have c4 := hsm.1
-  have hB := v.batchHM16 b hb _ hm3
   have hcp := W.cp i hi
   refine RelCT.mono (RelCT.exists_ (P := fun ρ x y => LRel kgR (kgW K.L) x y ∧ KHρ K ρ i x ∧ KHρ K ρ i y)
     (Q := fun _ _ => True) fun ρ => ?_) ?_ fun _ _ _ => trivial
@@ -2238,7 +2267,7 @@ theorem frag_tr (v : Sample4Impl) {b : Nat → Prog isa} (hb : v.callee.batchHM1
     rw [show (3 * i + 3) / 3 = i + 1 by omega_using [], show (3 * i + 3) % 3 = 0 by omega_using []] at s3
     refine RelCT.seq s0 (RelCT.seq s1 (RelCT.seq s2 (RelCT.seq s3 ?_)))
     rw [Top16.aP, k3]
-    refine RelCT.mono (sampleHAtM16_tr hB) (fun x y h => ⟨SHH16.of h.1.1 c4, SHH16.of h.1.2.1 c4, h.1.eq Wb.inBs.1,
+    refine RelCT.mono (sampleHAtBlocks16_tr v hb hm3) (fun x y h => ⟨SHH16.of h.1.1 c4, SHH16.of h.1.2.1 c4, h.1.eq Wb.inBs.1,
       h.1.2.2.2, ?_⟩) fun _ _ h => h
     rw [bytesAt136, bytesAt136, seed4_eq h.2.1 (k := 0) (by decide), seed4_eq h.2.1 (k := 1) (by decide),
       seed4_eq h.2.1 (k := 2) (by decide), seed4_eq h.2.1 (k := 3) (by decide), seed4_eq h.2.2 (k := 0) (by decide),
@@ -2360,7 +2389,7 @@ theorem lastIf_tr (hK : KgRowsOk K.L) (T : KgH16T K) :
 
 theorem rows_tr (hK : KgRowsOk K.L) (T : KgH16T K) (v : Sample4Impl) {b : Nat → Prog isa}
     (hb : v.callee.batchHM16 = some b) {p : Nat → Nat → Prog isa} (hpb : v.callee.batchP16 = some p) :
-    RelCT isa (R K.L (KN K 6)) (KeyGenH16.rows K b p v.callee.arith) (R K.L (KEnd K.L)) := by
+    RelCT isa (R K.L (KN K 6)) (KeyGenH16.rows K v.callee b p) (R K.L (KEnd K.L)) := by
   unfold KeyGenH16.rows
   refine RelCT.seq (relInv (I' := fun σ s => KG K σ 0 false s)
     (fun σ s hp hs => frag0_ok W hp v hpb hs) (frag0_tr W T v hpb)) ?_

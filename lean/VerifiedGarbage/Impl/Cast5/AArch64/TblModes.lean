@@ -20,8 +20,8 @@ place. The key is the subkeys where the caller passed them, at `x0`, and the
 number of rounds in `x1`: neither the modes nor the batch write either, so
 `prepare` does nothing. `crypt` keeps the scratch buffer's address (`sb` =
 `x5`, the batch's pointer to the subkeys) in `x22`, points `x4` at the
-buffer, copies the number of rounds to `x16`, sets the batch's constants and
-the table's address, and runs the batch. The batch writes most vector
+buffer, copies the number of rounds to `x16`, sets the batch's constants, and calls the shared batch, which loads
+its table's address. The batch writes most vector
 registers, `v8`–`v15` among them, whose low halves the calling convention
 preserves: `crypt` keeps them in `x11`, `x12`, `x19`–`x21` and `x26`–`x28`,
 which the batch does not write (the modes save `x19`–`x28` in their own
@@ -51,12 +51,12 @@ def modeRestore : List Instr :=
   (List.range 8).map (fun k => .vop (.dup .d2 (modeV k) (modeKeep k))) ++ ([movR sb .x22] : List Instr)
 
 /-- `sb` to `x22`, `x4` to the buffer (at `sb`), the number of rounds to
-`x16`, the batch's constants and the table's address. -/
+`x16`, the batch's constants. -/
 def modeSetup : List Instr := ([movR .x22 sb, movR .x4 sb, movR .x16 .x1] : List Instr) ++ setup
 
 /-- The batch of each direction, named for their literals. -/
-def batchEnc : Prog isa := batch true
-def batchDec : Prog isa := batch false
+def batchEnc : Prog isa := batchCall true
+def batchDec : Prog isa := batchCall false
 
 def batchOf : Bool → Prog isa
   | true => batchEnc

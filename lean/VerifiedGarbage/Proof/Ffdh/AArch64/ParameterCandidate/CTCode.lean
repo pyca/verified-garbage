@@ -1309,8 +1309,9 @@ def WQ (L : WsP) (s : State) : Prop := Ws s L.B L.Z L.w
 theorem residue_ct : RelCT isa (Two WQ) (seqs residue) fun _ _ => True :=
   ws_ct0 (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ _ h => h) (by taint_decide)
 
-theorem tableWrite_ct : RelCT isa (Two WQ) tableWrite fun _ _ => True :=
-  ws_block_ct0 (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ _ h => h) (by taint_decide)
+theorem tableWrite_ct : RelCT isa (Two WQ) tableWrite fun _ _ => True := by
+  obtain ⟨_, hc⟩ := tabWriteShared_hint
+  exact ws_ct0 (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ _ h => h) hc
 
 /-! ## The sieve -/
 

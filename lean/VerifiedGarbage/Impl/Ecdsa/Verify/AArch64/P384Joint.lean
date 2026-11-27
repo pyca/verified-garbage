@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.DigitCall
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Impl.P384.GTable9
@@ -45,7 +46,8 @@ def fixedEntry : Prog isa := .seq (.block fixedLoad) (Joint.signEntry cfg)
 def fixedDigit : Prog isa := .seq (.block (Joint.fixedRead cfg)) <|
  .ite (.nonzero .x .x2)
   (.seq fixedEntry <| .seq (jacMixedAdd K K.R K.E K.D) (.block (copyPt 6 K.R K.D))) (.block [])
-def digits : Prog isa := .seq (PubNaf.digit K) fixedDigit
+def digitsBody : Prog isa := .seq (PubNaf.digit K) fixedDigit
+def digits : Prog isa := callDigits "vg_ecdsa_p384_verify_digits" digitsBody
 def double : Prog isa := Impl.P384.EcdhDouble.callRD
 def step : Prog isa := .seq (.block [decCounter]) <| .seq double digits
 def window : Prog isa :=

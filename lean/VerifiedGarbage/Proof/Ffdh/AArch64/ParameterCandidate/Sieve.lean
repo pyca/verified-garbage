@@ -255,10 +255,11 @@ theorem tableWrite_ok {s : State} {p : PP} {w : Nat} (h : PSt p w s) (hT : slot 
       PSt p w t ∧ TabOk t.mem p.B w ∧ Frm p.B [(slot w aTab, 2048)] s.mem t.mem ∧ Keep mmRegs s t := by
   have hws := h.ws
   unfold tableWrite
-  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
   refine WP.mono hws.ws_ok fun s₁ ⟨⟨_, h11, m₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans hws.x0) h11) fun s₂ ⟨⟨h9, m₂, _⟩, k₂⟩ => ?_
-  refine WP.mono (tabWrites_ok (hws.scr.congr (k₁.trans k₂).wr) hT h9 256 (Nat.le_refl _))
+  refine WP.mono (tabWriteShared_ok (hws.scr.congr (k₁.trans k₂).wr) hT h9)
     fun t ⟨htab, ho, k₃⟩ => ?_
   rw [m₂, m₁] at ho
   have hf : Frm p.B [(slot w aTab, 2048)] s.mem t.mem := Frm.of_outside ho (by simp)

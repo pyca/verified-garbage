@@ -19,8 +19,16 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
@@ -31,6 +39,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 
 /-!
 # A candidate on AArch64: constant time, the stages before Montgomery setup
@@ -584,8 +593,7 @@ theorem trN_le (q : FPub) : trN q ≤ 256 ∧ 1 ≤ trN q := by unfold trN; spli
 
 /-- The table, and the counts. -/
 theorem trialHead_ok {q : FPub} {s : State} (h : KSt q s) :
-    WP isa (.block (ws ++ base aTab .x9 ++ tabWrite ++ [movi .x3 128, movi .x4 256, movi .x5 17,
-      .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1])) s fun t =>
+    WP isa VG.Impl.RsaKeyGen.AArch64.Candidate.trialHead s fun t =>
       0 < trN q ∧ TI q 0 t := by
   have hw := h.ws
   have hd := h.dims
@@ -593,12 +601,14 @@ theorem trialHead_ok {q : FPub} {s : State} (h : KSt q s) :
   have hz := hd.z
   have hw4 := hd.w4
   have hT : slot q.w aTab + 2048 ≤ q.Z := by simp only [slot, hdrBytes, aTab]; omega_arith
-  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  unfold VG.Impl.RsaKeyGen.AArch64.Candidate.trialHead
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
   refine WP.mono hw.ws_ok fun s₁ ⟨⟨h12₁, h11₁, hm₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans hw.x0) h11₁)
     fun s₂ ⟨⟨h9₂, hm₂, _⟩, k₂⟩ => ?_
-  refine WP.mono (tabWrites_ok (hw.scr.congr (k₁.trans k₂).wr) hT h9₂ 256 (Nat.le_refl _))
-    fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_
+  refine WP.seq (WP.mono (tabWriteShared_ok (hw.scr.congr (k₁.trans k₂).wr) hT h9₂)
+    fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_)
   rw [hm₂, hm₁] at ho₃
   have h12₃ : s₃.gpr .x12 = BitVec.ofNat 64 q.w :=
     (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans h12₁)
@@ -704,13 +714,30 @@ theorem trialBody_ct : RelCT isa (Two fun (p : FPub × Nat) s => p.2 < trN p.1 �
   refine RelCT.seqs_append (ne 3) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
   exact two_taint [] (pins_nil₀ _) (by taint_decide)
 
+/- The table's one public address suffices for its shared leaf call.
+RSA, DSA and FFDH reuse this analysis. -/
+taint_summary primeTableSum : taint (Taint.ofRegs [.x9])
+  (.call "vg_prime_table_write" (.block tabWrite))
+
+/-- The table writer after `ws` has established the public width. -/
+theorem tabWriteShared_hint : ∃ hc,
+    (taint.check (Taint.ofRegs [.x0, .x12, .x11])
+      (.seq (.block (base aTab .x9)) tabWriteShared) hc).isSome = true := by
+  taint_decide_sum [primeTableSum]
+
+/-- The trial head after `ws` has established the public width. -/
+theorem trialHead_hint : ∃ hc,
+    (taint.check (Taint.ofRegs [.x0, .x12, .x11])
+      (.seq (.block (base aTab .x9)) (.seq tabWriteShared (.block trialInit))) hc).isSome = true := by
+  taint_decide_sum [primeTableSum]
+
 /-- `trial` leaks the same in runs that agree on the public data. -/
 theorem trial_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
     RelCT isa (Two Φ) (seqs trial) fun _ _ => True := by
   have hh := fun q s (h : Φ q s) => trialHead_ok (hΦ q s h)
-  simp only [List.append_assoc] at hh
   simp only [trial, seqs, List.append_assoc]
-  refine RelCT.seq (two_post (ws_block_ct0 FPub.B FPub.Z FPub.w (fun _ _ h => (hΦ _ _ h).ws) (by taint_decide)) hh)
+  obtain ⟨_, hc⟩ := trialHead_hint
+  refine RelCT.seq (two_post (ws_ct0 FPub.B FPub.Z FPub.w (fun _ _ h => (hΦ _ _ h).ws) hc) hh)
     ((two_loop (Φ := TI) (Ψ := fun _ _ => True) trN trialBody_ct fun _ _ _ hk h => trialIter_ok hk h).mono
       (fun _ _ h => h) fun _ _ _ => trivial)
 

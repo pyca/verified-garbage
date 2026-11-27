@@ -7322,3 +7322,7 @@ pub(crate) mod vg_dsa_probable_prime_3072;
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_sign_prevalidated.rs"]
 pub(crate) mod vg_dsa_sign_prevalidated;
+
+#[rustfmt::skip]
+#[path = "internal/vg_prime_table_write.rs"]
+pub(crate) mod vg_prime_table_write;

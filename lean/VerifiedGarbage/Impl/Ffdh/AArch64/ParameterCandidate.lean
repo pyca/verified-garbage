@@ -154,7 +154,7 @@ def residue : List (Prog isa) := [
     .csel .x .x5 .x5 .x3, movi .x6 7, movi .x7 11, .csel .x .x6 .x6 .x7, .logic .eor .x .x5 .x5 .x6, sth .x5 fBad]]
 
 /-- RSA's table of small primes at `aTab`. -/
-def tableWrite : Prog isa := .block (ws ++ base aTab .x9 ++ tabWrite)
+def tableWrite : Prog isa := .seq (.block (ws ++ base aTab .x9)) tabWriteShared
 
 /-- After a word of the table: the words left (`x10`) zeroed under the mask
 of a divisor (`x1`; `x8` is all ones), which ends the loop. -/

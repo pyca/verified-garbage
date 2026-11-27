@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.DigitCall
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.P521Point
@@ -27,7 +28,8 @@ def fixedEntry : Prog isa := .seq (.block fixedLoad) <|
 def fixedDigit : Prog isa := .seq (.block (Naf.digitRead KG)) <|
  .ite (.nonzero .x .x2)
   (.seq fixedEntry <| .seq (jacMixedAdd K K.R K.E K.D) (.block (copyPt 9 K.R K.D))) (.block [])
-def digits : Prog isa := .seq (PubNaf.digit K) fixedDigit
+def digitsBody : Prog isa := .seq (PubNaf.digit K) fixedDigit
+def digits : Prog isa := callDigits "vg_ecdsa_p521_verify_digits" digitsBody
 /-- `D = 2R`, inline. -/
 def double : Prog isa := VG.Impl.Weierstrass.AArch64.P521.double K.M K.S K.R K.D
 def step : Prog isa := .seq (.block [decCounter]) <|

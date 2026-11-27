@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointStepTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointDigitsTiming
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -877,6 +877,8 @@ structure BatchHOk16 (b : Prog isa) : Prop where
   sp : b.all (fun i => !isa.writesSp i) = true
   /-- It uses no stack. -/
   xd : b.x86_64Depth = 0
+  /-- The fragment never changes the stack pointer, including through a frame. -/
+  nosp : NoSp b
 
 /-- The checks of every instruction of a fragment, at once. -/
 noncomputable def BatchHOk16.checks (b : Prog isa) : Bool :=
@@ -906,7 +908,8 @@ theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampl
   have h := sampleH16_checks fast
   simp only [BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
   exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1.1, h.1.1.2,
-    Code.all_of_allInstrs h.1.2, h.2⟩
+    Code.all_of_allInstrs h.1.2, h.2,
+    nosp_of (by cases fast <;> lit_decide)⟩
 
 /-- What key generation needs of a fragment it inlines absorbing `m` blocks
 (`Callee4.batchHM16`): as `BatchHOk16`, with `sampleHMKW true m`. -/

@@ -1105,16 +1105,17 @@ open VG.Proof.MlKem.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 theorem nativeTrialHead_ok {q : VG.Proof.RsaKeyGen.AArch64.FPub} {s : State} (hw : VG.Proof.Rsa.AArch64.Ws s q.B q.Z q.w)
     (hT : slot q.w aTab + 2048 ≤ q.Z) :
-    WP isa (.block (ws ++ base aTab .x9 ++ tabWrite ++ [movi .x3 128, movi .x4 256, movi .x5 17,
-      .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1])) s fun t =>
+    WP isa VG.Impl.RsaKeyGen.AArch64.Candidate.trialHead s fun t =>
       (0 < trN q ∧ TI q 0 t) ∧ wv t.mem q.B (slot q.w aN) q.w = wv s.mem q.B (slot q.w aN) q.w := by
   have hn := hw.scr.nowrap
-  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  unfold VG.Impl.RsaKeyGen.AArch64.Candidate.trialHead
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
   refine WP.mono hw.ws_ok fun s₁ ⟨⟨h12₁, h11₁, hm₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans hw.x0) h11₁)
     fun s₂ ⟨⟨h9₂, hm₂, _⟩, k₂⟩ => ?_
-  refine WP.mono (tabWrites_ok (hw.scr.congr (k₁.trans k₂).wr) hT h9₂ 256 (Nat.le_refl _))
-    fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_
+  refine WP.seq (WP.mono (tabWriteShared_ok (hw.scr.congr (k₁.trans k₂).wr) hT h9₂)
+    fun s₃ ⟨htab₃, ho₃, k₃⟩ => ?_)
   rw [hm₂, hm₁] at ho₃
   have h12₃ : s₃.gpr .x12 = BitVec.ofNat 64 q.w :=
     (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans h12₁)
@@ -1181,10 +1182,10 @@ theorem trialEarly_ct :
       wv s.mem q.1.B (slot q.1.w aN) q.1.w = q.2) =>
     WP.mono (nativeTrialHead_ok h.1 h.2.1) fun t ⟨⟨_, hI⟩, hc⟩ =>
       (⟨earlyWords_pos q.2 (trN_le q.1).2, hI, hc.trans h.2.2⟩ : 0 < earlyN q ∧ EI q 0 t)
-  simp only [List.append_assoc] at hh
-  simp only [trialEarly, seqs, List.append_assoc]
-  refine RelCT.seq (two_post (ws_block_ct0 (fun q : EPub => q.1.B) (fun q => q.1.Z) (fun q => q.1.w)
-      (fun _ _ h => h.1) (by taint_decide)) hh)
+  simp only [trialEarly, seqs]
+  obtain ⟨_, hc⟩ := trialHead_hint
+  refine RelCT.seq (two_post (ws_ct0 (fun q : EPub => q.1.B) (fun q => q.1.Z) (fun q => q.1.w)
+      (fun _ _ h => h.1) hc) hh)
     ((two_loop (Φ := EI) (Ψ := fun _ _ => True) earlyN earlyTrialBody_ct fun _ _ _ hk h => earlyTrialIter_ok hk h).mono
       (fun _ _ h => h) fun _ _ _ => trivial)
 

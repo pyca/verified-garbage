@@ -165,11 +165,34 @@ elab "closedH_in " v:ident b:ident p:ident : tactic => withMainContext do
   if (g.find? fun e => e.isConst && calls.contains e.constName!).isSome then
     throwError "the goal calls the halves of K-PKE key generation"
 
+/-- The selected hash fragment has the same control-flow guarantees. -/
+theorem hashBlocks_ctl (v : Sample4Impl) (b : Nat → Prog isa)
+    (B : ∀ m ≤ 3, BatchHMOk16 m (b m)) (m : Nat) (hm : m ≤ 3) :
+    ctlOk (v.callee.hashBlocks b m) = true := by
+  by_cases h3 : m = 3
+  · subst m
+    cases hh : v.callee.batchH16 with
+    | none => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using (B 3 hm).ctl
+    | some h => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using batchH_call_ctl (name := v.callee.hashName) (v.batchH16 h hh)
+  · simpa only [Callee4.hashBlocks, ite_eq_right h3] using (B m hm).ctl
+
+/-- Selecting the shared helper preserves the stack-pointer guarantee. -/
+theorem hashBlocks_sp (v : Sample4Impl) (b : Nat → Prog isa)
+    (B : ∀ m ≤ 3, BatchHMOk16 m (b m)) (m : Nat) (hm : m ≤ 3) :
+    (v.callee.hashBlocks b m).all (fun i => !isa.writesSp i) = true := by
+  by_cases h3 : m = 3
+  · subst m
+    cases hh : v.callee.batchH16 with
+    | none => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using (B 3 hm).sp
+    | some h => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using batchH_call_sp (name := v.callee.hashName) (v.batchH16 h hh)
+  · simpa only [Callee4.hashBlocks, ite_eq_right h3] using (B m hm).sp
+
 /-- `ctlOk` of key generation hashing `ek` in the rows, of the implementation
 `v` with the fragments `b` (`B`) and `p` (`P`), calling the halves of K-PKE
 key generation (`hR : KgRowsOk L`). -/
 tactic_template "kgh_ctl " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
   `(tactic| repeat' (first
+    | with_reducible exact hashBlocks_ctl $v $b $B _ (by decide)
     | with_reducible exact ($B _ (by decide)).ctl | with_reducible exact ($P (_, _) (by decide)).ctl
     | with_reducible exact ($hR).ntt.ctl | with_reducible exact ($hR).row.ctl
     | (closedH_in $v $b $p; decide +kernel) | (code_whnf; closedH_in $v $b $p; decide +kernel)
@@ -180,6 +203,7 @@ tactic_template "kgh_ctl " v:ident b:ident p:ident B:ident P:ident hR:ident : ta
 /-- That key generation hashing `ek` in the rows never writes the stack pointer. -/
 tactic_template "kgh_sp " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
   `(tactic| repeat' (first
+    | with_reducible exact hashBlocks_sp $v $b $B _ (by decide)
     | with_reducible exact ($B _ (by decide)).sp | with_reducible exact ($P (_, _) (by decide)).sp
     | with_reducible exact ($hR).ntt.sp | with_reducible exact ($hR).row.sp
     | (closedH_in $v $b $p; exact Code.all_of_spTest (by decide +kernel))
