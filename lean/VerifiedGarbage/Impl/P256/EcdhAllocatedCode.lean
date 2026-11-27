@@ -7,6 +7,9 @@ public import VerifiedGarbage.Impl.AArch64Instrs
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a literal at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.P256.EcdhAllocatedCode
 open VG VG.AArch64
 

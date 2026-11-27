@@ -20,6 +20,9 @@ then the magnitudes `1 … 16` that the AVX2 selection compares with.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.Ed25519.X86_64
 
 /-- `[Y - X, Y + X, 2dT]` of `[(k + 1) 1024^j]B` with `Z = 1` (its `2Z` is `2`), for `k < 16`,

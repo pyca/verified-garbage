@@ -14,6 +14,9 @@ accumulated point. The proof checks every entry against the specification's addi
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.Ed25519.X86_64
 
 /-- Affine `(x, y)` of `[d]B` for entry `e < 128`: `d = e + 1` for even `e`, `d = -e` for odd
