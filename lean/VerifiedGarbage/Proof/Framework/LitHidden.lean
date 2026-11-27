@@ -51,17 +51,12 @@ meta def hiddenCode (c : Expr) : MetaM Bool := do
   if c.getUsedConstants.any (· matches .str _ "lit") then return false
   hidden c
 
-/-- The closed code `c` as a literal, calling the literals of the code
-materialized so far (as `Lit.materialize` writes `N.lit`), and a proof that
-`c` is that literal: by evaluation, then each function called rewritten to
-its literal. -/
-meta def codeLit (c : Expr) : MetaM (Expr × Expr) := do
-  let ty ← inferType c
-  let codeTy ← whnfD ty
-  unless codeTy.isAppOfArity ``Code 2 do throwError "taint_decide: {c} is not code: {ty}"
-  let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
-  let v ← Lit.evalCode codeTy.appFn!.appArg! codeTy.appArg! c
-  let (abs, gs) ← Lit.abstractToLits ty v
+/-- For `v`, the value of the closed code `c : ty` (`Lit.evalCodes`): `c` as a literal, calling
+the literals of the code materialized so far (`lits`; as `Lit.materialize`
+writes `N.lit`), and a proof that `c` is that literal: by evaluation, then each
+function called rewritten to its literal. -/
+meta def codeLit (ty : Expr) (lits : Std.HashMap Expr Name) (c v : Expr) : MetaM (Expr × Expr) := do
+  let (abs, gs) ← Lit.abstractToLits lits v
   let lhss ← gs.mapM Lit.lhsOf
   -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
   let fill (f : Nat → Expr) : Expr :=
@@ -100,16 +95,38 @@ where
     | .mdata _ b | .proj _ _ b => go b
     | _ => return
 
-/-- The goal, with the code `c` in it replaced by its literal (`codeLit`). -/
-meta def rwCodeLit (c : Expr) : TacticM Unit := do
+/-- The goal, with the codes `cs` in it replaced by their literals (`codeLit`): evaluated
+together, and rewritten at once. -/
+meta def rwCodeLits (cs : Array Expr) : TacticM Unit := do
+  let some c₀ := cs[0]? | return
   let g ← getMainGoal
   let tgt ← instantiateMVars (← g.getType)
-  let (lit, prf) ← codeLit c
-  let ty ← inferType c
-  let motive ← withLocalDeclD `y ty fun y =>
-    mkLambdaFVars #[y] (tgt.replace fun t => if t == c then some y else none)
-  replaceMainGoal [← g.replaceTargetEq (tgt.replace fun t => if t == c then some lit else none)
-    (mkApp6 (mkConst ``congrArg [1, 1]) ty (mkSort 0) c lit motive prf)]
+  let ty ← inferType c₀
+  let codeTy ← whnfD ty
+  unless codeTy.isAppOfArity ``Code 2 do throwError "{c₀} is not code: {ty}"
+  for c in cs do
+    unless ← isDefEq (← inferType c) ty do throwError "{c} is not code of the type {ty}"
+  let vs ← Lit.evalCodes (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!) cs
+  let lits ← Lit.expandedLits ty
+  let mut ls := #[]
+  for c in cs, v in vs do ls := ls.push (← codeLit ty lits c v)
+  let k := cs.size
+  let idx : Std.HashMap Expr Nat := cs.zipIdx.foldl (fun m (c, i) => m.insert c i) {}
+  let put (f : Nat → Expr) : Expr := tgt.replace fun t => idx[t]?.map f
+  -- The goal as a function of the codes: at them, and at their literals, by congruence.
+  let xs ← cs.mapM fun _ => mkFVar <$> mkFreshFVarId
+  let F := cs.foldr (fun _ b => Expr.lam `y ty b .default) ((put (xs[·]!)).abstract xs)
+  let mut l := F
+  let mut r := F
+  let mut prf := mkApp2 (mkConst ``Eq.refl [1]) (mkSort 0) tgt
+  for i in [0:k] do
+    let (c', p) := ls[i]!
+    let B := (List.range (k - 1 - i)).foldl (fun b _ => mkForall `y .default ty b) (mkSort 0)
+    prf := if i == 0 then mkApp6 (mkConst ``congrArg [1, 1]) ty B cs[i]! c' F p
+      else mkAppN (mkConst ``congr [1, 1]) #[ty, B, l, r, cs[i]!, c', prf, p]
+    l := mkApp l cs[i]!
+    r := mkApp r c'
+  replaceMainGoal [← g.replaceTargetEq (put fun i => (ls[i]!).1) prf]
 
 /-- `taint_decide` (`VG.taintDecideAt`), but that after `rw_lit` a check of
 code that `rw_lit` has left to the functions that generate it (`hiddenCode`)
@@ -131,7 +148,7 @@ meta def taintDecideLit (chunkSize : Expr) : TacticM Unit := do
   let some chk := tgt.find? (·.isAppOfArity `VG.Taint.check 5)
     | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
   let c := chk.getArg! 3
-  if ← hiddenCode c then rwCodeLit c
+  if ← hiddenCode c then rwCodeLits #[c]
   evalTactic (← `(tactic| (kernel_rw; decide +kernel)))
 
 /-- `lit_decide_lit`: `lit_decide` for a check of code that `rw_lit` cannot
@@ -139,7 +156,7 @@ see (the functions of a variant), which it states of the code's literal, as
 `taint_decide_lit` does, before the kernel evaluates it. On any other code it
 is `lit_decide`. -/
 elab "lit_decide_lit" : tactic => withMainContext do
-  for c in ← hiddenCodes (← instantiateMVars (← getMainTarget)) do rwCodeLit c
+  rwCodeLits (← hiddenCodes (← instantiateMVars (← getMainTarget)))
   evalTactic (← `(tactic| lit_decide))
 
 /-- `taint_decide_lit`: `taint_decide` for a check of

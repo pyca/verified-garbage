@@ -1347,25 +1347,28 @@ where
     modify fun s => { s with code := s.code.insert k e }
     return e
 
-/-- The value of the closed code `code : Code I C`, evaluated in compiled code,
-as a literal (`codeToExprUnsafe`). -/
-meta def evalCode (I C code : Expr) : MetaM Expr := do
+/-- The values of the closed codes `codes : Code I C`, evaluated in compiled code
+(once: compiling an expression costs more than most of them), as literals
+(`codeToExprUnsafe`). -/
+meta def evalCodes (I C : Expr) (codes : Array Expr) : MetaM (Array Expr) := do
   let toE (T : Expr) : MetaM Expr := do
     return mkApp2 (mkConst ``ToExpr.toExpr [0]) T (← synthInstance (mkApp (mkConst ``ToExpr [0]) T))
-  -- in one evaluation: compiling an expression costs more than this one
   let prod (a b : Expr) := mkApp2 (mkConst ``Prod [0, 0]) a b
   let pair (α β a b : Expr) := mkApp4 (mkConst ``Prod.mk [0, 0]) α β a b
   let eI ← mkArrow I (mkConst ``Expr)
   let eC ← mkArrow C (mkConst ``Expr)
-  let ty := mkApp2 (mkConst ``Code) I C
-  let (toI, toC, c) ← unsafe evalOnce ((NonScalar → Expr) × (NonScalar → Expr) × Code NonScalar NonScalar)
-    (prod eI (prod eC ty)) (pair eI (prod eC ty) (← toE I) (pair eC ty (← toE C) code))
-  return unsafe codeToExprUnsafe I C toI toC c
+  let code := mkApp2 (mkConst ``Code) I C
+  let ty := mkApp (mkConst ``List [0]) code
+  let (toI, toC, cs) ← unsafe evalOnce ((NonScalar → Expr) × (NonScalar → Expr) × List (Code NonScalar NonScalar))
+    (prod eI (prod eC ty)) (pair eI (prod eC ty) (← toE I) (pair eC ty (← toE C) (← mkListLit code codes.toList)))
+  return cs.toArray.map fun c => unsafe codeToExprUnsafe I C toI toC c
 
-/-- `abstractCalls` of `v`, a literal of type `ty`, for the functions
-materialized so far. -/
-meta def abstractToLits (ty v : Expr) : MetaM (Expr × Array Name) := do
-  -- The code materialized so far, written out in full.
+/-- The value of the closed code `code : Code I C` as a literal (`evalCodes`). -/
+meta def evalCode (I C code : Expr) : MetaM Expr := return (← evalCodes I C #[code])[0]!
+
+/-- The literals of the functions materialized so far whose type is `ty`, written out in full
+(`expandLit`). -/
+meta def expandedLits (ty : Expr) : MetaM (Std.HashMap Expr Name) := do
   let mut lits : Std.HashMap Expr Name := {}
   let mut expanded : Std.HashMap Name Expr := {}
   for g in litNames (← getEnv) do
@@ -1373,6 +1376,11 @@ meta def abstractToLits (ty v : Expr) : MetaM (Expr × Array Name) := do
       let (e, m) ← (expandLit g).run expanded
       expanded := m
       lits := lits.insertIfNew e g
+  return lits
+
+/-- `abstractCalls` of `v`, a literal, for the functions materialized so far, whose literals
+are `lits` (`expandedLits`). -/
+meta def abstractToLits (lits : Std.HashMap Expr Name) (v : Expr) : MetaM (Expr × Array Name) := do
   let (abs, (_, gs)) ← (abstractCalls lits v).run ({}, #[])
   return (abs, gs)
 
@@ -1386,7 +1394,7 @@ meta def materialize (N : Name) (code : Expr) : MetaM Unit := do
     throwError "materialize_code: {code} is not code: {ty}"
   let codeTy := mkApp2 (mkConst ``Code) (← whnfD codeTy.appFn!.appArg!) (← whnfD codeTy.appArg!)
   let v ← evalCode codeTy.appFn!.appArg! codeTy.appArg! code
-  let (abs, gs) ← abstractToLits ty v
+  let (abs, gs) ← abstractToLits (← expandedLits ty) v
   let lhss ← gs.mapM lhsOf
   -- `abs` with the `i`-th callee (marked `.bvar (1000000 + i)`) replaced by `f i`.
   let inst (f : Nat → Expr) : Expr :=
