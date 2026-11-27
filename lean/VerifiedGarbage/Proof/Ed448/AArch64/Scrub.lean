@@ -17,6 +17,12 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
 public import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
 public import VerifiedGarbage.Impl.Ed448.AArch64.Verify
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scrub
+meta import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
+meta import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
+meta import VerifiedGarbage.Impl.Ed448.AArch64.Verify
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Ed448.WholeLocal
 
 /-!
@@ -105,6 +111,10 @@ private theorem verify_all {p : Instr → Bool} (c : Impl.Sha3.AArch64.Callee)
 
 /-! The functions' own instructions write only the registers `Impl/` states
 (`Impl.Ed448.AArch64.Fn.own`). -/
+
+materialize_code publicKeyStub := PublicKey.publicKeyWith stub
+materialize_code signCachedStub := SignCached.signCachedWith stub
+materialize_code verifyStub := Verify.verifyWith stub
 
 private theorem publicKey_own :
     calleeSide (PublicKey.publicKeyWith stub) Impl.Ed448.AArch64.Fn.own = true := by
