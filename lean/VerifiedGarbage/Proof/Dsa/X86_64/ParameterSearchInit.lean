@@ -16,8 +16,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.ParameterSearch
-meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Words
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Framework.Semantics

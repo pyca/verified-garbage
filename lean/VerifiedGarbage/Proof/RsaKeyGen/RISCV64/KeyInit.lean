@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.BE64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Impl.RsaKeyGen.RISCV64.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT

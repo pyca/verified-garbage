@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Call
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.Call
 meta import VerifiedGarbage.Proof.Framework.Offset
 
 -- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it

@@ -13,12 +13,6 @@ import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillLoop
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillABI
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -31,9 +25,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterCTState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Refill
@@ -42,9 +33,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Refill
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillOutcome
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
-meta import VerifiedGarbage.Proof.Dsa.Generation.Memory
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
@@ -52,11 +40,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import Mathlib.Tactic.Set
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
-meta import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
-meta import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 meta import Mathlib.Tactic.Set
 
 /-! ### `Dsa.X86_64.Generation.RefillCTSeed`, which only this module used -/

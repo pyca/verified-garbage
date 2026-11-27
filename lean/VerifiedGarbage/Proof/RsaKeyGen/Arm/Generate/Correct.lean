@@ -34,8 +34,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 import VerifiedGarbage.Proof.Rc2.PairMem
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
-meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # The controller's correctness (ARMv7)

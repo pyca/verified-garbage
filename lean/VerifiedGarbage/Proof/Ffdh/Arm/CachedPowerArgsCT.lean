@@ -12,7 +12,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
-meta import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.CombExpState
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore

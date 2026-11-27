@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
-meta import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeState
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOut
 import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

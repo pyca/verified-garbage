@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.KeyGeneration.Init
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.InitCommon
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep

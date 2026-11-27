@@ -23,11 +23,8 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
 public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Domain
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Domain.Body
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith

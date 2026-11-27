@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT

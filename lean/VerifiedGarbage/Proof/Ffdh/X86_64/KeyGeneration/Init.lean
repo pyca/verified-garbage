@@ -10,12 +10,9 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Init
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitGuards
-meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Depth
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

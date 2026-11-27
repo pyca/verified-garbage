@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.Dsa.RISCV64.ParameterSearch
-meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT

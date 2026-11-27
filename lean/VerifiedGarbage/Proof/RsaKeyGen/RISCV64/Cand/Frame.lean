@@ -15,7 +15,6 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
-meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! ### `RsaKeyGen.RISCV64.Cand.Pre`, which only this module used -/
 

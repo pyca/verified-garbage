@@ -33,7 +33,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec

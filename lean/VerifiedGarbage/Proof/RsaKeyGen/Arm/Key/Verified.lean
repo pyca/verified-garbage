@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint3
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
-meta import VerifiedGarbage.Proof.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 public import VerifiedGarbage.Proof.RsaKeyGen.Contract

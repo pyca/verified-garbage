@@ -24,7 +24,6 @@ import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Dsa.ProbablePrimeContract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Fin

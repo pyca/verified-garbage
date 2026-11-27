@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -21,10 +20,8 @@ import VerifiedGarbage.Proof.Dsa.RandomTrace
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
@@ -37,8 +34,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
-meta import VerifiedGarbage.Proof.Dsa.RandomTrace
-meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-! ### `Dsa.AArch64.RandomSampleCT`, which only this module used -/
 

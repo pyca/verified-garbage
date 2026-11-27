@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Impl.Dsa.Arm.Generation
-meta import VerifiedGarbage.Proof.Dsa.ParameterPublic
-meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.SearchInit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

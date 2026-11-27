@@ -26,9 +26,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Contract
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

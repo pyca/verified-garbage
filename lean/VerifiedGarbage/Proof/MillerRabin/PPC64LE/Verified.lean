@@ -26,9 +26,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
-meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Last
-meta import VerifiedGarbage.Proof.MillerRabin.Contract
-meta import VerifiedGarbage.Proof.Ffdh.MillerRabin
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
@@ -37,7 +34,6 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
-meta import VerifiedGarbage.Proof.MillerRabin.Representation
 meta import VerifiedGarbage.Proof.Bignum.Math
 
 /-! ### `Bignum.PPC64LE.MontVerified`, which only this module used -/

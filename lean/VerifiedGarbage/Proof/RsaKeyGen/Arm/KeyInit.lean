@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.CountedLoop
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
@@ -24,7 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd

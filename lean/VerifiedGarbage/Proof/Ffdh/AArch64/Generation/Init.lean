@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.EntropyRequest
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

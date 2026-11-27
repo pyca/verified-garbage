@@ -15,13 +15,10 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
 meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-meta import VerifiedGarbage.Proof.RsaKeyGen.Generate
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

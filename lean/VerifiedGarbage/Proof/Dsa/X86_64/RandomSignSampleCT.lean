@@ -12,17 +12,14 @@ import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttempt
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Dsa.RandomTrace
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-meta import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -31,8 +28,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import Aesop.BuiltinRules
-meta import VerifiedGarbage.Proof.Dsa.RandomTrace
-meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-! ### `Dsa.X86_64.RandomSampleCT`, which only this module used -/
 

@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.CachedSat
 import Batteries.Logic
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-! ### `Ffdh.X86_64.Cached.SearchProof.Implies`, which only this module used -/

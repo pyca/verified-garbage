@@ -9,13 +9,9 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
 import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Impl.Dsa.Layout
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

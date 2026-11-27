@@ -17,9 +17,7 @@ import VerifiedGarbage.Proof.Framework.CountedLoop
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.SearchInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.SearchContract
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Slots
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract

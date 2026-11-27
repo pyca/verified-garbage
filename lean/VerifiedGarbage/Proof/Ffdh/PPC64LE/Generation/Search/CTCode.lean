@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Loop
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -22,9 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Contract
 meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
-meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Writes
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Omega
@@ -33,11 +30,9 @@ public import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-meta import VerifiedGarbage.Proof.Ffdh.SievedBounds
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Impl.Ffdh.PPC64LE.Generation.Search
-meta import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Live
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 

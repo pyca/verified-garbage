@@ -12,12 +12,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Load
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

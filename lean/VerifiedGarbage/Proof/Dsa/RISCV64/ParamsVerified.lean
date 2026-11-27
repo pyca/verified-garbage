@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Dsa.RISCV64.Params
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsFront
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Dsa.Contract
 
 /-! ### `Dsa.RISCV64.ParamsImplies`, which only this module used -/
 

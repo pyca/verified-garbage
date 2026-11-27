@@ -14,9 +14,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.RsaKeyGen.AArch64.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.KeySearchPublic
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
-meta import VerifiedGarbage.Proof.RsaKeyGen.InitWords
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec

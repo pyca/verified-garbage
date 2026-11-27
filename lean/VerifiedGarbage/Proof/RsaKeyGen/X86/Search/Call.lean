@@ -6,14 +6,12 @@ import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Search.CallPre
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Rsa.BytesFrame
 meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
-meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 -- separate module: the search's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 

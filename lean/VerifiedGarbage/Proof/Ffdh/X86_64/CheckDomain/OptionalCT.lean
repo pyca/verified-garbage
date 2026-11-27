@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QSetup
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
@@ -34,7 +32,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Divides
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
@@ -43,7 +40,6 @@ meta import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -55,7 +51,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 
 /-! ### `Ffdh.X86_64.CheckDomain.StagesCT`, which this module and modules that import it used -/
 

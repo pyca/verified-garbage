@@ -50,7 +50,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
-meta import VerifiedGarbage.Proof.Dsa.Arithmetic
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! ### `Dsa.Arm.ContextBody`, which this module and modules that import it used -/

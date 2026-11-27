@@ -14,9 +14,6 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Verified
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

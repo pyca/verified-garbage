@@ -8,14 +8,12 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.RsaKeyGen.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top4
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 import VerifiedGarbage.Proof.MillerRabin.Arm.Run
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
 public import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
-meta import VerifiedGarbage.Proof.RsaKeyGen.CandidateContract
 
 /-! # `vg_rsa_keygen_candidate` on ARMv7 is verified against the shared contract
 

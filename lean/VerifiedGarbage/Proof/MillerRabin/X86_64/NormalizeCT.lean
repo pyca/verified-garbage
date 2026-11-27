@@ -15,7 +15,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Normalization observes only the public workspace and limb count -/
 

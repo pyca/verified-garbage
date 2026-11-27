@@ -10,11 +10,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Spec.Weierstrass
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomBody
-meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -25,21 +20,15 @@ public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 meta import VerifiedGarbage.Impl.Dsa.X86.RandomSign
-meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 import Batteries.Logic
 meta import Batteries.Logic
 import VerifiedGarbage.Proof.Dsa.RandomTrace
-meta import VerifiedGarbage.Proof.Dsa.RandomTrace
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 public import VerifiedGarbage.Impl.Dsa.X86.Random
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 meta import VerifiedGarbage.Impl.Dsa.X86.Random
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCandidate
-meta import VerifiedGarbage.Proof.Dsa.X86.RandomCandidate
 
 /-! ### `Dsa.X86.RandomCTDefs`, which only this module used -/
 

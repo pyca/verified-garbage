@@ -48,8 +48,6 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-meta import VerifiedGarbage.Proof.Dsa.PackedBytes
-meta import VerifiedGarbage.Proof.Ffdh.Domain
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
@@ -63,7 +61,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.PowLit

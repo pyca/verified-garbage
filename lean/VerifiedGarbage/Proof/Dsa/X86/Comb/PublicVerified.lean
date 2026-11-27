@@ -30,11 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Dsa.X86.Comb.Layout
 public import VerifiedGarbage.Proof.Mont.X86.CombTableState
-meta import VerifiedGarbage.Proof.Mont.X86.CombTableState
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerDigits
 import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicSelectTiming
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-meta import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
 meta import VerifiedGarbage.Proof.Mont.Words32
 
 /-! ### `Dsa.X86.Comb.PublicPowerTiming`, which only this module used -/

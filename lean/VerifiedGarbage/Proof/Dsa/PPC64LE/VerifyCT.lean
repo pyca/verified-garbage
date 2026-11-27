@@ -2,31 +2,24 @@ module
 
 import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFront
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFront
 import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSave
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.CheckKey
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubCorrect
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSave
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
 import VerifiedGarbage.Proof.Dsa.DomainWidths
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Ptr
-meta import VerifiedGarbage.Proof.Dsa.DomainWidths
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Check
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Sizes
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-meta import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -34,17 +27,13 @@ public import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Ctx
 meta import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 meta import VerifiedGarbage.Impl.Dsa.PPC64LE.Sign
-meta import VerifiedGarbage.Proof.Dsa.PackedBytes
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Load
-meta import VerifiedGarbage.Proof.Dsa.PPC64LE.Elem.Check
-meta import VerifiedGarbage.Proof.Dsa.SizeBounds
 
 /-! ### `Dsa.PPC64LE.CT.Key`, which this module and modules that import it used -/
 

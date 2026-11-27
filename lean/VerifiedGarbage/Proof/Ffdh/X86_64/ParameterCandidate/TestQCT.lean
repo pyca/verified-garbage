@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestPCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckCall
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

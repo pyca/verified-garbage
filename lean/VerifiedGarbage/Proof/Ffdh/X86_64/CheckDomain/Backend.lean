@@ -11,10 +11,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Safety
-meta import VerifiedGarbage.Spec.Ffdh.Contract
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Verified
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
