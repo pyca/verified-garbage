@@ -312,6 +312,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   states. Clear what they cannot use: `omega_arith`, `bv_omega_arith`
   (arithmetic hypotheses only) or `omega_using [h₁, …]`,
   `bv_omega_using [h₁, …]` (those facts only), `Proof/Framework/Omega.lean`.
+* **`by decide` of literals:** `Proof/Framework/FastDecide.lean`, which
+  `InstancePriority` imports, evaluates memberships, inclusions and
+  comparisons of literals (and their `∧`, `∨`, `¬`, `→`) itself, and has the
+  kernel compare registers by their numbers: a fact of that form, on lists
+  written out or defined as such lists, costs a fifth of one it leaves to
+  `decide`. In a term `by decide` runs no tactic block; any other nested
+  `(by tac)` first instantiates and shares every hypothesis, 2 to 5% of a long
+  proof.
 * **Index bounds:** `xs[i]` proves `i < xs.length` with `get_elem_tactic`,
   whose core rules rewrite every hypothesis and run `omega`.
   `Proof/Framework/GetElem.lean` (which `Mem` imports) tries `decide`
