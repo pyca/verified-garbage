@@ -28,9 +28,9 @@ namespace VG.Proof.EcKey.X86.P224.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.EcKey.X86.Fn.publicKeyP224 := spSafe_scrubAll Proof.EcKey.X86.P224.pk_sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.compressP224 := spSafe_scrubAll Proof.EcKey.Compressed.X86.P224.sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.decompressP224 :=
+instance : SpSafeCode Impl.EcKey.X86.Fn.publicKeyP224 := spSafe_scrubAll Proof.EcKey.X86.P224.pk_sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.compressP224 := spSafe_scrubAll Proof.EcKey.Compressed.X86.P224.sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.decompressP224 :=
   spSafe_scrubAll Proof.EcKey.Compressed.X86.P224Decompress.sp.1
 
 /-- `vg_ec_p224_public_key`. -/

@@ -25,7 +25,7 @@ namespace VG.Proof.Ecdh.X86.BrainpoolP384r1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.Ecdh.X86.Fn.exchangeBrainpoolP384r1 := spSafe_scrubAll Proof.Ecdh.X86.BrainpoolP384r1.ecdh_sp.1
+instance : SpSafeCode Impl.Ecdh.X86.Fn.exchangeBrainpoolP384r1 := spSafe_scrubAll Proof.Ecdh.X86.BrainpoolP384r1.ecdh_sp.1
 
 /-- `vg_ecdh_brainpoolp384r1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :

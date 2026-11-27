@@ -50,10 +50,10 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
-instance : SpSafe Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1 :=
+instance : SpSafeCode Impl.Ecdsa.X86.Fn.verifyBrainpoolP512r1 :=
   ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.BrainpoolP512r1.verify_sp.1)⟩
 
-instance : SpSafe (Impl.Ecdsa.X86.Fn.signBrainpoolP512r1 (HmacTable.X86.fnsOf vs)) :=
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signBrainpoolP512r1 (HmacTable.X86.fnsOf vs)) :=
   ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_brainpoolp512r1_sign_k") (coreC := Impl.Ecdsa.X86.signBrainpoolP512r1Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries) (vs := vs)
     Proof.Ecdsa.Rfc6979.X86.brainpoolp512r1_blk Proof.Ecdsa.X86.BrainpoolP512r1.signComb_sp.1)⟩
 

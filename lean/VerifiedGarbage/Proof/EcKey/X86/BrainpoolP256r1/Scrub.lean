@@ -28,9 +28,9 @@ namespace VG.Proof.EcKey.X86.BrainpoolP256r1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.EcKey.X86.Fn.publicKeyBrainpoolP256r1 := spSafe_scrubAll Proof.EcKey.X86.BrainpoolP256r1.pk_sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.compressBrainpoolP256r1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.BrainpoolP256r1.sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.decompressBrainpoolP256r1 :=
+instance : SpSafeCode Impl.EcKey.X86.Fn.publicKeyBrainpoolP256r1 := spSafe_scrubAll Proof.EcKey.X86.BrainpoolP256r1.pk_sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.compressBrainpoolP256r1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.BrainpoolP256r1.sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.decompressBrainpoolP256r1 :=
   spSafe_scrubAll Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.sp.1
 
 /-- `vg_ec_brainpoolp256r1_public_key`. -/

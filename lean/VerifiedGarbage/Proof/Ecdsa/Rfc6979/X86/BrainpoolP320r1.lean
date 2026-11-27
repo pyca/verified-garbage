@@ -139,7 +139,7 @@ theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.
       Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts _)
     (hs := brainpoolp320r1T_scrub hL)
 
-instance : SpSafe (Impl.Ecdsa.X86.Fn.signBrainpoolP320r1 (Proof.HmacTable.X86.fnsOf
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signBrainpoolP320r1 (Proof.HmacTable.X86.fnsOf
     (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))) :=
   ⟨X86.Scrub.scrubAll_spSafe (signCode_sp (brainpoolp320r1 Proof.BrainpoolP320r1.X86.hasLaw.law) _ _)⟩
 

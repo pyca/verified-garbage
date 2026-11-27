@@ -157,7 +157,7 @@ theorem all_of_noSp {c : Prog isa} (h : NoSp c) : c.all (fun i => !isa.writesSp 
   exact Taint.dst_ne_of_clobbers (h i hi)
 
 /-- The code as emitted, `c` and then its cleanup, for `sp_safe`. -/
-theorem spSafe_scrubAll {rb W : Nat} {c : Prog isa} (h : NoSp c) : SpSafe (scrubAll rb W c) :=
+theorem spSafe_scrubAll {rb W : Nat} {c : Prog isa} (h : NoSp c) : SpSafeCode (scrubAll rb W c) :=
   ⟨scrubAll_spSafe (all_of_noSp h)⟩
 
 /-- `postOut_of_local`, for a postcondition that reads the memory on return

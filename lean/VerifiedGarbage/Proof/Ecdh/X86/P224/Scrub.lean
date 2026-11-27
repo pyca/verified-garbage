@@ -25,7 +25,7 @@ namespace VG.Proof.Ecdh.X86.P224.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.Ecdh.X86.Fn.exchangeP224 := spSafe_scrubAll Proof.Ecdh.X86.P224.ecdh_sp.1
+instance : SpSafeCode Impl.Ecdh.X86.Fn.exchangeP224 := spSafe_scrubAll Proof.Ecdh.X86.P224.ecdh_sp.1
 
 /-- `vg_ecdh_p224`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P224.curve) :

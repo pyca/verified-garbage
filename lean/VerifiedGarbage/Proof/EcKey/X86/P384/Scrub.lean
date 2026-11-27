@@ -28,9 +28,9 @@ namespace VG.Proof.EcKey.X86.P384.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.EcKey.X86.Fn.publicKeyP384 := spSafe_scrubAll Proof.EcKey.X86.P384.pk_sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.compressP384 := spSafe_scrubAll Proof.EcKey.Compressed.X86.P384.sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.decompressP384 :=
+instance : SpSafeCode Impl.EcKey.X86.Fn.publicKeyP384 := spSafe_scrubAll Proof.EcKey.X86.P384.pk_sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.compressP384 := spSafe_scrubAll Proof.EcKey.Compressed.X86.P384.sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.decompressP384 :=
   spSafe_scrubAll Proof.EcKey.Compressed.X86.P384Decompress.sp.1
 
 /-- `vg_ec_p384_public_key`. -/

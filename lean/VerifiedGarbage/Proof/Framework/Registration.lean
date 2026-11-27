@@ -42,7 +42,7 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   `ofApi` and `ofSig` compare a number with itself; and 0 if it does not
   unfold to one, which `ofSig` then reports.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
-  by an instance of `SpSafe code`, if there is one; otherwise
+  by an instance of `SpSafeCode code`, if there is one; otherwise
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
   x86-64) by `Code.all_of_spTest (by lit_decide)`, which evaluates the ISA's
@@ -63,7 +63,7 @@ namespace VG
 instance before it evaluates the code): what the kernel has evaluated of a
 function's code, it need not evaluate again of the function with its cleanup, or
 in the registration file. -/
-class SpSafe {M : ISA} (c : Prog M) : Prop where
+class SpSafeCode {M : ISA} (c : Prog M) : Prop where
   all : c.all (fun i => !M.writesSp i) = true
 
 /-- What a form that builds a scrubbed registration takes: code with its
@@ -294,12 +294,12 @@ def enumFVar? (e : Expr) : MetaM (Option FVarId) := do
       return some fv
   return none
 
-/-- `spSafe` of the code `c`, from an instance of `SpSafe c`. -/
+/-- `spSafe` of the code `c`, from an instance of `SpSafeCode c`. -/
 def spSafe? (c : Expr) : MetaM (Option Expr) := do
   let ty ← inferType c
   unless ty.isAppOfArity ``Prog 1 do return none
-  let some inst ← synthInstance? (mkApp2 (mkConst ``SpSafe) ty.appArg! c) | return none
-  return mkApp3 (mkConst ``SpSafe.all) ty.appArg! c inst
+  let some inst ← synthInstance? (mkApp2 (mkConst ``SpSafeCode) ty.appArg! c) | return none
+  return mkApp3 (mkConst ``SpSafeCode.all) ty.appArg! c inst
 
 elab_rules : tactic
   | `(tactic| sp_safe) => do

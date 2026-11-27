@@ -28,9 +28,9 @@ namespace VG.Proof.EcKey.X86.Secp256k1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.EcKey.X86.Fn.publicKeySecp256k1 := spSafe_scrubAll Proof.EcKey.X86.Secp256k1.pk_sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.compressSecp256k1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.Secp256k1.sp.1
-instance : SpSafe Impl.EcKey.X86.Fn.decompressSecp256k1 :=
+instance : SpSafeCode Impl.EcKey.X86.Fn.publicKeySecp256k1 := spSafe_scrubAll Proof.EcKey.X86.Secp256k1.pk_sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.compressSecp256k1 := spSafe_scrubAll Proof.EcKey.Compressed.X86.Secp256k1.sp.1
+instance : SpSafeCode Impl.EcKey.X86.Fn.decompressSecp256k1 :=
   spSafe_scrubAll Proof.EcKey.Compressed.X86.Secp256k1Decompress.sp.1
 
 /-- `vg_ec_secp256k1_public_key`. -/

@@ -50,10 +50,10 @@ open VG.Proof.HmacTable.X86 (tables names vars)
 abbrev vs : List HmacTable.X86.HVar :=
   vars VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
 
-instance : SpSafe Impl.Ecdsa.X86.Fn.verifyP521 :=
+instance : SpSafeCode Impl.Ecdsa.X86.Fn.verifyP521 :=
   ⟨scrubAll_spSafe (verifyHash_all Proof.Ecdsa.Verify.X86.P521.verify_sp.1)⟩
 
-instance : SpSafe (Impl.Ecdsa.X86.Fn.signP521 (HmacTable.X86.fnsOf vs)) :=
+instance : SpSafeCode (Impl.Ecdsa.X86.Fn.signP521 (HmacTable.X86.fnsOf vs)) :=
   ⟨scrubAll_spSafe (signCode_all (coreN := "vg_ecdsa_p521_sign_k") (coreC := Impl.Ecdsa.X86.signP521Comb) (tries := Spec.Ecdsa.Rfc6979.Curves.p521.tries) (vs := vs)
     Proof.Ecdsa.Rfc6979.X86.p521_blk Proof.Ecdsa.X86.P521.signComb_sp.1)⟩
 

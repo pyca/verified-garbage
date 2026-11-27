@@ -25,7 +25,7 @@ namespace VG.Proof.Ecdh.X86.Secp256k1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
-instance : SpSafe Impl.Ecdh.X86.Fn.exchangeSecp256k1 := spSafe_scrubAll Proof.Ecdh.X86.Secp256k1.ecdh_sp.1
+instance : SpSafeCode Impl.Ecdh.X86.Fn.exchangeSecp256k1 := spSafe_scrubAll Proof.Ecdh.X86.Secp256k1.ecdh_sp.1
 
 /-- `vg_ecdh_secp256k1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
