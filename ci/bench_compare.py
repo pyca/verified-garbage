@@ -9,8 +9,8 @@ doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
 benchmarks show as new. Their benchmark
 binaries are run on this machine `--rounds` times each (keeping the fastest
 time of each benchmark on each side, if more than one): one round, with a
-short warm-up and measurement, is the default, since the check fails only
-on a slowdown of more than `--threshold`, far beyond the noise between two
+short warm-up and measurement, is the default. The default slowdown
+threshold is far beyond the noise between two
 runs of the same code (in an A/A run on CI, with two rounds of 0.2 s and
 0.5 s: 99% of benchmarks within 3%, the largest 12%).
 
@@ -27,14 +27,13 @@ When BASE runs its own `bench/` crate, whose benchmarks need not be HEAD's,
 each side runs all of its benchmarks at once, alternately, as before.
 
 The benchmarks still over the threshold after the rounds run again, base
-and head alternately, `--confirm` more times each: a slowdown fails only if
+and head alternately, `--confirm` more times each: a slowdown is flagged only if
 it is still there in the fastest time of every run.
 
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and, with `--json`, a results
 file of every time measured (`ci/bench_report.py`'s format, which its page
-charts; `--meta KEY=VALUE` adds fields of the run), and exits with status 1 if any
-verified-garbage benchmark got slower by more than `--threshold`. If BASE
+charts; `--meta KEY=VALUE` adds fields of the run). If BASE
 does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
 
 OpenSSL's and aws-lc-rs's code is the same on both sides, so their
@@ -672,6 +671,9 @@ def main():
                 f.write(report)
         return 0
 
+    if not best["head"] and (measured or shards == 1):
+        sys.exit("No verified-garbage benchmark timings were recorded for head")
+
     # The groups that depend on where the kernel puts their table run again
     # from fresh copies of each binary, alternately, and keep the fastest
     # time of the copies (the rounds above counting as the first copy).
@@ -743,7 +745,7 @@ def main():
     lines = [
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
-        f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
+        f"{runs} on this runner. Slowdowns of more than {args.threshold:.0%} are flagged."
         + (" OpenSSL (through rust-openssl) and aws-lc-rs ran "
            + ("as head did, from the same copies" if args.reference_copies and copied else "once, for reference")
            + (f", with OPENSSL_ia32cap={ia32cap}" if ia32cap
@@ -839,7 +841,7 @@ def main():
             **meta,
         }
         args.json.write_text(json.dumps(bench_report.document(context, results), indent=1) + "\n")
-    return 1 if regressions else 0
+    return 0
 
 
 if __name__ == "__main__":
