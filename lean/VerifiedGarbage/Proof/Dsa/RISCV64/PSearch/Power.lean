@@ -42,7 +42,7 @@ pieces (`power_vp`), `powA` and h's pointer are analysed with `s6` public,
 
 namespace VG.Proof.Dsa.RISCV64.PSearch
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Proof.Mont VG.Proof.Bignum.RISCV64
-open VG.Proof.Dsa.RISCV64 (Env loadArr_ok rr_ok storeBE_ok elemRange_ok wordsVal_mod_two loadRegs rrRegs
+open VG.Proof.Dsa.RISCV64 (Env loadArr_ok rrAny_ok storeBE_ok elemRange_ok wordsVal_mod_two loadRegs rrAnyRegs
   storeRegs elemRangeRegs)
 open VG.Proof.Bignum (slot)
 open VG.Impl.Dsa.RISCV64.ParameterSearch
@@ -67,7 +67,7 @@ theorem lui_pB : sext32 (BitVec.ofNat 20 (pB / 4096) ++ (0 : BitVec 12)) = BitVe
 
 /-- The registers `powA` writes. -/
 def powARegs : List Reg :=
-  [.a7, .t0, .s5, .s7, .s8] ++ loadRegs ++ [.s0, .s1, .s2, .s3, .t1] ++ rrRegs
+  [.a7, .t0, .s5, .s7, .s8] ++ loadRegs ++ [.s0, .s1, .s2, .s3, .t1] ++ rrAnyRegs
 
 /-- `powA`: into the P space at `B = S + pB`, p from the `pLen` bytes at
 `S + sPBE` into array 0 (word `w` zero), `−p⁻¹ mod 2⁶⁴` into `t1` and `R² mod p`
@@ -118,9 +118,9 @@ theorem powA_ok {s : State} {G : GP} (hl : G.pLen = 128 ∨ G.pLen = 256 ∨ G.p
     · rw [u.other _ (by decide), u₅.gpr, h6', VG.Proof.Mont.off, BitVec.add_zero]
   unfold powA
   rw [show VG.Impl.Rsa.RISCV64.Keys.seqs [Code.block (enterP G.pLen ++ [scr .s7 sPBE, .li .s8 G.pLen]),
-      VG.Impl.Dsa.RISCV64.loadArr 0, .block VG.Impl.Bignum.RISCV64.Precompute.minv, VG.Impl.Dsa.RISCV64.rr] =
+      VG.Impl.Dsa.RISCV64.loadArr 0, .block VG.Impl.Bignum.RISCV64.Precompute.minv, VG.Impl.Dsa.RISCV64.rrAny] =
     .seq (.block (enterP G.pLen ++ [scr .s7 sPBE, .li .s8 G.pLen])) (.seq (VG.Impl.Dsa.RISCV64.loadArr 0)
-      (.seq (.block VG.Impl.Bignum.RISCV64.Precompute.minv) VG.Impl.Dsa.RISCV64.rr)) from rfl]
+      (.seq (.block VG.Impl.Bignum.RISCV64.Precompute.minv) VG.Impl.Dsa.RISCV64.rrAny)) from rfl]
   refine WP.seq (WP.mono hb fun s₁ ⟨⟨a7, t0, s5, s7, s8, m1⟩, k1⟩ => ?_)
   obtain en1 : Env s₁ G.pS (pZ G.pLen) (pw G.pLen) := ⟨hs.congr k1.2.2, a7, s5, t0, by omega, w48, z28⟩
   refine WP.seq (WP.mono (loadArr_ok en1 (j := 0) (N := G.sa sPBE) (by decide) s7 s8 (by omega) (by omega)
@@ -133,7 +133,7 @@ theorem powA_ok {s : State} {G : GP} (hl : G.pLen = 128 ∨ G.pLen = 256 ∨ G.p
   refine WP.seq (WP.mono (minv_ok en2.hs en2.a7 (by rw [e0]; omega) (by omega) hodd)
     fun s₃ ⟨⟨i3, m3⟩, k3⟩ => ?_)
   obtain en3 := en2.keep k3
-  refine WP.mono (rr_ok en3 (by rw [m3, v0]; exact hp)) fun t ⟨⟨r1, r24, o4⟩, k4⟩ => ?_
+  refine WP.mono (rrAny_ok en3 (by rw [m3, v0]; exact hp)) fun t ⟨⟨r1, r24, o4⟩, k4⟩ => ?_
   rw [m3, v0] at r1 r24
   rw [m3] at o4
   refine ⟨⟨en3.keep k4, ?_, ?_, ?_, r1, r24, ?_⟩, ((k1.trans k2).trans (k3.trans k4)).mono (by decide)⟩

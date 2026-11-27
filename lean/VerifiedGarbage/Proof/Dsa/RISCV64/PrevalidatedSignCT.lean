@@ -37,7 +37,7 @@ the checks of the key only the sizes, then sets up the working spaces
 (`setupQ`, `setupP`) and runs `PrevalidatedSign.body`. Its levels up to the
 sizes' branch are signing's (`SignCT.lean`), failing to `zeroOut`. The sizes'
 passing side `XRsp` is cut at 0, 2 (after `enterQ; ptrQ`), 11 (after
-`enterP; ptrP`) and 26 (before `setMask`); from 27 on it is signing's tail
+`enterP; ptrP`), 18 (before `minv` and `rr`) and 26 (before `setMask`); from 27 on it is signing's tail
 (`tail_rel`), whose phase `TS` holds since the precondition makes the
 domain valid (`km_of`) and `setMask` leaves a mask in `hMask`.
 -/
@@ -172,6 +172,13 @@ theorem pinsRsp_11 : Pins (At ΦRsp FRsp 11) [.s6, .s11, .ra, .a7, .s5, .t0, .s7
         exact WP.mono (ptrP_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
           ((B1.keepM k' m').fixB.app (fix_envP (ip.keep k'))).app ⟨a7, a8, trivial⟩))
 
+/-- `minv` and `rr`, in the P space. -/
+theorem relRsp_18 : RelCT isa (Two (At ΦRsp FRsp 18)) (seg FRsp 18 26) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.S) (Z := fun v => v.L.qOff) (w := fun v => v.L.wp) (N := fun v => v.p) rfl
+    fun _ _ h => at_sem (M := fun v u => RrPre u v.L.S v.L.qOff v.L.wp v.p) (fun _ _ h => WP.of_flat
+      (c := .seq setupQ (.seq (.block enterP) (.seq (.block ptrP) (loadArr 0)))) rfl
+      (WP.seq (WP.mono (setupQ_P1 (onRsp _ _ h) (kmR h)) fun _ hs => loadP_SR3 hs))) h
+
 /-- The working spaces set up. -/
 theorem setup_CK {v : VD} {s : State} (h : ΦRsp v s) : WP isa (.seq setupQ setupP) s (CK v) :=
   WP.seq (WP.mono (setupQ_P1 (onRsp _ _ h) (kmR h)) fun _ hs => (setupP_SR3 hs).mono fun _ ⟨c, _⟩ => c)
@@ -208,7 +215,8 @@ theorem drop27 : FRsp.drop 27 = FTl := by kernel_rfl
 theorem XRsp_rel : RelCT isa (Two ΦRsp) XRsp fun _ _ => True := by
   refine chain_start (chain_cons runRsp (m := 2) (by decide) (two_taint _ pinsRsp_0 (by taint_decide)) ?_)
   refine chain_cons runRsp (m := 11) (by decide) (two_taint _ pinsRsp_2 (by taint_decide)) ?_
-  refine chain_cons runRsp (m := 26) (by decide) (two_taint _ pinsRsp_11 (by taint_decide)) ?_
+  refine chain_cons runRsp (m := 18) (by decide) (two_taint _ pinsRsp_11 (by taint_decide)) ?_
+  refine chain_cons runRsp (m := 26) (by decide) relRsp_18 ?_
   refine chain_cons runRsp (m := 27) (by decide) (two_taint _ pinsRsp_26 (by taint_decide)) ?_
   rw [drop27]
   exact relCT_flat (tail_rel (run_drop runRsp drop27) fun _ _ h =>

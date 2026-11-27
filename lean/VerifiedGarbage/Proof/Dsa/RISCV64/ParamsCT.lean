@@ -175,7 +175,9 @@ theorem onR3c : ∀ v u, ΦR3c v u → SR3 v u := fun _ _ h => semR3 onR2c ⟨at
 theorem R3c_rel : RelCT isa (Two ΦR3c) R3c fun _ _ => True := by
   refine chain_start (chain_cons runR3c (m := 2) (by decide)
     (two_taint _ (pinsL rfl (pinsR3_0 onR3c)) (by taint_decide)) ?_)
-  refine chain_cons runR3c (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3c)) (by taint_decide)) ?_
+  refine chain_cons runR3c (m := 9) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3c)) (by taint_decide)) ?_
+  refine chain_cons runR3c (m := 17) (by decide) (relL rfl rfl (relR3_9 onR3c)) ?_
+  refine chain_cons runR3c (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_17 onR3c)) (by taint_decide)) ?_
   refine chain_cons runR3c (m := 45) (by decide) (two_taint _ (pinsL rfl (pinsR3_18 onR3c)) (by taint_decide)) ?_
   refine chain_cons runR3c (m := 46) (by decide) (rel_ite_at hFR3gc (zeroL rfl (zeroEg onR3c))
     (eo_rel runEgc fun _ _ h => semEg onR3c ⟨atL rfl h.1, h.2⟩) nil_rel) ?_

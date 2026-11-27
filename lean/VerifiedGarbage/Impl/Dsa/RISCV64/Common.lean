@@ -27,9 +27,10 @@ in arrays 24–27: `R² mod m` in array 24.
 
 Unlike PPC64LE's, the modulus's top word may be zero: a valid domain's p may
 have fewer significant octets than `p_len`, and q than `q_len`. So `R² mod m`
-is `2^(128 w) mod m` by `128 w` doublings of 1 (`rr`, by `MontMul.lean`'s
-`doubleMod64`), which needs only `m` odd and at least 2, rather than
-`Precompute.r2`, which needs the top word set; and an array's word `w` is set
+(`rr`) is `2^(128 w) mod m` by `Precompute.r2`'s steps or `r2Words`, which
+need the top word set, only if it is, and otherwise by `128 w` doublings of 1
+(`MontMul.lean`'s `doubleMod64`), which need only `m ≥ 2`: p and q are
+public. And an array's word `w` is set
 to 0 before a number is loaded into it (`loadArr`), so that the comparison
 of `subMod64`, which reads it, sees the whole number.
 
@@ -153,14 +154,41 @@ def copy (o a : Nat) : Prog isa :=
   .seq (.block (base .t3 o ++ base .t4 a ++ [.addi .t5 .t0 2]))
     (countLoop .t5 [.load .d .s0 .t4 0, .store .d .s0 .t3 0, .addi .t3 .t3 8, .addi .t4 .t4 8])
 
-/-- `R² mod m = 2^(128 w) mod m` into array 1 and array 24: 1 into array 1,
-then `128 w` of `x := 2 x mod m` (`doubleMod64`, `x` in array 1), counted by
-`a1`. -/
-def rr : Prog isa :=
-  .seq (.block (base .a2 1 ++ base .a5 2 ++ base .a6 3 ++ [.addi .t3 .a2 0])) (.seq Precompute.zeroWords
+/-- `R² mod m = 2^(128 w) mod m` into array 1 (at `a2`), for any `m`: 1 into
+array 1, then `128 w` of `x := 2 x mod m` (`doubleMod64`), counted by `a1`. -/
+def rrDbl : Prog isa :=
+  .seq (.block [.addi .t3 .a2 0]) (.seq Precompute.zeroWords
     (.seq (.block [.li .s0 1, .store .d .s0 .a2 0, .shift .sll .d .a1 .t0 7])
-      (.seq (.loop (.seq Precompute.doubleMod64 (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1))
-        (copy 24 1))))
+      (.loop (.seq Precompute.doubleMod64 (.block [.addi .a1 .a1 (-1)])) (.nonzero .a1))))
+
+/-- `R² mod m` into array 1, for an odd `m` whose top word is not zero and
+`-m⁻¹ mod 2⁶⁴` in `t1`, by `Precompute.r2`'s steps: doublings to `2^w R mod m`,
+then its six Montgomery squares, counted by `s7`. -/
+def rrSqr : Prog isa :=
+  .seq Precompute.r2HiDbl (.seq (.block [.li .s7 6])
+    (.loop (.seq Precompute.r2Sq (.block [.addi .s7 .s7 (-1)])) (.nonzero .s7)))
+
+/-- `R² mod m` into array 1, for an odd `m` whose top word is not zero and
+`-m⁻¹ mod 2⁶⁴` in `t1`: by `rrSqr` for `w < 4`, else by long division
+(`Precompute.r2Words`). -/
+def rrHi : Prog isa :=
+  .seq (.block [.li .t3 4]) (.ite (.ltu .t0 .t3) rrSqr (.seq Precompute.lz Precompute.r2Words))
+
+/-- `m`'s top word (word `w - 1` of array 0) into `s0`. -/
+def rrTop : List Instr :=
+  [.shift .sll .d .t3 .t0 3, .add .t3 .t3 .a7, .addi .t3 .t3 (-8), .load .d .s0 .t3 0]
+
+/-- `R² mod m = 2^(128 w) mod m` into array 1 and array 24, for an odd `m` and
+`-m⁻¹ mod 2⁶⁴` in `t1`: by `rrDbl` if `m`'s top word is zero, else by
+`rrHi`. `m` is public. -/
+def rr : Prog isa :=
+  .seq (.block (base .a2 1)) (.seq (.block (base .a5 2)) (.seq (.block (base .a6 3)) (.seq (.block rrTop)
+    (.seq (.ite (.zero .s0) rrDbl rrHi) (copy 24 1)))))
+
+/-- `R² mod m = 2^(128 w) mod m` into array 1 and array 24, for any `m`:
+`rrDbl`. -/
+def rrAny : Prog isa :=
+  .seq (.block (base .a2 1 ++ base .a5 2 ++ base .a6 3)) (.seq rrDbl (copy 24 1))
 
 /-! ## The sizes -/
 

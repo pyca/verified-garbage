@@ -327,7 +327,9 @@ theorem Ks_rel : RelCT isa (Two ΦKs) RKs fun _ _ => True := by
 theorem R3s_rel : RelCT isa (Two ΦR3s) R3s fun _ _ => True := by
   refine chain_start (chain_cons runR3s (m := 2) (by decide)
     (two_taint _ (pinsL rfl (pinsR3_0 onR3s)) (by taint_decide)) ?_)
-  refine chain_cons runR3s (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3s)) (by taint_decide)) ?_
+  refine chain_cons runR3s (m := 9) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3s)) (by taint_decide)) ?_
+  refine chain_cons runR3s (m := 17) (by decide) (relL rfl rfl (relR3_9 onR3s)) ?_
+  refine chain_cons runR3s (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_17 onR3s)) (by taint_decide)) ?_
   refine chain_cons runR3s (m := 45) (by decide) (two_taint _ (pinsL rfl (pinsR3_18 onR3s)) (by taint_decide)) ?_
   refine chain_cons runR3s (m := 46) (by decide) (rel_ite_at hFR3gs (zeroL rfl (zeroEg onR3s))
     (eo_rel runEgs fun _ _ h => semEg onR3s ⟨atL rfl h.1, h.2⟩) nil_rel) ?_
@@ -880,6 +882,36 @@ theorem stRQ {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
       (let ⟨b, w⟩ := K.mw; ⟨b, by rw [(qa.body hL).word (by decide)]; exact w⟩)) I (by rw [h24, K.q0])
       (by rw [a25 25 (by decide) (by decide)]; exact r25))
 
+/-- Two programs, from their continuation's rule with none. -/
+theorem wp_seq_nil {a b : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq a (.seq b (.block []))) s Q) :
+    WP isa (.seq a b) s Q := by
+  obtain ⟨_, _, e, q⟩ := h
+  cases e with
+  | seq x e =>
+    cases e with
+    | seq y z =>
+      obtain ⟨-, rfl⟩ := exec_nil_iff.mp z
+      exact ⟨_, _, .seq x y, q⟩
+
+/-- `minv` and `rr`, in the Q space. -/
+theorem relTl69 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u) :
+    RelCT isa (Two (At Φ FTl 69)) (seg FTl 69 77) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.Q) (Z := fun _ => 1600) (w := fun v => v.L.wq) (N := fun v => v.q) rfl
+    fun _ _ h => at_sem (M := fun v u => RrPre u v.L.Q 1600 v.L.wq v.q) (fun _ _ h =>
+      WP.of_flat (c := .seq Sign.gk Sign.rRanges) (by kernel_rfl) (by
+        obtain ⟨hq, hqo, -⟩ := (hsem _ _ h).vals
+        exact wp_seq_nil (stRR (hsem _ _ h) fun _ K _ => ⟨[], _, .block rfl, K.qs.inq.env, K.q0, hq, hqo⟩))) h
+
+theorem pinsTl77 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u) :
+    Pins (At Φ FTl 77) [.s6, .s11, .ra, .a7, .s5, .t0] :=
+  pins_at_fix (fun v => fixB v ++ envQ v) (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges Verify.rrQ)) (by kernel_rfl) (by
+      obtain ⟨hq, hqo, -⟩ := (hsem _ _ h).vals
+      refine stRR (hsem _ _ h) fun t K _ => ?_
+      have hL := K.base.ok
+      exact WP.mono (rrQ25_ok hL K.qs (by rw [K.q0]; exact hq) (by rw [K.q0]; exact hqo))
+        fun u ⟨⟨_, _, _, _, qa⟩, k⟩ => fix_QK (K.qarr k qa))
+
 theorem pinsTl80 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u) :
     Pins (At Φ FTl 80) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
@@ -1123,7 +1155,9 @@ theorem tail_rel {Ψ : VD → State → Prop} (runT : ∀ v s, Ψ v s → WP isa
   refine chain_cons runT (m := 18) (by decide) (two_taint _ (pinsTl15 hsem) (by taint_decide)) ?_
   refine chain_cons runT (m := 29) (by decide) (two_taint _ (pinsTl18 hsem) (by taint_decide)) ?_
   refine chain_cons runT (m := 37) (by decide) (two_taint _ (pinsTl29 hsem) (by taint_decide)) ?_
-  refine chain_cons runT (m := 80) (by decide) (two_taint _ (pinsTl37 hsem) (by taint_decide)) ?_
+  refine chain_cons runT (m := 69) (by decide) (two_taint _ (pinsTl37 hsem) (by taint_decide)) ?_
+  refine chain_cons runT (m := 77) (by decide) (relTl69 hsem) ?_
+  refine chain_cons runT (m := 80) (by decide) (two_taint _ (pinsTl77 hsem) (by taint_decide)) ?_
   refine chain_cons runT (m := 83) (by decide) (two_taint _ (pinsTl80 hsem) (by taint_decide)) ?_
   refine chain_cons runT (m := 93) (by decide) (two_taint _ (pinsTl83 hsem) (by taint_decide)) ?_
   refine chain_cons runT (m := 96) (by decide) (two_taint _ (pinsTl93 hsem) (by taint_decide)) ?_

@@ -140,7 +140,9 @@ theorem Kk_rel : RelCT isa (Two ΦKk) RKk fun _ _ => True := by
 theorem R3k_rel : RelCT isa (Two ΦR3k) R3k fun _ _ => True := by
   refine chain_start (chain_cons runR3k (m := 2) (by decide)
     (two_taint _ (pinsL rfl (pinsR3_0 onR3k)) (by taint_decide)) ?_)
-  refine chain_cons runR3k (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3k)) (by taint_decide)) ?_
+  refine chain_cons runR3k (m := 9) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3k)) (by taint_decide)) ?_
+  refine chain_cons runR3k (m := 17) (by decide) (relL rfl rfl (relR3_9 onR3k)) ?_
+  refine chain_cons runR3k (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_17 onR3k)) (by taint_decide)) ?_
   refine chain_cons runR3k (m := 45) (by decide) (two_taint _ (pinsL rfl (pinsR3_18 onR3k)) (by taint_decide)) ?_
   refine chain_cons runR3k (m := 46) (by decide) (rel_ite_at hFR3gk (zeroL rfl (zeroEg onR3k))
     (eo_rel runEgk fun _ _ h => semEg onR3k ⟨atL rfl h.1, h.2⟩) nil_rel) ?_
