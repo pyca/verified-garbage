@@ -1,7 +1,7 @@
 name: Benchmarks
 
 # Compares the performance of a branch with an earlier commit, on runners of
-# each architecture, and fails if a benchmark slowed down by more than
+# each architecture, and flags benchmarks that slowed down by more than
 # ci/bench_compare.py's threshold; or, with no commit, measures the branch
 # alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary,
 # and in `benchmarks.html`, an artifact of the run: a page that charts every
