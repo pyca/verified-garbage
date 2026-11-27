@@ -11,7 +11,6 @@ public meta import Lean.Elab.Term
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # The residue analysis decides what `scrub` wipes (x86-64)

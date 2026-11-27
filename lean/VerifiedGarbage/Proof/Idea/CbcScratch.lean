@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Idea-CBC with its working space as an argument

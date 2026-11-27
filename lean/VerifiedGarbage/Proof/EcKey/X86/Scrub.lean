@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdh.Generic
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Elliptic-curve keys on x86 (32-bit), without secret residue

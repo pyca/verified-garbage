@@ -353,30 +353,66 @@ theorem preparedVerifyMessage_verified :
 omit h in
 private theorem core_side {f : Prog isa} (hf : calleeSide f 136 = true) :
     scrubFSide f [] 136 = true := by
-  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq, calleeOk_iff] at hf
-  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
-  exact ⟨⟨⟨⟨hf.1, tablesCall_of_noIcall hf.2.1 _⟩, hf.2.2⟩, by decide⟩, by decide⟩
+  rw [calleeSide_iff, calleeOk_iff] at hf
+  exact scrubFSide_iff.mpr ⟨hf.1, tablesCall_of_noIcall hf.2.1 _, hf.2.2, by decide, by decide⟩
 
-private theorem sign_callee : calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+omit h in
+/-- What the cleanups need of the code of the functions of the parameter set `p`. -/
+private noncomputable def sideOf (p : Params) (module : String) : Bool :=
+  calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 &&
+  calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 &&
+  calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 &&
+  calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 &&
+  scrubFSide (Impl.MlDsa.X86.KeyGen.keyGen Impl.MlDsa.X86.KeyGen.prims p) [] 96 &&
+  scrubFSide (Impl.MlDsa.X86.PkTr.pkTr p) [] 56 &&
+  scrubFSide (Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims p) [] 96 &&
+  scrubFSide (Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims p) [] 96
+
+omit h in
+/-- The functions of the three parameter sets, in one check: they share code,
+which the kernel then evaluates once. -/
+private theorem sides : (sideOf mlDsa44 "mldsa44" && sideOf mlDsa65 "mldsa65" && sideOf mlDsa87 "mldsa87") = true := by
+  lit_decide
+
+private theorem side : sideOf p module = true := by
+  have hs := sides
+  rw [Bool.and_eq_true, Bool.and_eq_true] at hs
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  exacts [hs.1.1, hs.1.2, hs.2]
+
+private theorem side_parts :
+    (((((((calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 = true ∧
+      calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 = true) ∧
+      calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 = true) ∧
+      calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 = true) ∧
+      scrubFSide (Impl.MlDsa.X86.KeyGen.keyGen Impl.MlDsa.X86.KeyGen.prims p) [] 96 = true) ∧
+      scrubFSide (Impl.MlDsa.X86.PkTr.pkTr p) [] 56 = true) ∧
+      scrubFSide (Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims p) [] 96 = true) ∧
+      scrubFSide (Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims p) [] 96 = true) := by
+  have hs := side h
+  simp only [sideOf, Bool.and_eq_true] at hs
+  exact hs
+
+private theorem sign_callee : calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 = true :=
+  (side_parts h).1.1.1.1.1.1.1
 
 theorem sign_side : scrubFSide (Impl.MlDsa.X86.Sign.signOf p module) [] 136 = true :=
   core_side (sign_callee h)
 
-private theorem signPrepared_callee : calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+private theorem signPrepared_callee : calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 = true :=
+  (side_parts h).1.1.1.1.1.1.2
 
 theorem signPrepared_side : scrubFSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) [] 136 = true :=
   core_side (signPrepared_callee h)
 
-private theorem verify_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+private theorem verify_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 = true :=
+  (side_parts h).1.1.1.1.1.2
 
 theorem verify_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyOf p module) [] 136 = true :=
   core_side (verify_callee h)
 
-private theorem verifyPrepared_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+private theorem verifyPrepared_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 = true :=
+  (side_parts h).1.1.1.1.2
 
 theorem verifyPrepared_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) [] 136 = true :=
   core_side (verifyPrepared_callee h)
@@ -423,20 +459,24 @@ section
 variable (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87)
 include h3
 
-theorem keyGen_side :
-    scrubFSide (Impl.MlDsa.X86.KeyGen.keyGen Impl.MlDsa.X86.KeyGen.prims p) [] 96 = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+private theorem exists_inst : ∃ module, Inst p module := by
+  rcases h3 with rfl | rfl | rfl
+  exacts [⟨_, inst44⟩, ⟨_, inst65⟩, ⟨_, inst87⟩]
 
-theorem pkTr_side : scrubFSide (Impl.MlDsa.X86.PkTr.pkTr p) [] 56 = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+theorem keyGen_side :
+    scrubFSide (Impl.MlDsa.X86.KeyGen.keyGen Impl.MlDsa.X86.KeyGen.prims p) [] 96 = true :=
+  (side_parts (exists_inst h3).choose_spec).1.1.1.2
+
+theorem pkTr_side : scrubFSide (Impl.MlDsa.X86.PkTr.pkTr p) [] 56 = true :=
+  (side_parts (exists_inst h3).choose_spec).1.1.2
 
 theorem preparePublic_side :
-    scrubFSide (Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims p) [] 96 = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+    scrubFSide (Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims p) [] 96 = true :=
+  (side_parts (exists_inst h3).choose_spec).1.2
 
 theorem prepareSecret_side :
-    scrubFSide (Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims p) [] 96 = true := by
-  rcases h3 with rfl | rfl | rfl <;> lit_decide
+    scrubFSide (Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims p) [] 96 = true :=
+  (side_parts (exists_inst h3).choose_spec).2
 
 end
 

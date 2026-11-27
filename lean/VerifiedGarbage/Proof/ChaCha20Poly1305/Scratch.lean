@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ChaCha20-Poly1305 with its working space as an argument
