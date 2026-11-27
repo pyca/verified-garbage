@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # `vg_aes_gcm_prepare16_pclmul_avx`
@@ -104,7 +105,7 @@ theorem st_ok (r : XReg) (d : Nat) (t : State)
       t'.xmm = t.xmm ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   rw [WP.block_cons_iff]
   refine ⟨{ t with mem := t.mem.writeW (t.gpr .rdi + BitVec.ofInt 64 (d : Int)) (t.xmm r) },
-    by simp only [isa, exec, State.store128, ea_at, hin, ite_true], WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+    by simp only [isa, reduceExec, State.store128, ea_at, hin, ite_true], WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
 /-- Storing `H'ⁿ` from `r` at its place. -/
 theorem store_ok {N : Nat} {H : Block} {C : Addr} {m₀ : Mem} {env : List (XReg × Nat)} {S : List Nat}

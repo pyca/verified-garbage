@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Blocks
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! # Keccak-f[1600] on AArch64, in general registers: absorbing blocks -/
 
@@ -27,7 +28,7 @@ theorem wp_eorRor {d n m : Reg} {k : Nat} {is : List Instr} {s : State} {Q : Sta
   · rename_i h0
     exact wp_eor fun t u => h t (by rw [h0, rotr_zero]; exact u)
   · refine WP.cons (s' := s.write .x d (s.gpr n ^^^ (s.gpr m).rotateRight (k % 64))) ?_ (h _ (Upd.write64 _ _ _))
-    simp only [exec, Size.bits, Nat.mod_lt k (show 64 > 0 by decide), ite_true, State.read, BitVec.setWidth_eq]
+    simp only [reduceExec, Size.bits, Nat.mod_lt k (show 64 > 0 by decide), ite_true, State.read, BitVec.setWidth_eq]
 
 theorem rotr_xor (a b : BitVec 64) {k : Nat} (hk : k < 64) : (a ^^^ b).rotateRight k = a.rotateRight k ^^^ b.rotateRight k := by
   apply BitVec.eq_of_getLsbD_eq

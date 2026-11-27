@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # A scratch buffer on the stack, wiped after use (AArch64)
@@ -68,7 +69,7 @@ theorem wipePairStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ pair
       (u.gpr .x16 + BitVec.ofNat 64 (16 * w) + 8) 8 ((u.read .x .x17).setWidth 64), ?_,
       (hf.write (List.mem_singleton_self _) _ hc₁).write (List.mem_singleton_self _) _ hc₂⟩
     rw [wipePairStores_succ, execBlock_append, he]
-    simp only [Option.bind_some, execBlock, isa, exec, hoff, and_self, ↓reduceIte,
+    simp only [Option.bind_some, execBlock, isa, reduceExec, hoff, and_self, ↓reduceIte,
       State.store, hin₁, hin₂, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
       pairTrace, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       State.read, Size.bits]
@@ -87,7 +88,7 @@ theorem wipePairChunk_run (R : Region) (u : State) (hR : R ∈ u.wr) (o j pairs 
   obtain ⟨m', he, hf⟩ := wipePairStores_run R (u.write .x .x16 (u.sp + BitVec.ofNat 64 (o + 512 * j)))
     (by simpa [State.write]) pairs hp (by rw [h16]; exact hc)
   refine ⟨m', ?_, by simpa [State.write] using hf⟩
-  simp only [wipePairChunk, execBlock, isa, exec, hj, ↓reduceIte]
+  simp only [wipePairChunk, execBlock, isa, reduceExec, hj, ↓reduceIte]
   rw [he, h16]
   simp [addrs]
 
@@ -171,7 +172,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
     (by omega_using [hwb]) (by simpa [State.write] using fun i hi => hc i (by omega_using [hi]))
   by_cases h0 : words % 2 = 0
   · refine ⟨_, ?_, ⟨g, m', rfl, fun q h₁ h₂ => ?_⟩, hf⟩
-    · simp only [wipeAt, h0, ↓reduceIte, List.append_nil, execBlock, isa, exec,
+    · simp only [wipeAt, h0, ↓reduceIte, List.append_nil, execBlock, isa, reduceExec,
         show 16 * 0 < Size.bits .x by decide]
       rw [he]
       simp [addrs, State.write, wipeTraceAt, h0]
@@ -183,7 +184,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
     refine ⟨_, ?_, ⟨g, m'.write (u.sp + BitVec.ofNat 64 (o + 8 * (words - 1))) 8 ((g .x17).setWidth 64), rfl,
       fun q h₁ h₂ => ?_⟩, hf.write (List.mem_singleton_self _) _ hk⟩
     · have hm : isa.exec (.movz .x .x17 0 0) u = some (u.write .x .x17 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) := by
-        simp [isa, exec]
+        simp [isa, reduceExec]
       rw [show wipeAt o words = .movz .x .x17 0 0 ::
           (wipePairChunks o (words / 2) ++ ([.strSp .x17 (o + 8 * (words - 1))] : List Instr)) by
             simp [wipeAt, h0],
@@ -191,7 +192,7 @@ theorem wipeAt_run (R : Region) (u : State) (o words : Nat) (hR : R ∈ u.wr) (h
       simp only []
       rw [execBlock_append, he]
       simp only [Option.bind_some, execBlock]
-      simp [exec, addrs, State.write, State.store, State.read, wipeTraceAt, h0, hoff, hin]
+      simp [reduceExec, addrs, State.write, State.store, State.read, wipeTraceAt, h0, hoff, hin]
     · rw [hg q h₁ h₂]; simp [State.write, h₂]
 
 /-- `wipe words` from `u`, with the `words` doublewords at `sp` in `R`

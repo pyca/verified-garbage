@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # The refillable-tape search by the public modulus width, on x86-64
 
@@ -687,13 +688,13 @@ theorem widthOf_run (n : Nat) (hn : BitVec.signExtend 64 (BitVec.ofNat 32 n) = B
       Agree u s ∧ u.gpr .rax = widthWord s ∧ isa.eval .e u = some (widthWord s == BitVec.ofNat 64 n) := by
   have ea₁ : s.ea { base := .rsp, disp := 16 } = stackArgAddr s 1 := rfl
   have e₁ : exec (.mov .rax (.mem { base := .rsp, disp := 16 })) s = some (s.setReg .rax (stackArg s 1)) := by
-    simp only [exec, readSrc, State.load64, ea₁, h₁, ite_true, Option.map_some]; rfl
+    simp only [reduceExec, readSrc, State.load64, ea₁, h₁, ite_true, Option.map_some]; rfl
   have ea₂ : (s.setReg .rax (stackArg s 1)).ea { base := .rax, disp := 8 } = stackArg s 1 + 8 := rfl
   have e₂ : exec (.mov .rax (.mem { base := .rax, disp := 8 })) (s.setReg .rax (stackArg s 1)) =
       some ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)) := by
     have h₂' : InRegions ((s.setReg .rax (stackArg s 1)).rd ++ (s.setReg .rax (stackArg s 1)).wr)
         (stackArg s 1 + 8) 8 := h₂
-    simp only [exec, readSrc, State.load64, ea₂, h₂', ite_true, Option.map_some]; rfl
+    simp only [reduceExec, readSrc, State.load64, ea₂, h₂', ite_true, Option.map_some]; rfl
   obtain ⟨u, e₃⟩ : ∃ u, exec (.alu .cmp .rax (.imm (BitVec.ofNat 32 n)))
       ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)) = some u := ⟨_, rfl⟩
   have hu : u = ((s.setReg .rax (stackArg s 1)).setReg .rax (widthWord s)).setFlags _ _

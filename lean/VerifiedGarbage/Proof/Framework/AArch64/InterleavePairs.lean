@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64: interleaving code with loads and stores of pairs
@@ -35,11 +36,11 @@ theorem exec_ldp_two {a b n : Reg} {o : Nat} (h : a ≠ b ∧ a ≠ n ∧ o % 8 
   have l1 : o < 4096 * 8 := by omega_using [hb]
   have l2 : (o + 8) % 8 = 0 := by omega_using [h8]
   have l3 : o + 8 < 4096 * 8 := by omega_using [hb]
-  simp only [exec, addr, Size.bytes, h8, l1, hab, hb, ne_eq, not_false_eq_true, and_self, ite_true, Option.bind_some, e]
+  simp only [reduceExec, addr, Size.bytes, h8, l1, hab, hb, ne_eq, not_false_eq_true, and_self, ite_true, Option.bind_some, e]
   cases h1 : s.load (s.gpr n + BitVec.ofNat 64 o) 8 with
   | none => rfl
   | some v =>
-    simp only [Option.map_some, Option.bind_some, exec, addr, Size.bytes, l2, l3, and_self, ite_true,
+    simp only [Option.map_some, Option.bind_some, reduceExec, addr, Size.bytes, l2, l3, and_self, ite_true,
       RegUpd.gpr_write_of_ne s .x _ (Ne.symm han), State.load, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write]
     rfl
 
@@ -50,7 +51,7 @@ theorem exec_stp_two {a b n : Reg} {o : Nat} (h : o % 8 = 0 ∧ o ≤ 504) (s : 
   have l1 : o < 4096 * 8 := by omega_using [hb]
   have l2 : (o + 8) % 8 = 0 := by omega_using [h8]
   have l3 : o + 8 < 4096 * 8 := by omega_using [hb]
-  simp only [exec, addr, Size.bytes, h8, l1, hb, and_self, ite_true, Option.bind_some, e]
+  simp only [reduceExec, addr, Size.bytes, h8, l1, hb, and_self, ite_true, Option.bind_some, e]
   cases h1 : s.store (s.gpr n + BitVec.ofNat 64 o) 8 (BitVec.setWidth (8 * 8) (s.read .x a)) with
   | none => rfl
   | some t =>
@@ -59,7 +60,7 @@ theorem exec_stp_two {a b n : Reg} {o : Nat} (h : o % 8 = 0 ∧ o ≤ 504) (s : 
       split at h1
       · cases h1; rfl
       · cases h1
-    simp only [Option.bind_some, exec, addr, Size.bytes, l2, l3, and_self, ite_true, g, State.read]
+    simp only [Option.bind_some, reduceExec, addr, Size.bytes, l2, l3, and_self, ite_true, g, State.read]
 
 theorem exec_expand (i : Instr) (s : State) : runBlock isa (expand i) s = exec i s := by
   have one : ∀ j, runBlock isa [j] s = exec j s := fun j => by

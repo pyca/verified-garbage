@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: scalar code keeps the `zmm` registers
@@ -16,7 +17,7 @@ namespace VG.X86_64
 theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s = some t) :
     t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   cases i <;> simp only [scalarI, Bool.false_eq_true] at hi
-  all_goals simp only [exec, Option.map_eq_some_iff] at h
+  all_goals simp only [reduceExec, Option.map_eq_some_iff] at h
   all_goals first
     | exact execAlu32_vec h
     | exact execMulx_vec h
@@ -131,7 +132,7 @@ theorem execCmov_hvec {cc : Cond} {d : Reg} {src : Src} {s t : State} (h : execC
 
 theorem exec_hvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s = some t) : t.ymmH = s.ymmH := by
   cases i <;> simp only [scalarI, Bool.false_eq_true] at hi
-  all_goals simp only [exec, Option.map_eq_some_iff] at h
+  all_goals simp only [reduceExec, Option.map_eq_some_iff] at h
   all_goals first
     | exact execAlu32_hvec h
     | exact execMulx_hvec h

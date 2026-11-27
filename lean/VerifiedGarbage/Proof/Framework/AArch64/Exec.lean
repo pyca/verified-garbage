@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.Contract -- shake: keep (`realize_eqns`)
 
 /-!
 # AArch64: instruction-level rewrite lemmas for symbolic execution
@@ -13,6 +14,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 @[expose] public section
 
 namespace VG.AArch64
+
+-- For the modules whose `simp` unfolds them.
+realize_eqns exec VOp.eval
 
 theorem exec_ldr_w {s : State} {t n : Reg} {off : Nat} (ho : off % 4 = 0 ∧ off < 16384)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 4) :

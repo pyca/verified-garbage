@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-! ### `AesGcm.PPC64LE.Gather.Contract`, which this module and modules that import it used -/
 
@@ -250,7 +251,7 @@ theorem covers_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers
 theorem wp_addSp {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15)
     (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addSp d imm :: is)) s Q :=
-  VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons (by simp [exec, show imm < 32768 from h]) (k _ (Upd.write _ _ _))
+  VG.Proof.ChaCha20Poly1305.PPC64LE.WP.cons (by simp [reduceExec, show imm < 32768 from h]) (k _ (Upd.write _ _ _))
 
 /-- `mov d n`, an `or` of `n` with itself. -/
 theorem wp_mov' {is : List Instr} {s : State} {Q : State → Prop} {d n : Reg}

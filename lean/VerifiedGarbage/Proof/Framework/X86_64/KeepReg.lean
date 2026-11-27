@@ -209,7 +209,7 @@ theorem step_holds {r : Reg} {v : BitVec 64} {a : Abs} {i : Instr} {s s' : State
           exact ha.2 y ((RegSet.mem_insert.mp hy).resolve_left hyx)
     all_goals exact other_holds h ha
   case movqR d x =>
-    simp only [exec, Option.some.injEq] at h
+    simp only [reduceExec, Option.some.injEq] at h
     subst h
     simp only [step]
     by_cases hd : d = r

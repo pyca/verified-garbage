@@ -258,7 +258,7 @@ theorem loads_ok (s : State) {d : Nat} (hd : d=18 ∨ d=20)
   refine wp_ldrq (by decide) rfl (by simpa only [ha.gpr,ha.rd,ha.wr] using h1) fun b hb => ?_
   let c := b.write .x .x9 (b.gpr .x0+BitVec.ofNat 64 (2*d-16))
   have hc : exec (.addImm .x .x9 .x0 (2*d-16)) b=some c := by
-    simp only [exec,show 2*d-16<4096 by omega_using [hd],ite_true,State.read,c,Size.bits,BitVec.setWidth_eq]
+    simp only [reduceExec,show 2*d-16<4096 by omega_using [hd],ite_true,State.read,c,Size.bits,BitVec.setWidth_eq]
   refine WP.block_cons_iff.mpr ⟨c,hc,?_⟩
   have cg : c.gpr .x9=s.gpr .x0+BitVec.ofNat 64 (2*d-16) := by
     simp only [c,RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,ite_true,hb.gpr,ha.gpr]
@@ -463,7 +463,7 @@ theorem advance_ok (s : State) {d : Nat} (hd : d=18 ∨ d=20) :
   let a := s.write .x .x0 (s.gpr .x0+BitVec.ofNat 64 (2*d))
   let b := a.write .x .x4 (a.gpr .x4+64)
   let t := b.write .x .x11 (b.gpr .x11-1)
-  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,exec,show 2*d<4096 by omega_using [hd],State.read,a],?_⟩
+  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,reduceExec,show 2*d<4096 by omega_using [hd],State.read,a],?_⟩
   refine WP.block_cons_iff.mpr ⟨b,rfl,?_⟩
   refine WP.block_cons_iff.mpr ⟨t,rfl,?_⟩
   apply WP.block_nil_iff.mpr

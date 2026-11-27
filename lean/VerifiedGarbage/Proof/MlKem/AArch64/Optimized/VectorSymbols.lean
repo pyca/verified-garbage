@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! # Vector taint tracking with public addresses of read-only tables
 
@@ -35,7 +36,7 @@ theorem step_sound {names : List String} {τ τ' : T} {i : Instr} {s u s' u' : S
     split at hs
     · rename_i hn
       cases hs
-      simp only [exec,Option.some.injEq] at es eu
+      simp only [reduceExec,Option.some.injEq] at es eu
       subst es; subst eu
       exact ⟨rfl,⟨h.1.1.write .x d (p:=true) (fun _=>h.2 name hn),h.1.2⟩,hy⟩
     · have ht := VectorTaint.step_sound h.1 hs es eu

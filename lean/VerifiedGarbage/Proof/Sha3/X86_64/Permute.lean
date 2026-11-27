@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Sha3.X86_64.Round
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -80,7 +81,7 @@ theorem wp_movm {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (k : ∀ s', Upd s s' d (s.mem.readW a 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.mov d (.mem m) :: is)) s Q := by
   refine WP.cons (s' := s.setReg d (s.mem.readW a 64)) ?_ (k _ (Upd.setReg _ _ _))
-  simp [exec, readSrc, State.load64, ha, hin]
+  simp [reduceExec, readSrc, State.load64, ha, hin]
 
 theorem wp_movi64 {d : Reg} {v : BitVec 64} (k : ∀ s', Upd s s' d v → WP isa (.block is) s' Q) :
     WP isa (.block (.movImm64 d v :: is)) s Q :=
@@ -105,7 +106,7 @@ theorem wp_xorm {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     WP isa (.block (.alu .xor d (.mem m) :: is)) s Q := by
   refine WP.cons (s' := (arithFlags s (s.gpr d ^^^ s.mem.readW a 64) false false).setReg d
     (s.gpr d ^^^ s.mem.readW a 64)) ?_ (k _ (Upd.flags _ _ _ _ _ _))
-  simp [exec, execAlu, readSrc, State.load64, ha, hin]
+  simp [reduceExec, execAlu, readSrc, State.load64, ha, hin]
 
 theorem wp_addi {d : Reg} {v : BitVec 32}
     (k : ∀ s', Upd s s' d (s.gpr d + v.signExtend 64) → WP isa (.block is) s' Q) :
@@ -124,7 +125,7 @@ theorem wp_store {m : MemOp} {r : Reg} {a : Addr} (ha : s.ea m = a) (hout : InRe
       s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (.store m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.gpr r) }) ?_ (k _ rfl rfl rfl rfl)
-  simp [exec, State.store64, ha, hout]
+  simp [reduceExec, State.store64, ha, hout]
 
 theorem wp_mov32i {d : Reg} {v : BitVec 32}
     (k : ∀ s', Upd s s' d (v.setWidth 64) → WP isa (.block is) s' Q) :
@@ -154,14 +155,14 @@ theorem wp_movzx8 {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (k : ∀ s', Upd s s' d ((s.mem a).setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.movzx8 d m :: is)) s Q := by
   refine WP.cons (s' := s.setReg d ((s.mem a).setWidth 64)) ?_ (k _ (Upd.setReg _ _ _))
-  simp [exec, State.load8, ha, hin]
+  simp [reduceExec, State.load8, ha, hin]
 
 theorem wp_store8 {m : MemOp} {r : Reg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 1)
     (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem.writeW a ((s.gpr r).setWidth 8) → s'.rd = s.rd →
       s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr r).setWidth 8) }) ?_ (k _ rfl rfl rfl rfl)
-  simp [exec, State.store8, ha, hout]
+  simp [reduceExec, State.store8, ha, hout]
 
 end
 

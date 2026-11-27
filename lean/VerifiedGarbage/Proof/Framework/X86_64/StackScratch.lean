@@ -163,7 +163,7 @@ theorem setScratch_run (r : Reg) (s : State) :
 
 theorem scratchState_gpr {r : Reg} (hr : r ≠ .rsp) (s : State) (q : Reg) :
     (scratchState r s).gpr q = if q = r then s.gpr .rsp + 8 else s.gpr q := by
-  simp only [scratchState, execBlock, isa, exec, readSrc, execAlu, Option.map_some,
+  simp only [scratchState, execBlock, isa, reduceExec, readSrc, execAlu, Option.map_some,
     Option.bind_some, Option.getD_some, arithFlags, State.setFlags, State.setReg]
   by_cases h : q = r
   · subst h; simp

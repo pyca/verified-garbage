@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The vectors' upper halves in two runs of the same path (x86-64)
@@ -64,7 +65,7 @@ theorem exec_ua {i : Instr} {a : Bool} {s₁ s₂ s₁' s₂' : State} (e₁ : e
     (e₂ : exec i s₂ = some s₂') (h : stepI a i = true) (hu : a = true → UA s₁ s₂) : UA s₁' s₂' := by
   by_cases hz : i = .vop .vzeroupper
   · subst hz
-    simp only [exec, VOp.exec, Option.some.injEq] at e₁ e₂
+    simp only [reduceExec, VOp.exec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     exact ⟨rfl, rfl⟩
   · have h' : a = true ∧ i.vecLevel = 0 := by

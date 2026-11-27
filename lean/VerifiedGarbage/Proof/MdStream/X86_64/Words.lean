@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: length fields and digests
@@ -337,7 +338,7 @@ theorem wp_movdquStore {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout
       s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (.movdquStore m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a (s.xmm r) }) ?_ (k _ rfl rfl rfl rfl)
-  simp [exec, State.store128, ha, hout]
+  simp [reduceExec, State.store128, ha, hout]
 
 theorem wp_movImm64' {d : Reg} {v : BitVec 64} (k : WP isa (.block is) (s.setReg d v) Q) :
     WP isa (.block (.movImm64 d v :: is)) s Q :=

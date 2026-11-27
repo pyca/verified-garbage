@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AES-GCM decryption out of place, in one pass, x86-64: `Verified`
@@ -87,7 +88,7 @@ theorem entry_run {thr : Nat} (hT : thr < 2 ^ 31) (s : State)
       eval .ae u = some (decide (thr ≤ (stackArg s 1).toNat)) := by
   have ea : s.ea (Impl.AesGcm.X86_64.at_ .rsp 16) = stackArgAddr s 1 := rfl
   refine ⟨?u, ?h1, ?h2, ?h3, ?h4, ?h5, ?h6, ?h7⟩
-  case h1 => simp [execBlock, Impl.AesGcm.X86_64.OpenToSplit.cmpLen, exec, readSrc, ea, hin, addrs, srcAddrs,
+  case h1 => simp [execBlock, Impl.AesGcm.X86_64.OpenToSplit.cmpLen, reduceExec, readSrc, ea, hin, addrs, srcAddrs,
     State.load64, execAlu]; rfl
   case h3 => rfl
   case h4 => rfl

@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The Salsa20/8 Core on x86-64: the rounds
@@ -92,34 +93,34 @@ structure Upd (d : Reg) (x : BitVec 64) (s s' : State) : Prop where
 
 theorem mov32_upd {s : State} {d : Reg} {src : Src} {x : Word} (hr : readSrc32 s src = some x) :
     ∃ s', exec (.mov32 d src) s = some s' ∧ Upd d (x.setWidth 64) s s' := by
-  simp only [exec, hr, Option.map_some, Option.some.injEq, exists_eq_left']
+  simp only [reduceExec, hr, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨by simp [State.setReg32, State.setReg], fun r hr => by simp [State.setReg32, State.setReg, hr],
     rfl, rfl, rfl⟩
 
 theorem add32_upd {s : State} {d : Reg} {src : Src} {x : Word} (hr : readSrc32 s src = some x) :
     ∃ s', exec (.alu32 .add d src) s = some s' ∧
       Upd d (((s.gpr d).setWidth 32 + x).setWidth 64) s s' := by
-  simp only [exec, execAlu32, hr, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp only [reduceExec, execAlu32, hr, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨by simp [State.setReg32, State.setReg],
     fun r hr => by simp [State.setReg32, State.setReg, arithFlags, State.setFlags, hr], rfl, rfl, rfl⟩
 
 theorem xor32_upd {s : State} {d : Reg} {src : Src} {x : Word} (hr : readSrc32 s src = some x) :
     ∃ s', exec (.alu32 .xor d src) s = some s' ∧
       Upd d (((s.gpr d).setWidth 32 ^^^ x).setWidth 64) s s' := by
-  simp only [exec, execAlu32, hr, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp only [reduceExec, execAlu32, hr, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨by simp only [State.setReg32, State.setReg, ite_true],
     fun r hr => by simp [State.setReg32, State.setReg, arithFlags, State.setFlags, hr], rfl, rfl, rfl⟩
 
 theorem ror32_upd {s : State} {d : Reg} {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 31) :
     ∃ s', exec (.shift32 .ror d n) s = some s' ∧
       Upd d ((((s.gpr d).setWidth 32).rotateRight n).setWidth 64) s s' := by
-  simp only [exec, execShift32, h1, h2, and_self, ite_true, Option.some.injEq, exists_eq_left']
+  simp only [reduceExec, execShift32, h1, h2, and_self, ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨by simp only [State.setReg32, State.setReg, ite_true],
     fun r hr => by simp [State.setReg32, State.setReg, State.setFlags, hr], rfl, rfl, rfl⟩
 
 theorem store32_exec {s : State} {m : MemOp} {r : Reg} (h : InRegions s.wr (s.ea m) 4) :
     exec (.store32 m r) s = some { s with mem := s.mem.writeW (s.ea m) ((s.gpr r).setWidth 32) } := by
-  simp only [exec, State.store32, h, ite_true]
+  simp only [reduceExec, State.store32, h, ite_true]
 
 /-- Running one instruction, then the rest of the block. -/
 theorem wp_cons {i : Instr} {is : List Instr} {s : State} {Q : State → Prop} {P : State → Prop}

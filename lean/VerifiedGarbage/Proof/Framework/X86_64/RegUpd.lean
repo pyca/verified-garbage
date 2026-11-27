@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.TCB.X86_64.Gpr
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 
 /-!
@@ -20,7 +21,7 @@ A register read after a register write has two forms:
 * `gpr_setReg_self` and `gpr_setReg_of_ne`, whose side condition `¬r = d`
   `simp` discharges from hypotheses, for registers that are variables.
 
-Use them with `simp only [runBlock_cons, runStep_some, exec, …,
+Use them with `simp only [runBlock_cons, runStep_some, reduceExec, …,
 State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, …]` and never unfold
 `State.setReg`, `arithFlags` or `State.setFlags`.
 -/

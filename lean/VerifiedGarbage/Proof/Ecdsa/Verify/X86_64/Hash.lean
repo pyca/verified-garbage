@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ECDSA verification of the hash function's output on x86-64: the conversion
@@ -111,14 +112,14 @@ theorem wp_movzx8 {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (k : ∀ s', Upd s s' d ((s.mem a).setWidth 64) → WP isa (.block is) s' Q) :
     WP isa (.block (.movzx8 d m :: is)) s Q := by
   refine WP.cons (s' := s.setReg d ((s.mem a).setWidth 64)) ?_ (k _ (Upd.setReg _ _ _))
-  simp [exec, State.load8, ha, hin]
+  simp [reduceExec, State.load8, ha, hin]
 
 theorem wp_store8 {m : MemOp} {r : Reg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 1)
     (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem.writeW a ((s.gpr r).setWidth 8) → s'.rd = s.rd →
       s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 m r :: is)) s Q := by
   refine WP.cons (s' := { s with mem := s.mem.writeW a ((s.gpr r).setWidth 8) }) ?_ (k _ rfl rfl rfl rfl)
-  simp [exec, State.store8, ha, hout]
+  simp [reduceExec, State.store8, ha, hout]
 
 theorem wp_shl {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
     (k : ∀ s', Upd s s' d (s.gpr d <<< n) → WP isa (.block is) s' Q) :
@@ -126,7 +127,7 @@ theorem wp_shl {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
   refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (64 - n)))
     (if n = 1 then some ((s.gpr d <<< n).msb ^^ (s.gpr d).getLsbD (64 - n)) else none)
     (some ((s.gpr d <<< n) == 0)) (some (s.gpr d <<< n).msb)).setReg d (s.gpr d <<< n)) ?_ (k _ ?_)
-  · simp [exec, execShift, hn]
+  · simp [reduceExec, execShift, hn]
   · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h]; rfl, rfl, rfl, rfl⟩
 
 theorem wp_shr {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
@@ -135,7 +136,7 @@ theorem wp_shr {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
   refine WP.cons (s' := (s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
     (if n = 1 then some (s.gpr d).msb else none) (some ((s.gpr d >>> n) == 0))
     (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) ?_ (k _ ?_)
-  · simp [exec, execShift, hn]
+  · simp [reduceExec, execShift, hn]
   · exact ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h]; rfl, rfl, rfl, rfl⟩
 
 end

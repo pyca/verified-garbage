@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelSteps
 public import VerifiedGarbage.TCB.AArch64.Residue
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Returning without secret residue, for code that reads no memory (AArch64)
@@ -91,16 +92,16 @@ theorem exec_withMS {i : Instr} (hi : regOnly i = true) (s : State) (m : Mem)
   cases i <;> cases hi
   all_goals first
     | rfl
-    | (simp only [exec]; split <;> rfl)
-    | (simp only [exec, vop_eval_withMS]; cases VOp.eval s _ <;> rfl)
-    | (simp only [exec]; split <;> (try split) <;> rfl)
+    | (simp only [reduceExec]; split <;> rfl)
+    | (simp only [reduceExec, vop_eval_withMS]; cases VOp.eval s _ <;> rfl)
+    | (simp only [reduceExec]; split <;> (try split) <;> rfl)
 
 /-- A register-only instruction changes neither the regions nor the memory. -/
 theorem exec_regOnly {i : Instr} (hi : regOnly i = true) {s t : State} (h : exec i s = some t) :
     t.rd = s.rd ∧ t.wr = s.wr ∧ t.mem = s.mem := by
   cases i <;> cases hi
   all_goals
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl⟩)
     | (split at h <;> first | (obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl⟩) | cases h)
@@ -158,34 +159,34 @@ theorem off_step {i : Instr} (hi : blind i = true) {s₁ s₂ a b : State} (h : 
     exact ⟨rfl, by rw [hrd, hwr, hmem]; exact hm⟩
   · cases i <;> simp only [isStore, Bool.false_eq_true] at hs
     case str sz t n off =>
-      simp only [exec, addr_withMS] at h₁ h₂
+      simp only [reduceExec, addr_withMS] at h₁ h₂
       cases ha : addr s₁ sz.bytes n off with
       | none => rw [ha] at h₁; cases h₁
       | some ad =>
         rw [ha] at h₁ h₂
         exact (off_store hm h₁ h₂).1
     case strb t n off =>
-      simp only [exec, addr_withMS] at h₁ h₂
+      simp only [reduceExec, addr_withMS] at h₁ h₂
       cases ha : addr s₁ 1 n off with
       | none => rw [ha] at h₁; cases h₁
       | some ad =>
         rw [ha] at h₁ h₂
         exact (off_store hm h₁ h₂).1
     case strq t n off =>
-      simp only [exec, addr_withMS] at h₁ h₂
+      simp only [reduceExec, addr_withMS] at h₁ h₂
       cases ha : addr s₁ 16 n off with
       | none => rw [ha] at h₁; cases h₁
       | some ad =>
         rw [ha] at h₁ h₂
         exact (off_store hm h₁ h₂).1
     case strSp t off =>
-      simp only [exec] at h₁ h₂
+      simp only [reduceExec] at h₁ h₂
       split at h₁
       · rw [ite_eq_left_of_eq_true _ _ (eq_true (by assumption))] at h₂
         exact (off_store hm h₁ h₂).1
       · cases h₁
     case stp t1 t2 n off =>
-      simp only [exec] at h₁ h₂
+      simp only [reduceExec] at h₁ h₂
       split at h₁
       · rw [ite_eq_left_of_eq_true _ _ (eq_true (by assumption))] at h₂
         obtain ⟨u₁, hu₁, h₁⟩ := Option.bind_eq_some_iff.mp h₁

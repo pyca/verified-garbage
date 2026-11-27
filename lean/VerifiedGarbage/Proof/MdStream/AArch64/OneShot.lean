@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MdStream.AArch64.Tail16`, which only this module used -/
 
@@ -36,13 +37,13 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_ldrq0 {t : VReg} {n : Reg} {a : Addr} (ha : s.gpr n = a) (hin : InRegions (s.rd ++ s.wr) a 16)
     (k : WP isa (.block is) (s.setV t (s.mem.read a 16)) Q) :
     WP isa (.block (.ldrq t n 0 :: is)) s Q :=
-  WP.cons (by simp [exec, addr, ha, State.load, hin]) k
+  WP.cons (by simp [reduceExec, addr, ha, State.load, hin]) k
 
 theorem wp_strq0 {t : VReg} {n : Reg} {a : Addr} (ha : s.gpr n = a) (hout : InRegions s.wr a 16)
     (k : ∀ s', Mupd s s' (s.mem.write a 16 (s.v t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.strq t n 0 :: is)) s Q :=
   WP.cons (s' := { s with mem := s.mem.write a 16 (s.v t) })
-    (by simp [exec, addr, ha, State.store, hout]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
+    (by simp [reduceExec, addr, ha, State.store, hout]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
 
 theorem wp_vop {op : VOp} {d : VReg} {x : BitVec 128} (h : op.eval s = some (d, x))
     (k : WP isa (.block is) (s.setV d x) Q) : WP isa (.block (.vop op :: is)) s Q :=
@@ -307,7 +308,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 4096)
     (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
     WP isa (.block (.addSp d imm :: is)) s Q :=
-  WP.cons (s' := s.write .x d (s.sp + BitVec.ofNat 64 imm)) (by simp [exec, h]) (k _ (Upd.write64 _ _ _))
+  WP.cons (s' := s.write .x d (s.sp + BitVec.ofNat 64 imm)) (by simp [reduceExec, h]) (k _ (Upd.write64 _ _ _))
 
 theorem wp_stp {t1 t2 n : Reg} {off : Nat} {a : Addr} (ho : off % 8 = 0 ∧ off ≤ 504)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (h₁ : InRegions s.wr a 8) (h₂ : InRegions s.wr (a + 8) 8)
@@ -316,7 +317,7 @@ theorem wp_stp {t1 t2 n : Reg} {off : Nat} {a : Addr} (ho : off % 8 = 0 ∧ off 
     WP isa (.block (.stp t1 t2 n off :: is)) s Q := by
   refine WP.cons (s' := { s with mem := (s.mem.writeW a (s.gpr t1)).writeW (a + 8) (s.gpr t2) }) ?_
     (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩)
-  simp only [exec, ho, and_self, ite_true, ha, State.store, h₁, h₂, Option.bind_some, Mem.writeW,
+  simp only [reduceExec, ho, and_self, ite_true, ha, State.store, h₁, h₂, Option.bind_some, Mem.writeW,
     State.read]
   try rfl
 
@@ -337,7 +338,7 @@ theorem wp_ldp {t1 t2 n : Reg} {off : Nat} {a : Addr} (ht : t1 ≠ t2) (ho : off
     WP isa (.block (.ldp t1 t2 n off :: is)) s Q := by
   refine WP.cons (s' := (s.write .x t1 (s.mem.readW a 64)).write .x t2 (s.mem.readW (a + 8) 64)) ?_
     (k _ ⟨?_, ?_, fun r h1 h2 => ?_, rfl, rfl, rfl, rfl⟩)
-  · simp only [exec, ht, ne_eq, not_false_eq_true, ho, and_self, ite_true, ha, State.load, h₁, h₂,
+  · simp only [reduceExec, ht, ne_eq, not_false_eq_true, ho, and_self, ite_true, ha, State.load, h₁, h₂,
       Option.bind_some, Option.map_some, Mem.readW]
     try rfl
   · simp only [State.write]; simp [ht]

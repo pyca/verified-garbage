@@ -8,6 +8,7 @@ public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A function that calls its callees through slots (x86-64)
@@ -199,7 +200,7 @@ theorem storeAddr_run {j : Nat} {n : String} {u : State}
     (hw : InRegions u.wr (u.gpr .rsp + BitVec.ofNat 64 (8 * j)) 8) :
     execBlock isa (Impl.ForwardCall.X86_64.storeAddr j n) u =
       some (storeState j n u, [.addr (u.gpr .rsp + BitVec.ofNat 64 (8 * j))]) := by
-  simp only [Impl.ForwardCall.X86_64.storeAddr, execBlock, isa, exec, State.ea, ofInt_natCast, addrs,
+  simp only [Impl.ForwardCall.X86_64.storeAddr, execBlock, isa, reduceExec, State.ea, ofInt_natCast, addrs,
     Option.map_some]
   simp [storeState, State.setReg, State.store64, hw]
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # A candidate on AArch64: the working space, and instructions for `brun`
@@ -76,16 +77,16 @@ theorem exec_mul_w {d n m : Reg} :
 
 theorem exec_addImm_w {d n : Reg} {imm : Nat} (h : imm < 4096) :
     exec (.addImm .w d n imm) s = some (s.write .w d ((s.gpr n).setWidth 32 + BitVec.ofNat 32 imm)) := by
-  simp [exec, h, State.read]
+  simp [reduceExec, h, State.read]
 
 theorem exec_movz_x' {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
     exec (.movz .x d imm hw) s = some (s.write .x d (imm.setWidth 64 <<< (16 * hw))) := by
-  simp only [exec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true]
+  simp only [reduceExec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true]
 
 theorem exec_movk_x {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
     exec (.movk .x d imm hw) s = some (s.write .x d ((s.gpr d &&& ~~~((0xFFFF : BitVec 64) <<< (16 * hw))) |||
       (imm.setWidth 64 <<< (16 * hw)))) := by
-  simp only [exec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true, State.read, BitVec.setWidth_eq]
+  simp only [reduceExec, Size.bits, show 16 * hw < 64 by omega_using [h], ite_true, State.read, BitVec.setWidth_eq]
 
 end
 

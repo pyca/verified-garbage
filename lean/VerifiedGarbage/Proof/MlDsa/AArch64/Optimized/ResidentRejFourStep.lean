@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ### `MlDsa.AArch64.Optimized.ResidentRejChoice`, which this module and modules that import it used -/
 
@@ -111,7 +112,7 @@ theorem lane_ok {s : State} {r : VReg} {e : Nat} {p : Addr} {L : List Zq}
       (t.gpr .x4).toNat=256-(acc L (vword (s.v r) e).toNat).length ∧
       Stored t.mem p (acc L (vword (s.v r) e).toNat) := by
     refine wp_x (d := .x11) (v := (vword (s.v r) e).setWidth 64)
-      (by simp only [exec,Size.bits,show e*32<128 by omega_using [he],ite_true]; rfl) fun a ha ea => ?_
+      (by simp only [reduceExec,Size.bits,show e*32<128 by omega_using [he],ite_true]; rfl) fun a ha ea => ?_
     refine WP.mono (accept_ok (aP := p) (L := L) (z := (vword (s.v r) e).toNat)
       (by rw [ea,BitVec.toNat_setWidth_of_le (by decide)]) hz
       (by rw [ha.get .x9]; exact h9) (by rw [ha.get .x3]; exact h3)

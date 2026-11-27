@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ### `Sha3.X86_64.Stream.Word`, which this module and modules that import it used -/
 
@@ -51,7 +52,7 @@ theorem wp_shr {d : Reg} {n : Nat} (h₁ : 1 ≤ n) (h₂ : n ≤ 63)
   have e : exec (.shift .shr d n) s = some ((s.setFlags (some ((s.gpr d).getLsbD (n - 1)))
       (if n = 1 then some (s.gpr d).msb else none) (some (s.gpr d >>> n == 0))
       (some (s.gpr d >>> n).msb)).setReg d (s.gpr d >>> n)) := by
-    simp only [exec, execShift, h₁, h₂, and_self, ite_true]
+    simp only [reduceExec, execShift, h₁, h₂, and_self, ite_true]
   exact WP.cons e (k _ (Upd.withFlags _ _ _ _ _ _ _))
 
 end

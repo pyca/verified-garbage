@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ## From `ResidentBody.lean` -/
 
@@ -243,7 +244,7 @@ theorem streamWith_ok (core : Core) {s : State} {T a b : Addr} {n blocks : Nat} 
   apply WP.seq
   let t := s.write .x .x28 (BitVec.ofNat 64 blocks)
   have he : isa.exec (.movz .x .x28 (BitVec.ofNat 16 blocks) 0) s = some t := by
-    simp only [isa,exec,Size.bits,Nat.mul_zero,show (0 : Nat)<64 by decide,ite_true,
+    simp only [isa,reduceExec,Size.bits,Nat.mul_zero,show (0 : Nat)<64 by decide,ite_true,
       BitVec.shiftLeft_zero]
     have hv : BitVec.setWidth 64 (BitVec.ofNat 16 blocks) = BitVec.ofNat 64 blocks := by
       apply BitVec.eq_of_toNat_eq

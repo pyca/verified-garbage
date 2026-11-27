@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ECDSA verification of the hash function's output on AArch64: the conversion
@@ -121,7 +122,7 @@ variable {is : List Instr} {Q : State → Prop}
 theorem wp_orr {d n m : Reg}
     (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → WP isa (.block is) s' Q) :
     WP isa (.block (.logic .orr .x d n m :: is)) s Q :=
-  Proof.MdStream.AArch64.WP.cons (s' := s.write .x d (s.gpr n ||| s.gpr m)) (by simp [exec, State.read])
+  Proof.MdStream.AArch64.WP.cons (s' := s.write .x d (s.gpr n ||| s.gpr m)) (by simp [reduceExec, State.read])
     (k _ (Upd.write64 _ _ _))
 
 end

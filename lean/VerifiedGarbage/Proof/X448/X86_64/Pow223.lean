@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X448 on x86-64: the addition chain as a function
@@ -105,7 +106,7 @@ theorem loadsAt_ok {base : Addr} : ∀ (l : List (Reg × Nat)) (s : State), Scr 
     simp only [List.map_cons, List.nodup_cons] at hnd
     rw [List.map_cons, WP.block_cons_iff]
     refine ⟨s.setReg r (word s.mem base d), by
-      simp only [exec, readSrc_sc hs (d := d) hd, Option.map_some], ?_⟩
+      simp only [reduceExec, readSrc_sc hs (d := d) hd, Option.map_some], ?_⟩
     have hs1 : Scr (s.setReg r (word s.mem base d)) base :=
       ⟨by rw [RegUpd.gpr_setReg_of_ne _ _ (Ne.symm hr)]; exact hs.rdi, hs.wr, hs.nowrap⟩
     refine WP.mono (loadsAt_ok l _ hs1 (fun p hp => hl p (List.mem_cons_of_mem _ hp)) hnd.2)
@@ -127,7 +128,7 @@ theorem storesAt_ok {base : Addr} : ∀ (l : List (Reg × Nat)) (s : State), Scr
     rw [List.map_cons, WP.block_cons_iff]
     refine ⟨s, by
       have hw := hs.write (d := d) (n := 8) hd
-      simp only [exec, ea_sc, hs.rdi, State.store64, hw, ite_true, hv, word, writeW_readW64], ?_⟩
+      simp only [reduceExec, ea_sc, hs.rdi, State.store64, hw, ite_true, hv, word, writeW_readW64], ?_⟩
     exact storesAt_ok l s hs fun p hp => hl p (List.mem_cons_of_mem _ hp)
 
 theorem pow223KeepWith_inline (F : Field) (name : String) (keep : List Nat) : (pow223KeepWith F name keep).inline =

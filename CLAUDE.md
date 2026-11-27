@@ -494,7 +494,7 @@ lemmas and tactics to use; read it before writing a proof:
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
-  every module.
+  every module that does not see a module with them (`realize_eqns`).
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
   `with_reducible assumption`; split a precondition of many facts with
   `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for

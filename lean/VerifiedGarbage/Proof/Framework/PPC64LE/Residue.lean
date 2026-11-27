@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelSteps
 public import VerifiedGarbage.TCB.PPC64LE.Residue
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # Returning without secret residue, for code that reads no memory (PPC64LE)
@@ -86,15 +87,15 @@ theorem exec_withMS {i : Instr} (hi : regOnly i = true) (s : State) (m : Mem)
   cases i <;> simp only [regOnly, Bool.false_eq_true] at hi
   all_goals first
     | rfl
-    | (simp only [exec]; split <;> rfl)
-    | (simp only [exec]; cases VOp.eval s.vpr _ <;> rfl)
+    | (simp only [reduceExec]; split <;> rfl)
+    | (simp only [reduceExec]; cases VOp.eval s.vpr _ <;> rfl)
 
 /-- A register-only instruction changes neither the regions nor the memory. -/
 theorem exec_regOnly {i : Instr} (hi : regOnly i = true) {s t : State} (h : exec i s = some t) :
     t.rd = s.rd ∧ t.wr = s.wr ∧ t.mem = s.mem := by
   cases i <;> simp only [regOnly, Bool.false_eq_true] at hi
   all_goals
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl⟩)
     | (split at h <;> first | (obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl⟩) | cases h)
@@ -161,16 +162,16 @@ theorem off_step {i : Instr} (hi : blind i = true) {s₁ s₂ a b : State} (h : 
     exact ⟨rfl, by rw [hrd, hwr, hmem]; exact hm⟩
   · cases i <;> simp only [isStore, Bool.false_eq_true] at hs
     case store sz t n off =>
-      simp only [exec, addr_withMS] at h₁ h₂
+      simp only [reduceExec, addr_withMS] at h₁ h₂
       exact off_store_bind hm h₁ h₂
     case stb t n off =>
-      simp only [exec, addr_withMS] at h₁ h₂
+      simp only [reduceExec, addr_withMS] at h₁ h₂
       exact off_store_bind hm h₁ h₂
     case stxvd2x n a b =>
-      simp only [exec, addrX_withMS] at h₁ h₂
+      simp only [reduceExec, addrX_withMS] at h₁ h₂
       exact off_store_bind hm h₁ h₂
     case storeRev sz t a b =>
-      cases sz <;> simp only [exec, addrX_withMS] at h₁ h₂ <;> exact off_store_bind hm h₁ h₂
+      cases sz <;> simp only [reduceExec, addrX_withMS] at h₁ h₂ <;> exact off_store_bind hm h₁ h₂
 
 /-- Plain code of blind instructions (`Code.plainAll blind`) returns without
 secret residue, whatever its contract. -/
