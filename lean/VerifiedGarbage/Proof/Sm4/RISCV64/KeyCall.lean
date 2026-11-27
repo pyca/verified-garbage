@@ -31,6 +31,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 
+import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 import VerifiedGarbage.Proof.Sm4.Layout
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.RISCV64
@@ -134,7 +136,169 @@ theorem prefix_ok {s0 : State} (hp : expandKeyRISCV64.pre s0) :
 
 
 
-def coreHead : List Instr := setSlots (keyMasks ++ bsKs) ++ ckTable ++ toBs ++
+
+def groupPairs (gs : List (BitVec 64 × List Nat)) : List (Nat × BitVec 64) :=
+  gs.flatMap fun g => g.2.map fun k => (k,g.1)
+
+theorem groupPairs_keys (v : BitVec 64) (ks : List Nat) (gs : List (BitVec 64 × List Nat)) :
+    (groupPairs ((v,ks)::gs)).map (·.1) = ks ++ (groupPairs gs).map (·.1) := by
+  simp only [groupPairs,List.flatMap_cons,List.map_append,List.map_map,Function.comp_def,List.map_id']
+
+theorem saveMem_keep (A : Addr) (g : Reg → BitVec 64) (ks : List Nat)
+    (hb : ∀ k ∈ ks, k < 256) (j : Nat) (hj : j < 256) (hn : j ∉ ks) (mm : Mem) :
+    (Spill.saveMem mm A g (ks.map fun k => (t0,8*k))).readW (wordAddr A j) 64 =
+      mm.readW (wordAddr A j) 64 := by
+  induction ks generalizing mm with
+  | nil => rfl
+  | cons k ks ih =>
+    have hk := hb k List.mem_cons_self
+    have ne : j ≠ k := fun eq => hn (by simp only [List.mem_cons,eq,true_or])
+    rw [List.map_cons,Spill.saveMem,ih (fun k h => hb k (List.mem_cons_of_mem _ h))
+      (fun h => hn (List.mem_cons_of_mem _ h)),
+      Mem.readW_writeW_sep (slot_sep A (by omega_using [hj]) (by omega_using [hk]) ne) (by decide)]
+
+theorem group_ok {A : Addr} (hal : A.toNat % 8 = 0) (v : BitVec 64) (ks : List Nat)
+    (hb : ∀ k ∈ ks, k < 256) (nd : ks.Nodup) {s : State} (ha : s.gpr .a4 = A)
+    (hw : ∀ k < 256, InRegions s.wr (wordAddr A k) 8) :
+    ∃ u, runBlock isa (ckStoreGroup (v,ks)) s = some u ∧
+      (∀ k ∈ ks, u.mem.readW (wordAddr A k) 64 = v) ∧
+      (∀ k < 256, k ∉ ks → u.mem.readW (wordAddr A k) 64 = s.mem.readW (wordAddr A k) 64) ∧
+      (∀ r, r ≠ t0 → r ≠ t1 → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Frame [⟨A,2048⟩] s.mem u.mem := by
+  obtain ⟨s1,e1,h1⟩ := Interleave.runBlock_of_WP
+    (ByteLoad.li64_ok (s := s) (d := t0) (tmp := t1) (by decide) v)
+  subst h1
+  let s1 := (s.write t1 (sext32 (v.setWidth 32))).write t0 v
+  have ha1 : s1.gpr .a4 = A := by
+    rw [RegUpd.gpr_write_of_ne _ _ (by decide),RegUpd.gpr_write_of_ne _ _ (by decide),ha]
+  have fit : Spill.Fits (ks.map fun k => (t0,8*k)) := by
+    refine ⟨?_,?_⟩
+    · intro p hp
+      obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hp
+      have h := hb k hk
+      exact ⟨by omega_using [],by omega_using [h]⟩
+    · simpa only [List.map_map,Function.comp_def,List.Nodup] using
+        (nd.map (fun k : Nat => 8*k)
+          (fun a b hn he => hn (by change 8*a = 8*b at he; omega_using [he])) :
+          List.Pairwise (fun a b : Nat => a ≠ b) (ks.map fun k => 8*k))
+  obtain ⟨u,eu,hu⟩ := Interleave.runBlock_of_WP (Spill.save_wp (b := .a4)
+    (l := ks.map fun k => (t0,8*k)) (s := s1) (by rw [ha1]; exact hal) fit.1 (by
+      intro p hp
+      obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hp
+      rw [ha1]
+      exact hw k (hb k hk)))
+  have stored : Spill.saveCode .a4 (ks.map fun k => (t0,8*k)) =
+      ks.map (fun k => Instr.store .d t0 .a4 (8*k)) := by
+    simp only [Spill.saveCode,List.map_map,Function.comp_def]
+  rw [stored] at eu
+  have mem : u.mem = Spill.saveMem s.mem A s1.gpr (ks.map fun k => (t0,8*k)) := by
+    rw [hu.mem,ha1]
+    rfl
+  refine ⟨u,?_,?_,?_,?_,hu.rd,hu.wr,?_⟩
+  · rw [ckStoreGroup,Interleave.runBlock_append,e1,Option.bind_some]
+    exact eu
+  · intro k hk
+    rw [mem]
+    have h := Spill.saveMem_saved fit s.mem A s1.gpr (t0,8*k) (List.mem_map.mpr ⟨k,hk,rfl⟩)
+    exact h.trans (RegUpd.gpr_write_self _ _ _)
+  · intro j hj hn
+    rw [mem]
+    exact saveMem_keep A s1.gpr ks hb j hj hn s.mem
+  · intro r h0 h1
+    rw [congrFun hu.gpr r,RegUpd.gpr_write_of_ne _ _ h0,RegUpd.gpr_write_of_ne _ _ h1]
+  · rw [mem]
+    apply Spill.saveMem_frame_base
+    · intro p hp
+      obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hp
+      have h := hb k hk
+      omega_using [h]
+    · decide
+
+theorem groups_ok {A : Addr} (hal : A.toNat % 8 = 0) :
+    ∀ (gs : List (BitVec 64 × List Nat)) {s : State},
+      (∀ kv ∈ groupPairs gs, kv.1 < 256) → ((groupPairs gs).map (·.1)).Nodup →
+      s.gpr .a4 = A → (∀ k < 256, InRegions s.wr (wordAddr A k) 8) →
+      ∃ u, runBlock isa (gs.flatMap ckStoreGroup) s = some u ∧
+        (∀ kv ∈ groupPairs gs, u.mem.readW (wordAddr A kv.1) 64 = kv.2) ∧
+        (∀ k < 256, k ∉ (groupPairs gs).map (·.1) →
+          u.mem.readW (wordAddr A k) 64 = s.mem.readW (wordAddr A k) 64) ∧
+        (∀ r, r ≠ t0 → r ≠ t1 → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+        Frame [⟨A,2048⟩] s.mem u.mem
+  | [],s,_,_,_,_ => ⟨s,rfl,by simp [groupPairs],fun _ _ _ => rfl,fun _ _ _ => rfl,rfl,rfl,Frame.refl _ _⟩
+  | (v,ks)::gs,s,hb,nd,ha,hw => by
+    rw [groupPairs_keys,List.nodup_append] at nd
+    have bound k (hk : k ∈ ks) : k < 256 := hb (k,v) (by
+      change (k,v) ∈ ks.map (fun k => (k,v)) ++ groupPairs gs
+      exact List.mem_append_left _ (List.mem_map.mpr ⟨k,hk,rfl⟩))
+    obtain ⟨s1,e1,v1,k1,g1,rd1,wr1,f1⟩ := group_ok hal v ks bound nd.1 ha hw
+    obtain ⟨u,eu,vu,ku,gu,rdu,wru,fu⟩ := groups_ok hal gs
+      (fun kv h => hb kv (by change kv ∈ ks.map (fun k => (k,v)) ++ groupPairs gs; exact List.mem_append_right _ h))
+      nd.2.1 (by rw [g1 _ (by decide) (by decide),ha]) (fun k hk => by rw [wr1]; exact hw k hk)
+    refine ⟨u,?_,?_,?_,fun r h0 h1 => (gu r h0 h1).trans (g1 r h0 h1),
+      rdu.trans rd1,wru.trans wr1,f1.trans fu⟩
+    · rw [List.flatMap_cons,Interleave.runBlock_append,e1,Option.bind_some]
+      exact eu
+    · intro kv hkv
+      change kv ∈ ks.map (fun k => (k,v)) ++ groupPairs gs at hkv
+      rcases List.mem_append.mp hkv with h | h
+      · obtain ⟨k,hk,rfl⟩ := List.mem_map.mp h
+        rw [ku k (bound k hk) (fun h => nd.2.2 k hk k h rfl),v1 k hk]
+      · exact vu kv h
+    · intro k hk hn
+      rw [groupPairs_keys,List.mem_append,not_or] at hn
+      rw [ku k hk hn.2,k1 k hk hn.1]
+
+
+theorem ckGroups_bound : ∀ kv ∈ groupPairs ckGroups, kv.1 < 256 := by
+  intro kv h
+  obtain ⟨g,hg,hk⟩ := List.mem_flatMap.mp h
+  obtain ⟨value,_hv,rfl⟩ := List.mem_map.mp hg
+  obtain ⟨k,hindex,rfl⟩ := List.mem_map.mp hk
+  obtain ⟨entry,he,eq⟩ := List.mem_map.mp hindex
+  change k < 256
+  rw [← eq]
+  exact ckEntries_lt entry (List.mem_filter.mp he).1
+
+theorem ckGroups_nodup : ((groupPairs ckGroups).map (·.1)).Nodup := by
+  decide +kernel
+
+theorem ckGroups_mem {e j : Nat} (he : e < 32) (hj : j < 8) :
+    (8*e+j,VG.Impl.Sm4.planeOf (Spec.Sm4.ck e) j) ∈ groupPairs ckGroups := by
+  let k := 8*e+j
+  let v := VG.Impl.Sm4.planeOf (Spec.Sm4.ck e) j
+  have h : (k,v) ∈ ckEntries := ckEntries_mem he hj
+  refine List.mem_flatMap.mpr ⟨(v,(ckEntries.filter (fun kv => kv.2 == v)).map (·.1)),?_,?_⟩
+  · refine List.mem_map.mpr ⟨v,?_,rfl⟩
+    rw [List.mem_eraseDups]
+    exact List.mem_map.mpr ⟨(k,v),h,rfl⟩
+  · refine List.mem_map.mpr ⟨k,?_,rfl⟩
+    exact List.mem_map.mpr ⟨(k,v),List.mem_filter.mpr ⟨h,by simp⟩,rfl⟩
+
+theorem groupedTable_ok {s : State} {b : Addr} (hb : s.gpr sb = b)
+    (hw : (⟨b,8*slots⟩ : Region) ∈ s.wr) (hal : b.toNat % 8 = 0) :
+    ∃ u, runBlock isa ckTableGrouped s = some u ∧
+      (∀ e < 32, ∀ j < 8, entryW u.mem b e j = VG.Impl.Sm4.planeOf (Spec.Sm4.ck e) j) ∧
+      (∀ r, r ≠ t0 → r ≠ t1 → r ≠ .a4 → u.gpr r = s.gpr r) ∧
+      u.rd = s.rd ∧ u.wr = s.wr ∧
+      Frame [⟨b+BitVec.ofNat 64 (8*tableSlot),2048⟩] s.mem u.mem := by
+  obtain ⟨s1,e1,r1,o1,m1,rd1,wr1⟩ := slotAddr_ok s .a4 tableSlot
+  rw [hb] at r1
+  obtain ⟨u,eu,vu,_ku,gu,rdu,wru,fu⟩ := groups_ok (A := b+BitVec.ofNat 64 (8*tableSlot))
+    (Spill.al8 hal (by decide)) ckGroups ckGroups_bound ckGroups_nodup r1 (fun k hk => by
+      refine ⟨_,by rw [wr1]; exact hw,?_⟩
+      rw [wordAddr,addr_add,tableSlot_eq]
+      exact VG.Offset.contains_base b (by rw [slots_eq]; omega_using [hk]) (by omega_using [hk]))
+  refine ⟨u,?_,?_,fun r h0 h1 h4 => (gu r h0 h1).trans (o1 r h4),
+    rdu.trans rd1,wru.trans wr1,by rw [← m1]; exact fu⟩
+  · rw [ckTableGrouped,Interleave.runBlock_append,e1,Option.bind_some]
+    exact eu
+  · intro e he j hj
+    have h := vu _ (ckGroups_mem he hj)
+    rw [wordAddr,addr_add] at h
+    rw [entryW,show 8*tableSlot+64*e+8*j = 8*tableSlot+8*(8*e+j) by omega_using []]
+    exact h
+
+def coreHead : List Instr := setSlots (keyMasks ++ bsKs) ++ ckTableGrouped ++ toBs ++
   slotAddr .a4 tableEnd ++ slotAddr kr tableSlot
 
 theorem coreHead_ok {s0 s : State} (hp : expandKeyRISCV64.pre s0) (hl : Loaded s0 s) :
@@ -149,7 +313,7 @@ theorem coreHead_ok {s0 s : State} (hp : expandKeyRISCV64.pre s0) (hl : Loaded s
     (by rw [hl.wr]; exact hw) hal
     (fun kv hkv => by have h := masks_lt kv hkv; rw [tableSlot_eq]; omega_using [h]) (by decide)
   have hb1 : s1.gpr sb = b := (g1 _ (by decide) (by decide)).trans hl.base
-  obtain ⟨s2,e2,v2,g2,rd2,wr2,f2⟩ := ckTable_ok hb1 (by rw [wr1,hl.wr]; exact hw) hal
+  obtain ⟨s2,e2,v2,g2,rd2,wr2,f2⟩ := groupedTable_ok hb1 (by rw [wr1,hl.wr]; exact hw) hal
   have hb2 : s2.gpr sb = b := (g2 _ (by decide) (by decide) (by decide)).trans hb1
   have notMask (k : Nat) (hk : 51 ≤ k) : k ∉ (keyMasks ++ bsKs).map (·.1) := by
     intro hin
