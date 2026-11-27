@@ -160,6 +160,20 @@ theorem allInstrs_fill2 {p : Instr → Bool} {a b e : Prog isa} (ha : a.allInstr
     exact ⟨⟨he.1.1, ih he.1.2⟩, he.2⟩
   | icall i m x y => exact he
 
+/-- What `verifiedScrubbedOfT` needs of code `c` that is the closed code `e` with its
+hole filled by `a`, code without indirect calls, and the implementations of
+its tables in the place of their stubs (`tableStub`): from what is known of
+`a`, and `e`, which the kernel evaluates once. It does not evaluate the code
+of every implementation at each call of every table: each proves what is
+needed of it (`tabCallee`, in `hf`) once. -/
+theorem table_depth_of_tfill {c e a : Prog isa} {ts : List (String × List FnTable)} {m da d : Nat}
+    {N : List String} (hf : TFill m N (Code.fill2 a (.block []) e) c) (hN : ∀ f ∈ N, f ∈ tableFns ts)
+    (ha : sideAll (fun i => !i.writesDit) a = true) (hda : a.aarch64Depth ≤ da)
+    (he : e.allInstrs (fun i => !i.writesDit) = true) (hd : Code.aarch64Depth2 da 0 e ≤ d) :
+    c.all (fun i => !i.writesDit) = true ∧ tablesCall c ts = true ∧ c.aarch64Depth ≤ d :=
+  hf.ok hN (allInstrs_fill2 (allInstrs_of_sideAll ha) rfl he)
+    (Nat.le_trans (Code.aarch64Depth_fill2_le hda (Nat.le_refl 0) e) hd)
+
 /-- Proves `TFill m N a b` of a function's code over stubs (`a`) and over
 implementations (`b`), from hypotheses of each list of implementations
 (`∀ q ∈ ts, tabCallee q.2 m = true ∧ q.1 ∈ N`) and of the code that calls

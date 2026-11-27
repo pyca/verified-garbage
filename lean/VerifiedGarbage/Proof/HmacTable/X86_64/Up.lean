@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.TableFill
+public import VerifiedGarbage.Impl.MdHashTable.X86_64
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
 import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.TableFill
+meta import VerifiedGarbage.Impl.MdHashTable.X86_64
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Sha1.X86_64.AvxBmi.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
@@ -46,9 +48,20 @@ of `w` (`X86_64.Scrub.upCallee`), with 24 bytes of stack. -/
 def HmacUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop :=
   upCallee w.H.hmacInitAny 24 = true ∧ upCallee w.H.updC 24 = true ∧ upCallee w.H.hmacFin 24 = true
 
-/-- `HmacUp` of every variant, evaluated once for every curve. -/
+/-- What the cleanup of a caller through a table of `MdHash` needs of the
+functions of `w` it calls, with 8 bytes of stack. -/
+structure MdUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop where
+  init : upCallee w.H.initC 8 = true
+  upd : upCallee w.H.updC 8 = true
+  fin : upCallee w.H.finC 8 = true
+  comp : upCallee w.H.compC 8 = true
+  dig : upCallee (Impl.MdHashTable.X86_64.digest w.H.P) 8 = true
+
+/-- `HmacUp` and `MdUp` of every variant, evaluated once for every curve. -/
 theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
-    upCallee w.H.hmacInitAny 24 && upCallee w.H.updC 24 && upCallee w.H.hmacFin 24) = true := by
+    upCallee w.H.hmacInitAny 24 && upCallee w.H.updC 24 && upCallee w.H.hmacFin 24 &&
+      upCallee w.H.initC 8 && upCallee w.H.updC 8 && upCallee w.H.finC 8 && upCallee w.H.compC 8 &&
+      upCallee (Impl.MdHashTable.X86_64.digest w.H.P) 8) = true := by
   simp only [Variants.MdHash.X86_64.variants, Variants.MdHash.X86_64.md5Variants,
     Variants.MdHash.X86_64.sha1Variants, Variants.MdHash.X86_64.sha224Variants,
     Variants.MdHash.X86_64.sha256Variants, Variants.MdHash.X86_64.sha384Variants,
@@ -59,6 +72,11 @@ theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
 theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp w := fun w hw => by
   have h := List.all_eq_true.mp variants_hmacUp w hw
   simp only [Bool.and_eq_true] at h
-  exact ⟨h.1.1, h.1.2, h.2⟩
+  exact ⟨h.1.1.1.1.1.1.1, h.1.1.1.1.1.1.2, h.1.1.1.1.1.2⟩
+
+theorem variants_mdUp : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, MdUp w := fun w hw => by
+  have h := List.all_eq_true.mp variants_hmacUp w hw
+  simp only [Bool.and_eq_true] at h
+  exact ⟨h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 end VG.Proof.HmacTable.X86_64

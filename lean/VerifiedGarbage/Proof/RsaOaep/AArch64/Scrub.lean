@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.HashTable.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.MdHashTable.AArch64.Up
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MdHashTable.AArch64.Tables
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
@@ -115,19 +116,44 @@ theorem variants_ok : OK variants := ⟨variants_coh, of_decide_eq_true (by kern
 theorem fnsOf_hashes : Proof.HashTable.AArch64.fnsOf variants = Impl.RsaOaep.AArch64.Fn.fnsOf hashes := by
   kernel_rfl
 
+open Proof.MdHashTable.AArch64 (names MdUp variants_mdUp)
+open Proof.HashTable.AArch64 (stubFns fns_up mem_tableFns)
+
+/-- Decryption's code is its code over stubs, with the tables' functions and
+the RSA operation's code in their places. -/
+theorem decrypt_tfill {vs : List MdHash} (hv : ∀ w ∈ vs, MdUp w) (c : Proof.Rsa.AArch64.CrtImpl) :
+    TFill 1 (names vs) (Code.fill2 (.call c.privPName c.privP) (.block [])
+        (Impl.RsaOaep.AArch64.decryptP stubFns "" (.block [])))
+      (Impl.RsaOaep.AArch64.decryptP (Proof.HashTable.AArch64.fnsOf vs) c.privPName c.privP) := by
+  rw [show Code.fill2 (.call c.privPName c.privP) (.block []) (Impl.RsaOaep.AArch64.decryptP stubFns "" (.block [])) =
+    Impl.RsaOaep.AArch64.decryptP stubFns c.privPName c.privP from by kernel_rfl]
+  obtain ⟨h1, h2, h3⟩ := fns_up hv
+  have hc : inames c.privP = [] := inames_of_noIcall (noIcall_of_sideAll (privP_side c))
+  unfold Impl.RsaOaep.AArch64.decryptP
+  tfill_calls
+
+theorem encrypt_tfill {vs : List MdHash} (hv : ∀ w ∈ vs, MdUp w) (c : Proof.Rsa.AArch64.PublicImpl) :
+    TFill 1 (names vs) (Code.fill2 (.call c.name c.code) (.block [])
+        (Impl.RsaOaep.AArch64.Precomputed.encrypt stubFns "" (.block [])))
+      (Impl.RsaOaep.AArch64.Precomputed.encrypt (Proof.HashTable.AArch64.fnsOf vs) c.name c.code) := by
+  rw [show Code.fill2 (.call c.name c.code) (.block [])
+      (Impl.RsaOaep.AArch64.Precomputed.encrypt stubFns "" (.block [])) =
+    Impl.RsaOaep.AArch64.Precomputed.encrypt stubFns c.name c.code from by kernel_rfl]
+  obtain ⟨h1, h2, h3⟩ := fns_up hv
+  have hc : inames c.code = [] := inames_of_noIcall (noIcall_of_sideAll c.side)
+  unfold Impl.RsaOaep.AArch64.Precomputed.encrypt
+  tfill_calls
+
 /-- `vg_rsa_oaep_decrypt_precomputed` as emitted, cleanup included. -/
 theorem decryptP_scrubbed (c : Proof.Rsa.AArch64.CrtImpl) :
     VerifiedScrubbed target (Impl.RsaOaep.AArch64.Fn.decryptP hashes c.toCrt)
       (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables variants), ("mgf1", tables variants)])
         3536) 32 := by
-  obtain ⟨hdit, ht, hd⟩ := table_depth_of_fill2
-    (c := Impl.RsaOaep.AArch64.decryptP (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.privPName c.privP)
-    (ts := [("hash", tables variants), ("mgf1", tables variants)])
-    (a := .call c.privPName c.privP) (b := .block []) (da := 203) (db := 0) (d := 221)
-    (e := Impl.RsaOaep.AArch64.decryptP (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block [])) (by kernel_rfl)
-    (privP_side c) (privP_depth c) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+  have hf := decrypt_tfill variants_mdUp c
+  rw [fnsOf_hashes] at hf
+  obtain ⟨hdit, ht, hd⟩ := table_depth_of_tfill (d := 221) hf (fun _ h => mem_tableFns h) (privP_side c) (privP_depth c)
+    (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
   have hv := decP_ok variants variants_ok c
   rw [fnsOf_hashes] at hv
   exact verifiedScrubbedOfT (W := 3536) hv (decryptOk _ _) (by decide)
@@ -139,13 +165,10 @@ theorem encrypt_scrubbed (c : Proof.Rsa.AArch64.PublicImpl) :
       (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables variants), ("mgf1", tables variants)]) 304)
       32 := by
-  obtain ⟨hdit, ht, hd⟩ := table_depth_of_fill2
-    (c := Impl.RsaOaep.AArch64.Precomputed.encrypt (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) c.name c.code)
-    (ts := [("hash", tables variants), ("mgf1", tables variants)])
-    (a := .call c.name c.code) (b := .block []) (da := 0) (db := 0) (d := 19)
-    (e := Impl.RsaOaep.AArch64.Precomputed.encrypt (Impl.RsaOaep.AArch64.Fn.fnsOf hashes) "" (.block []))
-    (by kernel_rfl) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_refl _) (by kernel_rfl) (by kernel_rfl)
-    (Nat.le_of_ble_eq_true (by kernel_rfl))
+  have hf := encrypt_tfill variants_mdUp c
+  rw [fnsOf_hashes] at hf
+  obtain ⟨hdit, ht, hd⟩ := table_depth_of_tfill (a := .call c.name c.code) (da := 0) (d := 19) hf
+    (fun _ h => mem_tableFns h) c.side (Nat.le_of_eq c.depth) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
   have hv := enc_ok variants variants_ok c
   rw [fnsOf_hashes] at hv
   exact verifiedScrubbedOfT (W := 304) hv (encryptOk _ _) (by decide)
