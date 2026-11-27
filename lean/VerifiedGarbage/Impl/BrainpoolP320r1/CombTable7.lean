@@ -10,6 +10,9 @@ coordinates are checked against the curve by Proof/BrainpoolP320r1/Comb7.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.BrainpoolP320r1
 
 def comb7T0 : List (Nat × Nat) := nat_pairs% [

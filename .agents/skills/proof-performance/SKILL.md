@@ -292,6 +292,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   order of magnitude slower in every module that uses it
   (`ci/check_lean_speed.py` checks it). Mathlib tactics run interpreted:
   keep `tauto` and similar out of hot proofs.
+* **Large literals the interpreter evaluates:** every `taint_decide` and
+  `materialize_code` evaluates, in the interpreter, each constant its code
+  reaches, such as the comb table in the configuration of a curve. Lean's
+  compiler makes a constant of each closed subterm of a definition, and the
+  interpreter looks up every one of them, by name, at each evaluation: 20 ms
+  for P-521's table, at each of the sixty checks of a module. A module of
+  large literals (tables, code written out) sets
+  `compiler.extract_closed false`, which costs a thirtieth of that.
 * **Register reads after writes:** in symbolic execution never unfold
   `State.setReg` (`write`, `setFlags`, `arithFlags`, `setV`): the registers
   become a function that `simp` re-simplifies under a binder at every

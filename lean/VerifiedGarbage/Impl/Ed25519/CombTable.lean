@@ -14,6 +14,9 @@ The proof checks every entry against the specification's addition.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.Ed25519
 
 /-- `[Y - X, Y + X, 2dT]` of `[(k + 1) 256^j]B` with `Z = 1` (its `2Z` is `2`), for `k < 8`,

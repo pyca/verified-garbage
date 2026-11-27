@@ -15,6 +15,9 @@ group law.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.P521
 
 /-- `[m 2^0]G` for `m = 1 … 64`, affine (table 0). -/

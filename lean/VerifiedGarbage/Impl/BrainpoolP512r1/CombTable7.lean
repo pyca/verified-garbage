@@ -13,6 +13,9 @@ specification's group law.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.BrainpoolP512r1
 
 def comb7T0 : List (Nat × Nat) := nat_pairs% [

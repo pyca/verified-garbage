@@ -502,7 +502,8 @@ lemmas and tactics to use; read it before writing a proof:
   numeral exponents; `open` only what a file uses; prefer simprocs to
   `simp (config := {decide := true})` on expensive facts; put tactic modules that import only core in
   `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`,
-  `nlinarith`) out of hot proofs. One call often takes most of a slow
+  `nlinarith`) out of hot proofs; set `compiler.extract_closed false` in a
+  module of large literals. One call often takes most of a slow
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to

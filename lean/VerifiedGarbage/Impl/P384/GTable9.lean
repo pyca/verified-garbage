@@ -15,6 +15,9 @@ entry against the specification's group law.
 
 @[expose] public section
 
+-- The interpreter looks up each constant extracted from a table at every evaluation of it.
+set_option compiler.extract_closed false
+
 namespace VG.Impl.P384
 
 /-- `[m]G` for `m = 1 … 256`, affine. -/
