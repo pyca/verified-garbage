@@ -497,6 +497,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
   exponents imports it, directly or through `Framework/GetElem.lean`
   (`ci/check_lean_speed.py` checks it).
+* **Names:** to find what a name means the elaborator asks for it, and for
+  each prefix of it, in every enclosing and opened namespace, 5 to 10 µs
+  each: `open` only what a file uses (never `VG`, which encloses it). A name
+  a macro writes costs several times that, so in the modules of `Proof/`
+  `Proof/Framework/FastNames.lean`, which `GetElem` imports, gives such a name
+  the constant its quotation resolved it to, as a term, an operator or a `simp`
+  lemma (a lemma's full name in a macro's `simp only [...]` took a
+  millisecond): a macro needs no `plain_simp_names` for it.
 * **Failing unfolding:** `rfl`, `trivial`, `congr 1`, `exact` and `simpa` on
   goals about symbolic memory or hash values can unfold definitions (down
   to `BitVec` internals) for seconds before failing or succeeding. Close

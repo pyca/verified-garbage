@@ -498,8 +498,8 @@ lemmas and tactics to use; read it before writing a proof:
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
   `with_reducible assumption`; split a precondition of many facts with
   `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for
-  numeral exponents; prefer simprocs to `simp (config := {decide := true})`
-  on expensive facts; put tactic modules that import only core in
+  numeral exponents; `open` only what a file uses; prefer simprocs to
+  `simp (config := {decide := true})` on expensive facts; put tactic modules that import only core in
   `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`,
   `nlinarith`) out of hot proofs. One call often takes most of a slow
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
