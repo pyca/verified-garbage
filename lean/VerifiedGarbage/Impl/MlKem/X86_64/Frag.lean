@@ -386,6 +386,14 @@ def Callee4.hashName (c : Callee4) : String :=
   | some (name, _) => name.replace "vg_mlkem16_sample_ntt4" "vg_mlkem16_sample_hash"
   | none => c.name ++ "_hash"
 
+/-- Reuse the shared three-block hash fragment when available. -/
+def Callee4.hashBlocks (c : Callee4) (b : Nat → Prog isa) (m : Nat) : Prog isa :=
+  if m = 3 then
+    match c.batchH16 with
+    | some h => .call c.hashName h
+    | none => b m
+  else b m
+
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse, none,
   none, none, none⟩
 /-- Four-way sampling with AVX2, with 16-bit coefficients; the functions of
