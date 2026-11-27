@@ -535,4 +535,193 @@ theorem redRows_ok {s : State} {B : Addr} {Z q dM N : Nat} (h : In s B Z q dM) (
   · rw [wa0, wt3, off_inj (by unfold oT; omega_using [hn, fit, hb]) (by unfold oT; omega_using [hn, fit])]
     omega_using []
 
+/-! ## The carry pass -/
+
+/-- After `i` limbs of a carry pass from `dS` to `dD`, from `s₀`. -/
+structure Norm (s₀ s : State) (B : Addr) (dS dD i : Nat) : Prop where
+  out : Outside B dD (8 * i) s₀.mem s.mem
+  val : lv s.mem B dD i + 2 ^ (57 * i) * (s.gpr .t5).toNat = lv s₀.mem B dS i
+  lim : Lim s.mem B dD i L57
+  cy : (s.gpr .t5).toNat ≤ 2 ^ 10
+  t6 : s.gpr .t6 = m57
+
+/-- The registers a step of the carry pass writes. -/
+def normRegs : List Reg := [.s0, .s1, .t5]
+
+theorem norm_arith {x c : BitVec 64} (h : x.toNat + c.toNat < 2 ^ 64) :
+    ((x + c) &&& m57).toNat ≤ L57 ∧ ((x + c) >>> 57).toNat ≤ 2 ^ 10 ∧
+      ((x + c) &&& m57).toNat + 2 ^ 57 * ((x + c) >>> 57).toNat = x.toNat + c.toNat := by
+  obtain e := toNat_add_lt h
+  rw [and_m57, srl57, e]
+  unfold L57
+  omega_using [h]
+
+theorem normStep_ok {s₀ s : State} {B : Addr} {Z dS dD i pS pD k n : Nat} (hs : Scr s B Z) (h : Norm s₀ s B dS dD i)
+    (ha0 : s.gpr .a0 = off B pS) (ha1 : s.gpr .a1 = off B pD) (eS : pS + k = dS + 8 * i) (eD : pD + k = dD + 8 * i)
+    (hi : i < n) (hk : k < 2048) (hS : dS + 8 * n ≤ Z) (hD : dD + 8 * n ≤ Z) (hS8 : dS % 8 = 0) (hD8 : dD % 8 = 0)
+    (sep : dS = dD ∨ dS + 8 * n ≤ dD ∨ dD + 8 * n ≤ dS) (lS : LimF s₀.mem B dS n fun _ => 2 ^ 64 - 2 ^ 10 - 1) :
+    WP isa (.block (normStep k)) s fun t => Norm s₀ t B dS dD (i + 1) ∧ Keep normRegs s t := by
+  have hn := hs.nowrap
+  obtain l : (word s₀.mem B (dS + 8 * i)).toNat ≤ 2 ^ 64 - 2 ^ 10 - 1 := lS i hi
+  obtain cy := h.cy
+  obtain rd : word s.mem B (dS + 8 * i) = word s₀.mem B (dS + 8 * i) :=
+    h.out.word (by omega_using [sep, hi]) (by omega_using [hn, hS, hi])
+  obtain ⟨a1, a2, a3⟩ := norm_arith (x := word s₀.mem B (dS + 8 * i)) (c := s.gpr .t5) (by omega_using [l, cy])
+  obtain r : WP isa (.block (normStep k)) s fun t =>
+      (t.mem = s.mem.writeW (off B (dD + 8 * i)) ((word s₀.mem B (dS + 8 * i) + s.gpr .t5) &&& m57) ∧
+        t.gpr .t5 = (word s₀.mem B (dS + 8 * i) + s.gpr .t5) >>> 57) ∧ Keep normRegs s t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    unfold normStep
+    brun [ha0, ha1, eS, eD, hk, h.t6, hs.ld (show dS + 8 * i + 8 ≤ Z by omega_using [hS, hi]),
+      hs.st (show dD + 8 * i + 8 ≤ Z by omega_using [hD, hi]),
+      hs.al8 (show dS + 8 * i + 8 ≤ Z by omega_using [hS, hi]) (by omega_using [hS8]),
+      hs.al8 (show dD + 8 * i + 8 ≤ Z by omega_using [hD, hi]) (by omega_using [hD8]),
+      show s.mem.readW (off B (dS + 8 * i)) 64 = word s₀.mem B (dS + 8 * i) from rd]
+  refine WP.mono r fun t ⟨⟨mt, t5⟩, k⟩ => ⟨⟨?_, ?_, ?_, by rw [t5]; exact a2, (k.gpr (by decide)).trans h.t6⟩, k⟩
+  · rw [mt]
+    exact (h.out.mono (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW_outside _ B _ (by omega_using [hn, hD, hi])).mono (by omega_using []) (by omega_using []))
+  · obtain v := h.val
+    rw [lv, lv, (show lv t.mem B dD i = lv s.mem B dD i by
+      rw [mt]; exact (writeW_outside _ B _ (by omega_using [hn, hD, hi])).lv (by omega_using []) (by omega_using [hn, hD, hi])),
+      mt, word_writeW_self, t5, ← v, Nat.mul_succ, Nat.pow_add, Nat.mul_assoc, Nat.add_assoc, Nat.add_assoc, ← Nat.mul_add,
+      ← Nat.mul_add, a3, Nat.add_comm (s.gpr .t5).toNat]
+  · refine LimF.append (j := i) (k := 1) ?_ ?_
+    · rw [mt]
+      exact (writeW_outside _ B _ (by omega_using [hn, hD, hi])).lim (by omega_using []) (by omega_using [hn, hD, hi]) h.lim
+    · intro c hc
+      obtain rfl : c = 0 := by omega_using [hc]
+      rw [Nat.mul_zero, Nat.add_zero, mt, word_writeW_self]
+      exact a1
+
+theorem norm_ok {s : State} {B : Addr} {Z dS dD c : Nat} (hs : Scr s B Z) (ha0 : s.gpr .a0 = off B dS)
+    (ha1 : s.gpr .a1 = off B dD) (h3 : s.gpr .t3 = off B (dS + 24 * c)) (hc : 0 < c) (hS : dS + 24 * c < Z)
+    (hD : dD + 24 * c ≤ Z) (hS8 : dS % 8 = 0) (hD8 : dD % 8 = 0)
+    (sep : dS = dD ∨ dS + 24 * c ≤ dD ∨ dD + 24 * c ≤ dS) (lS : LimF s.mem B dS (3 * c) fun _ => 2 ^ 64 - 2 ^ 10 - 1) :
+    WP isa norm s fun t => (Outside B dD (24 * c) s.mem t.mem ∧
+      (∃ k, lv t.mem B dD (3 * c) + 2 ^ (171 * c) * k = lv s.mem B dS (3 * c)) ∧ Lim t.mem B dD (3 * c) L57) ∧
+        Keep ([.t6, .a0, .a1] ++ normRegs) s t := by
+  have hn := hs.nowrap
+  unfold norm
+  obtain r0 : WP isa (.block (mask57 ++ ([.li .t5 0] : List Instr))) s fun t =>
+      (t.gpr .t6 = m57 ∧ t.gpr .t5 = 0#64 ∧ t.mem = s.mem) ∧ Keep [.t6, .t5] s t := by
+    rw [WP.block_append_iff]
+    refine WP.mono (mask57_ok s) fun u ⟨⟨u6, um⟩, ku⟩ => ?_
+    obtain r : WP isa (.block [.li .t5 0]) u fun t => (t.gpr .t5 = 0#64 ∧ t.mem = u.mem) ∧ Keep [.t5] u t :=
+      WP.keep _ (by brun [exec_li]) (by rfl) (by rfl)
+    exact WP.mono r fun t ⟨⟨t5, tm⟩, k⟩ => ⟨⟨(k.gpr (by decide)).trans u6, t5, tm.trans um⟩, (ku.trans k).mono (by decide)⟩
+  refine WP.seq (WP.mono r0 fun s₁ ⟨⟨t6, t5, m1⟩, k1⟩ => ?_)
+  refine WP.mono (ptr_loop (a := .a0) (e := .t3) (n := c) hc (fun b t => Norm s t B dS dD (3 * b) ∧ t.gpr .a0 = off B (dS + 24 * b) ∧
+      t.gpr .a1 = off B (dD + 24 * b) ∧ Keep ([.t6, .a0, .a1] ++ normRegs) s t) (fun b hb t ⟨ht, t0, t1, kt⟩ => ?_)
+    ⟨⟨by rw [m1]; exact Outside.refl _ _ _ _, by rw [t5, m1]; rfl, fun i hi => absurd hi (by omega_using []), by rw [t5]; decide, t6⟩,
+      (k1.gpr (by decide)).trans ha0, (k1.gpr (by decide)).trans ha1, k1.mono (by decide)⟩)
+    fun t ⟨ht, _, _, kt⟩ => ⟨⟨ht.out.mono (Nat.le_refl _) (by omega_using []), ⟨(t.gpr .t5).toNat, ?_⟩, ht.lim⟩, kt⟩
+  · rw [show (List.range 3).flatMap (fun k => normStep (8 * k)) = normStep 0 ++ (normStep 8 ++ normStep 16) by rfl]
+    simp only [List.append_assoc]
+    rw [WP.block_append_iff]
+    refine WP.mono (normStep_ok (n := 3 * c) (hs.congr kt.2.2) ht t0 t1 (by omega_using []) (by omega_using []) (by omega_using [hb]) (by decide)
+      (by omega_using [hS]) (by omega_using [hD]) hS8 hD8 (by omega_using [sep]) lS) fun u ⟨hu, ku⟩ => ?_
+    rw [WP.block_append_iff]
+    refine WP.mono (normStep_ok (n := 3 * c) (hs.congr (kt.trans ku).2.2) hu ((ku.gpr (by decide)).trans t0)
+      ((ku.gpr (by decide)).trans t1) (by omega_using []) (by omega_using []) (by omega_using [hb]) (by decide)
+      (by omega_using [hS]) (by omega_using [hD]) hS8 hD8 (by omega_using [sep]) lS) fun v ⟨hv, kv⟩ => ?_
+    obtain kuv := ku.trans kv
+    rw [WP.block_append_iff]
+    refine WP.mono (normStep_ok (n := 3 * c) (hs.congr (kt.trans kuv).2.2) hv ((kuv.gpr (by decide)).trans t0)
+      ((kuv.gpr (by decide)).trans t1) (by omega_using []) (by omega_using []) (by omega_using [hb]) (by decide)
+      (by omega_using [hS]) (by omega_using [hD]) hS8 hD8 (by omega_using [sep]) lS) fun w ⟨hw, kw⟩ => ?_
+    obtain kuw := kuv.trans kw
+    obtain fin : WP isa (.block [.addi .a0 .a0 24, .addi .a1 .a1 24]) w fun v =>
+        (v.gpr .a0 = off B (dS + 24 * b + 24) ∧ v.gpr .a1 = off B (dD + 24 * b + 24) ∧ v.mem = w.mem) ∧
+          Keep [.a0, .a1] w v := by
+      refine WP.keep _ ?_ (by rfl) (by rfl)
+      brun [(kuw.gpr (r := .a0) (by decide)).trans t0, (kuw.gpr (r := .a1) (by decide)).trans t1]
+    refine WP.mono fin fun x ⟨⟨x0, x1, xm⟩, kx⟩ => ⟨⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩, ?_⟩
+    · rw [xm]; exact hw.out
+    · rw [xm, kx.gpr (by decide)]; exact hw.val
+    · rw [xm]; exact hw.lim
+    · rw [kx.gpr (by decide)]; exact hw.cy
+    · rw [kx.gpr (by decide)]; exact hw.t6
+    · rw [x0, Nat.mul_succ, Nat.add_assoc]
+    · rw [x1, Nat.mul_succ, Nat.add_assoc]
+    · exact Keep.trans' kt ((kuw.trans kx).mono (by decide))
+    · rw [x0, kx.gpr (by decide), kuw.gpr (by decide), kt.gpr (by decide), h3,
+        off_inj (by omega_using [hn, hS, hb]) (by omega_using [hn, hS])]
+      omega_using []
+  · rw [← ht.val, show 57 * (3 * c) = 171 * c by omega_using []]
+
+/-! ## Zeroing `T` -/
+
+theorem lv_zero {m : Mem} {B : Addr} {d k : Nat} (h : Lim m B d k 0) : lv m B d k = 0 := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [lv, ih fun i hi => h i (by omega_using [hi]), Nat.eq_zero_of_le_zero (h k (Nat.lt_succ_self k))]
+    rfl
+
+theorem zeroT57_ok {s : State} {B : Addr} {Z q dM : Nat} (h : In s B Z q dM) :
+    WP isa zeroT57 s fun t => (Outside B (oT q dM) (144 * q) s.mem t.mem ∧ Lim t.mem B (oT q dM) (18 * q) 0) ∧
+      Keep [.t2, .t3, .t4, .s0] s t := by
+  obtain fit := h.fit
+  obtain dM8 := h.dM8
+  obtain q6 := h.q6
+  have hn := h.scr.nowrap
+  unfold zeroT57
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (limbs_ok h) fun s₁ ⟨⟨x2, m1⟩, k1⟩ => ?_
+  obtain r : WP isa (.block [.shift .sll .d .t2 .t2 1, .add .t4 .s5 .t2, .addi .t3 .s5 0, .li .s0 0]) s₁ fun t =>
+      (t.gpr .t4 = off B (oT q dM + 144 * q) ∧ t.gpr .t3 = off B (oT q dM) ∧ t.gpr .s0 = 0#64 ∧ t.mem = s₁.mem) ∧
+        Keep [.t2, .t3, .t4, .s0] s₁ t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    obtain e : BitVec.ofNat 64 (72 * q) <<< 1 = BitVec.ofNat 64 (144 * q) := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
+      omega_using []
+    brun [x2, (k1.gpr (r := .s5) (by decide)).trans h.s5, e, exec_li, BitVec.add_zero]
+  refine WP.mono r fun s₂ ⟨⟨t4, t3, s0, m2⟩, k2⟩ => ?_
+  obtain k12 := k1.trans k2
+  refine WP.mono (ptr_loop (a := .t3) (e := .t4) (n := 6 * q) (by have := h.q1; omega_using [this]) (fun b t => t.gpr .t3 = off B (oT q dM + 24 * b) ∧
+      Outside B (oT q dM) (24 * b) s.mem t.mem ∧ Lim t.mem B (oT q dM) (3 * b) 0 ∧ t.gpr .s0 = 0#64 ∧
+      t.gpr .t4 = off B (oT q dM + 144 * q) ∧
+      Keep [.t2, .t3, .t4, .s0] s t) (fun b hb t ⟨h3, ho, hl, h0, h4, kt⟩ => ?_)
+    ⟨t3, by rw [m2, m1]; exact Outside.refl _ _ _ _, fun i hi => absurd hi (by omega_using []), s0, t4, k12.mono (by decide)⟩)
+    fun t ⟨_, ho, hl, _, _, kt⟩ => ⟨⟨ho.mono (Nat.le_refl _) (by omega_using []), (show 18 * q = 3 * (6 * q) by omega_using []) ▸ hl⟩, kt⟩
+  obtain hs := h.scr.congr kt.2.2
+  obtain b1 : oT q dM + 24 * b + 24 ≤ Z := by unfold oT; omega_using [fit, hb]
+  obtain b8 : (oT q dM + 24 * b) % 8 = 0 := by unfold oT; omega_using [dM8]
+  obtain r : WP isa (.block [.store .d .s0 .t3 0, .store .d .s0 .t3 8, .store .d .s0 .t3 16, .addi .t3 .t3 24]) t fun u =>
+      (u.mem = ((t.mem.writeW (off B (oT q dM + 24 * b)) 0#64).writeW (off B (oT q dM + 24 * b + 8)) 0#64).writeW
+        (off B (oT q dM + 24 * b + 16)) 0#64 ∧ u.gpr .t3 = off B (oT q dM + 24 * b + 24)) ∧ Keep [.t3] t u := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [h3, h0, hs.st (show oT q dM + 24 * b + 8 ≤ Z by omega_using [b1]),
+      hs.st (show oT q dM + 24 * b + 8 + 8 ≤ Z by omega_using [b1]),
+      hs.st (show oT q dM + 24 * b + 16 + 8 ≤ Z by omega_using [b1]),
+      hs.al8 (show oT q dM + 24 * b + 8 ≤ Z by omega_using [b1]) b8,
+      hs.al8 (show oT q dM + 24 * b + 8 + 8 ≤ Z by omega_using [b1]) (by omega_using [b8]),
+      hs.al8 (show oT q dM + 24 * b + 16 + 8 ≤ Z by omega_using [b1]) (by omega_using [b8])]
+  refine WP.mono r fun u ⟨⟨um, u3⟩, ku⟩ => ?_
+  obtain ou : Outside B (oT q dM + 24 * b) 24 t.mem u.mem := by
+    rw [um]
+    exact (((writeW_outside _ B _ (by omega_using [hn, b1])).mono (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW_outside _ B _ (by omega_using [hn, b1])).mono (by omega_using []) (by omega_using []))).trans
+      ((writeW_outside _ B _ (by omega_using [hn, b1])).mono (by omega_using []) (by omega_using []))
+  refine ⟨⟨by rw [u3, Nat.mul_succ, Nat.add_assoc], (ho.mono (Nat.le_refl _) (by omega_using [])).trans
+    (ou.mono (by omega_using []) (by omega_using [])), ?_, (ku.gpr (by decide)).trans h0, (ku.gpr (by decide)).trans h4,
+    Keep.trans' kt (ku.mono (by decide))⟩, ?_⟩
+  · refine LimF.append (j := 3 * b) (k := 3) (ou.lim (by omega_using []) (by omega_using [hn, b1]) hl) ?_
+    rw [show oT q dM + 8 * (3 * b) = oT q dM + 24 * b by omega_using []]
+    intro i hi
+    rw [um]
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega_using [hi]) with rfl | rfl | rfl
+    · rw [show oT q dM + 24 * b + 8 * 0 = oT q dM + 24 * b by omega_using [], wd_ne _ B _ (by omega_using []) (by omega_using [hn, b1]) (by omega_using [hn, b1]),
+        wd_ne _ B _ (by omega_using []) (by omega_using [hn, b1]) (by omega_using [hn, b1]), word_writeW_self]
+      exact Nat.le_refl 0
+    · rw [Nat.mul_one, wd_ne _ B _ (by omega_using []) (by omega_using [hn, b1]) (by omega_using [hn, b1]), word_writeW_self]
+      exact Nat.le_refl 0
+    · rw [word_writeW_self]
+      exact Nat.le_refl 0
+  · rw [u3, ku.gpr (by decide), h4, off_inj (by unfold oT; omega_using [hn, fit, hb]) (by unfold oT; omega_using [hn, fit])]
+    omega_using []
+
 end VG.Proof.Bignum.RISCV64.Pow57
