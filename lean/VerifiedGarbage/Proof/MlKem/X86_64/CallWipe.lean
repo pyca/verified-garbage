@@ -208,6 +208,18 @@ theorem xdLe_batchHM {k m : Nat} {b : Prog isa} (B : BatchHMOk16 m b) : xdLe k b
 theorem xdLe_batchP {k N₀ m : Nat} {b : Prog isa} (B : BatchPOk16 N₀ m b) : xdLe k b = true :=
   xdLe_of_le (by rw [B.xd]; exact Nat.zero_le _)
 
+/-- The shared hash leaf fits the caller's existing return-address budget. -/
+theorem xdLe_hashBlocks {k : Nat} (v : Sample4Impl) (b : Nat → Prog isa)
+    (B : ∀ m ≤ 3, BatchHMOk16 m (b m)) (m : Nat) (hm : m ≤ 3) (hk : 8 ≤ k) :
+    xdLe k (v.callee.hashBlocks b m) = true := by
+  by_cases h3 : m = 3
+  · subst m
+    cases hh : v.callee.batchH16 with
+    | none => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using (xdLe_batchHM (k := k) (B 3 hm))
+    | some h => simpa only [Callee4.hashBlocks, ↓ite_eq_left, hh] using
+        xdLe_batch_call (name := v.callee.hashName) (v.batchH16 h hh) hk
+  · simpa only [Callee4.hashBlocks, ite_eq_right h3] using (xdLe_batchHM (k := k) (B m hm))
+
 /-- As `s4_xd`, for key generation with the fragments `b` and `p` (`B`, `P`)
 and the halves of K-PKE key generation (`hR`). -/
 tactic_template "kgh_xd " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
@@ -215,6 +227,7 @@ tactic_template "kgh_xd " v:ident b:ident p:ident B:ident P:ident hR:ident : tac
     | (closedH_in $v $b $p; decide +kernel)
     | with_reducible exact xdLe_block _
     | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
+    | with_reducible exact xdLe_hashBlocks $v $b $B _ (by decide) (by decide)
     | with_reducible apply xdLe_batchHM ($B _ (by decide)) | with_reducible apply xdLe_batchP ($P (_, _) (by decide))
     | with_reducible apply xdLe_callee ($hR).ntt | with_reducible apply xdLe_callee ($hR).row
     | (code_whnf; closedH_in $v $b $p; decide +kernel)
