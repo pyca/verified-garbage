@@ -146,6 +146,20 @@ theorem scrubAll_spSafe {rb W : Nat} {c : Prog isa} (h : c.all (fun i => !isa.wr
   simp only [scrubAll, wipeBelow, Code.all, h, zeroRegs_all, tail_all, Bool.true_and, Bool.and_true]
   exact wipe_all _
 
+/-- `c` writes `esp` only in its frames and calls, from `NoSp c`. -/
+theorem writesSp_of_noSp {c : Prog isa} (h : NoSp c) : c.all (fun i => !isa.writesSp i) = true := by
+  refine Code.all_of_allInstrs ?_
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  have he : i.dst = Taint.dst i := by cases i <;> rfl
+  show (!(i.dst == some Reg.esp)) = true
+  rw [he, Bool.not_eq_true', beq_eq_false_iff_ne]
+  exact Taint.dst_ne_of_clobbers (h i hi)
+
+/-- The code as emitted, `c` and then its cleanup, for `sp_safe`. -/
+theorem spSafe_scrubAll {rb W : Nat} {c : Prog isa} (h : NoSp c) : SpSafeCode (scrubAll rb W c) :=
+  ⟨scrubAll_spSafe (writesSp_of_noSp h)⟩
+
 /-- `postOut_of_local`, for a postcondition that reads the memory on return
 only within the buffers where the precondition holds (one that reads an
 output buffer by a length the precondition equates with the buffer's). -/

@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Hash
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 
 /-!
 # ECDSA on x86 (32-bit), without secret residue
@@ -93,5 +96,27 @@ theorem signSide_of {R : Rfc6979.X86.RfcCurve} {tries : Nat} {vs : List HVar}
     {ts : List (String × List FnTable)} {W : Nat}
     (h : scrubFSide (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf R.E R.big R.sh R.coreN R.coreC tries vs)) ts W = true) :
     scrubFSide (Rfc6979.X86.signCodeT R tries vs) ts W = true := h
+
+open Rfc6979.X86 in
+/-- `vg_ecdsa_<curve>_sign` writes `esp` only in its frames and calls, if the
+core it calls does not. -/
+theorem signCode_all {E : Impl.Ecdsa.X86.Cfg} {big : Bool} {sh : Nat} {coreN : String} {coreC : Prog isa}
+    {tries : Nat} {vs : List HVar} (hT : RfcT (cfgC E big sh)) (h : NoSp coreC) :
+    (Impl.Ecdsa.Rfc6979.X86.signCode (cfgOf E big sh coreN coreC tries vs)).all
+      (fun i => !isa.writesSp i) = true := by
+  refine Code.all_of_allInstrs ?_
+  have h := body_okP (c := cfgOf E big sh coreN coreC tries vs) hT (fnsOk_of vs) (okP_of_noSp h)
+  simp only [OkP, Proof.Pbkdf2.Whole.X86.clobbers_esp] at h
+  simp only [Impl.Ecdsa.Rfc6979.X86.signCode, Impl.Ecdsa.Rfc6979.X86.Cfg.sign, Code.allInstrs, h]
+  rfl
+
+/-- `vg_ecdsa_<curve>_verify` writes `esp` only in its frames and calls, if the
+verification it runs does not. -/
+theorem verifyHash_all {len : Nat} {wide : Bool} {core : Prog isa} (h : NoSp core) :
+    (Impl.Ecdsa.X86.VerifyHash.verifyHash len wide core).all (fun i => !isa.writesSp i) = true := by
+  have h₁ := writesSp_of_noSp (Ecdsa.Verify.X86.Hash.hashed_noSp (len := len) (wide := wide) h)
+  simp only [Impl.Ecdsa.X86.VerifyHash.verifyHash, Impl.StackScratch.X86.withStackScratch, Code.all, h₁,
+    Bool.and_true]
+  decide
 
 end VG.Proof.Ecdsa.X86.Scrub

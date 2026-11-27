@@ -25,12 +25,15 @@ namespace VG.Proof.Ecdh.X86.Secp256k1.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
+instance : SpSafeCode Impl.Ecdh.X86.Fn.exchangeSecp256k1 := spSafe_scrubAll Proof.Ecdh.X86.Secp256k1.ecdh_sp.1
+
 /-- `vg_ecdh_secp256k1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeSecp256k1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86.abi 28) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.Secp256k1.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeSecp256k1
-      verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified hL hI }
+      verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified hL hI
+      spSafe := writesSp_of_noSp Proof.Ecdh.X86.Secp256k1.ecdh_sp.1 }
     (exchangeOut _ _ [])
 
 end VG.Proof.Ecdh.X86.Secp256k1.Scrub
