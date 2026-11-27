@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.ZMask
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

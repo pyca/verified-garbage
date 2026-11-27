@@ -2,17 +2,18 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.RISCV64.Domain
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.ZMask
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PubSave
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 public import VerifiedGarbage.Proof.Ffdh.Lead
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Ffdh.RISCV64.GenerateKey.Body
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubSan
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
@@ -26,6 +27,10 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Impl.Ffdh.RISCV64.Domain
 
 /-!
 # FFDH's domain checks on RISC-V: the pieces
@@ -536,7 +541,7 @@ theorem sg1_ok {x : DD} {v : Nat} {s : State} (h : PV x s) (hv : wordsVal s.mem 
 
 /-- The power: `v^q mod p` into array 4. -/
 theorem sg2_ok {x : DD} {v : Nat} {s : State} (h : SG1 x v s) (hq : x.L = 3 * x.k) :
-    WP isa ModExp.powWin s fun t =>
+    WP isa ModExp.powWinFn s fun t =>
       (PV x t ∧ wordsVal t.mem x.S (slot x.w 4) x.w = v ^ x.q % x.p) ∧ DArr x s.mem t.mem := by
   obtain ⟨⟨hb, hp, hv'⟩, h4, hrr, hinv, h9, h10⟩ := h
   have hc := hb.ctx
@@ -559,11 +564,11 @@ theorem sg2_ok {x : DD} {v : Nat} {s : State} (h : SG1 x v s) (hq : x.L = 3 * x.
     rw [hbs]
     show _ = Spec.Rsa.os2ip ((x.db.drop (2 * x.k)).take x.k)
     rw [← VG.Proof.Ffdh.os2ip_drop_lead ((x.db.drop (2 * x.k)).take x.k), List.drop_take, List.drop_drop]
-  refine WP.mono (Win.powWin_ok (D := off x.D (2 * x.k + x.ld)) hc.scr (by omega_arith) hw' z24 hb.a7 hb.s5 hb.t0
+  refine WP.mono (Win.powWinCall_ok (D := off x.D (2 * x.k + x.ld)) hc.scr (by omega_arith) hw' z24 hb.a7 hb.s5 hb.t0
     hinv (by rw [hp]; omega_arith) (by rw [hp]; exact hf.1) (by rw [hrr, hp]; exact Nat.mod_lt _ (by omega_arith))
     (by rw [h9]; show _ = off (off x.D (2 * x.k + x.ld)) 0; rw [off_off, Nat.add_zero]) h10 (by omega_arith)
     (by omega_arith) hrdq hsepq)
-    fun t ⟨⟨hpow, ot⟩, kt⟩ => ?_
+    fun t ⟨⟨hpow, ot, _⟩, kt⟩ => ?_
   have art : DArr x s.mem t.mem := darr_of ot (by omega_arith) (by omega_arith)
   refine ⟨⟨⟨hb.keep kt art, by rw [Outside.wordsVal ot (by omega_arith) (by omega_arith)]; exact hp, hv'⟩, ?_⟩, art⟩
   rw [hpow (by rw [hrr, hp]), h4, hp, hbq]
@@ -792,31 +797,6 @@ theorem qDiv_ok {x : DD} {s : State} (h : PV x s) (hf : QF x) :
 
 /-! ## The front -/
 
-/-- The working space's address into `t0` and the callee-saved registers
-saved there: only its header's words 16–27 change. -/
-theorem pre_ok (rS : Reg) {s : State} {S : Addr} {Z : Nat} (hS : s.gpr rS = S) (hs : Scr s S Z) (hZ : 256 ≤ Z) :
-    WP isa (.block (([.addi .t0 rS 0] : List Instr) ++ PublicChecked.saveRegs)) s fun t =>
-      t.gpr .s6 = S ∧ (∀ i < 12, t.mem.readW (off (Pub.savW S) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
-        Keep [.t0, .s6] s t ∧ Outside S 0 256 s.mem t.mem := by
-  have hn := hs.nowrap
-  refine WP.block_append (WP.mono (WP.keep [.t0] (Q := fun t => t.gpr .t0 = S ∧ t.mem = s.mem)
-    (by brun [hS, BitVec.add_zero]) (by rfl) (by rfl)) fun s₁ ⟨⟨a0, m1⟩, k1⟩ => ?_)
-  have e : ∀ i, off (Pub.savW S) (8 * i) = off S (128 + 8 * i) := fun i => by rw [off, off, Offset.add_add]
-  have hin : ∀ i < 12, InRegions s₁.wr (off (Pub.savW (s₁.gpr .t0)) (8 * i)) 8 := fun i hi => by
-    rw [a0, e]; exact (hs.congr k1.2.2).st (by omega_arith)
-  refine WP.mono (Pub.save_ok s₁ hin (fun i hi => by rw [a0]; exact Pub.sav_al hs.al (by omega_arith) hi))
-    fun t hS => ⟨hS.s6.trans a0, fun i hi => ?_, (k1.trans hS.keep).mono (by decide), fun y hy => ?_⟩
-  · rw [← a0, hS.saved i hi, k1.gpr fun h => Pub.saved_ne_t0 i hi (List.mem_singleton.mp h)]
-  · rw [← m1]
-    refine hS.frame y fun r hr hc => ?_
-    rw [List.mem_singleton] at hr
-    subst hr
-    rw [a0] at hc
-    have hc' := (Offset.sub_base (n := 96) (k := 256) S (d := 128) (by omega_arith)) _ hc
-    simp only [Region.Contains] at hc'
-    simp only [ofs] at hy
-    omega_arith
-
 /-- A register into the header's word at `d`. -/
 theorem sth_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 128 ≤ Z) (h6 : s.gpr .s6 = S) (r : Reg)
     {d : Nat} (hd : d + 8 ≤ 128) (hd8 : d % 8 = 0) :
@@ -870,36 +850,185 @@ theorem retMask_ok {x : DD} {s : State} (h : DBase x s) {c : Prop} [Decidable c]
 theorem ofNat_toNat' (v : BitVec 64) : BitVec.ofNat 64 v.toNat = v := by
   rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
-theorem dpres_saved : ∀ r ∈ preserved, ∃ i < 12, r = PublicChecked.saved i := by decide
-
-/-- Every register but `ra`. -/
-def dNotRa : List Reg :=
-  [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10,
-    .s11, .t3, .t4, .t5, .t6]
-
 theorem ret_bv32 (c : Prop) [Decidable c] :
     ((BitVec.ofNat 64 (if c then 1 else 0)).setWidth 32).toNat = if c then 1 else 0 := by
   split <;> rfl
 
-/-- `restore`, the arrays changed since the front. -/
-theorem dRestore_ok {x : DD} {s₀ t : State} (h : DBase x t)
-    (hsv : ∀ i < 12, word t.mem x.S (128 + 8 * i) = s₀.gpr (PublicChecked.saved i)) :
-    WP isa (.block PublicChecked.restore) t fun u =>
-      (∀ r ∈ preserved, u.gpr r = s₀.gpr r) ∧ u.gpr .a0 = t.gpr .a0 := by
-  have hc := h.ctx
-  have hn := hc.scr.nowrap
-  have hZ := hc.hZ
-  have h24 : 256 ≤ slot x.w 24 := by unfold slot hdrBytes; omega_arith
-  have e : ∀ i, off (Pub.savW x.S) (8 * i) = off x.S (128 + 8 * i) := fun i => by rw [off, off, Offset.add_add]
-  refine WP.mono (Pub.restore_ok t (S := x.S) (v := fun i => s₀.gpr (PublicChecked.saved i)) h.s6
-    (fun i hi => by show InRegions t.wr (off (Pub.savW x.S) (8 * i)) 8; rw [e]; exact hc.scr.st (by omega_arith))
-    (fun i hi => Pub.sav_al hc.scr.al (by omega_arith) hi)
-    (fun i hi => by show t.mem.readW (off (Pub.savW x.S) (8 * i)) 64 = _; rw [e]; exact hsv i hi))
-    fun u ⟨urs, uot, _, _, _, _⟩ => ⟨fun r hr => ?_, uot .a0 (by decide)⟩
-  obtain ⟨i, hi, rfl⟩ := dpres_saved r hr
-  exact urs i hi
-
 theorem beq_mask {s : State} {c : Bool} (h : s.gpr .s9 = bmask c) : (s.gpr .s9 == 0) = !c := by
   rw [h, bmask_beq]
+
+end VG.Proof.Ffdh.RISCV64.Domain
+
+/-!
+## FFDH's domain checks on RISC-V: the pieces in constant time
+
+As for the exchange (`Proof/Ffdh/RISCV64/CT.lean`): two runs with the same
+public data are related at each cut by `Two`, both satisfying a predicate for
+it. Each piece of code shared by `vg_ffdh_check_public` and
+`vg_ffdh_check_domain` is checked once by the taint analysis, from the
+registers a predicate fixes (`Pins`); `two_ite` relates a branch on a
+register that a predicate fixes as a function of the data.
+-/
+
+namespace VG.Proof.Ffdh.RISCV64.Domain
+
+open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64
+  VG.Impl.Ffdh.RISCV64 VG.Impl.Ffdh.RISCV64.Domain
+open VG.Proof.Bignum.RISCV64
+open VG.Proof.Bignum (slot)
+open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
+
+/-! ## Pins -/
+
+theorem pins_base {α : Type} {Φ : α → State → Prop} (f : α → DD) (h : ∀ a s, Φ a s → DBase (f a) s) :
+    Pins Φ dbaseRegs :=
+  fun a _ _ h₁ h₂ => DBase.pins (h a _ h₁) (h a _ h₂)
+
+theorem pins_one {α : Type} {Φ : α → State → Prop} (r : Reg) (f : α → BitVec 64)
+    (h : ∀ a s, Φ a s → s.gpr r = f a) : Pins Φ [r] := by
+  intro a s₁ s₂ h₁ h₂ r' hr
+  rw [List.mem_singleton] at hr
+  subst hr
+  rw [h a _ h₁, h a _ h₂]
+
+theorem pins_cons {α : Type} {Φ : α → State → Prop} {r : Reg} {rs : List Reg} (h₁ : Pins Φ [r]) (h₂ : Pins Φ rs) :
+    Pins Φ (r :: rs) := by
+  intro a s₁ s₂ g₁ g₂ r' hr
+  rcases List.mem_cons.mp hr with rfl | hr
+  · exact h₁ a _ _ g₁ g₂ _ List.mem_cons_self
+  · exact h₂ a _ _ g₁ g₂ _ hr
+
+theorem pins_and {α : Type} {Φ Ψ : α → State → Prop} {rs : List Reg} (h : Pins Φ rs) :
+    Pins (fun a s => Φ a s ∧ Ψ a s) rs :=
+  fun a _ _ h₁ h₂ => h a _ _ h₁.1 h₂.1
+
+theorem pins_nil {α : Type} {Φ : α → State → Prop} : Pins Φ ([] : List Reg) :=
+  fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil
+
+/-- A branch on whether `r` is zero, which `Φ` fixes as `b`. -/
+theorem two_ite {α : Type} {Φ : α → State → Prop} {r : Reg} (b : α → Bool)
+    (hb : ∀ a s, Φ a s → (s.gpr r == 0) = b a) {t e : Prog isa} {Q : State → State → Prop}
+    (ht : RelCT isa (Two fun a s => Φ a s ∧ b a = true) t Q)
+    (he : RelCT isa (Two fun a s => Φ a s ∧ b a = false) e Q) :
+    RelCT isa (Two Φ) (.ite (.zero r) t e) Q := by
+  refine RelCT.ite (fun s₁ s₂ ⟨a, h₁, h₂, _⟩ => by rw [Steps.eval_zero, Steps.eval_zero, hb a _ h₁, hb a _ h₂])
+    (ht.mono (fun s₁ s₂ ⟨⟨a, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
+    (he.mono (fun s₁ s₂ ⟨⟨a, h₁, h₂, hsp⟩, hc⟩ => ?_) fun _ _ h => h)
+  · rw [Steps.eval_zero, hb a _ h₁, Option.some.injEq] at hc
+    exact ⟨a, ⟨h₁, hc⟩, ⟨h₂, hc⟩, hsp⟩
+  · rw [Steps.eval_zero, hb a _ h₁, Option.some.injEq] at hc
+    exact ⟨a, ⟨h₁, hc⟩, ⟨h₂, hc⟩, hsp⟩
+
+/-! ## The shared pieces, by the taint analysis -/
+
+section
+variable {α : Type} {Φ : α → State → Prop}
+
+theorem loadN_rel (h : Pins Φ (.s7 :: .s8 :: dbaseRegs)) :
+    RelCT isa (Two Φ) Precompute.loadN fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem check1_rel (h : Pins Φ (.s7 :: .s8 :: dbaseRegs)) :
+    RelCT isa (Two Φ) (.block Precompute.check1) fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem check2_rel (h : Pins Φ (.s8 :: .t4 :: dbaseRegs)) :
+    RelCT isa (Two Φ) Precompute.check2 fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem range_rel (h : Pins Φ (.a6 :: dbaseRegs)) :
+    RelCT isa (Two Φ) range fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem hasQ_rel (h : Pins Φ dbaseRegs) :
+    RelCT isa (Two Φ) (.block hasQ) fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem sgA_rel (h : Pins Φ dbaseRegs) :
+    RelCT isa (Two Φ) (.seq r2 (.block qScan)) fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem qSkip_rel (h : Pins Φ (.t3 :: .a4 :: dbaseRegs)) :
+    RelCT isa (Two Φ) qSkip fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem powWin_rel (h : Pins Φ (.s9 :: .s10 :: dbaseRegs)) :
+    RelCT isa (Two Φ) ModExp.powWinFn fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem isOne_rel (h : Pins Φ dbaseRegs) :
+    RelCT isa (Two Φ) isOne fun _ _ => True := two_taint _ h (by taint_decide)
+
+theorem fail_rel : RelCT isa (Two Φ) (.block [.li .a0 0]) fun _ _ => True := two_taint _ pins_nil (by taint_decide)
+
+theorem restore_rel (h : Pins Φ [.s6]) :
+    RelCT isa (Two Φ) (.block Impl.Dsa.RISCV64.restore) fun _ _ => True := two_taint _ h (by taint_decide)
+
+end
+
+/-! ## Predicates at the cuts shared by both functions -/
+
+/-- After the branches: the working space in `s6`. -/
+def CF (x : DD) (s : State) : Prop := s.gpr .s6 = x.S
+
+theorem pins_CF : Pins CF [.s6] := pins_one .s6 (fun x => x.S) fun _ _ h => h
+
+theorem pins_P1 : Pins P1 (.s7 :: .s8 :: dbaseRegs) :=
+  pins_cons (pins_one .s7 (fun x => off x.D 0) fun _ _ h => h.2.1)
+    (pins_cons (pins_one .s8 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.2.2) (pins_base id fun _ _ h => h.1))
+
+theorem pins_P2 : Pins P2 (.s7 :: .s8 :: dbaseRegs) :=
+  pins_cons (pins_one .s7 (fun x => off x.D 0) fun _ _ h => h.2.2.1)
+    (pins_cons (pins_one .s8 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.2.2.2) (pins_base id fun _ _ h => h.1))
+
+theorem pins_P3 : Pins P3 (.s8 :: .t4 :: dbaseRegs) :=
+  pins_cons (pins_one .s8 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.2.2.1)
+    (pins_cons (pins_one .t4 (fun x => BitVec.ofNat 64 ((x.db.take x.k).getD 0 0).toNat) fun _ _ h => h.2.2.2.1)
+      (pins_base id fun _ _ h => h.1))
+
+/-- `loadP`, from `P1` to `P4`. -/
+theorem loadP_rel : RelCT isa (Two P1) loadP (Two P4) := by
+  unfold loadP Precompute.check
+  exact RelCT.seq (two_post (loadN_rel pins_P1) fun _ _ h => WP.mono (loadN_P h) fun _ h => h.1)
+    (RelCT.seq (two_post (check1_rel pins_P2) fun _ _ h => WP.mono (check1_P h) fun _ h => h.1)
+      (two_post (check2_rel pins_P3) fun _ _ h => WP.mono (check2_P h) fun _ h => h.1))
+
+/-- The branch on p's validity. -/
+theorem p_ite {t : Prog isa} {Q : State → State → Prop}
+    (ht : RelCT isa (Two fun x s => P4 x s ∧ (!Spec.Rsa.modulusValid x.p x.k) = false) t Q)
+    (he : RelCT isa (Two fun x s => P4 x s ∧ (!Spec.Rsa.modulusValid x.p x.k) = true) (.block [.li .a0 0]) Q) :
+    RelCT isa (Two P4) (.ite (.zero .s0) t (.block [.li .a0 0])) Q := by
+  refine two_ite (fun x => !(!Spec.Rsa.modulusValid x.p x.k)) (fun x s h => ?_)
+    (ht.mono (fun _ _ ⟨x, ⟨h₁, c₁⟩, ⟨h₂, c₂⟩, sp⟩ => ⟨x, ⟨h₁, by simpa using c₁⟩, ⟨h₂, by simpa using c₂⟩, sp⟩)
+      fun _ _ h => h)
+    (he.mono (fun _ _ ⟨x, ⟨h₁, c₁⟩, ⟨h₂, c₂⟩, sp⟩ => ⟨x, ⟨h₁, by simpa using c₁⟩, ⟨h₂, by simpa using c₂⟩, sp⟩)
+      fun _ _ h => h)
+  rw [Bool.not_not]
+  exact Bool.eq_iff_iff.mpr (by rw [beq_iff_eq]; exact h.2.2)
+
+/-- The invalid-p branch reaches `CF`. -/
+theorem pFail_rel : RelCT isa (Two fun x s => P4 x s ∧ (!Spec.Rsa.modulusValid x.p x.k) = true)
+    (.block [.li .a0 0]) (Two CF) :=
+  two_post fail_rel fun x s h => WP.mono (WP.keep [.a0] (Q := fun _ => True) (by brun [exec_li]; exact ⟨_, rfl⟩)
+    (by rfl) (by rfl)) fun _ ⟨_, k⟩ => (k.gpr (by decide)).trans h.1.1.s6
+
+/-- A failed check reaches `CF`. -/
+theorem fail_CF {Φ : DD → State → Prop} (hb : ∀ x s, Φ x s → DBase x s) :
+    RelCT isa (Two Φ) (.block [.li .a0 0]) (Two CF) :=
+  two_post fail_rel fun x s h => WP.mono (WP.keep [.a0] (Q := fun _ => True) (by brun [exec_li]; exact ⟨_, rfl⟩)
+    (by rfl) (by rfl)) fun _ ⟨_, k⟩ => (k.gpr (by decide)).trans (hb x s h).s6
+
+/-- The subgroup check of `v x`, from `PV`, reaches `CF`. -/
+theorem subgroup_rel {Φ : DD → State → Prop} (v : DD → Nat)
+    (h : ∀ x s, Φ x s → PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v x ∧ x.L = 3 * x.k) :
+    RelCT isa (Two Φ) subgroup (Two CF) := by
+  unfold subgroup sgPre
+  have pinsA : Pins (fun x s => SGA x (v x) s ∧ x.L = 3 * x.k) (.t3 :: .a4 :: dbaseRegs) :=
+    pins_cons (pins_one .t3 (fun x => off x.D (2 * x.k)) fun _ _ h => h.1.2.2.2.2.1)
+      (pins_cons (pins_one .a4 (fun x => BitVec.ofNat 64 x.k) fun _ _ h => h.1.2.2.2.2.2)
+        (pins_base id fun _ _ h => h.1.1.1))
+  have pinsSG : Pins (fun x s => SG1 x (v x) s ∧ x.L = 3 * x.k) (.s9 :: .s10 :: dbaseRegs) :=
+    pins_cons (pins_one .s9 (fun x => off x.D (2 * x.k + x.ld)) fun _ _ h => h.1.2.2.2.2.1)
+      (pins_cons (pins_one .s10 (fun x => BitVec.ofNat 64 (x.k - x.ld)) fun _ _ h => h.1.2.2.2.2.2)
+        (pins_base id fun _ _ h => h.1.1.1))
+  have pinsPW : Pins (fun x s => PV x s ∧ wordsVal s.mem x.S (slot x.w 4) x.w = v x ^ x.q % x.p) dbaseRegs :=
+    pins_base id fun _ _ h => h.1.1
+  refine RelCT.seq (RelCT.seq (two_post (sgA_rel (pins_base id fun _ _ g => (h _ _ g).1.1)) fun x s g =>
+    WP.mono (sgA_ok (h x s g).1 (h x s g).2.1) fun _ k => ⟨k.1, (h x s g).2.2⟩)
+      (two_post (qSkip_rel pinsA) fun x s g => WP.mono (sgB_ok g.1 g.2) fun _ k => ⟨k.1, g.2⟩)) (RelCT.seq
+      (two_post (powWin_rel pinsSG) fun x s g => WP.mono (sg2_ok g.1 g.2) fun _ k => k.1)
+      (two_post (isOne_rel pinsPW) fun x s g => WP.mono (isOne_ok g.1 g.2) fun _ k => k.1.1.s6))
 
 end VG.Proof.Ffdh.RISCV64.Domain

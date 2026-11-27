@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.RISCV64.ModExp
+public import VerifiedGarbage.Impl.Dsa.RISCV64.Common
 
 /-!
 # Finite-field Diffie–Hellman on RISC-V: the exchange
@@ -13,14 +13,15 @@ operations (`Impl/Bignum/RISCV64/PublicChecked.lean`, `ModExp.lean`) at
 `scratch`: a header of 32 words, then arrays of `w + 2` words,
 `w = ⌈p_len / 8⌉`.
 
-* The callee-saved registers are saved in the header's words 16–27, and
-  `out`, x, `x_len` and the peer in its words 0–3;
+* The callee-saved registers and `ra` are saved in the header's words 16–28,
+  as DSA's functions save them (`Dsa.RISCV64.save`), and `out`, x, `x_len`
+  and the peer in its words 0–3;
 * p is loaded into array 0 and checked as `vg_rsa_public_precompute` checks
   a modulus (`Precompute.check`); otherwise the result is 0;
 * the peer's y into array 4 (`PublicChecked.loadX`), `R² mod p` into array 1
   (`Precompute.r2`, which also leaves `-p⁻¹ mod 2⁶⁴` in `t1`), and
-  `z = y^x mod p` into array 4 by `ModExp.powWin` over x's `x_len` bytes,
-  whose windows select table entries by masked scans: nothing depends on x
+  `z = y^x mod p` into array 4 by `vg_bignum_pow_win` (`ModExp.powWinFn`)
+  over x's `x_len` bytes, whose windows select table entries by masked scans: nothing depends on x
   but its length;
 * the mask of `z ∉ {0, 1, p − 1}` (`zMask`: 0 in array 5, 1 in array 7,
   `p − 1` in array 6, and `eqMask` with each), and z's `p_len` bytes under
@@ -34,13 +35,14 @@ The code branches on p's validity alone.
 namespace VG.Impl.Ffdh.RISCV64
 
 open VG.RISCV64 VG.Impl.Bignum VG.Impl.Bignum.RISCV64
-open VG.Impl.Bignum.RISCV64.PublicChecked (base saveRegs restore setup)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base setup)
+open VG.Impl.Dsa.RISCV64 (save restore)
 
-/-- The working space, the second argument on the stack, into `t0`; the
+/-- The working space, the second argument on the stack, into `t2`; the
 registers saved there; `out`, x, `x_len` and the peer into the header's
 words 0–3, and the domain into `s7` and `p_len` into `s8` for p's load. -/
 def exFront : List Instr :=
-  [.addSp .t0 8, .load .d .t0 .t0 0] ++ saveRegs ++
+  [.addSp .t2 8, .load .d .t2 .t2 0] ++ save .t2 ++
     [.store .d .a0 .s6 0, .store .d .a5 .s6 8, .store .d .a6 .s6 16, .store .d .a7 .s6 24,
       .addi .s7 .a2 0, .addi .s8 .a4 0, .addi .a1 .a4 0] ++ setup
 
@@ -89,6 +91,6 @@ def exOut : Prog isa :=
 /-- `vg_ffdh_exchange`. -/
 def exchange : Prog isa :=
   .seq (.block exFront) (.seq loadP
-    (.seq (.ite (.zero .s0) (.seq exPre (.seq ModExp.powWin exOut)) (.block [.li .a0 0])) (.block restore)))
+    (.seq (.ite (.zero .s0) (.seq exPre (.seq ModExp.powWinFn exOut)) (.block [.li .a0 0])) (.block restore)))
 
 end VG.Impl.Ffdh.RISCV64

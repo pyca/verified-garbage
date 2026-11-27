@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Omega
--- separate module: the precompute's constant-time proof, apart from its correctness proof's chain of modules
 
 /-!
 # `vg_ffdh_generate_key_precompute` on RISC-V: constant time, and verified
@@ -39,6 +38,7 @@ namespace VG.Proof.Ffdh.RISCV64.Cached
 open VG VG.RISCV64 VG.RISCV64.Taint VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64
   VG.Impl.Ffdh.RISCV64.Cached VG.Impl.Ffdh.RISCV64.Cached.Precompute
 open VG.Proof.Bignum.RISCV64
+open VG.Proof.Bignum (ofNat_toNat64)
 open VG.Proof.Ffdh.RISCV64
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
 open VG.Impl.Ffdh.RISCV64.VettedValidation (tableSym tableConsts)

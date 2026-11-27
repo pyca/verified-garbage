@@ -1,7 +1,5 @@
 module
 
--- separate module: built alongside Correct
-
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Out
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PreCT
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -46,11 +44,11 @@ def X0 (x : XD) (s : State) : Prop := fnContract.pre s ∧ xdOf s = x
 
 /-- The front after its first two instructions. -/
 abbrev frontRest : List Instr :=
-  PublicChecked.saveRegs ++ (([.store .d .a0 .s6 0, .store .d .a5 .s6 8, .store .d .a6 .s6 16,
+  Impl.Dsa.RISCV64.save .t2 ++ (([.store .d .a0 .s6 0, .store .d .a5 .s6 8, .store .d .a6 .s6 16,
     .store .d .a7 .s6 24, .addi .s7 .a2 0, .addi .s8 .a4 0, .addi .a1 .a4 0] : List Instr) ++ PublicChecked.setup)
 
 /-- After loading the working space's address. -/
-def F1 (x : XD) (s : State) : Prop := s.gpr .t0 = x.S ∧ WP isa (.block frontRest) s (Base x)
+def F1 (x : XD) (s : State) : Prop := s.gpr .t2 = x.S ∧ WP isa (.block frontRest) s (Base x)
 
 /-- After the branch. -/
 def CF (x : XD) (s : State) : Prop := s.gpr .s6 = x.S
@@ -65,7 +63,7 @@ def Y7 (x : XD) (s : State) : Prop := RW x s ∧ WP isa (.block [.load .d .s10 .
 def Y6 (x : XD) (s : State) : Prop := RW x s ∧ WP isa zMask s (Y7 x)
 
 /-- Before the power. -/
-def Y5 (x : XD) (s : State) : Prop := R5 x s ∧ WP isa ModExp.powWin s (Y6 x)
+def Y5 (x : XD) (s : State) : Prop := R5 x s ∧ WP isa ModExp.powWinFn s (Y6 x)
 
 /-- After the peer's address. -/
 def Y1 (x : XD) (s : State) : Prop :=
@@ -113,7 +111,7 @@ theorem pins_base {Φ : XD → State → Prop} (h : ∀ x s, Φ x s → Base x s
 
 theorem pins_X0 : Pins X0 ([] : List Reg) := fun _ _ _ _ _ _ hr => absurd hr List.not_mem_nil
 
-theorem pins_F1 : Pins F1 [.t0] := pins_of (fun x _ => x.S) fun x s h r hr => by
+theorem pins_F1 : Pins F1 [.t2] := pins_of (fun x _ => x.S) fun x s h r hr => by
   rw [List.mem_singleton] at hr; subst hr; exact h.1
 
 theorem pins_X3 : Pins X3 (baseRegs ++ ([.t4] : List Reg)) := by
@@ -154,7 +152,7 @@ theorem pins_CF : Pins CF [.s6] := pins_of (fun x _ => x.S) fun x s h r hr => by
 /-! ## The steps, by correctness -/
 
 theorem XL1 {x : XD} {s : State} (h : X0 x s) :
-    WP isa (.block ([.addSp .t0 8, .load .d .t0 .t0 0] : List Instr)) s (F1 x) := by
+    WP isa (.block ([.addSp .t2 8, .load .d .t2 .t2 0] : List Instr)) s (F1 x) := by
   obtain ⟨hpre, rfl⟩ := h
   have hf := front_ok hpre
   unfold exFront at hf

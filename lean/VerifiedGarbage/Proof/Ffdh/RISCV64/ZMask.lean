@@ -233,8 +233,6 @@ theorem bmask_not' (a : Bool) : bmask a ^^^ -1#64 = bmask (!a) := by cases a <;>
 
 theorem ones_and (b : Bool) : BitVec.allOnes 64 &&& bmask b = bmask b := by cases b <;> decide
 
-theorem ones_xor (a : Bool) : bmask a ^^^ BitVec.allOnes 64 = bmask (!a) := bmask_not a
-
 /-- After the first comparison: `s9 :=` its inverted mask, `s4 :=` all ones. -/
 theorem blkA_ok {s : State} {a : Bool} (h9 : s.gpr .s9 = BitVec.allOnes 64) (h4 : s.gpr .s4 = bmask a) :
     WP isa (.block [.logic .xor .s4 .s4 .s9, .logic .and .s9 .s9 .s4, .li .s4 (-1)]) s fun t =>

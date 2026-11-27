@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
@@ -20,7 +19,7 @@ import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
 # `vg_ffdh_derive_public` on RISC-V: the front and x's range
@@ -43,7 +42,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum
 open VG.Proof.Bignum.RISCV64
 open VG.Proof.Ffdh.RISCV64
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.RISCV64.Pub (savW savR)
+open VG.Impl.Dsa.RISCV64 (save)
 open VG.Impl.Bignum.RISCV64.PublicChecked (base)
 
 /-! ## The function -/
@@ -142,14 +141,12 @@ theorem dhdr_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 32 ≤ Z
       (o2.mono (by omega_arith) (by omega_arith))).trans (o3.mono (by omega_arith) (by omega_arith))
 
 /-- The registers the front writes. -/
-def frontRegs : List Reg := [.t0, .s6, .t2, .s7, .s8, .a1, .a7, .s5, .s10, .s11]
+def frontRegs : List Reg := [.t2, .s6, .s7, .s8, .a1, .a7, .s5, .s10, .s11, .t0]
 
-/-- `dpFront`: `Base`, the callee-saved registers saved, and only the header
-changed. -/
+/-- `dpFront`: `Base`, the registers saved, and only the header changed. -/
 theorem dpFront_ok {s : State} (h : dpContract.pre s) :
     WP isa (.block dpFront) s fun t =>
-      Base (dxOf s) t ∧
-        (∀ i < 12, t.mem.readW (off (savW (s.gpr .a7)) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
+      Base (dxOf s) t ∧ SavedAt (s.gpr .a7) t.mem s ∧
         Keep frontRegs s t ∧ Outside (s.gpr .a7) 0 256 s.mem t.mem := by
   obtain ⟨hrd, hwr, dOD, dOX, dOS, dOA, dDS, dXS, dSA, nwO, nwD, nwX, nwS, ⟨hk, hk'⟩, hL,
     hol, hx1, hxk, hsl, alS, alsp⟩ := h
@@ -160,22 +157,9 @@ theorem dpFront_ok {s : State} (h : dpContract.pre s) :
   have hZ : 256 + 128 * (s.gpr .a4).toNat ≤ Z := by omega_arith
   have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS alS
   unfold dpFront
-  simp only [List.append_assoc]
-  have h1 : WP isa (.block ([.addi .t0 .a7 0] : List Instr)) s fun t =>
-      (t.gpr .t0 = S ∧ t.mem = s.mem) ∧ Keep [.t0] s t := by
-    refine WP.keep _ ?_ (by rfl) (by rfl)
-    brun [hSd, add_ofNat_zero]
-  refine WP.block_append (WP.mono h1 fun s₁ ⟨⟨a0', m1⟩, k1⟩ => ?_)
-  have hin : ∀ i < 12, InRegions s₁.wr (off (savW (s₁.gpr .t0)) (8 * i)) 8 := fun i hi => by
-    rw [a0', k1.2.2, hwr]
-    show InRegions _ (S + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
-    rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  refine WP.block_append (WP.mono (Pub.save_ok s₁ hin (fun i hi => by
-    rw [a0']; exact Pub.sav_al alS (by omega_arith) hi)) fun s₂ hS => ?_)
-  have k12 := k1.trans hS.keep
-  have h6₂ : s₂.gpr .s6 = S := hS.s6.trans a0'
+  rw [show ∀ a b c d : List Instr, a ++ b ++ c ++ d = (a ++ b) ++ (c ++ d) from fun a b c d => by
+    simp only [List.append_assoc]]
+  refine WP.block_append (WP.mono (pre_ok .a7 hSd hs (by omega_arith)) fun s₂ ⟨h6₂, sv₂, k12, hsavO⟩ => ?_)
   refine WP.block_append (WP.mono (dhdr_ok (hs.congr k12.2.2) (by omega_arith) h6₂)
     fun s₃ ⟨⟨w0, w8, w16, w24, b7, b8, b1, o3⟩, k3⟩ => ?_)
   have k13 := k12.trans k3
@@ -185,16 +169,6 @@ theorem dpFront_ok {s : State} (h : dpContract.pre s) :
   have k := k13.trans k4
   have hrdt : t.rd ++ t.wr = s.rd ++ s.wr := by rw [k.2.1, k.2.2]
   -- Memory: the saved registers' words and the header's words 0–3.
-  have hsavO : Outside S 0 256 s.mem s₂.mem := fun y hy => by
-    rw [← m1]
-    refine hS.frame y fun r hr hc => ?_
-    rw [List.mem_singleton] at hr
-    subst hr
-    rw [a0'] at hc
-    have hc' := (Offset.sub_base (n := 96) (k := 256) S (d := 128) (by omega_arith)) _ hc
-    simp only [Region.Contains] at hc'
-    simp only [ofs] at hy
-    omega_arith
   have hO : Outside S 0 256 s.mem t.mem := by
     rw [jm]; exact hsavO.trans (o3.mono (Nat.le_refl _) (by omega_arith))
   have hOZ : Outside S 0 Z s.mem t.mem := hO.mono (Nat.le_refl _) (by omega_arith)
@@ -227,13 +201,8 @@ theorem dpFront_ok {s : State} (h : dpContract.pre s) :
   · rw [hw3 8 (by decide), w8, k12.gpr (by decide)]; simp [off]
   · rw [hw3 16 (by decide), w16, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hw3 24 (by decide), w24, k12.gpr (by decide), k12.gpr (by decide)]; simp [off]
-  · intro i hi
-    have e : off (savW S) (8 * i) = off S (128 + 8 * i) := by rw [off, off, Offset.add_add]
-    rw [e]
-    show word t.mem S (128 + 8 * i) = _
-    rw [jm, o3.word (Or.inr (by omega_arith)) (by omega_arith)]
-    show s₂.mem.readW (off S (128 + 8 * i)) 64 = _
-    rw [← e, ← a0', hS.saved i hi, k1.gpr fun h => Pub.saved_ne_t0 i hi (List.mem_singleton.mp h)]
+  · rw [jm]; exact sv₂.mono o3 (by decide)
+
 
 /-! ## x's range -/
 
@@ -586,7 +555,7 @@ theorem bad_ok {x : XD} {s : State} (hb : Base x s) (h9 : s.gpr .s9 = 0) :
   refine WP.seq (WP.mono (Pub.output_ok (b := false) hc.scr hc.outW hc.nwO hb.a7 hb.s5 hb.s11 hb.s10
     (by rw [h9]; rfl) (by omega_arith) (by omega_arith) (by omega_arith) hc.sepO) fun t ⟨⟨ob, ot, _⟩, kt⟩ => ?_)
   refine WP.mono (WP.keep [.a0] (Q := fun u => u.gpr .a0 = BitVec.ofNat 64 2 ∧ u.mem = t.mem)
-    (by brun [fin64_exec_li_lit (show 2 < 2048 by decide)]) (by rfl) (by rfl)) fun u ⟨⟨ua, um⟩, ku⟩ =>
+    (by brun [Dsa.RISCV64.exec_li_lit (show 2 < 2048 by decide)]) (by rfl) (by rfl)) fun u ⟨⟨ua, um⟩, ku⟩ =>
       ⟨⟨by rw [um]; exact Pub.zero_bytes fun i hi => by rw [ob i hi]; rfl, ua⟩,
         (ku.gpr (by decide)).trans ((kt.gpr (by decide)).trans hb.s6), by rw [um]; exact ot⟩
 

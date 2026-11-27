@@ -1,21 +1,17 @@
 module
 
--- separate module: built alongside CT
-
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Derive.Body
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Out
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubSave
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
 # `vg_ffdh_derive_public` on RISC-V: correctness
@@ -24,7 +20,7 @@ import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
 and for a valid p checks x's range (`xRange_ok`): out of range it writes
 zeros with the status 2 (`bad_ok`), otherwise `g^x mod p` or zeros with the
 status 1 or 3 (`good_ok`), as the exchange computes its shared value; then it
-restores the callee-saved registers (`dp_correct`).
+restores the registers (`dp_correct`).
 -/
 
 @[expose] public section
@@ -36,7 +32,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum
 open VG.Proof.Bignum.RISCV64
 open VG.Proof.Ffdh.RISCV64
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.RISCV64.Pub (savW savR)
+open VG.Impl.Dsa.RISCV64 (restore)
 
 /-- What the branches leave, from `s` after p's check. -/
 def DPost (x : XD) (s t : State) : Prop :=
@@ -77,7 +73,7 @@ theorem good_ok {x : XD} {s : State} (h : X4 x s) (hz : s.gpr .s0 = 0) :
       WP.seq (WP.mono h7 fun s₈ ⟨_, h8⟩ => WP.mono h8 fun t op => ?_)))
   obtain ⟨m, am, om⟩ := op.mem
   refine WP.mono (WP.keep [.a0, .t2] (Q := fun u => u.gpr .a0 = BitVec.ofNat 64 3 - (t.gpr .a0 <<< 1) ∧
-    u.mem = t.mem) (by unfold status; brun [fin64_exec_li_lit (show 3 < 2048 by decide)]) (by rfl) (by rfl))
+    u.mem = t.mem) (by unfold status; brun [Dsa.RISCV64.exec_li_lit (show 3 < 2048 by decide)]) (by rfl) (by rfl))
     fun u ⟨⟨ua, um⟩, ku⟩ => ⟨?_, (ku.gpr (by decide)).trans op.s6, m, pp.arr.trans am, by rw [um]; exact om⟩
   rw [um, ua, op.out, op.a0, pp.z, status_bv]
   exact ⟨rfl, rfl⟩
@@ -129,19 +125,10 @@ theorem ret_status (n : Nat) (hn : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 3
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega_arith
 
-/-- Every register but `ra`. -/
-def dpNotRa : List Reg :=
-  [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10,
-    .s11, .t3, .t4, .t5, .t6]
-
-theorem pres_saved : ∀ r ∈ preserved, ∃ i < 12, r = PublicChecked.saved i := by decide
-
 theorem dp_correct (s : State) (h : dpContract.pre s) :
     ∃ tr t, Exec isa derivePublic s tr t ∧ abiPreserved s t ∧ dpContract.post s t := by
   show WP isa derivePublic s fun t => abiPreserved s t ∧ dpContract.post s t
-  suffices main : WP isa derivePublic s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ dpContract.post s t from
-    WP.mono (WP.rdwr (WP.keep dpNotRa main (by rfl))) fun t ⟨⟨⟨hp, hpost⟩, kra⟩, _, _, hsp⟩ =>
-      ⟨⟨hp, hsp, kra.gpr (by decide)⟩, hpost⟩
+  refine abi_of ?_
   have hpre := h
   obtain ⟨hrd, hwr, dOD, dOX, dOS, dOA, dDS, dXS, dSA, nwO, nwD, nwX, nwS, ⟨hk, hk'⟩, hL,
     hol, hx1, hxk, hsl, alS, alsp⟩ := h
@@ -165,25 +152,12 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
   change Outside (s.gpr .a0) 0 (s.gpr .a4).toNat m t₅.mem at om
   change (s.gpr .a7).toNat + (stackArg s 0).toNat * 8 ≤ 2 ^ 64 at hnS
   -- The saved registers' words.
-  have hin : ∀ i < 12, InRegions t₅.wr (off (savW (s.gpr .a7)) (8 * i)) 8 := fun i hi => by
-    rw [w5, w4, w3, hwr]
-    show InRegions _ (s.gpr .a7 + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
-    rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have hsav : ∀ i < 12, t₅.mem.readW (off (savW (s.gpr .a7)) (8 * i)) 64 = s.gpr (PublicChecked.saved i) :=
-      fun i hi => by
-    have e : off (savW (s.gpr .a7)) (8 * i) = off (s.gpr .a7) (128 + 8 * i) := by
-      rw [off, off, Offset.add_add]
-    rw [← hsv i hi, e]
-    show word t₅.mem (s.gpr .a7) (128 + 8 * i) = word s₃.mem (s.gpr .a7) (128 + 8 * i)
-    refine (Pub.Outside.word_apart om sepSO (by omega_arith) (by omega_arith) hnS).trans ?_
-    show Mont.word m _ _ = Mont.word s₃.mem _ _
-    rw [Outside.word am (Or.inl (by omega_arith)) (by omega_arith), Outside.word a4 (Or.inl (by omega_arith)) (by omega_arith)]
-  refine WP.mono (Pub.restore_ok t₅ (S := s.gpr .a7) (v := fun i => s.gpr (PublicChecked.saved i)) t6 hin
-    (fun i hi => Pub.sav_al alS (by omega_arith) hi) hsav) fun u ⟨urs, uot, um, _, _, _⟩ => ⟨fun r hr => ?_, ?_⟩
-  · obtain ⟨i, hi, rfl⟩ := pres_saved r hr
-    exact urs i hi
+  have hsav : SavedAt (s.gpr .a7) t₅.mem s := fun i hi => by
+    have e := ((hsv.mono a4 (Or.inr (by decide))).mono am (Or.inr (by decide))) i hi
+    rw [← e]
+    exact Pub.Outside.word_apart om sepSO (by omega_arith) (by omega_arith) hnS
+  have hs5 : Scr t₅ (s.gpr .a7) ((stackArg s 0).toNat * 8) := hc.scr.congr (by rw [w5, w4])
+  refine WP.mono (restoreS_ok hs5 (by omega_arith) t6 hsav) fun u ⟨urs, u0, um⟩ => ⟨urs, ?_⟩
   · intro hdv
     -- The memory apart from the working space, before the branch.
     have hOZ : Outside (s.gpr .a7) 0 ((stackArg s 0).toNat * 8) s.mem s₄.mem :=
@@ -219,7 +193,7 @@ theorem dp_correct (s : State) (h : dpContract.pre s) :
     obtain ⟨tb, ta⟩ := tpost hmod
     rw [bY, bX, bB] at tb ta
     have hL' : (s.gpr .a3).toNat = 2 * (s.gpr .a4).toNat ∨ (s.gpr .a3).toNat = 3 * (s.gpr .a4).toNat := hL
-    rw [keyStatus_dom (by omega_arith) hL' hdv, hpD, Proof.Ffdh.domainOf_g _ _ hLk.1, hpe, um, uot .a0 (by decide), ta,
+    rw [keyStatus_dom (by omega_arith) hL' hdv, hpD, Proof.Ffdh.domainOf_g _ _ hLk.1, hpe, um, u0, ta,
       ret_status _ (by split <;> [decide; split <;> decide]), VG.Proof.Bignum.powMod_eq]
     rw [show (dxOf s).O = s.gpr .a0 from rfl, show (dxOf s).k = (s.gpr .a4).toNat from rfl] at tb
     refine ⟨rfl, ?_⟩

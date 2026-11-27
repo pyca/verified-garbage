@@ -15,8 +15,8 @@ scratch = a3, scratch_len = a4)` (`Spec/Ffdh/Contract.lean`), as PPC64LE's
 (`Impl/Ffdh/RISCV64.lean`): a header of 32 words, then arrays of `w + 2`
 words, `w = ⌈p_len / 8⌉`.
 
-* The callee-saved registers are saved in the header's words 16–27, and
-  `domain`, `domain_len` and (for `vg_ffdh_check_public`) y in its words
+* The callee-saved registers and `ra` are saved in the header's words 16–28,
+  and `domain`, `domain_len` and (for `vg_ffdh_check_public`) y in its words
   0–2;
 * p is loaded into array 0 and checked as `vg_rsa_public_precompute` checks
   a modulus (`Precompute.check`); otherwise the result is 0;
@@ -25,7 +25,7 @@ words, `w = ⌈p_len / 8⌉`.
   and `PublicChecked.checkX`'s mask of its being below p);
 * with q, `R² mod p` into array 1 (`r2`), q's octets scanned for its first
   nonzero one (`GenerateKey.scanBody`, at index `lead`), the value raised to
-  q's `p_len − lead` octets from there (`ModExp.powWin`) and compared with 1
+  q's `p_len − lead` octets from there (`ModExp.powWinFn`) and compared with 1
   (`subgroup`);
 * `vg_ffdh_check_domain` checks q's range and that it is odd, then that
   `p mod q = 1` (q into array 0, p's bytes reduced modulo q into array 1 by
@@ -43,21 +43,22 @@ an array's size, `t0` `w`, `s11` `p_len`.
 namespace VG.Impl.Ffdh.RISCV64.Domain
 
 open VG.RISCV64 VG.Impl.Bignum VG.Impl.Bignum.RISCV64
-open VG.Impl.Bignum.RISCV64.PublicChecked (base saveRegs restore setup)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base setup)
+open VG.Impl.Dsa.RISCV64 (save restore)
 open VG.Impl.Ffdh.RISCV64 (loadP r2 eqMask zMask)
 
 /-- The domain into `s7` and `p_len` into `s8` for p's load, and `p_len`
 into `a1` for `setup`. -/
 def args : List Instr := [.addi .s7 .a0 0, .addi .s8 .a2 0, .addi .a1 .a2 0]
 
-/-- The working space (`a3`) into `t0`, the registers saved there, the domain
+/-- The working space (`a3`) into `t2`, the registers saved there, the domain
 and its length into the header's words 0 and 1, then `setup`. -/
 def cdFront : List Instr :=
-  [.addi .t0 .a3 0] ++ saveRegs ++ [.store .d .a0 .s6 0, .store .d .a1 .s6 8] ++ args ++ setup
+  [.addi .t2 .a3 0] ++ save .t2 ++ [.store .d .a0 .s6 0, .store .d .a1 .s6 8] ++ args ++ setup
 
 /-- As `cdFront`, the working space in `a5`, and y into the header's word 2. -/
 def cpFront : List Instr :=
-  [.addi .t0 .a5 0] ++ saveRegs ++ [.store .d .a0 .s6 0, .store .d .a1 .s6 8, .store .d .a3 .s6 16] ++ args ++
+  [.addi .t2 .a5 0] ++ save .t2 ++ [.store .d .a0 .s6 0, .store .d .a1 .s6 8, .store .d .a3 .s6 16] ++ args ++
     setup
 
 /-- `s9 :=` all ones if the `p_len` bytes `v` at `a6` are in `2 .. p − 2`,
@@ -94,7 +95,7 @@ def isOne : Prog isa :=
 
 /-- `a0 := 1` if `v^q mod p = 1` for v in array 4, else 0: `R² mod p`, the
 power by q's octets from its first nonzero one, compared with 1. -/
-def subgroup : Prog isa := .seq sgPre (.seq ModExp.powWin isOne)
+def subgroup : Prog isa := .seq sgPre (.seq ModExp.powWinFn isOne)
 
 /-- The check of y (its address in the header's word 2), after p's. -/
 def checkY : Prog isa :=

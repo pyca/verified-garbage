@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.Derive
 public import VerifiedGarbage.Impl.Ffdh.RISCV64.GenerateKey
 public import VerifiedGarbage.Impl.Ffdh.RISCV64.VettedValidation
 

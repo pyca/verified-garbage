@@ -1,5 +1,7 @@
 module
 
+-- separate module: the controller, which builds in parallel with the candidate it calls
+
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Generation.Search.Data
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -16,8 +18,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
-import VerifiedGarbage.Proof.Ffdh.GenerationBounds
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-! # The parameter search's correctness (RISC-V)
 
@@ -507,6 +508,18 @@ theorem call_rand (h : SLive p original used k s) {u : State}
   rw [← VG.Proof.Dsa.bytesAt_slice _ _ (show used + (p.randLen - used) ≤ p.randLen by
     have := h.used_le; omega), hr, List.take_of_length_le (by simp only [List.length_drop, hl]; omega)]
 
+/-- The controller's stack may change, not the candidate's outputs. -/
+theorem CandPost.stack (h : SInput p original) {t u : State} (hp : CandPost p used t)
+    (ha : u.gpr .a0 = t.gpr .a0) (hf : Frame [below original.sp (stackUse p.S)] t.mem u.mem) :
+    CandPost p used u := by
+  have hu : wordsAt u.mem p.up 1 = wordsAt t.mem p.up 1 := by
+    simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil]
+    rw [hf.readW (r := ⟨p.up, 8⟩) (by rw [BitVec.add_zero]; exact Region.contains_self _ _)
+      (h.write_stack (by rw [← h.used_eq]; simp [inWrites])) (by decide)]
+  unfold CandPost at hp ⊢
+  rw [ha, h.output_stack hf, hu]
+  exact hp
+
 theorem search_candidate_run (c : Cand) (hS : p.S = c.S) (h : SLive p original used k s) :
     WP isa (candidateRun c.call) s fun t => SLive p original used k t ∧ CandPost p used t := by
   have hf := h.callFacts
@@ -532,22 +545,25 @@ theorem search_candidate_run (c : Cand) (hS : p.S = c.S) (h : SLive p original u
     rw [← hS]; exact cand_pre hf (by rw [hS]; exact c.pos) he
   refine WP.callAny (k := candK c.S) c.correct hpre
     (call_covers_reads h k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_ (by omega)
-  intro t hrd hwr hsp hfr hcs' hpost hyt
+  intro t hrd hwr hsp hfr hcs' hpost m' u' fl hyt
+  rw [h.sp, show p.sp - 16 - BitVec.ofNat 64 16 = p.sp - BitVec.ofNat 64 32 from callSp_eq p] at fl
+  have hlost := h.input.stack_frame fl (by decide) (by omega)
   refine ⟨?_, ?_⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 16 t).rd = s.rd from hrd.trans k.2.1)
-      (show (freed 16 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
+    refine h.restore (t := { freed 16 t with mem := m', unknowns := u' }) (hrd.trans k.2.1)
+      (by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl) ?_ ?_ ?_ hyt
     · change t.sp + BitVec.ofNat 64 16 = s.sp
       rw [hsp, husp]
       exact BitVec.sub_add_cancel _ _
     · intro r hr
       exact (hcs' r hr).trans (k.gpr (by revert r hr; decide))
     · rw [hu] at hfr
-      exact candidate_frame h (by omega) hm hfr
-    · exact hyt
+      exact (candidate_frame h (by omega) hm hfr).trans
+        (hlost.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp [callChanges])
   · -- The candidate's status and outputs.
     have hp := cand_post hf he (by
       simp only [State.withRegions_mem, State.callEntry_mem]; exact call_rand h hm) hpost
+    refine CandPost.stack h.input (t := t) ?_ rfl hlost
     unfold CandPost at hp ⊢
     simp only [State.withRegions_gpr, State.withRegions_mem] at hp
     exact hp
@@ -638,7 +654,7 @@ theorem search_accept {p : SPub} {original s : State} {used k q : Nat} {rest : L
     brun [ldf, stf, h.s0, h2, hv12, e12, a.ld 96 (by decide), a.st 96 (by decide),
       a.al 96 (by decide) (by decide), a.st 0 (by decide), a.st 24 (by decide), a.st 112 (by decide),
       a.al 0 (by decide) (by decide), a.al 24 (by decide) (by decide), a.al 112 (by decide) (by decide),
-      fin64_exec_li_zero, fin64_exec_li_lit (show 1 < 2048 by decide)]
+      fin64_exec_li_zero, Proof.Dsa.RISCV64.exec_li_lit (show 1 < 2048 by decide)]
   have hb := acceptValues_bound (used + ((p.randLen - used) - rest.length))
   have hw (j : Nat) (hj : j < 16) : word t.mem p.control (8 * j) =
       controllerValue (acceptValues (used + ((p.randLen - used) - rest.length))) j
@@ -717,7 +733,7 @@ theorem search_reject {p : SPub} {original s : State} {used k : Nat}
       a.al 0 (by decide) (by decide), a.al 80 (by decide) (by decide), a.al 88 (by decide) (by decide),
       a.al 96 (by decide) (by decide), a.st 0 (by decide), a.st 80 (by decide), a.st 88 (by decide),
       a.st 96 (by decide), a.st 112 (by decide), a.al 112 (by decide) (by decide),
-      fin64_exec_li_lit (show 4 < 2048 by decide)]
+      Proof.Dsa.RISCV64.exec_li_lit (show 4 < 2048 by decide)]
     rfl
   have hb := rejectValues_bound p (used + p.read used) (k - 1)
   have hh : Slots t.mem p.control (p.headers (used + p.read used) (k - 1)) := by
@@ -1173,18 +1189,26 @@ theorem iteration_depth (c : Cand) : sdepth (iteration c.call) ≤ c.S + 16 := b
     sdepth, Cand.call, Instr.frameBytes, Nat.max_le, Nat.zero_le, and_true, true_and]
   omega
 
-/-- After the frame: a finished search, with `ra` and the stack pointer
-back. -/
+/-- After the frame: a finished search, with `ra` and the stack pointer back
+and the frame's bytes lost. -/
 theorem SDone.popped {p : SPub} {original s : State} {r : ParameterSearchResult}
-    (h : SDone p original r s) (v sp : BitVec 64) :
-    SDone p original r { s.write .ra v with sp := sp } := by
-  refine ⟨h.input, h.rd, h.wr, ?_, fun reg hr h0 => ?_, h.savedS0, h.usedPtr, h.used,
-    h.status, h.policy, h.output⟩
+    (h : SDone p original r s) (v sp : BitVec 64) {m : Mem} (u : Nat → BitVec 64)
+    (hf : Frame [below original.sp (stackUse p.S)] s.mem m) :
+    SDone p original r { s.write .ra v with sp := sp, mem := m, unknowns := u } := by
+  have hc := h.input.control_frame
+    (hf.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp [callChanges])
+  refine ⟨h.input, h.rd, h.wr, ?_, fun reg hr h0 => ?_, (hc 4 (by decide)).trans h.savedS0,
+    (hc 7 (by decide)).trans h.usedPtr, (hc 12 (by decide)).trans h.used,
+    (hc 14 (by decide)).trans h.status, Eq.trans ?_ h.policy, (h.input.output_stack hf).trans h.output⟩
   · show (s.write .ra v).gpr .s0 = _
     rw [RegUpd.gpr_write, ite_eq_right (by decide)]; exact h.s0
   · show (s.write .ra v).gpr reg = _
     rw [RegUpd.gpr_write, ite_eq_right (fun e => by subst e; exact absurd hr (by decide))]
     exact h.saved reg hr h0
+  · change [word m p.control (8 * 0), word m p.control (8 * 1), word m p.control (8 * 2),
+      word m p.control (8 * 3)] = [word s.mem p.control (8 * 0), word s.mem p.control (8 * 1),
+      word s.mem p.control (8 * 2), word s.mem p.control (8 * 3)]
+    rw [hc 0 (by decide), hc 1 (by decide), hc 2 (by decide), hc 3 (by decide)]
 
 theorem SInput.tail_eq {p : SPub} {s : State} (h : SInput p s) : searchResult s = p.tail 0 p.attempts := by
   obtain ⟨_, hp⟩ := h
@@ -1211,7 +1235,8 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (hS : p.S = c.S) (h : SI
     rw [hsp, show s.sp - 16 = s.sp - BitVec.ofNat 64 16 from rfl]
     exact Offset.sub_below s.sp (a := 16) (b := p.S + 32) (by omega) (by unfold stackUse; omega)
   · refine WP.mono (search_loop c hS (expected := searchResult s) (n := p.attempts + 1)
-      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu => ⟨hu.popped _ _, ?_, hsp⟩
+      ⟨0, p.attempts, rfl, hl, h.tail_eq⟩) fun u hu m w fl => ⟨hu.popped _ _ w (h.stack_frame (a := 16) (b := 16)
+        (by rw [h.sp_eq, ← hsp]; exact fl) (by decide) (by omega)), ?_, hsp⟩
     show (u.write .ra (t.gpr .ra)).gpr .ra = _
     rw [RegUpd.gpr_write_self, k.gpr (by decide)]
   · show sdepth (iteration c.call) + 16 < 2 ^ 64
@@ -1221,7 +1246,7 @@ theorem search_body {p : SPub} {s t : State} (c : Cand) (hS : p.S = c.S) (h : SI
 
 theorem SReturned.post {S : Nat} {s t : State} (h : SReturned (sOfState S s) (searchResult s) t) :
     searchPost s t :=
-  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, Proof.Ffdh.SievedGeneration.search_requests _ _ _ _⟩
+  ⟨h.1, h.2.1, h.2.2.2, _, h.2.2.1, Proof.Ffdh.SievedGeneration.search_asked _ _ _ _⟩
 
 theorem search_correct_ok (c : Cand) {s : State} (h : searchPre c.S s) :
     WP isa (code c.call) s fun t => searchPost s t ∧ abiPreserved s t := by

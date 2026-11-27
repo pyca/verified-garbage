@@ -33,13 +33,14 @@ the status reveals.
 namespace VG.Impl.Ffdh.RISCV64.Derive
 
 open VG.RISCV64 VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64
-open VG.Impl.Bignum.RISCV64.PublicChecked (base saveRegs restore setup)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base setup)
+open VG.Impl.Dsa.RISCV64 (save restore)
 
-/-- The working space (`a7`) into `t0`; the registers saved there; `y`, x,
+/-- The working space (`a7`) into `t2`; the registers saved there; `y`, x,
 `x_len` and g's address into the header's words 0–3, and the domain into
 `s7` and `p_len` into `s8` for p's load. -/
 def dpFront : List Instr :=
-  [.addi .t0 .a7 0] ++ saveRegs ++
+  [.addi .t2 .a7 0] ++ save .t2 ++
     [.store .d .a0 .s6 0, .store .d .a5 .s6 8, .store .d .a6 .s6 16, .add .t2 .a2 .a4,
       .store .d .t2 .s6 24, .addi .s7 .a2 0, .addi .s8 .a4 0, .addi .a1 .a4 0] ++ setup
 
@@ -81,7 +82,7 @@ def dpBad : Prog isa := .seq PublicChecked.output (.block [.li .a0 2])
 def status : List Instr := [.shift .sll .d .a0 .a0 1, .li .t2 3, .sub .a0 .t2 .a0]
 
 /-- x in range: `g^x mod p` to `y` or zeros, status 1 or 3. -/
-def dpGood : Prog isa := .seq exPre (.seq ModExp.powWin (.seq exOut (.block status)))
+def dpGood : Prog isa := .seq exPre (.seq ModExp.powWinFn (.seq exOut (.block status)))
 
 /-- After p's check. -/
 def dpBody : Prog isa := .seq xRange (.ite (.zero .s9) dpBad dpGood)

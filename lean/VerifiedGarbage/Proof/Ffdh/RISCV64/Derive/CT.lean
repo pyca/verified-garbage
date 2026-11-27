@@ -14,12 +14,12 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
 # `vg_ffdh_derive_public` on RISC-V: constant time
@@ -150,7 +150,7 @@ theorem TB {d : DD} {s : State} (h : RB d s ∧ s.gpr .s9 = 0) : WP isa dpBad s 
 
 /-- The status. -/
 theorem TS {x : XD} {s : State} (h : CF x s) : WP isa (.block status) s (CF x) := by
-  refine WP.mono (WP.keep [.a0, .t2] (Q := fun _ => True) (by unfold status; brun [fin64_exec_li_lit (show 3 < 2048 by decide)]; exact ⟨_, rfl⟩) (by rfl) (by rfl))
+  refine WP.mono (WP.keep [.a0, .t2] (Q := fun _ => True) (by unfold status; brun [Dsa.RISCV64.exec_li_lit (show 3 < 2048 by decide)]; exact ⟨_, rfl⟩) (by rfl) (by rfl))
     fun t ⟨_, kt⟩ => (kt.gpr (by decide)).trans h
 
 /-! ## Constant time -/

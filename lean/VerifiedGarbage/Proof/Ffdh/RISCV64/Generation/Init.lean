@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import VerifiedGarbage.Proof.Ffdh.ParameterPublic
 public import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Impl.Ffdh.RISCV64.Generation.Init
 meta import VerifiedGarbage.Proof.Ffdh.RISCV64.KeyGeneration.Init
@@ -14,18 +14,17 @@ meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.EntropyRequest
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-! # Native FFDH parameter-generation initialization on RISC-V: correctness, constant time
 
 `zext_ok`: the generator's low word, zero-extended, in `a2`; `validate_ok`:
-`t0` is zero exactly for valid parameters (`initValid`); `initialize_ok` and
-`clear_ok`: the four public words (`initWritten`) and the result. The code
+`t0` is zero exactly for valid parameters (`initValid`); `initialize_ok`:
+the four public words (`initWritten`) and the result. The code
 branches only on `bits` and the generator's low word, which are public, but
 the generator's register is public only in its low word, so constant time is
 relational (`init_relCT`): `zext` is checked by the taint analysis with `a2`
@@ -37,8 +36,8 @@ secret, and the rest with `a2`, now equal in both runs, public.
 namespace VG.Proof.Ffdh.RISCV64.Generation
 
 open VG VG.RISCV64 VG.RISCV64.Taint VG.Proof.Bignum VG.Impl.Ffdh.RISCV64.Generation
-open VG.Proof.Ffdh.RISCV64.KeyGeneration (initWritten initWritten_words StateWr st al st0 al0)
-open VG.Proof.Bignum.RISCV64 (add_ofNat_zero fin64_exec_li_zero)
+open VG.Proof.Ffdh.RISCV64.KeyGeneration (initWritten initWritten_words clear_ok StateWr st al st0 al0)
+open VG.Proof.Bignum.RISCV64 (add_ofNat_zero)
 
 /-- Whether `init` accepts `bits` and the generator. -/
 def initValid (bits g : Nat) : Prop := 512 ≤ bits ∧ bits ≤ 8192 ∧ (g = 2 ∨ g = 5)
@@ -88,7 +87,7 @@ theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .a1 = BitVec.ofNat 64 n)
       ((t.gpr .t0 = 0 ↔ initValid n g) ∧ t.mem = s.mem) ∧ Keep [.t0, .t1, .t2, .t3, .t4] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   unfold validate lt
-  brun [hx, hg, exec_lui, lui2, fin64_exec_li_lit (show 512 < 2048 by decide)]
+  brun [hx, hg, exec_lui, lui2, Dsa.RISCV64.exec_li_lit (show 512 < 2048 by decide)]
   simp only [ofNat_lt hn (show 512 < 2 ^ 64 by decide), ofNat_lt (show 8192 < 2 ^ 64 by decide) hn,
     ofNat_lt (show g < 2 ^ 64 by omega) (show 2 < 2 ^ 64 by decide),
     ofNat_lt (show g < 2 ^ 64 by omega) (show 3 < 2 ^ 64 by decide),
@@ -97,16 +96,6 @@ theorem validate_ok (s : State) {n g : Nat} (hx : s.gpr .a1 = BitVec.ofNat 64 n)
     flag_eq (c := 2) (c' := 3) rfl, flag_eq (c := 5) (c' := 6) rfl, flags_zero]
   unfold initValid
   omega
-
-theorem clear_ok {s : State} (h : StateWr s) :
-    WP isa (.block clear) s fun t => (t.gpr .a0 = 0 ∧ t.mem = initWritten s.mem (s.gpr .a0) 0 0 0 0) ∧
-      Keep [.a0, .t2] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold clear initWritten
-  brun [st0 h, al0 h, st h 0 (by decide), st h 8 (by decide), st h 16 (by decide), st h 24 (by decide),
-    al h 0 (by decide) (by decide), al h 8 (by decide) (by decide), al h 16 (by decide) (by decide),
-    al h 24 (by decide) (by decide), fin64_exec_li_zero, add_ofNat_zero]
-  all_goals rfl
 
 theorem shift_ofNat (n k : Nat) : (BitVec.ofNat 64 n) <<< k = BitVec.ofNat 64 (n * 2 ^ k) := by
   apply BitVec.eq_of_toNat_eq
@@ -141,7 +130,7 @@ theorem initialize_ok {s : State} {bits : Nat} (h : StateWr s) (hx : s.gpr .a1 =
   unfold initializeState initWritten
   brun [hx, hw, hm, hc, hr, st0 h, al0 h, st h 0 (by decide), st h 8 (by decide), st h 16 (by decide), st h 24 (by decide),
     al h 0 (by decide) (by decide), al h 8 (by decide) (by decide), al h 16 (by decide) (by decide),
-    al h 24 (by decide) (by decide), fin64_exec_li_lit (show 1 < 2048 by decide), add_ofNat_zero]
+    al h 24 (by decide) (by decide), Dsa.RISCV64.exec_li_lit (show 1 < 2048 by decide), add_ofNat_zero]
   rfl
 
 def initPre (s : State) : Prop := StateWr s
@@ -152,7 +141,7 @@ def initPost (s t : State) : Prop :=
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = List.replicate 4 0
   | some values => ((t.gpr .a0).setWidth 32).toNat = 1 ∧ ∃ first,
       Spec.Rsa.wordsAt t.mem (s.gpr .a0) 4 = (values ++ [first]).map (BitVec.ofNat 64) ∧
-      Spec.Entropy.RequestValid (Spec.Ffdh.parameterEntropy (s.gpr .a1).toNat) 0 first
+      Proof.Ffdh.FirstAsked (s.gpr .a1).toNat first
 
 def initPub (s t : State) : Prop :=
   s.sp = t.sp ∧ s.gpr .a0 = t.gpr .a0 ∧ s.gpr .a1 = t.gpr .a1 ∧
@@ -189,7 +178,7 @@ theorem init_ok {s : State} (h : StateWr s) : WP isa init s (initPost s) := by
   · have hv : initValid n g := h0.1 (by simpa using hb)
     refine WP.mono (initialize_ok hvw hv4 hv.2.1) fun t ⟨⟨ht, hmt⟩, _⟩ => ?_
     simp only [initPost, hxn, hgn, parameterInit_eq, ite_eq_left hv]
-    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.first_valid hv.1⟩
+    refine ⟨by rw [ht]; rfl, _, ?_, Proof.Ffdh.firstAsked hv.1⟩
     rw [hmt, hmv, h3, initWritten_words]
     rfl
   · have hv : ¬initValid n g := fun hv => by simp [h0.2 hv] at hb
@@ -255,7 +244,7 @@ theorem init_relCT (p : Inputs) (hg : p.g < 2 ^ 32) :
     · exact h₁.2.2.1.trans h₂.2.2.1.symm
 
 /-- `vg_ffdh_parameter_generation_init`. -/
-theorem init_verified : Verified RISCV64.target init (Spec.Ffdh.parameterInitContract RISCV64.abi) := by
+theorem init_verified : Verified RISCV64.target init (Proof.Ffdh.parameterInitAskedContract RISCV64.abi) := by
   refine Verified.of_correct (k := initContract) init_correct ?_ ?_
   · intro s₁ s₂ tr₁ tr₂ t₁ t₂ _ _ hp e₁ e₂
     obtain ⟨hsp, h3, h4, h5⟩ := hp
@@ -265,7 +254,7 @@ theorem init_verified : Verified RISCV64.target init (Spec.Ffdh.parameterInitCon
     have i₂ : Input p s₂ := ⟨h3.symm, by simp only [p, h4, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       by simp only [p, h5, BitVec.ofNat_toNat, BitVec.setWidth_eq], hsp.symm⟩
     exact (init_relCT p ((s₁.gpr .a2).setWidth 32).isLt _ _ _ _ _ _ ⟨i₁, i₂⟩ e₁ e₂).1
-  · sig_implies [Spec.Ffdh.parameterInitContract, Spec.Ffdh.parameterInitSig,
+  · sig_implies [Proof.Ffdh.parameterInitAskedContract, Spec.Ffdh.parameterInitSig,
       initContract, initPre, initPost, initPub, StateWr, RISCV64.abi, RISCV64.argRegs] [initSat] using initSat
 
 end VG.Proof.Ffdh.RISCV64.Generation

@@ -28,10 +28,11 @@ theorem al8 {B : Addr} (hB : B.toNat % 8 = 0) {d : Nat} (hd : d % 8 = 0) :
 /-- A frame saving `r` around `main`, which may have frames of any kind:
 `main` runs from `s₀` with the stack pointer moved down by 16 and `r` stored
 8 bytes above it, in the permissions of `s₀`, and the pop restores `r` and
-the stack pointer. -/
+the stack pointer, and loses the frame's bytes. -/
 theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Prop}
     (hsp : 16 ≤ s₀.sp.toNat) (hd : ∀ R ∈ s₀.wr, Region.Disjoint ⟨s₀.sp - 16, 16⟩ R)
-    (hmain : WP isa main (framed r s₀) fun s₂ => Q { s₂.write r (s₀.gpr r) with sp := s₀.sp })
+    (hmain : WP isa main (framed r s₀) fun s₂ => ∀ m u, Frame [⟨s₀.sp - 16, 16⟩] s₂.mem m →
+      Q { s₂.write r (s₀.gpr r) with sp := s₀.sp, mem := m, unknowns := u })
     (hn : sdepth main + 16 < 2 ^ 64) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
   refine WP.frame hsp (WP.narrowAny (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega))
@@ -39,7 +40,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi
     exact InRegions_append_cons (xs := []).mpr (.inr hi)
-  · intro s' hrd hwr hsp' hf hq
+  · intro s' hrd hwr hsp' hf hq m u fl
     have hread : s'.mem.read (s'.sp + 8) 8 = s₀.gpr r := by
       rw [hsp', show (pushed r s₀).sp = s₀.sp - 16 from rfl,
         hf.read (r := ⟨s₀.sp - 16, 16⟩) (frame_contains s₀.sp) (fun R hR => ?_) (by decide)]
@@ -55,7 +56,7 @@ theorem WP.frameRegAny {r : Reg} {main : Prog isa} {s₀ : State} {Q : State →
       simp only [pushed] at hrd
       subst hrd
       rfl
-    rw [e]; exact hq
+    rw [e]; exact hq m u fl
 
 
 end VG.Proof.Ffdh.RISCV64.KeyGeneration

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ffdh.SievedBounds
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-! # The parameter search's contract, public data, loop states and writes (RISC-V)
 
@@ -132,7 +132,7 @@ def searchPost (s t : State) : Prop :=
     ∃ requested, wordsAt t.mem (stackArg s 1) 4 = [BitVec.ofNat 64 (searchResult s).remaining,
       BitVec.ofNat 64 (genLen s), BitVec.ofNat 64 (parameterEntropy (genBits s)),
       BitVec.ofNat 64 requested] ∧
-      (searchResult s).Requests (parameterEntropy (genBits s)) requested
+      Proof.Ffdh.Asked (genBits s) (searchResult s) requested
 
 /-- What timing may depend on: the arguments, the tape, the controller's
 public words and the table's address. -/
@@ -299,17 +299,9 @@ theorem sp_eq (h : SInput p s) : p.sp = s.sp := by rw [← h.2]; rfl
 
 theorem sp_room (h : SInput p s) : p.S + 32 ≤ p.sp.toNat := by rw [h.sp_eq]; exact h.1.2.1
 
-theorem sp_al (h : SInput p s) : p.sp.toNat % 16 = 0 := by rw [h.sp_eq]; exact h.1.2.2.1
-
-theorem sp_top (h : SInput p s) : p.sp.toNat + 16 ≤ 2 ^ 64 := by rw [h.sp_eq]; exact h.1.1
-
 theorem up_al (h : SInput p s) : p.up.toNat % 8 = 0 := by
   obtain ⟨-, -, -, -, -, -, -, -, -, hu, -⟩ := h.1
   rw [← h.2]; exact hu
-
-theorem B_al (h : SInput p s) : p.B.toNat % 8 = 0 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, hb, -⟩ := h.1
-  rw [← h.2]; exact hb
 
 theorem control_al (h : SInput p s) : p.control.toNat % 8 = 0 := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hc, -⟩ := h.1
@@ -325,14 +317,6 @@ theorem len_eq (h : SInput p s) : p.len = (p.bits + 7) / 8 := by
 
 theorem len_bounds (h : SInput p s) : 64 ≤ p.len ∧ p.len ≤ 1024 := by
   have := h.bits_bounds; have := h.len_eq; omega
-
-theorem gen_eq (h : SInput p s) : p.gen = 2 ∨ p.gen = 5 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hg, -⟩ := h.1
-  rw [← h.2]; exact hg
-
-theorem scratch_le (h : SInput p s) : Spec.Rsa.scratchWords p.len ≤ p.Z / 8 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hs, -⟩ := h.1
-  rw [← h.2]; simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]; exact hs
 
 theorem z8 (h : SInput p s) : p.Z / 8 * 8 = p.Z := by
   rw [← h.2]; simp only [sOfState, Nat.mul_div_cancel _ (by decide : 0 < 8)]
@@ -392,6 +376,29 @@ theorem read_disjoint (h : SInput p s) {r : Region} (hr : r ∈ inReads s) :
   · obtain rfl := List.mem_singleton.mp hw
     exact (h.stack_disjoint (List.mem_append_right _ hr)).symm
 
+/-- A released frame's bytes are of the search's stack. -/
+theorem stack_frame (h : SInput p s) {m m' : Mem} {a b : Nat}
+    (hf : Frame [⟨p.sp - BitVec.ofNat 64 a, b⟩] m m') (hb : b ≤ a) (ha : a ≤ p.S + 32) :
+    Frame [below s.sp (stackUse p.S)] m m' :=
+  hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    obtain rfl := List.mem_singleton.mp hr
+    rw [← h.sp_eq]
+    exact Offset.sub_below p.sp ha (show p.S + 32 - a + b ≤ p.S + 32 by omega_using [hb, ha])⟩
+
+theorem write_stack (h : SInput p s) {r : Region} (hr : r ∈ inWrites s) :
+    ∀ q ∈ [below s.sp (stackUse p.S)], r.Disjoint q := fun q hq => by
+  obtain rfl := List.mem_singleton.mp hq
+  exact (h.stack_disjoint (List.mem_append_left _ hr)).symm
+
+/-- The stack's bytes may change, not the output. -/
+theorem output_stack (h : SInput p s) {m m' : Mem} (hf : Frame [below s.sp (stackUse p.S)] m m') :
+    bytesAt m' p.op p.len = bytesAt m p.op p.len := by
+  have hl := h.len_bounds
+  simp only [Spec.Rsa.bytesAt]
+  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p.op, p.len⟩)
+    (h.write_stack (by rw [← h.2]; simp [inWrites, inOut, sOfState])) (show p.len ≤ 2 ^ 64 by omega_using [hl])
+    (List.mem_range.mp hi)
+
 theorem bytes_frame (h : SInput p s) {r : Region} (hr : r ∈ inReads s) {m m' : Mem}
     (hf : Frame (changes p.S s) m m') : bytesAt m' r.base r.len = bytesAt m r.base r.len := by
   simp only [Spec.Rsa.bytesAt]
@@ -437,10 +444,6 @@ theorem used_eq (h : SInput p s) : inUsed s = ⟨p.up, 8⟩ := by rw [← h.2]; 
 theorem ctl_eq (h : SInput p s) : inCtl s = ⟨p.control, 128⟩ := by rw [← h.2]; rfl
 
 theorem scr_eq (h : SInput p s) : inScr s = ⟨p.B, p.Z⟩ := by rw [← h.2]; rfl
-
-private theorem not_self_disjoint {r : Region} (h : r.Disjoint r) (hl : 0 < r.len) : False :=
-  h r.base (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
 
 theorem out_mem (h : SInput p s) : (⟨p.op, p.len⟩ : Region) ∈ inWrites s := by
   rw [← h.out_eq]; simp [inWrites]
@@ -672,8 +675,8 @@ theorem terminal_ok {s : State} {B : Addr} (a : CtlAccess s B) (hb : s.gpr .s0 =
   all_goals
     brun [stf, hb, a.st 0 (by decide), a.st 24 (by decide), a.st 112 (by decide),
       a.al 0 (by decide) (by decide), a.al 24 (by decide) (by decide),
-      a.al 112 (by decide) (by decide), fin64_exec_li_zero, fin64_exec_li_lit (show 1 < 2048 by decide),
-      fin64_exec_li_lit (show 3 < 2048 by decide)]
+      a.al 112 (by decide) (by decide), fin64_exec_li_zero, Proof.Dsa.RISCV64.exec_li_lit (show 1 < 2048 by decide),
+      Proof.Dsa.RISCV64.exec_li_lit (show 3 < 2048 by decide)]
 
 /-- A terminal status written over a loop state, with no attempts left. -/
 theorem terminal_live {p : SPub} {original s : State} {used k : Nat}

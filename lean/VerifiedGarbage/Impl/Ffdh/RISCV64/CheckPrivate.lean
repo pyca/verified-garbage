@@ -17,7 +17,7 @@ exchange's `out` (the header's word 0, and `s10`) is the working space past
 its 24 arrays, which nothing writes. After x's range (`Derive.xRange`,
 status 2 out of range):
 
-* `z = g^x mod p` into array 4 (`exPre`, `ModExp.powWin`);
+* `z = g^x mod p` into array 4 (`exPre`, `ModExp.powWinFn`);
 * the mask of `1 < z < p − 1` (`zMask`) and, with y's `p_len` octets loaded
   into array 8, that of `z = y` (`eqMask`); the status is 1 under both masks,
   else 0.
@@ -31,7 +31,8 @@ the status reveals.
 namespace VG.Impl.Ffdh.RISCV64.CheckPrivate
 
 open VG.RISCV64 VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64 VG.Impl.Ffdh.RISCV64.Derive
-open VG.Impl.Bignum.RISCV64.PublicChecked (base saveRegs restore setup)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base setup)
+open VG.Impl.Dsa.RISCV64 (save restore)
 
 /-- y's address into the header's word 4, and the domain, its length and
 `p_len` into `a2`, `a3` and `a4`, as `vg_ffdh_derive_public` has them; x,
@@ -46,9 +47,9 @@ def cpHdr : List Instr :=
 and the header's word 0. -/
 def cpOut : List Instr := [.li .t2 24, .mul .t2 .t2 .s5, .add .s10 .t2 .a7, .store .d .s10 .s6 0]
 
-/-- The working space (`a7`) into `t0`, the registers saved there, the
+/-- The working space (`a7`) into `t2`, the registers saved there, the
 header, `setup`, and the exchange's `out`. -/
-def cpFront : List Instr := [.addi .t0 .a7 0] ++ saveRegs ++ cpHdr ++ setup ++ cpOut
+def cpFront : List Instr := [.addi .t2 .a7 0] ++ save .t2 ++ cpHdr ++ setup ++ cpOut
 
 /-- y's address from the header's word 4. -/
 def ldY : List Instr := [.load .d .s7 .s6 32]
@@ -67,7 +68,7 @@ mask of `z = y`; `a0 :=` 1 or 0. -/
 def cpCmp : Prog isa := .seq zMask (.seq (.block ldY) (.seq loadY (.seq (eqMask 4 8) (.block both))))
 
 /-- x in range: `a0 :=` 1 if `g^x mod p` is in `2..p − 2` and equals y, else 0. -/
-def cpGood : Prog isa := .seq exPre (.seq ModExp.powWin cpCmp)
+def cpGood : Prog isa := .seq exPre (.seq ModExp.powWinFn cpCmp)
 
 /-- After p's check. -/
 def cpBody : Prog isa := .seq xRange (.ite (.zero .s9) (.block [.li .a0 2]) cpGood)

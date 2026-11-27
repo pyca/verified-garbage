@@ -1,26 +1,552 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Rows
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Digit
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.Cached
+public import VerifiedGarbage.Proof.Bignum.RISCV64.ModExpWin
+public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+public import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMont
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubE
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubSan
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreWrite
+import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreSave
+import VerifiedGarbage.Proof.Ffdh.CombBitBytes
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Scalar
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.RISCV64.PubMont
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFios
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombMont
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
--- separate module: the cached attempt's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
-/-! # FFDH's comb on RISC-V
+/-!
+# FFDH's comb on RISC-V
 
 `step_ok`: a row of the comb, a square, the digit's entry and a product.
-`comb_ok`: `g^x mod p` from the context's rows. -/
+`comb_ok`: `g^x mod p` from the context's rows.
+-/
 
 @[expose] public section
+
+/-! # FFDH's context on RISC-V: its rows
+
+The context is `3 + 34 w` words: three public words, then rows of `w`
+words, row `j` at byte `rowOff w j` (`p`, `R² mod p`, then entry `e` at row
+`2 + e`). `rowPtr_ok`: the address of a row; `loadRow_ok`: a row to an
+array of the working space, by `copyWords`. `select_ok`: array 4 `:=` the
+digit's entry, reading every entry under an equality mask. -/
+
+namespace VG.Proof.Ffdh.RISCV64.Cached
+
+open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64
+  VG.Impl.Ffdh.RISCV64.Cached
+open VG.Proof.Bignum.RISCV64
+open VG.Proof.Bignum.RISCV64.Win (WCtx A mask selectAt_ok sub1_sign arr_eq arr1 slot_lt arrO arr_out)
+open VG.Proof.Bignum (slot slot_sep Arrays)
+open VG.Impl.Bignum.RISCV64.PublicChecked (base)
+
+
+/-- The context's words. -/
+abbrev ctxWords (w : Nat) : Nat := 3 + 34 * w
+
+/-- The offset of row `j` in a context of `w`-word rows. -/
+abbrev rowOff (w j : Nat) : Nat := 24 + 8 * (w * j)
+
+/-- Entry `a` of the context at `C`, as a number. -/
+abbrev ent (m : Mem) (C : Addr) (w a : Nat) : Nat := wordsVal m C (rowOff w (a + 2)) w
+
+/-- The context at `C`: readable, aligned and apart from the working space. -/
+structure CtxRd (s : State) (B : Addr) (Z : Nat) (C : Addr) (w : Nat) : Prop where
+  hn : C.toNat + 8 * ctxWords w ≤ 2 ^ 64
+  rd : ∀ d, d + 8 ≤ 8 * ctxWords w → InRegions (s.rd ++ s.wr) (off C d) 8
+  al : C.toNat % 8 = 0
+  sep : ∀ x, ofs C x < 8 * ctxWords w → Z ≤ ofs B x
+
+theorem CtxRd.congr {s t : State} {B : Addr} {Z : Nat} {C : Addr} {w : Nat} (h : CtxRd s B Z C w)
+    (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) : CtxRd t B Z C w :=
+  ⟨h.hn, fun d hd => by rw [hrd, hwr]; exact h.rd d hd, h.al, h.sep⟩
+
+theorem row_fits {w j : Nat} (hj : j < 34) : rowOff w j + 8 * w ≤ 8 * ctxWords w := by
+  have h1 := Nat.mul_le_mul_left w (show j + 1 ≤ 34 by omega_arith)
+  rw [Nat.mul_succ, Nat.mul_comm w 34] at h1
+  unfold rowOff ctxWords; omega_arith
+
+/-- Numbers of `k` words that agree word by word. -/
+theorem wordsVal_of_words {m m' : Mem} {B B' : Addr} : ∀ {d d' k : Nat},
+    (∀ i < k, word m B (d + 8 * i) = word m' B' (d' + 8 * i)) → wordsVal m B d k = wordsVal m' B' d' k
+  | _, _, 0, _ => rfl
+  | d, d', k + 1, h => by
+    have h0 := h 0 (by omega_arith)
+    simp only [Nat.mul_zero, Nat.add_zero] at h0
+    simp only [wordsVal]
+    rw [h0, wordsVal_of_words (d := d + 8) (d' := d' + 8) fun i hi => by
+      have := h (i + 1) (by omega_arith)
+      rwa [show d + 8 * (i + 1) = d + 8 + 8 * i by omega_arith,
+        show d' + 8 * (i + 1) = d' + 8 + 8 * i by omega_arith] at this]
+
+/-- A change of the working space keeps the context. -/
+theorem ctx_of_scr {B C : Addr} {Z n o l : Nat} {m m' : Mem} (h : Outside B o l m m') (hl : o + l ≤ Z)
+    (hsep : ∀ x, ofs C x < n → Z ≤ ofs B x) : Outside C n (2 ^ 64) m m' :=
+  fun x hx => h x (Or.inr (by
+    rcases hx with hx | hx
+    · have := hsep x hx; omega_arith
+    · have := (x - C).isLt; simp only [ofs] at hx; omega_arith))
+
+theorem row_bv {w j : Nat} (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) (C : Addr) :
+    C + (BitVec.ofNat 64 j * BitVec.ofNat 64 w) <<< 3 + BitVec.ofNat 64 24 = off C (rowOff w j) := by
+  have hwj : j * w < 2 ^ 47 := by
+    calc j * w < 2 ^ 16 * 2 ^ 31 := Nat.mul_lt_mul_of_lt_of_lt hj hw
+      _ = 2 ^ 47 := by rw [← Nat.pow_add]
+  have e : (BitVec.ofNat 64 j * BitVec.ofNat 64 w) <<< 3 = BitVec.ofNat 64 (8 * (w * j)) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_shiftLeft, BitVec.toNat_mul, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show w < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show j * w < 2 ^ 64 by omega_arith), Nat.shiftLeft_eq,
+      Nat.mod_eq_of_lt (show j * w * 2 ^ 3 < 2 ^ 64 by omega_arith),
+      Nat.mod_eq_of_lt (show 8 * (w * j) < 2 ^ 64 by rw [Nat.mul_comm w j]; omega_arith), Nat.mul_comm w j]
+    omega_arith
+  rw [e, BitVec.add_assoc, ← BitVec.ofNat_add, off, rowOff, Nat.add_comm]
+
+/-- `rowPtr rd`: `rd :=` the address of row `j` (in `t2`) of the context at
+`C` (`s10`), with `w` in `t0`. -/
+theorem rowPtr_ok {s : State} {C : Addr} {w j : Nat} {rd : Reg} (hrd : rd = .t3 ∨ rd = .t4)
+    (h10 : s.gpr .s10 = C) (h0 : s.gpr .t0 = BitVec.ofNat 64 w) (h2 : s.gpr .t2 = BitVec.ofNat 64 j)
+    (hw : w < 2 ^ 31) (hj : j < 2 ^ 16) :
+    WP isa (.block (rowPtr rd)) s fun t => (t.gpr rd = off C (rowOff w j) ∧ t.mem = s.mem) ∧ Keep [.t2, rd] s t := by
+  rcases hrd with rfl | rfl <;>
+  · refine WP.keep _ ?_ (by rfl) (by rfl)
+    unfold rowPtr
+    brun [h10, h0, h2, row_bv hw hj]
+
+/-- `loadRow a`: row `j` (in `t2`) of the context at `C` (`s10`) to array
+`a`. -/
+theorem loadRow_ok {s : State} {B C : Addr} {Z w N j a : Nat} (h : WCtx s B Z w N) (hc : CtxRd s B Z C w)
+    (h10 : s.gpr .s10 = C) (h2 : s.gpr .t2 = BitVec.ofNat 64 j) (ha : a < 24) (hj : j < 34) :
+    WP isa (loadRow a) s fun t =>
+      (A t.mem B w a = wordsVal s.mem C (rowOff w j) w ∧ Outside B (slot w a) (8 * w) s.mem t.mem) ∧
+        Keep [.t2, .t3, .t4, .t5, .s0] s t := by
+  have hw := h.w2; have hw' := h.w31
+  have hrow := row_fits (w := w) hj
+  have hn := hc.hn
+  have hsl := h.sl ha
+  unfold loadRow
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (rowPtr_ok (rd := .t4) (.inr rfl) h10 h.t0 h2 hw' (by omega_arith)) fun t₁ ⟨⟨a4, m1⟩, k1⟩ => ?_
+  have h1 := h.regs k1 (by decide) m1
+  refine WP.mono (Pub.base_ok (rd := .t3) (by decide) h1.a7 h1.s5 a) fun t₂ ⟨⟨a3, m2⟩, k2⟩ => ?_
+  have h2' := h1.regs k2 (by decide) m2
+  have hm : t₂.mem = s.mem := by rw [m2, m1]
+  refine WP.mono (Pub.copyIn_ok (P := C) (Zp := 8 * ctxWords w) (dS := rowOff w j) (dD := slot w a) h2'.scr hn
+    (fun i hi => by rw [(k1.trans k2).2.1, (k1.trans k2).2.2]; exact hc.rd _ (by omega_arith))
+    (fun i hi => by
+      have : (off C (rowOff w j + 8 * i)).toNat = C.toNat + (rowOff w j + 8 * i) := by
+        simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
+        rw [Nat.mod_eq_of_lt (a := rowOff w j + 8 * i) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+      rw [this]; have := hc.al; unfold rowOff; omega_arith)
+    ((k2.gpr (by decide)).trans a4) a3 h2'.t0 (by omega_arith) hw' (slot_al w a) (by omega_arith) (by omega_arith)
+    hc.sep) fun t ⟨⟨_, _, hw₁, ho⟩, kt⟩ => ⟨⟨?_, by rw [← hm]; exact ho⟩, ((k1.trans k2).trans kt).mono (by decide)⟩
+  rw [← hm]
+  exact wordsVal_of_words hw₁
+
+/-! ## The selection -/
+
+/-- `Win.mask`'s subtraction form (main's `MillerRabin.RISCV64.mask_sub` is
+about its own `mask`). -/
+theorem mask_sub (b : Bool) : BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) = mask b := by
+  cases b <;> decide
+
+theorem isEntry_ok {s : State} {e d : Nat} (h3 : s.gpr .a3 = BitVec.ofNat 64 e)
+    (h1 : s.gpr .a1 = BitVec.ofNat 64 d) (he : e < 32) (hd : d < 32) :
+    WP isa (.block Generate.isEntry) s fun t => (t.gpr .s4 = mask (decide (e = d)) ∧ t.mem = s.mem) ∧
+      Keep [.t2, .t3, .s4] s t := by
+  have hx : (BitVec.ofNat 64 e ^^^ BitVec.ofNat 64 d).toNat < 2 ^ 32 := by
+    rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (by omega_arith)]
+    exact Nat.xor_lt_two_pow (by omega_arith) (by omega_arith)
+  have hz : (BitVec.ofNat 64 e ^^^ BitVec.ofNat 64 d = 0) ↔ e = d := by
+    rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.xor_eq_zero_iff]
+    constructor
+    · intro h
+      have := congrArg BitVec.toNat h
+      rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+        at this
+    · rintro rfl; rfl
+  refine WP.keep _ ?_ (by rfl) (by rfl)
+  unfold Generate.isEntry
+  brun [h3, h1, sub1_sign hx, Pub.pub_li0]
+  rw [← mask_sub]
+  by_cases h : e = d
+  · simp [h]
+  · simp [h, show ¬ (BitVec.ofNat 64 e ^^^ BitVec.ofNat 64 d = 0#64) from fun h' => h (hz.mp h')]
+
+/-- The registers a choice of an entry writes. -/
+def selERegs : List Reg := [.t2, .t3, .t4, .t5, .s0, .s2, .s3, .s4, .a0, .a2, .a3, .a5, .a6]
+
+/-- `selEntry o t`: entry `e` (`a3`) to array `o` if it is the digit `d`
+(`a1`), else array `t`; `e` advanced. -/
+theorem selEntry_ok {s : State} {B C : Addr} {Z w N e d o t : Nat} (h : WCtx s B Z w N) (hc : CtxRd s B Z C w)
+    (h10 : s.gpr .s10 = C) (h3 : s.gpr .a3 = BitVec.ofNat 64 e) (h1 : s.gpr .a1 = BitVec.ofNat 64 d)
+    (he : e < 32) (hd : d < 32) (hot : o = 5 ∧ t = 4 ∨ o = 4 ∧ t = 5) :
+    WP isa (Generate.selEntry o t) s fun u =>
+      (A u.mem B w o = (if e = d then ent s.mem C w e else A s.mem B w t) ∧ Arrays B w [3, o] s.mem u.mem ∧
+        u.gpr .a3 = BitVec.ofNat 64 (e + 1)) ∧ Keep selERegs s u := by
+  have hn := h.nw
+  have ho : o < 24 := by omega_arith
+  have ht : t < 24 := by omega_arith
+  unfold Generate.selEntry seqs
+  rw [show ([.addi .t2 .a3 2] ++ rowPtr .t4 ++ base .t3 3 : List Instr) =
+    ([.addi .t2 .a3 2] : List Instr) ++ (rowPtr .t4 ++ base .t3 3) from List.append_assoc _ _ _]
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.t2] (Q := fun u => u.gpr .t2 = BitVec.ofNat 64 (e + 2) ∧ u.mem = s.mem)
+    (by brun [h3, ← BitVec.ofNat_add]) (by rfl) (by rfl)) fun s₁ ⟨⟨a2, m1⟩, k1⟩ => ?_
+  have c1 := h.regs k1 (by decide) m1
+  refine WP.mono (wp_seq_inv (WP.mono (loadRow_ok (a := 3) c1 (hc.congr k1.2.1 k1.2.2)
+    ((k1.gpr (by decide)).trans h10) a2 (by decide) (by omega_arith)) fun s₂ ⟨⟨v3, o3⟩, k2⟩ => ?_))
+    (fun _ h => WP.seq h)
+  rw [m1] at v3 o3
+  have c2 := c1.of k2 (by decide) (by rw [m1]; exact arrO o3 (by decide) (by decide))
+  have k12 := k1.trans k2
+  refine WP.seq ?_
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (isEntry_ok (e := e) (d := d) (by rw [k12.gpr (by decide), h3]) (by rw [k12.gpr (by decide), h1])
+    he hd) fun t₁ ⟨⟨h4, n1⟩, j1⟩ => ?_
+  have e1 := c2.regs j1 (by decide) n1
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .a5) (by decide) e1.a7 e1.s5 3) fun t₂ ⟨⟨a5, n2⟩, j2⟩ => ?_
+  have e2 := e1.regs j2 (by decide) n2
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.base_ok (rd := .a6) (by decide) e2.a7 e2.s5 t) fun t₃ ⟨⟨a6, n3⟩, j3⟩ => ?_
+  have e3 := e2.regs j3 (by decide) n3
+  refine WP.mono (Pub.base_ok (rd := .a2) (by decide) e3.a7 e3.s5 o) fun t₄ ⟨⟨a2', n4⟩, j4⟩ => ?_
+  have e4 := e3.regs j4 (by decide) n4
+  have hm : t₄.mem = s₂.mem := by rw [n4, n3, n2, n1]
+  have j14 := ((j1.trans j2).trans j3).trans j4
+  refine WP.seq (WP.mono (selectAt_ok e4 (b := decide (e = d)) (o := o) (a := 3) (t := t) ho (by decide) ht
+      (by omega_arith) (by omega_arith) a2' (by rw [j4.gpr (by decide), j3.gpr (by decide), a5])
+      (by rw [j4.gpr (by decide), a6]) (by rw [j4.gpr (by decide), j3.gpr (by decide), j2.gpr (by decide), h4]))
+    fun s₃ ⟨⟨hv, hout⟩, k3⟩ => ?_)
+  rw [hm] at hv hout
+  refine WP.mono (WP.keep [.a3] (Q := fun u => u.gpr .a3 = BitVec.ofNat 64 (e + 1) ∧ u.mem = s₃.mem)
+    (by brun [(k3.gpr (r := .a3) (by decide)).trans ((j14.gpr (r := .a3) (by decide)).trans
+      ((k12.gpr (r := .a3) (by decide)).trans h3)), ← BitVec.ofNat_add]) (by rfl) (by rfl))
+    fun u ⟨⟨u3, um⟩, ku⟩ => ⟨⟨?_, ?_, u3⟩, (((k12.trans j14).trans k3).trans ku).mono (by decide)⟩
+  · rw [um, hv, v3]
+    by_cases hb : e = d
+    · simp [hb]
+    · simp only [hb, decide_false, Bool.false_eq_true, ↓reduceIte]
+      exact arr_out o3 ht (by omega_arith) hn
+  · rw [um]
+    exact ((arr1 o3 (by omega_arith)).mono (by simp)).trans ((arr1 hout (by omega_arith)).mono (by simp))
+
+/-- A change of arrays of the working space keeps the context. -/
+theorem arrays_ctx {B C : Addr} {Z w n : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
+    (hjs : ∀ j ∈ js, j < 24) (hZ : slot w 24 ≤ Z) (hsep : ∀ x, ofs C x < n → Z ≤ ofs B x) :
+    Outside C n (2 ^ 64) m m' := fun x hx => h x fun j hj => Or.inr (by
+  have := slot_lt (w := w) (hjs j hj)
+  show slot w j + 8 * (w + 2) ≤ (x - B).toNat
+  rcases hx with hx | hx
+  · have h' : Z ≤ (x - B).toNat := hsep x hx
+    omega_arith
+  · have := (x - C).isLt; simp only [ofs] at hx; omega_arith)
+
+theorem ent_keep {C : Addr} {w a : Nat} {m m' : Mem} (h : Outside C (8 * ctxWords w) (2 ^ 64) m m')
+    (hn : C.toNat + 8 * ctxWords w ≤ 2 ^ 64) (ha : a < 32) : ent m' C w a = ent m C w a :=
+  Outside.wordsVal h (Or.inl (row_fits (w := w) (by omega_arith)))
+    (by have := row_fits (w := w) (j := a + 2) (by omega_arith); omega_arith)
+
+/-- The selection after the entries below `2 k`, from `s₀`. -/
+structure SelI (s₀ : State) (B C : Addr) (Z w N d k : Nat) (u : State) : Prop where
+  win : WCtx u B Z w N
+  ctx : CtxRd u B Z C w
+  h10 : u.gpr .s10 = C
+  h1 : u.gpr .a1 = BitVec.ofNat 64 d
+  h3 : u.gpr .a3 = BitVec.ofNat 64 (2 * k)
+  acc : A u.mem B w 4 = if d < 2 * k then ent s₀.mem C w d else 0
+  out : Arrays B w [3, 4, 5] s₀.mem u.mem
+  keep : Keep selERegs s₀ u
+
+/-- `select`: array 4 `:=` entry `d` (`a1`) of the context (`s10`). -/
+theorem select_ok {s : State} {B C : Addr} {Z w N d : Nat} (h : WCtx s B Z w N) (hc : CtxRd s B Z C w)
+    (h10 : s.gpr .s10 = C) (h1 : s.gpr .a1 = BitVec.ofNat 64 d) (hd : d < 32) :
+    WP isa Generate.select s fun u =>
+      (A u.mem B w 4 = ent s.mem C w d ∧ Arrays B w [3, 4, 5] s.mem u.mem) ∧ Keep selERegs s u := by
+  have hn := h.nw
+  have hZ := h.hZ
+  have hw := h.w2; have hw' := h.w31
+  have entK : ∀ {m m' : Mem}, Arrays B w [3, 4, 5] m m' → ∀ a < 32, ent m' C w a = ent m C w a :=
+    fun hm a ha => ent_keep (arrays_ctx hm (by simp) hZ hc.sep) hc.hn ha
+  unfold Generate.select seqs
+  refine WP.seq (WP.mono (Pub.base_ok (rd := .t3) (by decide) h.a7 h.s5 4) fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_)
+  have c1 := h.regs k1 (by decide) m1
+  refine WP.seq (WP.mono (zeroWords_ok c1.scr a3 c1.t0 (by omega_arith) hw' (slot_al w 4)
+    (by have := h.sl (j := 4) (by decide); omega_arith)) fun s₂ ⟨⟨_, z2, o2⟩, k2⟩ => ?_)
+  have c2 := c1.of k2 (by decide) (arrO o2 (by decide) (by decide))
+  rw [m1] at o2
+  refine WP.seq (WP.mono (WP.keep [.a3] (Q := fun u => u.gpr .a3 = BitVec.ofNat 64 (2 * 0) ∧ u.mem = s₂.mem)
+    (by brun [Pub.pub_li0]) (by rfl) (by rfl)) fun s₃ ⟨⟨a33, m3⟩, k3⟩ => ?_)
+  have k13 := (k1.trans k2).trans k3
+  have o3 : Arrays B w [3, 4, 5] s.mem s₃.mem := by
+    rw [m3]; exact (arr1 o2 (by omega_arith)).mono (by simp)
+  have i0 : SelI s B C Z w N d 0 s₃ := by
+    refine ⟨c2.regs k3 (by decide) m3, hc.congr k13.2.1 k13.2.2, (k13.gpr (by decide)).trans h10,
+      (k13.gpr (by decide)).trans h1, a33, ?_, o3, k13.mono (by decide)⟩
+    rw [ite_eq_right_iff.mpr fun h => absurd h (by omega_arith), m3]
+    exact Pub.wsv_zero z2
+  refine WP.mono (count_loop (n := 16) (cr := .t2) (by decide) (SelI s B C Z w N d)
+    (fun k hk u hu => ?_) i0) fun u hu => ⟨⟨by rw [hu.acc, ite_eq_left_iff.mpr fun h => absurd (by omega_arith) h],
+      hu.out⟩, hu.keep⟩
+  unfold seqs
+  refine WP.seq (WP.mono (selEntry_ok (e := 2 * k) (d := d) (o := 5) (t := 4) hu.win hu.ctx hu.h10 hu.h3 hu.h1
+    (by omega_arith) hd (.inl ⟨rfl, rfl⟩)) fun v₁ ⟨⟨b5, o5, j3⟩, kv⟩ => ?_)
+  have cv := hu.win.of kv (by decide) (Win.win_of_arrays o5 (by simp))
+  refine WP.seq (WP.mono (selEntry_ok (e := 2 * k + 1) (d := d) (o := 4) (t := 5) cv (hu.ctx.congr kv.2.1 kv.2.2)
+    ((kv.gpr (by decide)).trans hu.h10) j3 ((kv.gpr (by decide)).trans hu.h1) (by omega_arith) hd
+    (.inr ⟨rfl, rfl⟩)) fun v₂ ⟨⟨b4, o4, j4⟩, kw⟩ => ?_)
+  refine WP.mono (WP.keep [.t2] (Q := fun v => v.gpr .t2 = BitVec.ofNat 64 (2 * k + 1 + 1) - BitVec.ofNat 64 32 ∧
+    v.mem = v₂.mem) (by brun [j4]) (by rfl) (by rfl)) fun v ⟨⟨v2, vm⟩, kx⟩ => ⟨?_, ?_⟩
+  · have ov : Arrays B w [3, 4, 5] s.mem v.mem := by
+      rw [vm]; exact (hu.out.trans (o5.mono (by simp))).trans (o4.mono (by simp))
+    refine ⟨(cv.of kw (by decide) (Win.win_of_arrays o4 (by simp))).regs kx (by decide) vm,
+      ((hu.ctx.congr kv.2.1 kv.2.2).congr kw.2.1 kw.2.2).congr kx.2.1 kx.2.2,
+      (kx.gpr (by decide)).trans ((kw.gpr (by decide)).trans ((kv.gpr (by decide)).trans hu.h10)),
+      (kx.gpr (by decide)).trans ((kw.gpr (by decide)).trans ((kv.gpr (by decide)).trans hu.h1)),
+      by rw [kx.gpr (by decide), j4]; congr 1, ?_, ov, ((hu.keep.trans kv).trans kw).trans kx |>.mono (by decide)⟩
+    rw [vm, b4, b5, entK hu.out _ (by omega_arith), entK (hu.out.trans (o5.mono (by simp))) _ (by omega_arith)]
+    rw [hu.acc]
+    by_cases e1 : 2 * k + 1 = d
+    · subst e1; simp only [↓reduceIte, show 2 * k + 1 < 2 * (k + 1) by omega_arith]
+    · by_cases e0 : 2 * k = d
+      · subst e0; simp only [↓reduceIte, e1, show 2 * k < 2 * (k + 1) by omega_arith]
+      · rw [ite_eq_right_iff.mpr fun h => absurd h e1, ite_eq_right_iff.mpr fun h => absurd h e0]
+        by_cases hl : d < 2 * k
+        · rw [ite_eq_left_iff.mpr fun h => absurd hl h, ite_eq_left_iff.mpr fun h => absurd (by omega_arith) h]
+        · rw [ite_eq_right_iff.mpr fun h => absurd h hl, ite_eq_right_iff.mpr fun h => absurd h (by omega_arith)]
+  · rw [v2, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega_arith
+
+end VG.Proof.Ffdh.RISCV64.Cached
+
+/-! # FFDH's comb on RISC-V: a row's digit
+
+`bit_ok`: bit `k` of x, from its octets, most significant first.
+`digit_ok`: the five bits `i + j rows` of row `i`'s digit. -/
+
+namespace VG.Proof.Ffdh.RISCV64.Cached
+
+open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64
+  VG.Impl.Ffdh.RISCV64.Cached VG.Impl.Ffdh.RISCV64.Cached.Generate
+open VG.Proof.Bignum.RISCV64
+
+theorem eval_ltu' (s : State) (a b : Reg) : isa.eval (.ltu a b) s = some (decide (s.gpr a < s.gpr b)) := rfl
+
+theorem ofNat_lt_ofNat {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    decide (BitVec.ofNat 64 a < BitVec.ofNat 64 b) = decide (a < b) := by
+  simp only [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb]
+
+theorem ofNat_shr3 {a : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 3 = BitVec.ofNat 64 (a / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt h]
+  rw [Nat.mod_eq_of_lt (by omega_arith)]
+
+theorem ofNat_and7 (a : Nat) : BitVec.ofNat 64 a &&& BitVec.ofNat 64 7 = BitVec.ofNat 64 (a % 8) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    show (7 : Nat) % 2 ^ 64 = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+  rw [Nat.mod_mod_of_dvd _ (by decide)]
+  exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide))).symm
+
+/-- A byte's bit `j`. -/
+theorem bit_bv (b : Byte) {j : Nat} (hj : j < 8) :
+    (b.setWidth 64 >>> ((BitVec.ofNat 64 j).toNat % 64)) &&& BitVec.ofNat 64 1 =
+      BitVec.ofNat 64 (b.toNat / 2 ^ j % 2) := by
+  apply BitVec.eq_of_toNat_eq
+  have hb := b.isLt
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show j < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt (show j < 64 by omega_arith),
+    Nat.mod_eq_of_lt (show b.toNat < 2 ^ 64 by omega_arith), Nat.shiftRight_eq_div_pow,
+    show (1 : Nat) % 2 ^ 64 = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+  have : b.toNat / 2 ^ j % 2 ^ 1 < 2 ^ 64 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
+  rw [Nat.mod_eq_of_lt this]
+
+/-- `bit`: `t5 :=` bit `k` (`t6`) of x, the `L` octets at `X` (`s8`), `L` in
+`s11`; 0 from `8 L` up. -/
+theorem bit_ok {s : State} {X : Addr} {xb : List Byte} {k : Nat}
+    (h11 : s.gpr .s11 = BitVec.ofNat 64 xb.length) (h6 : s.gpr .t6 = BitVec.ofNat 64 k) (h8 : s.gpr .s8 = X)
+    (hrd : ∀ n < xb.length, InRegions (s.rd ++ s.wr) (off X n) 1)
+    (hval : ∀ n (h : n < xb.length), s.mem (off X n) = xb[n]) (hk : k < 2 ^ 31) (hL : 8 * xb.length < 2 ^ 31) :
+    WP isa bit s fun t =>
+      (t.gpr .t5 = BitVec.ofNat 64 (Spec.Rsa.os2ip xb / 2 ^ k % 2) ∧ t.mem = s.mem) ∧ Keep [.t2, .t5] s t := by
+  unfold bit
+  refine WP.seq (WP.mono (WP.keep [.t2] (Q := fun t => t.gpr .t2 = BitVec.ofNat 64 (8 * xb.length) ∧ t.mem = s.mem)
+    (by brun [h11, Pre.ofNat_shl3]) (by rfl) (by rfl))
+    fun s₁ ⟨⟨a2, m1⟩, k1⟩ => ?_)
+  have g6 : s₁.gpr .t6 = BitVec.ofNat 64 k := (k1.gpr (by decide)).trans h6
+  refine WP.ite (decide (k < 8 * xb.length)) (by
+      rw [eval_ltu', g6, a2, ofNat_lt_ofNat (by omega_arith) (by omega_arith)]) (fun hb => ?_) (fun hb => ?_)
+  · have hb' : k < 8 * xb.length := by simpa using hb
+    obtain ⟨n, hn⟩ : ∃ n, n = xb.length - 1 - k / 8 := ⟨_, rfl⟩
+    have hidx : n < xb.length := by omega_arith
+    have l3 : InRegions (s₁.rd ++ s₁.wr) (X + BitVec.ofNat 64 n) 1 := by
+      rw [k1.2.1, k1.2.2]; exact hrd _ hidx
+    have v3 : (s₁.mem.read (X + BitVec.ofNat 64 n) 1).setWidth 64 = (xb[n]'hidx).setWidth 64 := by
+      rw [Pub.read1_setWidth, m1]; exact congrArg (BitVec.setWidth 64) (hval _ hidx)
+    refine WP.mono (WP.keep [.t2, .t5] (Q := fun t =>
+        t.gpr .t5 = BitVec.ofNat 64 ((xb[n]'hidx).toNat / 2 ^ (k % 8) % 2) ∧ t.mem = s₁.mem) (by
+      brun [g6, (k1.gpr (r := .s11) (by decide)).trans h11, (k1.gpr (r := .s8) (by decide)).trans h8,
+        ofNat_shr3 (show k < 2 ^ 64 by omega_arith),
+        Offset.ofNat_sub_ofNat (show k / 8 ≤ xb.length by omega_arith),
+        Offset.ofNat_sub_ofNat (show 1 ≤ xb.length - k / 8 by omega_arith),
+        show xb.length - k / 8 - 1 = n by omega_arith, add_ofNat_zero, l3, v3, ofNat_and7, exec_srl_reg,
+        bit_bv _ (Nat.mod_lt k (show 0 < 8 by decide))]) (by rfl) (by rfl)) fun t ⟨⟨t5, tm⟩, kt⟩ =>
+      ⟨⟨?_, tm.trans m1⟩, (k1.trans kt).mono (by decide)⟩
+    rw [t5, CombBitBytes.os2ip_bit xb k hb']
+    subst hn; rfl
+  · have hb' : ¬ k < 8 * xb.length := by simpa using hb
+    refine WP.mono (WP.keep [.t5] (Q := fun t => t.gpr .t5 = BitVec.ofNat 64 0 ∧ t.mem = s₁.mem)
+      (by brun [Pub.pub_li0]) (by rfl) (by rfl)) fun t ⟨⟨t5, tm⟩, kt⟩ =>
+        ⟨⟨?_, tm.trans m1⟩, (k1.trans kt).mono (by decide)⟩
+    rw [t5]
+    have hlt : Spec.Rsa.os2ip xb < 2 ^ k :=
+      Nat.lt_of_lt_of_le (VG.Proof.Bignum.os2ip_lt xb) (by
+        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
+    rw [Nat.div_eq_of_lt hlt]
+
+theorem tooth_bv {acc b j : Nat} (hb : b < 2) (hj : j < 5) (ha : acc < 2 ^ j) :
+    BitVec.ofNat 64 acc ||| BitVec.ofNat 64 b <<< j = BitVec.ofNat 64 (acc + 2 ^ j * b) := by
+  have h2j : 2 ^ j ≤ 16 := Nat.le_trans (Nat.pow_le_pow_right (by decide : 0 < 2) (show j ≤ 4 by omega_arith))
+    (by decide)
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show acc < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show b * 2 ^ j < 2 ^ 64 by
+      have : b * 2 ^ j ≤ 1 * 16 := Nat.mul_le_mul (by omega_arith) h2j
+      omega_arith),
+    Nat.mod_eq_of_lt (show acc + 2 ^ j * b < 2 ^ 64 by
+      have : 2 ^ j * b ≤ 16 * 1 := Nat.mul_le_mul h2j (by omega_arith)
+      omega_arith),
+    Nat.or_comm, Nat.mul_comm b, ← Nat.two_pow_add_eq_or_of_lt ha, Nat.add_comm]
+
+/-- What `bit` reads: the rows (`s7`), and the `L` octets of x at `X`
+(`s8`), `L` in `s11`. -/
+structure XCtx (s : State) (X : Addr) (xb : List Byte) (rows : Nat) : Prop where
+  h11 : s.gpr .s11 = BitVec.ofNat 64 xb.length
+  h7 : s.gpr .s7 = BitVec.ofNat 64 rows
+  h8 : s.gpr .s8 = X
+  hrd : ∀ n < xb.length, InRegions (s.rd ++ s.wr) (off X n) 1
+  hval : ∀ n (h : n < xb.length), s.mem (off X n) = xb[n]
+  hL : 8 * xb.length < 2 ^ 31
+
+/-- The registers `digit` writes. -/
+def digitRegs : List Reg := [.a1, .t2, .t5, .t6]
+
+theorem XCtx.keep {s t : State} {X : Addr} {xb : List Byte} {rows : Nat} (h : XCtx s X xb rows)
+    (hm : t.mem = s.mem) (k : Keep digitRegs s t) : XCtx t X xb rows :=
+  ⟨(k.gpr (by decide)).trans h.h11, (k.gpr (by decide)).trans h.h7, (k.gpr (by decide)).trans h.h8,
+    fun n hn => by rw [k.2.1, k.2.2]; exact h.hrd n hn, fun n hn => by rw [hm]; exact h.hval n hn, h.hL⟩
+
+/-- `tooth j`: `a1 := acc + 2^j` bit `i + j rows` of x, for `acc < 2^j`; `t6`
+on to the next tooth's bit. -/
+theorem tooth_ok {s : State} {X : Addr} {xb : List Byte} {i rows j acc : Nat} (h : XCtx s X xb rows)
+    (h6 : s.gpr .t6 = BitVec.ofNat 64 (i + j * rows)) (hj : j < 5) (hk : i + 5 * rows < 2 ^ 31)
+    (h1 : s.gpr .a1 = BitVec.ofNat 64 acc) (ha : acc < 2 ^ j) :
+    WP isa (tooth j) s fun t =>
+      (t.gpr .a1 = BitVec.ofNat 64 (acc + 2 ^ j * Rsa.FixedBaseComb.bit (Spec.Rsa.os2ip xb) (i + j * rows)) ∧
+        t.gpr .t6 = BitVec.ofNat 64 (i + (j + 1) * rows) ∧ XCtx t X xb rows ∧ t.mem = s.mem) ∧
+        Keep digitRegs s t := by
+  have hjr : j * rows ≤ 4 * rows := Nat.mul_le_mul_right _ (by omega_arith)
+  unfold tooth
+  refine WP.seq (WP.mono (bit_ok h.h11 h6 h.h8 h.hrd h.hval (by omega_arith) h.hL) fun t ⟨⟨a5, m⟩, k⟩ => ?_)
+  have hb : Spec.Rsa.os2ip xb / 2 ^ (i + j * rows) % 2 < 2 := Nat.mod_lt _ (by decide)
+  have g1 : t.gpr .a1 = BitVec.ofNat 64 acc := (k.gpr (by decide)).trans h1
+  have g6 : t.gpr .t6 = BitVec.ofNat 64 (i + j * rows) := (k.gpr (by decide)).trans h6
+  have g7 : t.gpr .s7 = BitVec.ofNat 64 rows := (k.gpr (by decide)).trans h.h7
+  have e6 : BitVec.ofNat 64 (i + j * rows) + BitVec.ofNat 64 rows = BitVec.ofNat 64 (i + (j + 1) * rows) := by
+    rw [← BitVec.ofNat_add, Nat.succ_mul, Nat.add_assoc]
+  have post : ∀ u : State, (u.gpr .a1 = BitVec.ofNat 64 (acc + 2 ^ j *
+      Rsa.FixedBaseComb.bit (Spec.Rsa.os2ip xb) (i + j * rows)) ∧
+      u.gpr .t6 = BitVec.ofNat 64 (i + (j + 1) * rows) ∧ u.mem = t.mem) ∧ Keep [.t5, .a1, .t6] t u →
+      (u.gpr .a1 = BitVec.ofNat 64 (acc + 2 ^ j * Rsa.FixedBaseComb.bit (Spec.Rsa.os2ip xb) (i + j * rows)) ∧
+        u.gpr .t6 = BitVec.ofNat 64 (i + (j + 1) * rows) ∧ XCtx u X xb rows ∧ u.mem = s.mem) ∧
+        Keep digitRegs s u :=
+    fun u ⟨⟨b1, b6, bm⟩, bk⟩ => ⟨⟨b1, b6, h.keep (bm.trans m) ((k.trans bk).mono (by decide)), bm.trans m⟩,
+      (k.trans bk).mono (by decide)⟩
+  by_cases h0 : j = 0
+  · subst h0
+    have ha0 : acc = 0 := by omega_arith
+    subst ha0
+    simp only [ite_true, List.nil_append]
+    refine WP.mono (WP.keep [.t5, .a1, .t6] ?_ (by rfl) (by rfl)) post
+    brun [a5, g1, g6, g7, e6]
+    rw [Nat.zero_add, Nat.one_mul]
+    exact BitVec.zero_or
+  · simp only [h0, ite_false, List.singleton_append]
+    refine WP.mono (WP.keep [.t5, .a1, .t6] ?_ (by rfl) (by rfl)) post
+    brun [a5, g1, g6, g7, e6, tooth_bv hb hj ha, show j < 64 by omega_arith]
+    rfl
+
+/-- The comb's digit of row `i`, for `rows` rows: `FixedBaseComb.digit` for
+`rows = rows bits`. -/
+def combDigit (x i rows : Nat) : Nat :=
+  Rsa.FixedBaseComb.bit x i + 2 * Rsa.FixedBaseComb.bit x (i + rows) +
+    4 * Rsa.FixedBaseComb.bit x (i + 2 * rows) + 8 * Rsa.FixedBaseComb.bit x (i + 3 * rows) +
+    16 * Rsa.FixedBaseComb.bit x (i + 4 * rows)
+
+theorem combDigit_eq (bits x i : Nat) :
+    combDigit x i (Spec.Rsa.FixedBaseComb.rows bits) = Rsa.FixedBaseComb.digit bits x i := rfl
+
+theorem seqs_teeth : seqs ((List.range 5).map tooth) =
+    .seq (tooth 0) (.seq (tooth 1) (.seq (tooth 2) (.seq (tooth 3) (tooth 4)))) := rfl
+
+/-- `digit`: `a1 :=` row `i`'s digit of x, for `i + 1` in `s9`. -/
+theorem digit_ok {s : State} {X : Addr} {xb : List Byte} {i rows : Nat} (h : XCtx s X xb rows)
+    (h9 : s.gpr .s9 = BitVec.ofNat 64 (i + 1)) (hk : i + 5 * rows < 2 ^ 31) :
+    WP isa digit s fun t =>
+      (t.gpr .a1 = BitVec.ofNat 64 (combDigit (Spec.Rsa.os2ip xb) i rows) ∧ t.mem = s.mem) ∧
+        Keep digitRegs s t := by
+  unfold digit
+  rw [seqs_teeth]
+  have hb := Rsa.FixedBaseComb.bit_lt (Spec.Rsa.os2ip xb)
+  refine WP.seq (WP.mono (WP.keep [.a1, .t6] (Q := fun t => t.gpr .a1 = BitVec.ofNat 64 0 ∧
+    t.gpr .t6 = BitVec.ofNat 64 (i + 0 * rows) ∧ t.mem = s.mem)
+    (by brun [h9, Pub.pub_li0, exec_addi_neg_lit (show 1 ≤ 2048 by decide),
+          Offset.ofNat_sub_ofNat (show 1 ≤ i + 1 by omega_arith), Nat.add_sub_cancel]
+        rw [Nat.zero_mul, Nat.add_zero])
+      (by rfl) (by rfl))
+    fun t₀ ⟨⟨a0, b0, m0⟩, k0⟩ => ?_)
+  have c0 := h.keep m0 (k0.mono (by decide))
+  refine WP.seq (WP.mono (tooth_ok (j := 0) c0 b0 (by decide) hk a0 (by decide)) fun t₁ ⟨⟨a1, b1, c1, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (tooth_ok (j := 1) c1 b1 (by decide) hk a1 (by have := hb (i + 0 * rows); omega_arith))
+    fun t₂ ⟨⟨a2, b2, c2, m2⟩, k2⟩ => ?_)
+  refine WP.seq (WP.mono (tooth_ok (j := 2) c2 b2 (by decide) hk a2
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); omega_arith)) fun t₃ ⟨⟨a3, b3, c3, m3⟩, k3⟩ => ?_)
+  refine WP.seq (WP.mono (tooth_ok (j := 3) c3 b3 (by decide) hk a3
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows); omega_arith))
+    fun t₄ ⟨⟨a4, b4, c4, m4⟩, k4⟩ => ?_)
+  refine WP.mono (tooth_ok (j := 4) c4 b4 (by decide) hk a4
+    (by have := hb (i + 0 * rows); have := hb (i + 1 * rows); have := hb (i + 2 * rows)
+        have := hb (i + 3 * rows); omega_arith)) fun t ⟨⟨a5, _, _, m5⟩, k5⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  · rw [a5]
+    unfold combDigit
+    simp only [Nat.zero_add, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.pow_zero, Nat.pow_one,
+      show (2 : Nat) ^ 2 = 4 from rfl, show (2 : Nat) ^ 3 = 8 from rfl, show (2 : Nat) ^ 4 = 16 from rfl]
+  · rw [m5, m4, m3, m2, m1, m0]
+  · have k05 := (((((k0.mono (rs' := digitRegs) (by decide)).trans k1).trans k2).trans k3).trans k4).trans k5
+    exact k05.mono (by decide)
+
+end VG.Proof.Ffdh.RISCV64.Cached
 
 namespace VG.Proof.Ffdh.RISCV64.Cached
 
@@ -148,7 +674,7 @@ theorem step_ok {s₀ u : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P 
   -- `n` rows left.
   refine WP.mono (WP.keep [.s9] (Q := fun v => v.gpr .s9 = BitVec.ofNat 64 n ∧ v.mem = u₄.mem) (by
     brun [c4.h9, exec_addi_neg_lit (show 1 ≤ 2048 by decide),
-      ofNat_sub'' (show 1 ≤ n + 1 by omega_arith) (show n + 1 < 2 ^ 64 by omega_arith), Nat.add_sub_cancel])
+      Offset.ofNat_sub_ofNat (show 1 ≤ n + 1 by omega_arith), Nat.add_sub_cancel])
     (by rfl) (by rfl)) fun v ⟨⟨a5, m5⟩, k5⟩ => ?_
   exact c4.frame (by rw [m5]; exact Outside.refl _ _ _ _) (by rw [m5]) k5 (by decide) a5 (by rw [m5]; exact c4.acc)
 
@@ -168,7 +694,7 @@ theorem rows_ok {s₀ u : State} {B C X : Addr} {Z w : Nat} {xb : List Byte} {P 
   have e : Spec.Rsa.FixedBaseComb.rows bits - i = Spec.Rsa.FixedBaseComb.rows bits - (i + 1) + 1 := by omega_arith
   rw [e] at hv hc
   refine WP.mono (step_ok hq hv (by omega_arith)) fun v' hv' => ⟨hv', ?_⟩
-  rw [hv'.h9, hc, ofNat_sub'' (by omega_arith) (by omega_arith), Nat.add_sub_cancel]
+  rw [hv'.h9, hc, Offset.ofNat_sub_ofNat (by omega_arith), Nat.add_sub_cancel]
 
 /-! ## The comb -/
 

@@ -1,29 +1,92 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Fn
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.RISCV64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PubSave
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 public import VerifiedGarbage.Impl.Ffdh.RISCV64
 public import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
+public import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
+public import VerifiedGarbage.Proof.Bignum.RISCV64.ModExpWin
+public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+import VerifiedGarbage.Proof.Dsa.RISCV64.Save
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCheck
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFios
 import VerifiedGarbage.Proof.Bignum.RISCV64.Double64
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
-public import VerifiedGarbage.Proof.Bignum.RISCV64.ModExpWin
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
 
 /-!
 # FFDH's exchange on RISC-V: up to the power
+
+## The function
+
+`vg_ffdh_exchange(out = a0, out_len = a1, domain = a2, domain_len = a3,
+p_len = a4, x = a5, x_len = a6, peer = a7, peer_len, scratch, scratch_len)`,
+the last three on the stack (`fnContract`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.RISCV64
+
+open VG VG.RISCV64
+
+/-- The arguments on the stack: `peer_len`, `scratch` and `scratch_len`. -/
+abbrev stackArgs (s : State) : Region := ⟨stackArgAddr s 0, 24⟩
+
+/-- What timing may depend on: the domain, the peer and the status. -/
+def exLeak (s : State) : List Nat :=
+  let dom := Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat
+  let yB := Spec.Rsa.bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat
+  dom.map (·.toNat) ++ yB.map (·.toNat) ++
+    [if (Spec.Ffdh.exchangeOp (Spec.Ffdh.domainOf (s.gpr .a4).toNat dom)
+      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat)) (Spec.Rsa.os2ip yB)).isSome
+      then 1 else 0]
+
+/-- `vg_ffdh_exchange`, on the registers and the stack. -/
+def fnContract : Contract isa where
+  pre s :=
+    let out : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
+    let dom : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
+    let x : Region := ⟨s.gpr .a5, (s.gpr .a6).toNat⟩
+    let peer : Region := ⟨s.gpr .a7, (stackArg s 0).toNat⟩
+    let scr : Region := ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
+    s.rd = [dom, x, peer, stackArgs s] ∧ s.wr = [out, scr] ∧
+      out.Disjoint dom ∧ out.Disjoint x ∧ out.Disjoint peer ∧ out.Disjoint scr ∧ out.Disjoint (stackArgs s) ∧
+      dom.Disjoint scr ∧ x.Disjoint scr ∧ peer.Disjoint scr ∧ scr.Disjoint (stackArgs s) ∧
+      (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .a5).toNat + (s.gpr .a6).toNat ≤ 2 ^ 64 ∧ (s.gpr .a7).toNat + (stackArg s 0).toNat ≤ 2 ^ 64 ∧
+      (stackArg s 1).toNat + (stackArg s 2).toNat * 8 ≤ 2 ^ 64 ∧
+      Spec.Ffdh.pLenValid (s.gpr .a4).toNat ∧ Spec.Ffdh.domainLenValid (s.gpr .a4).toNat (s.gpr .a3).toNat ∧
+      (s.gpr .a1).toNat = (s.gpr .a4).toNat ∧ (stackArg s 0).toNat = (s.gpr .a4).toNat ∧
+      1 ≤ (s.gpr .a6).toNat ∧ (s.gpr .a6).toNat ≤ (s.gpr .a4).toNat ∧
+      Spec.Rsa.scratchWords (s.gpr .a4).toNat ≤ (stackArg s 2).toNat ∧
+      (stackArg s 1).toNat % 8 = 0 ∧ s.sp.toNat % 16 = 0
+  post s t :=
+    let dom := Spec.Rsa.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat
+    let a := Spec.Ffdh.domainOf (s.gpr .a4).toNat dom
+    let y := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat)
+    Spec.Ffdh.domainValid (s.gpr .a4).toNat dom = true → Spec.Ffdh.publicValid ⟨a, y⟩ = true →
+      Spec.Rsa.written t.mem (s.gpr .a0) (s.gpr .a1).toNat ((t.gpr .a0).setWidth 32)
+        (Spec.Ffdh.exchangeOp a (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a5) (s.gpr .a6).toNat)) y)
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
+      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.gpr .a6 = s₂.gpr .a6 ∧
+      s₁.gpr .a7 = s₂.gpr .a7 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
+      stackArg s₁ 2 = stackArg s₂ 2 ∧ exLeak s₁ = exLeak s₂
+
+end VG.Proof.Ffdh.RISCV64
+
+/-!
+## FFDH's exchange on RISC-V: up to the power
 
 The public data of a run (`XD`, `xdOf`): the pointers and lengths and the
 domain's octets. `Ctx`: what holds from `setup` on, but for the registers:
@@ -35,15 +98,13 @@ its header, stores the header's words 0–3 (`hdr_ok`) and sets up the
 registers.
 -/
 
-@[expose] public section
-
 namespace VG.Proof.Ffdh.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum.RISCV64
   VG.Impl.Ffdh.RISCV64
 open VG.Proof.Bignum.RISCV64
 open VG.Proof.Bignum (slot)
-open VG.Proof.Bignum.RISCV64.Pub (savW savR)
+open VG.Impl.Dsa.RISCV64 (save restore saved)
 
 /-- The public data of an exchange: `out`, the domain and its length, p's
 length, x's address and length, the peer, the working space and its size in
@@ -143,10 +204,72 @@ theorem Base.same {x : XD} {s t : State} {rs : List Reg} (h : Base x s) (k : Kee
 
 /-! ## The front -/
 
-/-- The second argument on the stack, `scratch`, into `t0`. -/
+/-- The words 16–28 of the header at `S` hold `s₀`'s registers (`saved`). -/
+def SavedAt (S : Addr) (m : Mem) (s₀ : State) : Prop := ∀ i < 13, word m S (128 + 8 * i) = s₀.gpr (saved i)
+
+theorem SavedAt.mono {S : Addr} {m m' : Mem} {s₀ : State} {o n : Nat} (h : SavedAt S m s₀) (hm : Outside S o n m m')
+    (ho : o + n ≤ 128 ∨ 232 ≤ o) : SavedAt S m' s₀ := fun i hi => by
+  rw [Outside.word hm (by omega_using [ho, hi]) (by omega_using [hi])]; exact h i hi
+
+theorem savW_eq (S : Addr) (i : Nat) : off (S + BitVec.ofNat 64 128) (8 * i) = off S (128 + 8 * i) := by
+  rw [off, off, Offset.add_add]
+
+/-- The callee-saved registers and `ra` saved in the header of the working
+space at `S` (`t2`), and `S` into `s6`. -/
+theorem save2_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ Z) (h2 : s.gpr .t2 = S) :
+    WP isa (.block (save .t2)) s fun t =>
+      (t.gpr .s6 = S ∧ SavedAt S t.mem s ∧ Outside S 0 256 s.mem t.mem) ∧ Keep [.t2, .s6] s t := by
+  have hn := hs.nowrap
+  refine WP.mono (Dsa.RISCV64.saveT2_ok s h2 (fun i hi => by rw [savW_eq]; exact hs.st (by omega_arith))
+    (fun i hi => by rw [savW_eq]; exact hs.al8 (by omega_arith) (by omega_arith))) fun t hS =>
+      ⟨⟨hS.s6, fun i hi => ?_, fun y hy => ?_⟩, hS.keep⟩
+  · have h := hS.saved i hi
+    rw [savW_eq] at h
+    exact h
+  · refine hS.frame y fun r hr hc => ?_
+    rw [List.mem_singleton] at hr
+    subst hr
+    have hc' := (Offset.sub_base (n := 104) (k := 256) S (d := 128) (by omega_arith)) _ hc
+    simp only [Region.Contains] at hc'
+    simp only [ofs] at hy
+    omega_arith
+
+/-- `save2_ok` after the working space's address from `rS` into `t2`. -/
+theorem pre_ok (rS : Reg) {s : State} {S : Addr} {Z : Nat} (hS : s.gpr rS = S) (hs : Scr s S Z) (hZ : 256 ≤ Z) :
+    WP isa (.block (([.addi .t2 rS 0] : List Instr) ++ save .t2)) s fun t =>
+      t.gpr .s6 = S ∧ SavedAt S t.mem s ∧ Keep [.t2, .s6] s t ∧ Outside S 0 256 s.mem t.mem := by
+  refine WP.block_append (WP.mono (WP.keep [.t2] (Q := fun t => t.gpr .t2 = S ∧ t.mem = s.mem)
+    (by brun [hS, BitVec.add_zero]) (by rfl) (by rfl)) fun s₁ ⟨⟨a2, m1⟩, k1⟩ => ?_)
+  refine WP.mono (save2_ok (hs.congr k1.2.2) hZ a2) fun t ⟨⟨h6, sv, o⟩, k⟩ =>
+    ⟨h6, fun i hi => ?_, (k1.trans k).mono (by decide), by rw [← m1]; exact o⟩
+  rw [sv i hi, k1.gpr fun h => Dsa.RISCV64.saved_ne_t2 i hi (List.mem_singleton.mp h)]
+
+theorem pres_saved : ∀ r ∈ preserved, ∃ i < 13, r = saved i := by decide
+
+/-- `restore`: the registers that `SavedAt` states. -/
+theorem restoreS_ok {s₀ t : State} {S : Addr} {Z : Nat} (hs : Scr t S Z) (hZ : 256 ≤ Z) (h6 : t.gpr .s6 = S)
+    (hsv : SavedAt S t.mem s₀) :
+    WP isa (.block restore) t fun u =>
+      ((∀ r ∈ preserved, u.gpr r = s₀.gpr r) ∧ u.gpr .ra = s₀.gpr .ra) ∧ u.gpr .a0 = t.gpr .a0 ∧ u.mem = t.mem := by
+  have hn := hs.nowrap
+  refine WP.mono (Dsa.RISCV64.restore_ok t (v := fun i => s₀.gpr (saved i)) h6
+    (fun i hi => by rw [savW_eq]; exact hs.st (by omega_arith))
+    (fun i hi => by rw [savW_eq]; exact hs.al8 (by omega_arith) (by omega_arith))
+    (fun i hi => by rw [savW_eq]; exact hsv i hi))
+    fun u ⟨urs, uot, um, _, _, _⟩ => ⟨⟨fun r hr => ?_, urs 11 (by decide)⟩, uot .a0 (by decide), um⟩
+  obtain ⟨i, hi, rfl⟩ := pres_saved r hr
+  exact urs i hi
+
+/-- The calling convention, from the registers that `restoreS_ok` states. -/
+theorem abi_of {c : Prog isa} {s : State} {P : State → Prop}
+    (h : WP isa c s fun t => ((∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra) ∧ P t) :
+    WP isa c s fun t => abiPreserved s t ∧ P t :=
+  WP.mono (WP.rdwr h) fun _ ⟨⟨⟨hp, hra⟩, hP⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hP⟩
+
+/-- The second argument on the stack, `scratch`, into `t2`. -/
 theorem loadS1_ok (s : State) (h : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8) (ha : s.sp.toNat % 16 = 0) :
-    WP isa (.block ([.addSp .t0 8, .load .d .t0 .t0 0] : List Instr)) s fun t =>
-      (t.gpr .t0 = stackArg s 1 ∧ t.mem = s.mem) ∧ Keep [.t0] s t := by
+    WP isa (.block ([.addSp .t2 8, .load .d .t2 .t2 0] : List Instr)) s fun t =>
+      (t.gpr .t2 = stackArg s 1 ∧ t.mem = s.mem) ∧ Keep [.t2] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   simp only [stackArgAddr, Nat.reduceMul] at h
   have ha' : (s.sp + BitVec.ofNat 64 8 + BitVec.ofNat 64 0).toNat % 8 = 0 := by
@@ -205,14 +328,12 @@ theorem rd_of_mem {s : State} {A : Addr} {L n : Nat} (h : (⟨A, L⟩ : Region) 
   ⟨_, List.mem_append_left _ h, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- The registers the front writes. -/
-def frontRegs : List Reg := [.t0, .s6, .s7, .s8, .a1, .a7, .s5, .s10, .s11]
+def frontRegs : List Reg := [.t2, .s6, .s7, .s8, .a1, .a7, .s5, .s10, .s11, .t0]
 
-/-- `exFront`: `Base`, the callee-saved registers saved, and only the header
-changed. -/
+/-- `exFront`: `Base`, the registers saved, and only the header changed. -/
 theorem front_ok {s : State} (h : fnContract.pre s) :
     WP isa (.block exFront) s fun t =>
-      Base (xdOf s) t ∧
-        (∀ i < 12, t.mem.readW (off (savW (stackArg s 1)) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
+      Base (xdOf s) t ∧ SavedAt (stackArg s 1) t.mem s ∧
         Keep frontRegs s t ∧ Outside (stackArg s 1) 0 256 s.mem t.mem := by
   obtain ⟨hrd, hwr, dOD, dOX, dOP, dOS, dOA, dDS, dXS, dPS, dSA, nwO, nwD, nwX, nwP, nwS, ⟨hk, hk'⟩, hL,
     hol, hpl, hx1, hxk, hsl, alS, alsp⟩ := h
@@ -229,18 +350,11 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
     exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold exFront
   simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (loadS1_ok s hA1 alsp) fun s₁ ⟨⟨a0', m1⟩, k1⟩ => ?_)
-  rw [hSd] at a0'
-  have hin : ∀ i < 12, InRegions s₁.wr (off (savW (s₁.gpr .t0)) (8 * i)) 8 := fun i hi => by
-    rw [a0', k1.2.2, hwr]
-    show InRegions _ (S + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
-    rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _),
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  refine WP.block_append (WP.mono (Pub.save_ok s₁ hin (fun i hi => by
-    rw [a0']; exact Pub.sav_al alS (by omega_arith) hi)) fun s₂ hS => ?_)
-  have k12 := k1.trans hS.keep
-  have h6₂ : s₂.gpr .s6 = S := hS.s6.trans a0'
+  refine WP.block_append (WP.mono (loadS1_ok s hA1 alsp) fun s₁ ⟨⟨a2', m1⟩, k1⟩ => ?_)
+  rw [hSd] at a2'
+  refine WP.block_append (WP.mono (save2_ok (hs.congr k1.2.2) (by omega_arith) a2') fun s₂ ⟨⟨h6₂, sv₂, hsavO⟩, kS⟩ => ?_)
+  rw [m1] at hsavO
+  have k12 := k1.trans kS
   refine WP.block_append (WP.mono (hdr_ok (hs.congr k12.2.2) (by omega_arith) h6₂)
     fun s₃ ⟨⟨w0, w8, w16, w24, b7, b8, b1, o3⟩, k3⟩ => ?_)
   have k13 := k12.trans k3
@@ -250,16 +364,6 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   have k := k13.trans k4
   have hrdt : t.rd ++ t.wr = s.rd ++ s.wr := by rw [k.2.1, k.2.2]
   -- Memory: the saved registers' words and the header's words 0–3.
-  have hsavO : Outside S 0 256 s.mem s₂.mem := fun y hy => by
-    rw [← m1]
-    refine hS.frame y fun r hr hc => ?_
-    rw [List.mem_singleton] at hr
-    subst hr
-    rw [a0'] at hc
-    have hc' := (Offset.sub_base (n := 96) (k := 256) S (d := 128) (by omega_arith)) _ hc
-    simp only [Region.Contains] at hc'
-    simp only [ofs] at hy
-    omega_arith
   have hO : Outside S 0 256 s.mem t.mem := by
     rw [jm]; exact hsavO.trans (o3.mono (Nat.le_refl _) (by omega_arith))
   have hOZ : Outside S 0 Z s.mem t.mem := hO.mono (Nat.le_refl _) (by omega_arith)
@@ -297,12 +401,8 @@ theorem front_ok {s : State} (h : fnContract.pre s) :
   · rw [hw3 16 (by decide), w16, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · rw [hw3 24 (by decide), w24, k12.gpr (by decide)]
   · intro i hi
-    have e : off (savW S) (8 * i) = off S (128 + 8 * i) := by rw [off, off, Offset.add_add]
-    rw [e]
-    show word t.mem S (128 + 8 * i) = _
-    rw [jm, o3.word (Or.inr (by omega_arith)) (by omega_arith)]
-    show s₂.mem.readW (off S (128 + 8 * i)) 64 = _
-    rw [← e, ← a0', hS.saved i hi, k1.gpr fun h => Pub.saved_ne_t0 i hi (List.mem_singleton.mp h)]
+    have e := (sv₂.mono o3 (by decide)) i hi
+    rw [jm, e, k1.gpr fun h => Dsa.RISCV64.saved_ne_t2 i hi (List.mem_singleton.mp h)]
 
 end VG.Proof.Ffdh.RISCV64
 
@@ -444,7 +544,7 @@ end VG.Proof.Ffdh.RISCV64
 `exPre_split`: from a valid p in array 0 (`X4`), `exPre` loads the peer's
 address (`R1`), the peer into array 4 (`loadX_ok`), `R² mod p` into array 1
 and `-p⁻¹ mod 2⁶⁴` into `t1` (`r2t_ok`), and x's address and length (`R5`);
-then `ModExp.powWin` leaves `z = y^x mod p` in array 4 (`PowPost`).
+then `ModExp.powWinFn` leaves `z = y^x mod p` in array 4 (`PowPost`).
 -/
 
 namespace VG.Proof.Ffdh.RISCV64
@@ -505,7 +605,7 @@ then the power. -/
 theorem exPre_split {x : XD} {s : State} (h : X4 x s) (hz : s.gpr .s0 = 0) :
     WP isa (.block [.load .d .a6 .s6 24]) s fun s₁ => R1 x s₁ ∧
       WP isa (.seq PublicChecked.loadX (.seq r2 (.block [.load .d .s9 .s6 8, .load .d .s10 .s6 16]))) s₁
-        fun s₅ => R5 x s₅ ∧ WP isa ModExp.powWin s₅ (PowPost x s) := by
+        fun s₅ => R5 x s₅ ∧ WP isa ModExp.powWinFn s₅ (PowPost x s) := by
   obtain ⟨hb, hp, h0⟩ := h
   have hc := hb.ctx
   have hv := h0.mp hz
@@ -582,11 +682,11 @@ theorem exPre_split {x : XD} {s : State} (h : X4 x s) (hz : s.gpr .s0 = 0) :
   have hm8 : s₈.mem = s₆.mem := by rw [m8, m7]
   refine ⟨⟨by rw [k8.gpr (by decide), a9]; exact hc6.hX, by rw [a10, m7]; exact hc6.hXL, rw8⟩, ?_⟩
   -- The power.
-  refine WP.mono (Win.powWin_ok (D := x.X) (L := x.xl) hc8.scr (by omega_arith) hw' hZ rw8.2.1 rw8.2.2.1
+  refine WP.mono (Win.powWinCall_ok (D := x.X) (L := x.xl) hc8.scr (by omega_arith) hw' hZ rw8.2.1 rw8.2.2.1
     rw8.2.2.2.1 (by rw [k78.gpr (by decide), hm8, w6]; exact inv6) (by rw [hm8, p6]; exact hf.2.1)
     (by rw [hm8, p6]; exact hf.1) (by rw [hm8, p6, rr6]; exact Nat.mod_lt _ (by omega_arith))
     (by rw [k8.gpr (by decide), a9]; exact hc6.hX) (by rw [a10, m7]; exact hc6.hXL) hc.xl1 (by omega_arith)
-    hc8.rdX hc8.sepX) fun t ⟨⟨hpow, ot⟩, kt⟩ => ?_
+    hc8.rdX hc8.sepX) fun t ⟨⟨hpow, ot, _⟩, kt⟩ => ?_
   have art : Arr x s₈.mem t.mem := arr_of ot (by omega_arith) (by omega_arith)
   have ar6' : Arr x s.mem s₆.mem := ar2.trans ar6
   have ar8 : Arr x s.mem s₈.mem := by rw [hm8]; exact ar6'

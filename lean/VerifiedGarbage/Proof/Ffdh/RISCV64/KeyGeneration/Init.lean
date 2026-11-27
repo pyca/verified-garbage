@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-! # Native FFDH key-generation initialization on RISC-V: correctness, constant time
 
@@ -102,7 +102,7 @@ theorem validate_ok (s : State) {n : Nat} (hx : s.gpr .a1 = BitVec.ofNat 64 n) (
       ((t.gpr .t0 == 0) = decide (64 ≤ n ∧ n ≤ 1024) ∧ t.mem = s.mem) ∧ Keep [.t0, .t1, .t2] s t := by
   refine WP.keep _ ?_ (by rfl) (by rfl)
   unfold validate
-  brun [hx, exec_sltu, fin64_exec_li_lit (show 64 < 2048 by decide), fin64_exec_li_lit (show 1024 < 2048 by decide)]
+  brun [hx, exec_sltu, Dsa.RISCV64.exec_li_lit (show 64 < 2048 by decide), Dsa.RISCV64.exec_li_lit (show 1024 < 2048 by decide)]
   exact valid_bit hn
 
 theorem clear_ok {s : State} (h : StateWr s) :
@@ -122,8 +122,8 @@ theorem initialize_ok {s : State} (h : StateWr s) :
   unfold initializeState initWritten
   brun [st0 h, al0 h, st h 0 (by decide), st h 8 (by decide), st h 16 (by decide), st h 24 (by decide),
     al h 0 (by decide) (by decide), al h 8 (by decide) (by decide), al h 16 (by decide) (by decide),
-    al h 24 (by decide) (by decide), fin64_exec_li_lit (show 128 < 2048 by decide),
-    fin64_exec_li_lit (show 1 < 2048 by decide), add_ofNat_zero]
+    al h 24 (by decide) (by decide), Dsa.RISCV64.exec_li_lit (show 128 < 2048 by decide),
+    Dsa.RISCV64.exec_li_lit (show 1 < 2048 by decide), add_ofNat_zero]
   exact ⟨rfl, rfl⟩
 
 def initPre (s : State) : Prop := StateWr s

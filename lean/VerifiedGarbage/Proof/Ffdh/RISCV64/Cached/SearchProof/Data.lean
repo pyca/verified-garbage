@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-! # The cached key-generation controller's contract, public data, loop states and writes (RISC-V)
 
@@ -922,7 +922,7 @@ theorem key_rejected_scalar {p : KeyPublic} {original s : State} {used keys scal
     simp only [List.foldl_cons, List.foldl_nil]
     brun [ldf, stf, h.s0, hv1, e1, a.ld 8 (by decide), a.al 8 (by decide) (by decide),
       a.st 8 (by decide), a.st 112 (by decide), a.al 112 (by decide) (by decide),
-      fin64_exec_li_lit (show 4 < 2048 by decide)]
+      Proof.Dsa.RISCV64.exec_li_lit (show 4 < 2048 by decide)]
     rfl
   have hh : Slots t.mem p.control (p.headers used keys (scalars - 1)) := by
     refine headers_after _ (scalarValues_bound scalars) hm ?_
@@ -953,8 +953,8 @@ theorem key_rejected_public {p : KeyPublic} {original s : State} {used keys scal
     simp only [List.foldl_cons, List.foldl_nil]
     brun [ldf, stf, h.s0, hv0, e0, a.ld 0 (by decide), a.al 0 (by decide) (by decide),
       a.st 0 (by decide), a.st 8 (by decide), a.st 112 (by decide), a.al 8 (by decide) (by decide),
-      a.al 112 (by decide) (by decide), fin64_exec_li_lit (show 4 < 2048 by decide),
-      fin64_exec_li_lit (show 128 < 2048 by decide)]
+      a.al 112 (by decide) (by decide), Proof.Dsa.RISCV64.exec_li_lit (show 4 < 2048 by decide),
+      Proof.Dsa.RISCV64.exec_li_lit (show 128 < 2048 by decide)]
     rfl
   have hh : Slots t.mem p.control (p.headers used (keys - 1) 128) := by
     refine headers_after _ (publicValues_bound keys) hm ?_

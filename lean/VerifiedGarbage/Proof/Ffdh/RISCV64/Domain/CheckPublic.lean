@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Domain.Rel
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.Domain.Body
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Ffdh.RISCV64.Domain.Rel
+meta import VerifiedGarbage.Proof.Ffdh.RISCV64.Domain.Body
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
-meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Ffdh.Domain
@@ -17,8 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.Power
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
@@ -152,19 +150,19 @@ def cpData (s : State) : DD :=
     Spec.Rsa.bytesAt s.mem (s.gpr .a3) (s.gpr .a2).toNat⟩
 
 /-- The registers the front writes. -/
-def cpFrontRegs : List Reg := [.t0, .s6, .s7, .s8, .a1, .a7, .s5, .s10, .s11]
+def cpFrontRegs : List Reg := [.t2, .s6, .s7, .s8, .a1, .a7, .s5, .s10, .s11, .t0]
 
 /-- The front: the registers saved, the domain, its length and y in the
 header, `setup`. -/
 theorem cpFront_ok {s : State} (h : cpContract.pre s) :
     WP isa (.block cpFront) s fun t => (P1 (cpData s) t ∧ word t.mem (s.gpr .a5) 16 = s.gpr .a3) ∧
-      (∀ i < 12, t.mem.readW (off (Pub.savW (s.gpr .a5)) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
+      SavedAt (s.gpr .a5) t.mem s ∧
       Keep cpFrontRegs s t ∧ Outside (s.gpr .a5) 0 256 s.mem t.mem := by
   obtain ⟨hrd, hwr, dDS, dYS, nwD, nwY, nwS, ⟨hk, hk'⟩, hL, hyl, hsl, alS⟩ := h
   simp only [Spec.Rsa.scratchWords] at hsl
   have hLk : (s.gpr .a1).toNat = 2 * (s.gpr .a2).toNat ∨ (s.gpr .a1).toNat = 3 * (s.gpr .a2).toNat := hL
   have hs : Scr s (s.gpr .a5) ((s.gpr .a6).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) nwS alS
-  rw [show cpFront = ([.addi .t0 .a5 0] ++ PublicChecked.saveRegs) ++ ([.store .d .a0 .s6 0] ++
+  rw [show cpFront = ([.addi .t2 .a5 0] ++ Impl.Dsa.RISCV64.save .t2) ++ ([.store .d .a0 .s6 0] ++
       ([.store .d .a1 .s6 8] ++ ([.store .d .a3 .s6 16] ++ (args ++ PublicChecked.setup)))) by
     simp only [cpFront, List.append_assoc, List.cons_append, List.nil_append]]
   refine WP.block_append (WP.mono (pre_ok .a5 rfl hs (by omega_arith)) fun s₁ ⟨h61, sv1, k1, o1⟩ => ?_)
@@ -210,15 +208,11 @@ theorem cpFront_ok {s : State} (h : cpContract.pre s) :
     rw [tm, w16, k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide)]
   refine ⟨⟨⟨⟨⟨hs.congr (k14.trans kt).2.2, hk, hk', hLk, ?_, rdD, sepD, bD, rdY, sepY, bY, hw0, hw8⟩,
       t6, ta7, by rw [t5, Nat.mul_add]; rfl, t0, t11⟩,
-    by rw [t7, k14.gpr (by decide)]; exact (BitVec.add_zero _).symm, t8⟩, hw16⟩, fun i hi => ?_,
+    by rw [t7, k14.gpr (by decide)]; exact (BitVec.add_zero _).symm, t8⟩, hw16⟩, ?_,
     (k14.trans kt).mono (by decide), hO⟩
   · show slot (((s.gpr .a2).toNat + 7) / 8) 24 ≤ (s.gpr .a6).toNat * 8
     unfold slot hdrBytes; omega_arith
-  · have e : off (Pub.savW (s.gpr .a5)) (8 * i) = off (s.gpr .a5) (128 + 8 * i) := by rw [off, off, Offset.add_add]
-    rw [← sv1 i hi, tm, e]
-    show word s₄.mem (s.gpr .a5) (128 + 8 * i) = word s₁.mem (s.gpr .a5) (128 + 8 * i)
-    rw [Outside.word o4 (by omega_arith) (by omega_arith), Outside.word o3 (by omega_arith) (by omega_arith),
-      Outside.word o2 (by omega_arith) (by omega_arith)]
+  · rw [tm]; exact ((sv1.mono o2 (by decide)).mono o3 (by decide)).mono o4 (by decide)
 
 /-- A word of the header is kept by changes to the arrays. -/
 theorem DArr.hdr {x : DD} {s : State} (hc : DCtx x s) {m : Mem} (h : DArr x s.mem m) {d : Nat} (hd : d + 8 ≤ 256) :
@@ -243,9 +237,7 @@ theorem pv_iff (x : DD) (hlen : x.db.length = x.L) (hL : x.L = 2 * x.k ∨ x.L =
 theorem cp_correct (s : State) (h : cpContract.pre s) :
     ∃ tr t, Exec isa checkPublic s tr t ∧ abiPreserved s t ∧ cpContract.post s t := by
   show WP isa checkPublic s fun t => abiPreserved s t ∧ cpContract.post s t
-  suffices main : WP isa checkPublic s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ cpContract.post s t from
-    WP.mono (WP.rdwr (WP.keep dNotRa main (by rfl))) fun t ⟨⟨⟨hp, hpost⟩, kra⟩, _, _, hsp⟩ =>
-      ⟨⟨hp, hsp, kra.gpr (by decide)⟩, hpost⟩
+  refine abi_of ?_
   have hpre := h
   obtain ⟨hrd, hwr, dDS, dYS, nwD, nwY, nwS, ⟨hk, hk'⟩, hL, hyl, hsl, alS⟩ := h
   unfold checkPublic
@@ -254,15 +246,10 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
   have hY4 : word s₄.mem (cpData s).S 16 = (cpData s).Y := by rw [a4.hdr h1.1.ctx (by decide)]; exact hY
   refine WP.seq (WP.mono (cpBranch_ok h4 hY4) fun t₅ ⟨⟨b5, t0⟩, a5⟩ => ?_)
   have hc := b5.ctx
-  have hn := hc.scr.nowrap
   have hZ := hc.hZ
   have h24 : 256 ≤ slot (cpData s).w 24 := by unfold slot hdrBytes; omega_arith
-  refine WP.mono (dRestore_ok b5 fun i hi => ?_) fun u ⟨urs, u0⟩ => ⟨urs, fun hdv => ?_⟩
-  · have e : off (Pub.savW (s.gpr .a5)) (8 * i) = off (s.gpr .a5) (128 + 8 * i) := by rw [off, off, Offset.add_add]
-    rw [← hsv i hi, e]
-    show word t₅.mem (cpData s).S (128 + 8 * i) = word s₃.mem (cpData s).S (128 + 8 * i)
-    rw [Outside.word a5 (Or.inl (by omega_arith)) (by omega_arith),
-      Outside.word a4 (Or.inl (by omega_arith)) (by omega_arith)]
+  refine WP.mono (restoreS_ok hc.scr (by omega_arith) b5.s6 ((hsv.mono a4 (Or.inr (by decide))).mono a5 (Or.inr (by decide))))
+    fun u ⟨urs, u0, _⟩ => ⟨urs, fun hdv => ?_⟩
   · show ((u.gpr .a0).setWidth 32).toNat = _
     have hmod := Proof.Ffdh.domainValid_mod hdv
     have hv : Spec.Rsa.modulusValid (cpData s).p (cpData s).k = true := hmod

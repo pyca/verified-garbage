@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
--- separate module: the cached attempt's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
 
 /-!
 # `vg_ffdh_generate_key_cached` on RISC-V: the front

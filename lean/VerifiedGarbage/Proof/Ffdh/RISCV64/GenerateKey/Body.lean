@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubLoad
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.MontCore
@@ -18,18 +17,16 @@ import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
-# `vg_ffdh_generate_key` on RISC-V: the scalar, and the front
+# FFDH's key generation on RISC-V: the scalar's pieces
 
 `scan_ok`: `scanBody`, without a branch, keeps the first nonzero octet of the
-bound and its index (`scanAt`). `smear_ok`: the bits of that octet below its
-top one (`smearN`). `cut_ok`: `rand`'s octets to x, cut there
-(`KeyScalar.cut`), so that x is `scalarOfOctets` of `rand` (`gkOct_eq`).
-`masked_ok`: x's octets and'ed with a mask. `gkContract`, `gxOf` and
-`gkFront_ok`: the function, its public data as `vg_ffdh_derive_public`'s
-(`XD`), and its front.
+bound (`bptr`) and its index (`scanAt`). `cut_ok`: `rand`'s octets to x, cut
+there (`KeyScalar.cut`). `masked_ok`, `maskPre_ok`: x's octets and'ed with
+the mask of the status 1. `XR`: what holds of x and `rand`. `ghdr_ok`: the
+header's words and the arguments moved.
 -/
 
 @[expose] public section
@@ -40,11 +37,10 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Impl.Bignum VG.Impl.Bignum
   VG.Impl.Ffdh.RISCV64 VG.Impl.Ffdh.RISCV64.GenerateKey
 open VG.Proof.Bignum.RISCV64
 open VG.Proof.Ffdh.RISCV64
-open VG.Proof.Ffdh.KeyScalar (smearN smearN_eq smearN_lt cut cut_length cut_get cut_eq bnd bnd_length)
+open VG.Proof.Ffdh.KeyScalar (cut cut_length cut_get bnd)
 open VG.Proof.Ffdh (scanAt scanAt_succ scanAt_length lead)
 open VG.Proof.Bignum (slot)
 open VG.Proof.Ffdh.RISCV64.Derive (AR)
-open VG.Proof.Bignum.RISCV64.Pub (savW savR)
 
 /-! ## Masks -/
 
@@ -156,26 +152,6 @@ theorem scan_ok {s : State} {P : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k < 2 ^ 3
 
 /-! ## The smear -/
 
-theorem smear_nat : ∀ n < 256, (let a := BitVec.ofNat 64 n ||| BitVec.ofNat 64 n >>> 1
-    let b := a ||| a >>> 2
-    b ||| b >>> 4) = BitVec.ofNat 64 (smearN n) := by decide +kernel
-
-/-- `smear`: `s2 :=` `smearN` of its octet. -/
-theorem smear_ok (s : State) {b : Byte} (h2 : s.gpr .s2 = b.setWidth 64) :
-    WP isa (.block smear) s fun t =>
-      (t.gpr .s2 = (BitVec.ofNat 8 (smearN b.toNat)).setWidth 64 ∧ t.mem = s.mem) ∧ Keep [.s2, .t6] s t := by
-  refine WP.keep _ ?_ (by rfl) (by rfl)
-  unfold smear
-  brun [h2]
-  have e : b.setWidth 64 = BitVec.ofNat 64 b.toNat := by apply BitVec.eq_of_toNat_eq; simp
-  have e2 : (BitVec.ofNat 8 (smearN b.toNat)).setWidth 64 = BitVec.ofNat 64 (smearN b.toNat) := by
-    apply BitVec.eq_of_toNat_eq
-    have := smearN_lt _ b.isLt
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega_arith
-  rw [e, e2]
-  exact smear_nat _ b.isLt
-
 /-! ## Masks of the index -/
 
 theorem lt_mask {j l : Nat} (hj : j < 2 ^ 32) (hl : l < 2 ^ 32) :
@@ -260,7 +236,7 @@ theorem cutBody_ok {s t : State} {R X : Addr} {k ld j : Nat} {tb : Byte} (hj : j
     fun u ⟨⟨u24, u25, u4, u6, um⟩, ku⟩ =>
       ⟨⟨u24, u25, u4, ?_, ?_, ?_, ?_, (tk.trans ku).mono (by decide)⟩, u6⟩
   · brun [t24, t25, t4, t9, t14, hrd', hst, add_ofNat_zero, Pub.read1_setWidth, hb, fin64_exec_li_zero,
-      fin64_exec_li_lit (show 255 < 2048 by decide), exec_addi_neg_lit (show 1 ≤ 2048 by decide),
+      Dsa.RISCV64.exec_li_lit (show 255 < 2048 by decide), exec_addi_neg_lit (show 1 ≤ 2048 by decide),
       lt_mask (show j < 2 ^ 32 by omega_arith) (show ld < 2 ^ 32 by omega_arith),
       eq_mask (show j < 2 ^ 32 by omega_arith) (show ld < 2 ^ 32 by omega_arith), sel255, or_xor_mask]
     rw [BitVec.ofNat_add]
@@ -357,14 +333,6 @@ theorem masked_ok {s : State} {X : Addr} {k : Nat} {c : Bool} (hk1 : 1 ≤ k) (h
 /-- The bound's octets the code scans: q's, or p's. -/
 def bptr (D : Addr) (k L : Nat) : Addr := if L = 3 * k then off D (2 * k) else D
 
-/-- The smeared octet of the bound's first nonzero one. -/
-def smeared (m : Mem) (D : Addr) (k L : Nat) : Byte :=
-  BitVec.ofNat 8 (smearN ((Spec.Rsa.bytesAt m (bptr D k L) k).getD (lead (Spec.Rsa.bytesAt m (bptr D k L) k)) 0).toNat)
-
-/-- x's octets: `rand`'s cut at the bound's first nonzero octet. -/
-def gkOct (m : Mem) (D R : Addr) (k L : Nat) : List Byte :=
-  cut (Spec.Rsa.bytesAt m R k) (lead (Spec.Rsa.bytesAt m (bptr D k L) k)) (smeared m D k L)
-
 /-- The bound's octets the code scans are `KeyScalar.bnd`'s. -/
 theorem bptr_bnd (m : Mem) (D : Addr) {k L : Nat} (hL : L = 2 * k ∨ L = 3 * k) :
     Spec.Rsa.bytesAt m (bptr D k L) k = bnd k (Spec.Rsa.bytesAt m D L) := by
@@ -374,31 +342,6 @@ theorem bptr_bnd (m : Mem) (D : Addr) {k L : Nat} (hL : L = 2 * k ∨ L = 3 * k)
   by_cases hq : L = 3 * k
   · rw [ite_eq_left hq, ite_eq_left hq, VG.Proof.Dsa.bytesAt_slice m D (by omega_arith : 2 * k + k ≤ L)]
   · rw [ite_eq_right hq, ite_eq_right hq, Proof.Ffdh.take_bytesAt m D (by omega_arith)]
-
-theorem gkOct_length (m : Mem) (D R : Addr) {k L : Nat} (hk : 1 ≤ k) : (gkOct m D R k L).length = k := by
-  have hl : (Spec.Rsa.bytesAt m (bptr D k L) k).length = k := by simp [Spec.Rsa.bytesAt]
-  have hne : Spec.Rsa.bytesAt m (bptr D k L) k ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
-  have := Proof.Ffdh.lead_lt hne
-  have hR : (Spec.Rsa.bytesAt m R k).length = k := by simp [Spec.Rsa.bytesAt]
-  unfold gkOct
-  rw [cut_length _ (by rw [hR]; omega_arith), hR]
-
-/-- x's octets are the scalar of the attempt. -/
-theorem gkOct_eq (m : Mem) (D R : Addr) {k L : Nat} (hk : 1 ≤ k) (hL : L = 2 * k ∨ L = 3 * k)
-    (hp : L ≠ 3 * k → Spec.Rsa.os2ip (Spec.Rsa.bytesAt m D k) % 2 = 1 ∧ 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt m D k)) :
-    Spec.Rsa.os2ip (gkOct m D R k L) =
-      Spec.Ffdh.scalarOfOctets (Spec.Ffdh.domainOf k (Spec.Rsa.bytesAt m D L)) (Spec.Rsa.bytesAt m R k) := by
-  have hl : (Spec.Rsa.bytesAt m D L).length = L := by simp [Spec.Rsa.bytesAt]
-  have hd : (Spec.Rsa.bytesAt m D L).length = 2 * k ∨ (Spec.Rsa.bytesAt m D L).length = 3 * k := by rw [hl]; exact hL
-  unfold gkOct smeared
-  rw [bptr_bnd m D hL]
-  refine cut_eq hk hd (fun h3 => ?_) (by simp [Spec.Rsa.bytesAt]) ?_
-  · rw [Proof.Ffdh.take_bytesAt m D (by omega_arith)]; exact hp (by rw [hl] at h3; exact h3)
-  · rw [Proof.Ffdh.getD_of (Proof.Ffdh.lead_lt (by
-        intro he; have := bnd_length hd; rw [he] at this; simp at this; omega_arith))]
-    have hlt := BitVec.isLt ((bnd k (Spec.Rsa.bytesAt m D L))[lead (bnd k (Spec.Rsa.bytesAt m D L))]'(Proof.Ffdh.lead_lt (by
-        intro he; have := bnd_length hd; rw [he] at this; simp at this; omega_arith)))
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (smearN_lt _ hlt), smearN_eq _ hlt]
 
 /-! ## The scalar -/
 
@@ -437,136 +380,8 @@ theorem Ctx.ofX {x : XD} {R : Addr} {s t : State} (h : Ctx x s) (hx : XR x R s) 
     by rw [hw 0 (by decide)]; exact h.hO, by rw [hw 8 (by decide)]; exact h.hX,
     by rw [hw 16 (by decide)]; exact h.hXL, by rw [hw 24 (by decide)]; exact h.hY⟩
 
-/-- `boundPtr`: `t3 :=` the bound's octets. -/
-theorem bp_ok {x : XD} {s : State} (hc : Ctx x s) (ha : AR x s) :
-    WP isa boundPtr s fun t => (t.gpr .t3 = off (bptr x.D x.k x.L) 0 ∧ t.mem = s.mem) ∧ Keep [.t2, .t3] s t := by
-  have hk' := hc.k1024
-  have hL := hc.hL
-  refine WP.keep _ ?_ (by rfl)
-  unfold boundPtr
-  refine WP.seq (WP.mono (WP.keep [.t2] (Q := fun t => (t.gpr .t2 == 0) = decide (x.L = 3 * x.k) ∧ t.mem = s.mem)
-    (by unfold hasQ; brun [ha.a3, ha.a4]; exact Derive.sub_3k_zero (by omega_arith) (by omega_arith)) (by rfl) (by rfl))
-    fun s₁ ⟨⟨t2, m1⟩, k1⟩ => ?_)
-  refine WP.ite (s₁.gpr .t2 == 0) (Steps.eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
-  · rw [t2, decide_eq_true_eq] at hb
-    refine WP.mono (WP.keep [.t3] (Q := fun t => t.gpr .t3 = off (off x.D (2 * x.k)) 0 ∧ t.mem = s₁.mem)
-      (by brun [(k1.gpr (r := .a2) (by decide)).trans ha.a2, (k1.gpr (r := .a4) (by decide)).trans ha.a4,
-        Derive.q_addr]) (by rfl) (by rfl)) fun t ⟨⟨t3, mt⟩, _⟩ => ⟨?_, by rw [mt, m1]⟩
-    rw [t3]; unfold bptr; rw [ite_eq_left hb]
-  · have hq : ¬ x.L = 3 * x.k := by rw [t2] at hb; simpa using hb
-    refine WP.mono (WP.keep [.t3] (Q := fun t => t.gpr .t3 = off x.D 0 ∧ t.mem = s₁.mem)
-      (by brun [(k1.gpr (r := .a2) (by decide)).trans ha.a2, add_ofNat_zero]) (by rfl) (by rfl))
-      fun t ⟨⟨t3, mt⟩, _⟩ => ⟨?_, by rw [mt, m1]⟩
-    rw [t3]; unfold bptr; rw [ite_eq_right hq]
-
 /-- The registers `scalar` writes. -/
 def scRegs : List Reg := [.t1, .t2, .t3, .t4, .t5, .t6, .s0, .s1, .s2, .s3, .s4, .a0, .a1]
-
-/-- `scalar`: x's octets the cut of `rand`'s (`gkOct`), and `s0 := 0`. -/
-theorem scalar_ok {x : XD} {R : Addr} {s : State} (hb : Base x s) (ha : AR x s) (hx : XR x R s)
-    (h1 : s.gpr .t1 = R) :
-    WP isa scalar s fun t =>
-      (Spec.Rsa.bytesAt t.mem x.X x.k = gkOct s.mem x.D R x.k x.L ∧ Outside x.X 0 x.k s.mem t.mem ∧
-        t.gpr .s0 = 0) ∧ Keep scRegs s t := by
-  have hc := hb.ctx
-  have hk := hc.k64
-  have hk' := hc.k1024
-  have hL := hc.hL
-  unfold scalar
-  refine WP.seq (WP.mono (bp_ok hc ha) fun s₂ ⟨⟨b3, m2⟩, k2⟩ => ?_)
-  have hrdB : ∀ i < x.k, InRegions (s₂.rd ++ s₂.wr) (off (bptr x.D x.k x.L) i) 1 := fun i hi => by
-    rw [k2.2.1, k2.2.2]
-    unfold bptr
-    by_cases hq : x.L = 3 * x.k
-    · rw [ite_eq_left hq, Derive.off_off]; exact hc.rdD _ (by omega_arith)
-    · rw [ite_eq_right hq]; exact hc.rdD _ (by omega_arith)
-  refine WP.seq (WP.mono (scan_ok (P := bptr x.D x.k x.L) (by omega_arith) (by omega_arith) hrdB b3
-    ((k2.gpr (by decide)).trans ha.a4)) fun u hu => WP.seq (WP.mono hu fun s₃ ⟨⟨h31, h32, m3⟩, k3⟩ => ?_))
-  have k23 := k2.trans k3
-  rw [m2] at h31 h32
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (smear_ok s₃ h32) fun s₄ ⟨⟨h42, m4⟩, k4⟩ => ?_
-  have k24 := k23.trans k4
-  refine WP.mono (WP.keep [.t5, .t4, .a0] (Q := fun u => u.gpr .t5 = BitVec.ofNat 64 x.k ∧
-    u.gpr .t4 = BitVec.ofNat 64 0 ∧ u.gpr .a0 = off x.X 0 ∧ u.mem = s₄.mem)
-    (by unfold cutSetup; brun [(k24.gpr (r := .a4) (by decide)).trans ha.a4, (k24.gpr (r := .a5) (by decide)).trans ha.a5,
-      fin64_exec_li_zero, add_ofNat_zero]; rfl) (by rfl) (by rfl))
-    fun s₅ ⟨⟨h55, h54, h50, m5⟩, k5⟩ => ?_
-  have k25 := k24.trans k5
-  have hm5 : s₅.mem = s.mem := by rw [m5, m4, m3, m2]
-  refine WP.seq (WP.mono (cut_ok (R := R) (X := x.X) (k := x.k) (ld := lead (Spec.Rsa.bytesAt s.mem (bptr x.D x.k x.L) x.k))
-    (tb := smeared s.mem x.D x.k x.L) (by omega_arith) (by omega_arith)
-    (by
-      have hl : (Spec.Rsa.bytesAt s.mem (bptr x.D x.k x.L) x.k).length = x.k := by simp [Spec.Rsa.bytesAt]
-      have hne : Spec.Rsa.bytesAt s.mem (bptr x.D x.k x.L) x.k ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
-      have := Proof.Ffdh.lead_lt hne
-      omega_arith)
-    hx.nwX (by rw [k25.2.2]; exact hx.wX) (by rw [k25.2.1, k25.2.2]; exact hx.rdR) hx.sepRX
-    (by rw [k25.gpr (by decide), h1]; simp [off]) h50 h54
-    ((k5.gpr (by decide)).trans ((k4.gpr (by decide)).trans h31))
-    ((k5.gpr (by decide)).trans h42) h55) fun s₆ ⟨⟨h6b, o6⟩, k6⟩ => ?_)
-  refine WP.mono (WP.keep [.s0] (Q := fun u => u.gpr .s0 = 0 ∧ u.mem = s₆.mem) (by brun [fin64_exec_li_zero])
-    (by rfl) (by rfl)) fun t ⟨⟨t0, mt⟩, kt⟩ => ⟨⟨?_, ?_, t0⟩, ((k25.trans k6).trans kt).mono (by decide)⟩
-  · rw [mt, h6b, hm5]; rfl
-  · rw [mt, ← hm5]; exact o6
-
-/-! ## The function -/
-
-/-- The arguments on the stack: `rand_len`, `scratch` and `scratch_len`. -/
-abbrev gkStack (s : State) : Region := ⟨stackArgAddr s 0, 24⟩
-
-/-- The status of the attempt. -/
-def gkStatus (s : State) : Nat :=
-  let a := Spec.Ffdh.domainOf (s.gpr .a6).toNat (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat)
-  Spec.Ffdh.keyStatus a (Spec.Ffdh.scalarOfOctets a (Spec.Rsa.bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat))
-
-/-- What timing may depend on: the domain and the status. -/
-def gkLeak (s : State) : List Nat :=
-  (Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat).map (·.toNat) ++ [gkStatus s]
-
-/-- `vg_ffdh_generate_key`, on the registers and the stack. -/
-def gkContract : Contract isa where
-  pre s :=
-    let x : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
-    let y : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
-    let dom : Region := ⟨s.gpr .a4, (s.gpr .a5).toNat⟩
-    let rand : Region := ⟨s.gpr .a7, (stackArg s 0).toNat⟩
-    let scr : Region := ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
-    s.rd = [dom, rand, gkStack s] ∧ s.wr = [x, y, scr] ∧
-      x.Disjoint y ∧ x.Disjoint dom ∧ x.Disjoint rand ∧ x.Disjoint scr ∧ x.Disjoint (gkStack s) ∧
-      y.Disjoint dom ∧ y.Disjoint rand ∧ y.Disjoint scr ∧ y.Disjoint (gkStack s) ∧
-      dom.Disjoint scr ∧ rand.Disjoint scr ∧ scr.Disjoint (gkStack s) ∧
-      (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64 ∧ (s.gpr .a2).toNat + (s.gpr .a3).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .a4).toNat + (s.gpr .a5).toNat ≤ 2 ^ 64 ∧ (s.gpr .a7).toNat + (stackArg s 0).toNat ≤ 2 ^ 64 ∧
-      (stackArg s 1).toNat + (stackArg s 2).toNat * 8 ≤ 2 ^ 64 ∧
-      Spec.Ffdh.pLenValid (s.gpr .a6).toNat ∧ Spec.Ffdh.domainLenValid (s.gpr .a6).toNat (s.gpr .a5).toNat ∧
-      (s.gpr .a1).toNat = (s.gpr .a6).toNat ∧ (s.gpr .a3).toNat = (s.gpr .a6).toNat ∧
-      (stackArg s 0).toNat = (s.gpr .a6).toNat ∧ Spec.Rsa.scratchWords (s.gpr .a6).toNat ≤ (stackArg s 2).toNat ∧
-      (stackArg s 1).toNat % 8 = 0 ∧ s.sp.toNat % 16 = 0
-  post s t :=
-    let dom := Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat
-    let a := Spec.Ffdh.domainOf (s.gpr .a6).toNat dom
-    let sc := Spec.Ffdh.scalarOfOctets a (Spec.Rsa.bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat)
-    Spec.Ffdh.domainValid (s.gpr .a6).toNat dom = true →
-      ((t.gpr .a0).setWidth 32).toNat = Spec.Ffdh.keyStatus a sc ∧
-        if Spec.Ffdh.keyStatus a sc = 1 then
-          Spec.Rsa.bytesAt t.mem (s.gpr .a0) (s.gpr .a6).toNat = Spec.Rsa.i2osp sc (s.gpr .a6).toNat ∧
-            Spec.Rsa.bytesAt t.mem (s.gpr .a2) (s.gpr .a6).toNat =
-              Spec.Rsa.i2osp (Spec.Rsa.powMod a.g sc a.p) (s.gpr .a6).toNat
-        else Spec.Rsa.bytesAt t.mem (s.gpr .a0) (s.gpr .a6).toNat = List.replicate (s.gpr .a6).toNat 0 ∧
-          Spec.Rsa.bytesAt t.mem (s.gpr .a2) (s.gpr .a6).toNat = List.replicate (s.gpr .a6).toNat 0
-  pub s₁ s₂ :=
-    s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
-      s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.gpr .a5 = s₂.gpr .a5 ∧ s₁.gpr .a6 = s₂.gpr .a6 ∧
-      s₁.gpr .a7 = s₂.gpr .a7 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
-      stackArg s₁ 2 = stackArg s₂ 2 ∧ gkLeak s₁ = gkLeak s₂
-
-/-- The exchange's public data: `y` as `out`, x as x, g as the peer. -/
-def gxOf (s : State) : XD :=
-  ⟨s.gpr .a2, s.gpr .a4, (s.gpr .a5).toNat, (s.gpr .a6).toNat, s.gpr .a0, (s.gpr .a6).toNat,
-    off (s.gpr .a4) (s.gpr .a6).toNat, stackArg s 1, (stackArg s 2).toNat * 8,
-    Spec.Rsa.bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat⟩
 
 /-! ## The front -/
 
@@ -616,110 +431,6 @@ theorem ghdr_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 32 ≤ Z
     exact (((o0.mono (by omega_arith) (by omega_arith)).trans (o1.mono (by omega_arith) (by omega_arith))).trans
       (o2.mono (by omega_arith) (by omega_arith))).trans (o3.mono (by omega_arith) (by omega_arith))
 
-/-- The registers the front writes. -/
-def frontRegs : List Reg := [.t0, .s6, .t2, .t1, .a3, .a5, .a0, .a2, .a4, .s7, .s8, .a1, .a7, .s5, .s10, .s11]
-
-/-- `gkFront`: `Base`, `AR`, `rand` in `t1`, the callee-saved registers
-saved, and only the header changed. -/
-theorem gkFront_ok {s : State} (h : gkContract.pre s) :
-    WP isa (.block gkFront) s fun t =>
-      Base (gxOf s) t ∧ AR (gxOf s) t ∧ t.gpr .t1 = s.gpr .a7 ∧
-        (∀ i < 12, t.mem.readW (off (savW (stackArg s 1)) (8 * i)) 64 = s.gpr (PublicChecked.saved i)) ∧
-        Keep frontRegs s t ∧ Outside (stackArg s 1) 0 256 s.mem t.mem := by
-  obtain ⟨hrd, hwr, dXY, dXD, dXR, dXS, dXA, dYD, dYR, dYS, dYA, dDS, dRS, dSA, nwX, nwY, nwD, nwR, nwS,
-    ⟨hk, hk'⟩, hL, hxl, hyl, hrl, hsl, alS, alsp⟩ := h
-  simp only [Spec.Rsa.scratchWords] at hsl
-  simp only [gxOf]
-  have hA1 : InRegions (s.rd ++ s.wr) (stackArgAddr s 1) 8 := by
-    refine ⟨gkStack s, List.mem_append_left _ (by rw [hrd]; simp), ?_⟩
-    show (⟨s.sp + BitVec.ofNat 64 (8 * 0), 24⟩ : Region).Contains (s.sp + BitVec.ofNat 64 (8 * 1)) 8
-    simp only [Nat.mul_zero, Nat.mul_one, add_ofNat_zero]
-    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  generalize hSd : stackArg s 1 = S at hwr dXS dYS dDS dRS dSA nwS alS ⊢
-  generalize hZd : (stackArg s 2).toNat * 8 = Z at hwr dXS dYS dDS dRS dSA nwS ⊢
-  have hZ : 256 + 128 * (s.gpr .a6).toNat ≤ Z := by omega_arith
-  have hs : Scr s S Z := Scr.of_mem (by rw [hwr]; simp) nwS alS
-  unfold gkFront
-  simp only [List.append_assoc]
-  refine WP.block_append (WP.mono (loadS1_ok s hA1 alsp) fun s₁ ⟨⟨a0', m1⟩, k1⟩ => ?_)
-  rw [hSd] at a0'
-  have hin : ∀ i < 12, InRegions s₁.wr (off (savW (s₁.gpr .t0)) (8 * i)) 8 := fun i hi => by
-    rw [a0', k1.2.2, hwr]
-    show InRegions _ (S + BitVec.ofNat 64 128 + BitVec.ofNat 64 (8 * i)) 8
-    rw [Offset.add_add]
-    exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  refine WP.block_append (WP.mono (Pub.save_ok s₁ hin (fun i hi => by
-    rw [a0']; exact Pub.sav_al alS (by omega_arith) hi)) fun s₂ hS => ?_)
-  have k12 := k1.trans hS.keep
-  have h6₂ : s₂.gpr .s6 = S := hS.s6.trans a0'
-  refine WP.block_append (WP.mono (ghdr_ok (hs.congr k12.2.2) (by omega_arith) h6₂)
-    fun s₃ ⟨⟨w0, w8, w16, w24, b1, b3, b5, b0, b2, b4, b6, b7, b8, ba1, o3⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
-  refine WP.mono (Pub.setup_ok (O := s.gpr .a2) (k := (s.gpr .a6).toNat) (b0.trans (k12.gpr (by decide)))
-    (by rw [ba1, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq])
-    ((k3.gpr (by decide)).trans h6₂) hk') fun t ⟨⟨j10, j11, j0, j5, j7, jm⟩, k4⟩ => ?_
-  have k := k13.trans k4
-  have hrdt : t.rd ++ t.wr = s.rd ++ s.wr := by rw [k.2.1, k.2.2]
-  have hsavO : Outside S 0 256 s.mem s₂.mem := fun y hy => by
-    rw [← m1]
-    refine hS.frame y fun r hr hc => ?_
-    rw [List.mem_singleton] at hr
-    subst hr
-    rw [a0'] at hc
-    have hc' := (Offset.sub_base (n := 96) (k := 256) S (d := 128) (by omega_arith)) _ hc
-    simp only [Region.Contains] at hc'
-    simp only [ofs] at hy
-    omega_arith
-  have hO : Outside S 0 256 s.mem t.mem := by
-    rw [jm]; exact hsavO.trans (o3.mono (Nat.le_refl _) (by omega_arith))
-  have hOZ : Outside S 0 Z s.mem t.mem := hO.mono (Nat.le_refl _) (by omega_arith)
-  have hb : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs S y < Z → off Q i ≠ y) →
-      Spec.Rsa.bytesAt t.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hsep =>
-    Pub.bytes_apart (o := 0) (n := Z) hOZ (by omega_arith) hsep
-  have hw3 : ∀ d, d + 8 ≤ 32 → word t.mem S d = word s₃.mem S d := fun d _ => by rw [jm]
-  have hLk : 2 * (s.gpr .a6).toNat ≤ (s.gpr .a5).toNat ∧ (s.gpr .a5).toNat ≤ 3 * (s.gpr .a6).toNat := by
-    simp only [Spec.Ffdh.domainLenValid] at hL; omega_arith
-  have sepD := Pub.ne_of_disjoint dDS (Nat.le_of_lt (s.gpr .a5).isLt)
-  have rdD : ∀ i < (s.gpr .a5).toNat, InRegions (t.rd ++ t.wr) (off (s.gpr .a4) i) 1 := by
-    rw [hrdt]; exact rd_of_mem (by rw [hrd]; simp) (Nat.le_refl _) (BitVec.isLt _)
-  have rdX : ∀ i < (s.gpr .a6).toNat, InRegions (t.rd ++ t.wr) (off (s.gpr .a0) i) 1 := fun i hi => by
-    rw [hrdt]
-    exact ⟨⟨s.gpr .a0, (s.gpr .a1).toNat⟩, List.mem_append_right _ (by rw [hwr]; simp),
-      Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  refine ⟨⟨⟨hs.congr k.2.2, hk, hk', hLk, ?_, by rw [← hyl]; exact nwY, fun i hi => ⟨⟨s.gpr .a2, (s.gpr .a3).toNat⟩,
-      by rw [k.2.2, hwr]; simp, Offset.contains_base _ (by change i < (s.gpr .a6).toNat at hi; omega_arith)
-        (by change i < (s.gpr .a6).toNat at hi; omega_arith)⟩,
-      fun y hy => Pub.sep_of_disjoint dYS y (by rw [hyl]; exact hy),
-      rdD, sepD, fun i hi => by rw [Derive.off_off]; exact rdD _ (by change i < (s.gpr .a6).toNat at hi; omega_arith),
-      fun i hi => by rw [Derive.off_off]; exact sepD _ (by change i < (s.gpr .a6).toNat at hi; omega_arith),
-      rdX, fun i hi => Pub.ne_of_disjoint dXS (Nat.le_of_lt (s.gpr .a1).isLt) i
-        (by change i < (s.gpr .a6).toNat at hi; omega_arith), by change 1 ≤ (s.gpr .a6).toNat; omega_arith, Nat.le_refl _,
-      (by rw [hb _ _ sepD]), ?_, ?_, ?_, ?_⟩,
-    by rw [k4.gpr (by decide), k3.gpr (by decide)]; exact h6₂, j7,
-    by rw [j5, Nat.mul_add], j0, by rw [k4.gpr (by decide), b7, k12.gpr (by decide)]; simp [off],
-    by rw [k4.gpr (by decide), b8, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    by rw [j10]; simp [off], j11⟩,
-    ⟨by rw [k4.gpr (by decide), b2, k12.gpr (by decide)],
-      by rw [k4.gpr (by decide), b3, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      by rw [k4.gpr (by decide), b4, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq],
-      by rw [k4.gpr (by decide), b5, k12.gpr (by decide)],
-      by rw [k4.gpr (by decide), b6, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]⟩,
-    by rw [k4.gpr (by decide), b1, k12.gpr (by decide)], ?_, k.mono (by decide), hO⟩
-  · show slot (((s.gpr .a6).toNat + 7) / 8) 24 ≤ Z
-    unfold slot hdrBytes; omega_arith
-  · rw [hw3 0 (by decide), w0, k12.gpr (by decide)]; simp [off]
-  · rw [hw3 8 (by decide), w8, k12.gpr (by decide)]; simp [off]
-  · rw [hw3 16 (by decide), w16, k12.gpr (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [hw3 24 (by decide), w24, k12.gpr (by decide), k12.gpr (by decide)]; simp [off]
-  · intro i hi
-    have e : off (savW S) (8 * i) = off S (128 + 8 * i) := by rw [off, off, Offset.add_add]
-    rw [e]
-    show word t.mem S (128 + 8 * i) = _
-    rw [jm, o3.word (Or.inr (by omega_arith)) (by omega_arith)]
-    show s₂.mem.readW (off S (128 + 8 * i)) 64 = _
-    rw [← e, ← a0', hS.saved i hi, k1.gpr fun h => Pub.saved_ne_t0 i hi (List.mem_singleton.mp h)]
-
 /-! ## The mask's start -/
 
 theorem st_mask : ∀ n < 4, (((0 : BitVec 64) - (BitVec.ofNat 64 n - BitVec.ofNat 64 1) |||
@@ -743,43 +454,6 @@ theorem maskPre_ok {s : State} {S X : Addr} {Z k n : Nat} (hs : Scr s S Z) (hZ :
     hs.al8 (d := 8) (by omega_arith) (by decide), hs.al8 (d := 16) (by omega_arith) (by decide)]
   exact ⟨st_mask n hn, hX, hK⟩
 
-theorem gkOct_congr {m m' : Mem} {D R : Addr} {k L : Nat} (hR : Spec.Rsa.bytesAt m' R k = Spec.Rsa.bytesAt m R k)
-    (hB : Spec.Rsa.bytesAt m' (bptr D k L) k = Spec.Rsa.bytesAt m (bptr D k L) k) :
-    gkOct m' D R k L = gkOct m D R k L := by
-  unfold gkOct smeared; rw [hR, hB]
-
-/-- x's and `rand`'s facts, from the precondition. -/
-theorem xr_of_pre {s t : State} (h : gkContract.pre s) (r3 : t.rd = s.rd) (w3 : t.wr = s.wr) :
-    XR (gxOf s) (s.gpr .a7) t := by
-  obtain ⟨hrd, hwr, dXY, dXD, dXR, dXS, dXA, dYD, dYR, dYS, dYA, dDS, dRS, dSA, nwX, nwY, nwD, nwR, nwS,
-    ⟨hk, hk'⟩, hL, hxl, hyl, hrl, hsl, alS, alsp⟩ := h
-  refine ⟨fun i hi => ?_, by change (s.gpr .a0).toNat + (s.gpr .a6).toNat ≤ _; omega_arith,
-    fun y hy => by
-      change ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 at hy
-      change (s.gpr .a6).toNat ≤ ofs (s.gpr .a0) y
-      have := Pub.sep_of_disjoint dXS.symm y hy
-      rw [hxl] at this; exact this,
-    fun i hi y hy => Pub.ne_of_disjoint dXD.symm (Nat.le_of_lt (s.gpr .a5).isLt) i hi y (by rw [hxl]; exact hy),
-    fun i hi => ?_, fun i hi y hy => Pub.ne_of_disjoint dXR.symm (Nat.le_of_lt (stackArg s 0).isLt) i
-      (by change i < (s.gpr .a6).toNat at hi; omega_arith) y (by rw [hxl]; exact hy),
-    fun i hi => Pub.ne_of_disjoint dRS (Nat.le_of_lt (stackArg s 0).isLt) i
-      (by change i < (s.gpr .a6).toNat at hi; omega_arith), rfl,
-    fun i hi y hy => Pub.ne_of_disjoint dXY (Nat.le_of_lt (s.gpr .a1).isLt) i
-      (by change i < (s.gpr .a6).toNat at hi; omega_arith) y (by rw [hyl]; exact hy),
-    fun y hy => by
-      change ofs (stackArg s 1) y < (stackArg s 2).toNat * 8 at hy
-      change (s.gpr .a6).toNat ≤ ofs (s.gpr .a2) y
-      have := Pub.sep_of_disjoint dYS.symm y hy
-      rw [hyl] at this; exact this,
-    fun i hi y hy => Pub.ne_of_disjoint dXY.symm (Nat.le_of_lt (s.gpr .a3).isLt) i
-      (by change i < (s.gpr .a6).toNat at hi; omega_arith) y (by rw [hxl]; exact hy)⟩
-  · change i < (s.gpr .a6).toNat at hi
-    rw [w3, hwr]
-    exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  · change i < (s.gpr .a6).toNat at hi
-    rw [r3, w3]
-    exact rd_of_mem (L := (stackArg s 0).toNat) (by rw [hrd]; simp) (by omega_arith) (BitVec.isLt _) i hi
-
 /-- Writes to x leave the working space. -/
 theorem outX_scr {X S : Addr} {k Z : Nat} {m m' : Mem} (ho : Outside X 0 k m m')
     (hsep : ∀ y, ofs S y < Z → k ≤ ofs X y) : Outside S Z (2 ^ 64) m m' := fun y hy =>
@@ -788,26 +462,5 @@ theorem outX_scr {X S : Addr} {k Z : Nat} {m m' : Mem} (ho : Outside X 0 k m m')
     rcases hy with h | h
     · exact hsep y h
     · have := (y - S).isLt; simp only [ofs] at h; omega_arith))
-
-/-- `scalar` keeps `X4`, `AR` and `XR`. -/
-theorem scalarX4_ok {x : XD} {R : Addr} {s : State} (h : X4 x s) (hz : s.gpr .s0 = 0) (ha : AR x s)
-    (hx : XR x R s) (h1 : s.gpr .t1 = R) :
-    WP isa scalar s fun t => X4 x t ∧ t.gpr .s0 = 0 ∧ AR x t ∧ XR x R t ∧
-      Spec.Rsa.bytesAt t.mem x.X x.k = gkOct s.mem x.D R x.k x.L ∧ Outside x.X 0 x.k s.mem t.mem := by
-  have hv := h.2.2.mp hz
-  have hb := h.1
-  have hc := hb.ctx
-  have hZ := hc.hZ
-  have hn := hc.scr.nowrap
-  unfold slot hdrBytes at hZ
-  refine WP.mono (WP.rdwr (scalar_ok hb ha hx h1)) fun s₁ ⟨⟨⟨xb, xo, z0⟩, k1⟩, r1, w1, _⟩ => ?_
-  have hc1 := Ctx.ofX hc hx r1 w1 xo
-  have os1 := outX_scr xo hx.sepSX
-  have hb1 : Base x s₁ := ⟨hc1, (k1.gpr (by decide)).trans hb.s6, (k1.gpr (by decide)).trans hb.a7,
-    (k1.gpr (by decide)).trans hb.s5, (k1.gpr (by decide)).trans hb.t0, (k1.gpr (by decide)).trans hb.s7,
-    (k1.gpr (by decide)).trans hb.s8, (k1.gpr (by decide)).trans hb.s10, (k1.gpr (by decide)).trans hb.s11⟩
-  have e0 : slot x.w 0 = 256 := by simp [slot, hdrBytes]
-  exact ⟨⟨hb1, by rw [Outside.wordsVal os1 (Or.inl (by omega_arith)) (by omega_arith)]; exact h.2.1,
-    fun _ => hv, fun _ => z0⟩, z0, ha.keep k1, hx.keep r1 w1, xb, xo⟩
 
 end VG.Proof.Ffdh.RISCV64.GenerateKey

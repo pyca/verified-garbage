@@ -38,7 +38,36 @@ open VG.Proof.Ffdh.Control (writeController writeController_frame writeControlle
 open VG.Impl.Ffdh.RISCV64.KeyGeneration.Search
 open VG.Impl.Ffdh.RISCV64.Cached.Search
 
-/-! ## Frames -/
+/-! ## Frames
+
+What a released frame held is lost: the state keeps all but the stack. -/
+
+/-- A frame's bytes are of the search's stack. -/
+theorem KeyInput.stack_frame {p : KeyPublic} {original : State} (h : KeyInput p original) {m m' : Mem}
+    {a b : Nat} (hf : Frame [⟨p.sp - BitVec.ofNat 64 a, b⟩] m m') (hb : b ≤ a) (ha : a ≤ 64) :
+    Frame [below original.sp stackUse] m m' :=
+  hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    obtain rfl := List.mem_singleton.mp hr
+    rw [← h.sp_eq]
+    exact Offset.sub_below p.sp ha (by show 64 - a + b ≤ 64; omega_using [ha, hb])⟩
+
+/-- The stack's bytes may change, not the outputs. -/
+theorem KeyInput.output_stack {p : KeyPublic} {original : State} (h : KeyInput p original) {m m' : Mem}
+    (hf : Frame [below original.sp stackUse] m m') :
+    Spec.Rsa.bytesAt m' p.xp p.len = Spec.Rsa.bytesAt m p.xp p.len ∧
+      Spec.Rsa.bytesAt m' p.yp p.len = Spec.Rsa.bytesAt m p.yp p.len := by
+  have hk := h.len_lt
+  obtain one : ∀ q : Addr, (⟨q, p.len⟩ : Region) ∈ inWrites original →
+      Spec.Rsa.bytesAt m' q p.len = Spec.Rsa.bytesAt m q p.len := fun q hq => by
+    simp only [Spec.Rsa.bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    refine hf.bytes (R := ⟨q, p.len⟩) (fun r hr => ?_) (show p.len ≤ 2 ^ 64 by omega_using [hk])
+      (List.mem_range.mp hi)
+    obtain rfl := List.mem_singleton.mp hr
+    exact (h.stack_disjoint (List.mem_append_left _ hq)).symm
+  refine ⟨one _ ?_, one _ ?_⟩
+  · rw [show (⟨p.xp, p.len⟩ : Region) = inX original from h.x_eq.symm]; simp [inWrites]
+  · rw [show (⟨p.yp, p.len⟩ : Region) = inY original from h.y_eq.symm]; simp [inWrites]
 
 /-! ## The attempt -/
 
@@ -402,17 +431,20 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
   have hu : u.sp = callSp p := husp.trans e0
   refine WP.callAny (k := cgContract) a.correct (call_attempt_pre h hf hu ha hm)
     (call_covers_reads h hroom k.2.1 k.2.2) (call_covers_writes h k.2.2) ?_ (by rw [a.stack]; decide)
-  intro t hrd hwr hsp hfr hcs hpost
+  intro t hrd hwr hsp hfr hcs hpost m' u' fl
+  rw [h.sp, show p.sp - 16 - BitVec.ofNat 64 48 = p.sp - BitVec.ofNat 64 64 from callSp_eq p] at fl
+  have hlost := h.input.stack_frame fl (by decide) (by decide)
   refine ⟨?_, ?_⟩
   · -- The loop state, after the frame.
-    apply h.restore (show (freed 48 t).rd = s.rd from hrd.trans k.2.1)
-      (show (freed 48 t).wr = s.wr from by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl)
+    refine h.restore (t := { freed 48 t with mem := m', unknowns := u' }) (hrd.trans k.2.1)
+      (by change t.wr.tail = s.wr; rw [hwr, k.2.2]; rfl) ?_ ?_ ?_
     · change t.sp + BitVec.ofNat 64 48 = s.sp
       rw [hsp, husp]
       exact BitVec.sub_add_cancel _ _
     · intro r hr
       exact (hcs r hr).trans (k.gpr (by revert r hr; decide))
-    · exact attempt_frame h hm hfr a.stack
+    · exact (attempt_frame h hm hfr a.stack).trans
+        (hlost.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp [KeyInput.callChanges])
   · -- The attempt's status and outputs.
     obtain ⟨hdom, hrand, h6⟩ := call_inputs h hroom hf hm hu ha
     have hp := hpost
@@ -420,7 +452,10 @@ theorem key_attempt_run (a : Attempt) (h : KeyLive p original used keys scalars 
     obtain ⟨hst, hout⟩ := hp
     simp only [call_gpr (by decide : Reg.a0 ∉ linkRegs), call_gpr (by decide : Reg.a2 ∉ linkRegs),
       ha.1, ha.2.2.1, State.withRegions_gpr, State.withRegions_mem] at hst hout
-    exact ⟨hst, hout⟩
+    refine ⟨hst, ?_⟩
+    obtain ⟨ex, ey⟩ := h.input.output_stack hlost
+    rw [show ({ freed 48 t with mem := m', unknowns := u' } : State).mem = m' from rfl, ex, ey]
+    exact hout
 
 end
 
@@ -928,18 +963,32 @@ theorem iteration_depth (a : Attempt) : sdepth (iteration a.call) = 48 := by
     request, Impl.Bignum.RISCV64.countLoop, sdepth, Attempt.call, Instr.frameBytes, this, Nat.max_def]
   decide
 
-/-- After the frame: a finished search, with `ra` and the stack pointer
-back. -/
+/-- After the frame: a finished search, with `ra` and the stack pointer back
+and the frame's bytes lost. -/
 theorem KeyDone.popped {p : KeyPublic} {original s : State} {r : KeySearchResult}
-    (h : KeyDone p original r s) (v sp : BitVec 64) :
-    KeyDone p original r { s.write .ra v with sp := sp } := by
-  refine ⟨h.input, h.rd, h.wr, ?_, fun reg hr h0 => ?_, h.savedS0, h.usedPtr, h.used,
-    h.status, h.policy, h.output⟩
+    (h : KeyDone p original r s) (v sp : BitVec 64) {m : Mem} (u : Nat → BitVec 64)
+    (hf : Frame [below original.sp stackUse] s.mem m) :
+    KeyDone p original r { s.write .ra v with sp := sp, mem := m, unknowns := u } := by
+  have hc := h.input.control_frame
+    (hf.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; simp [KeyInput.callChanges])
+  obtain ⟨ex, ey⟩ := h.input.output_stack hf
+  refine ⟨h.input, h.rd, h.wr, ?_, fun reg hr h0 => ?_, (hc 4 (by decide)).trans h.savedS0,
+    (hc 15 (by decide)).trans h.usedPtr, (hc 11 (by decide)).trans h.used,
+    (hc 14 (by decide)).trans h.status, Eq.trans ?_ h.policy, ?_⟩
   · show (s.write .ra v).gpr .s0 = _
     rw [RegUpd.gpr_write, ite_eq_right (by decide)]; exact h.s0
   · show (s.write .ra v).gpr reg = _
     rw [RegUpd.gpr_write, ite_eq_right (fun e => by subst e; exact absurd hr (by decide))]
     exact h.saved reg hr h0
+  · change [word m p.control (8 * 0), word m p.control (8 * 1), word m p.control (8 * 2),
+      word m p.control (8 * 3)] = [word s.mem p.control (8 * 0), word s.mem p.control (8 * 1),
+      word s.mem p.control (8 * 2), word s.mem p.control (8 * 3)]
+    rw [hc 0 (by decide), hc 1 (by decide), hc 2 (by decide), hc 3 (by decide)]
+  · have ho := h.output
+    show KeyOutput p r m
+    unfold KeyOutput at ho ⊢
+    rw [ex, ey]
+    exact ho
 
 theorem KeyInput.tail_eq {p : KeyPublic} {s : State} (h : KeyInput p s) :
     keyResult s = p.tail (keyRand s) 0 p.keys p.scalars := by
@@ -966,7 +1015,8 @@ theorem key_body {p : KeyPublic} {s t : State} (a : Attempt) (h : KeyInput p s)
     exact Offset.sub_below s.sp (a := 16) (b := 64) (by decide) (by decide)
   · refine WP.mono (key_loop a (expected := keyResult s) (n := 128 * p.keys + p.scalars + 1)
       ⟨0, p.keys, p.scalars, rfl, hl, by rw [h.tail_eq], by rw [h.tail_eq]⟩)
-      fun u hu => ⟨hu.popped _ _, ?_, hsp⟩
+      fun u hu m w fl => ⟨hu.popped _ _ w (h.stack_frame (a := 16) (b := 16)
+        (by rw [h.sp_eq, ← hsp]; exact fl) (by decide) (by decide)), ?_, hsp⟩
     show (u.write .ra (t.gpr .ra)).gpr .ra = _
     rw [RegUpd.gpr_write_self, k.gpr (by decide)]
   · show sdepth (iteration a.call) + 16 < 2 ^ 64

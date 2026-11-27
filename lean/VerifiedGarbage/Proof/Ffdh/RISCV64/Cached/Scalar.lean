@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Front
+public import VerifiedGarbage.Proof.Ffdh.ScalarWidth
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreSave
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
--- separate module: the cached attempt's correctness proof is split in a chain of modules, so that a change rebuilds only the modules after it
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
 # `vg_ffdh_generate_key_cached` on RISC-V: the scalar
@@ -31,51 +31,38 @@ open VG.Proof.Ffdh.RISCV64
 open VG.Proof.Ffdh.RISCV64.GenerateKey (XR cut_ok cutRegs scRegs outX_scr)
 open VG.Proof.Ffdh.RISCV64.Derive (AR)
 open VG.Proof.Ffdh.KeyScalar (cut)
+open VG.Proof.Ffdh.ScalarWidth (width headBits mask cut_value)
 open VG.Proof.Bignum (slot)
 
-/-- The mask of the first octet's bits, for `bits` bits. -/
-def tbOf (bits : Nat) : Byte := BitVec.ofNat 8 (255 / 2 ^ (8 * ((bits + 7) / 8) - bits))
-
-theorem tbOf_toNat (bits : Nat) : (tbOf bits).toNat = 2 ^ (8 - (8 * ((bits + 7) / 8) - bits)) - 1 := by
-  have hd : 8 * ((bits + 7) / 8) - bits < 8 := by omega_arith
-  obtain ⟨d, hd'⟩ : ∃ d, d = 8 * ((bits + 7) / 8) - bits := ⟨_, rfl⟩
-  rw [← hd'] at hd ⊢
-  unfold tbOf; rw [← hd']
-  have key : ∀ d < 8, (BitVec.ofNat 8 (255 / 2 ^ d)).toNat = 2 ^ (8 - d) - 1 := by decide
-  exact key d hd
+/-- With at least a bit, the scalar's octets are `⌈bits / 8⌉`. -/
+theorem width_of_pos {bits : Nat} (h : 1 ≤ bits) : width bits = (bits + 7) / 8 := by
+  unfold width; omega_using [h]
 
 /-- x's value: `rand`'s mod `2^bits`. -/
 theorem scalarC_value {rb : List Byte} {k bits : Nat} (hl : rb.length = k) (hb1 : 1 ≤ bits) (hbk : bits ≤ 8 * k) :
-    Spec.Rsa.os2ip (cut rb (k - (bits + 7) / 8) (tbOf bits)) = Spec.Rsa.os2ip rb % 2 ^ bits := by
-  rw [VG.Proof.Ffdh.KeyScalar.cut_value (n := k - (bits + 7) / 8) (e := (bits + 7) / 8)
-    (j := 8 - (8 * ((bits + 7) / 8) - bits)) (by omega_arith) (by omega_arith) (by omega_arith) (tbOf_toNat bits)]
-  congr 2
-  omega_arith
+    Spec.Rsa.os2ip (cut rb (k - (bits + 7) / 8) (mask bits)) = Spec.Rsa.os2ip rb % 2 ^ bits := by
+  subst hl
+  rw [← width_of_pos hb1]
+  exact cut_value (by omega_using [hb1, hbk]) hbk
 
 theorem exec_srl_reg {s : State} {d n m : Reg} :
     exec (.shiftReg .srl .d d n m) s = some (s.write d (s.gpr n >>> ((s.gpr m).toNat % 64))) := rfl
 
-theorem tb_shift : ∀ d < 8, BitVec.ofNat 64 255 >>> ((BitVec.ofNat 64 d).toNat % 64) =
-    (BitVec.ofNat 8 (255 / 2 ^ d)).setWidth 64 := by decide
-
-theorem ofNat_shl3' {a : Nat} (h : 8 * a < 2 ^ 64) : BitVec.ofNat 64 a <<< 3 = BitVec.ofNat 64 (8 * a) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-  rw [Nat.mod_eq_of_lt (show a < 2 ^ 64 by omega_arith)]
-  omega_arith
-
-theorem ofNat_sub'' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
-    BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega_arith
+/-- The mask of the first octet's bits. -/
+theorem mask_shift {bits : Nat} (h : 1 ≤ bits) :
+    BitVec.ofNat 64 255 >>> ((BitVec.ofNat 64 (8 * ((bits + 7) / 8) - bits)).toNat % 64) =
+      (mask bits).setWidth 64 := by
+  have key : ∀ d < 8, BitVec.ofNat 64 255 >>> ((BitVec.ofNat 64 d).toNat % 64) =
+      (BitVec.ofNat 8 (2 ^ (8 - d) - 1)).setWidth 64 := by decide
+  rw [key _ (by omega_arith), mask, headBits, width_of_pos h]
+  rw [show 8 - (8 * ((bits + 7) / 8) - bits) = bits - 8 * ((bits + 7) / 8 - 1) by omega_arith]
 
 /-- `scalarBlock`: the mask, the index, and the cut's start. -/
 theorem sb_ok {s : State} {S X : Addr} {Z k bits : Nat} (hs : Scr s S Z) (hZ : 64 ≤ Z) (h6 : s.gpr .s6 = S)
-    (h4 : s.gpr .a4 = BitVec.ofNat 64 k) (h5 : s.gpr .a5 = X) (hk : (bits + 7) / 8 ≤ k) (hk' : k < 2 ^ 32)
+    (h4 : s.gpr .a4 = BitVec.ofNat 64 k) (h5 : s.gpr .a5 = X) (hb1 : 1 ≤ bits) (hk : (bits + 7) / 8 ≤ k)
     (hbw : word s.mem S 40 = BitVec.ofNat 64 bits) (hyw : word s.mem S 48 = BitVec.ofNat 64 ((bits + 7) / 8)) :
     WP isa (.block scalarBlock) s fun t =>
-      (t.gpr .s2 = (tbOf bits).setWidth 64 ∧ t.gpr .s1 = BitVec.ofNat 64 (k - (bits + 7) / 8) ∧
+      (t.gpr .s2 = (mask bits).setWidth 64 ∧ t.gpr .s1 = BitVec.ofNat 64 (k - (bits + 7) / 8) ∧
         t.gpr .t5 = BitVec.ofNat 64 k ∧ t.gpr .t4 = BitVec.ofNat 64 0 ∧ t.gpr .a0 = off X 0 ∧ t.mem = s.mem) ∧
       Keep [.t2, .t3, .s2, .s1, .t5, .t4, .a0] s t := by
   have hn := hs.nowrap
@@ -86,15 +73,14 @@ theorem sb_ok {s : State} {S X : Addr} {Z k bits : Nat} (hs : Scr s S Z) (hZ : 6
   have a48 := hs.al8 (d := 48) (by omega_arith) (by decide)
   have v40 : s.mem.readW (off S 40) 64 = BitVec.ofNat 64 bits := hbw
   have v48 : s.mem.readW (off S 48) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := hyw
-  have hd : 8 * ((bits + 7) / 8) - bits < 8 := by omega_arith
   refine WP.keep _ ?_ (by rfl) (by rfl)
   unfold scalarBlock GenerateKey.cutSetup hBytes hBits
-  brun [h6', h4, h5, l40, l48, a40, a48, v40, v48, exec_srl_reg, fin64_exec_li_lit (show 255 < 2048 by decide),
+  brun [h6', h4, h5, l40, l48, a40, a48, v40, v48, exec_srl_reg, Proof.Dsa.RISCV64.exec_li_lit (show 255 < 2048 by decide),
     fin64_exec_li_zero, add_ofNat_zero,
-    ofNat_shl3' (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega_arith),
-    ofNat_sub'' (show bits ≤ 8 * ((bits + 7) / 8) by omega_arith) (show 8 * ((bits + 7) / 8) < 2 ^ 64 by omega_arith),
-    ofNat_sub'' hk (show k < 2 ^ 64 by omega_arith), tb_shift _ hd]
-  exact ⟨rfl, rfl⟩
+    Pre.ofNat_shl3,
+    Offset.ofNat_sub_ofNat (show bits ≤ 8 * ((bits + 7) / 8) by omega_arith),
+    Offset.ofNat_sub_ofNat hk, mask_shift hb1]
+  rfl
 
 /-- `scalar`: x's octets the cut of `rand`'s at the context's width, and
 `s0 := 0`. -/
@@ -102,7 +88,7 @@ theorem scalarC_core {x : XD} {R : Addr} {s : State} {bits : Nat} (hb : Base x s
     (h1 : s.gpr .t1 = R) (hb1 : 1 ≤ bits) (hbk : bits ≤ 8 * x.k)
     (hbw : word s.mem x.S 40 = BitVec.ofNat 64 bits) (hyw : word s.mem x.S 48 = BitVec.ofNat 64 ((bits + 7) / 8)) :
     WP isa scalar s fun t =>
-      (Spec.Rsa.bytesAt t.mem x.X x.k = cut (Spec.Rsa.bytesAt s.mem R x.k) (x.k - (bits + 7) / 8) (tbOf bits) ∧
+      (Spec.Rsa.bytesAt t.mem x.X x.k = cut (Spec.Rsa.bytesAt s.mem R x.k) (x.k - (bits + 7) / 8) (mask bits) ∧
         Outside x.X 0 x.k s.mem t.mem ∧ t.gpr .s0 = 0) ∧ Keep scRegs s t := by
   have hc := hb.ctx
   have hk := hc.k64
@@ -110,9 +96,9 @@ theorem scalarC_core {x : XD} {R : Addr} {s : State} {bits : Nat} (hb : Base x s
   have hZ := hc.hZ
   unfold slot hdrBytes at hZ
   unfold scalar
-  refine WP.seq (WP.mono (sb_ok (X := x.X) hc.scr (by omega_arith) hb.s6 ha.a4 ha.a5 (by omega_arith) (by omega_arith)
+  refine WP.seq (WP.mono (sb_ok (X := x.X) hc.scr (by omega_arith) hb.s6 ha.a4 ha.a5 hb1 (by omega_arith)
     hbw hyw) fun s₁ ⟨⟨a2, a1, a5, a4, a0, m1⟩, k1⟩ => ?_)
-  refine WP.seq (WP.mono (cut_ok (R := R) (X := x.X) (k := x.k) (ld := x.k - (bits + 7) / 8) (tb := tbOf bits)
+  refine WP.seq (WP.mono (cut_ok (R := R) (X := x.X) (k := x.k) (ld := x.k - (bits + 7) / 8) (tb := mask bits)
     (by omega_arith) (by omega_arith) (by omega_arith) hx.nwX (by rw [k1.2.2]; exact hx.wX)
     (by rw [k1.2.1, k1.2.2]; exact hx.rdR) hx.sepRX (by rw [k1.gpr (by decide), h1]; simp [off]) a0 a4 a1 a2 a5)
     fun s₂ ⟨⟨b2, o2⟩, k2⟩ => ?_)
@@ -126,7 +112,7 @@ theorem scalarC_ok {x : XD} {R : Addr} {s : State} {bits : Nat} (h : X4 x s) (hz
     (hx : XR x R s) (h1 : s.gpr .t1 = R) (hb1 : 1 ≤ bits) (hbk : bits ≤ 8 * x.k)
     (hbw : word s.mem x.S 40 = BitVec.ofNat 64 bits) (hyw : word s.mem x.S 48 = BitVec.ofNat 64 ((bits + 7) / 8)) :
     WP isa scalar s fun t => X4 x t ∧ t.gpr .s0 = 0 ∧ AR x t ∧ XR x R t ∧
-      Spec.Rsa.bytesAt t.mem x.X x.k = cut (Spec.Rsa.bytesAt s.mem R x.k) (x.k - (bits + 7) / 8) (tbOf bits) ∧
+      Spec.Rsa.bytesAt t.mem x.X x.k = cut (Spec.Rsa.bytesAt s.mem R x.k) (x.k - (bits + 7) / 8) (mask bits) ∧
       Outside x.X 0 x.k s.mem t.mem := by
   have hv := h.2.2.mp hz
   have hb := h.1

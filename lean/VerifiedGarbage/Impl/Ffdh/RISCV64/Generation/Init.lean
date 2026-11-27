@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Impl.Ffdh.RISCV64.KeyGeneration.Init
 
 /-! # Native FFDH parameter generation on RISC-V: validation and limits
 
@@ -11,7 +11,7 @@ exactly when `512 ≤ bits ≤ 8192` and the generator is 2 or 5 (`g == c` as
 `(g < c + 1) − (g < c)`), a branch on public values. Then the attempt limit
 `bits² · 64`, the width `⌈bits / 8⌉`, the entropy cap `32769 ⌈bits / 8⌉` and
 the first request `512 ⌈bits / 8⌉`, and 1 returned, or zeros to the four
-public words and 0 returned.
+public words and 0 returned (`KeyGeneration.clear`).
 -/
 
 @[expose] public section
@@ -40,13 +40,9 @@ def initializeState : List Instr := [
   .shift .sll .d .t2 .t1 15, .add .t2 .t2 .t1, .shift .sll .d .t3 .t1 9,
   .store .d .t0 .a0 0, .store .d .t1 .a0 8, .store .d .t2 .a0 16, .store .d .t3 .a0 24, .li .a0 1]
 
-/-- Zeros to the four public words, and 0 returned. -/
-def clear : List Instr :=
-  [.li .t2 0, .store .d .t2 .a0 0, .store .d .t2 .a0 8, .store .d .t2 .a0 16, .store .d .t2 .a0 24, .li .a0 0]
-
 /-- After `zext`. -/
 def rest : Prog isa :=
-  .seq (.block validate) (.ite (.zero .t0) (.block initializeState) (.block clear))
+  .seq (.block validate) (.ite (.zero .t0) (.block initializeState) (.block KeyGeneration.clear))
 
 /-- `vg_ffdh_parameter_generation_init`. -/
 def init : Prog isa := .seq (.block zext) rest

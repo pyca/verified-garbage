@@ -1,54 +1,59 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.ParameterCandidate.Base
-meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
-import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.Sieve
-import VerifiedGarbage.Proof.MillerRabin.RISCV64.Core
-import VerifiedGarbage.Proof.Bignum.RISCV64.ModArith
-import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
-import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
-import VerifiedGarbage.Proof.RsaKeyGen.Halve
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.ParameterCandidate.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.RISCV64.Cand.TrialOk
+public import VerifiedGarbage.Proof.RsaKeyGen.TrialFilter
+public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.RISCV64.ModArith
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
+import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
-import VerifiedGarbage.Proof.Framework.Mem
-
--- separate module: the candidate's shape checks, whose symbolic executions the tests' changes need not re-check
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Blinded.Loop
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Verified
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.Halve
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # An FFDH parameter candidate on RISC-V: the candidate and its shape
 
-As on PPC64LE (`Proof/Ffdh/PPC64LE/ParameterCandidate/{Shape,Residue,Halve,MainShape}.lean`
-and the shape checks of `Main.lean`): `shapeP_ok`, the first `out_len`
+`shapeP_ok`, the first `out_len`
 octets of the tape into array 0, cut to `bits` bits with its top and low
 bits set (`candidateOf`); `residue_ok`, the generator's congruence;
-`halveQ_ok`, q from p in place; `shape_iff`, the flags all clear exactly when
-the specification's shape checks pass; and `MB`, p's working space with
+`halveQ_ok`, q from p in place; and `MB`, p's working space with
 `hBad` zero exactly when a proposition holds, through each check.
 
-The sieve (`Impl.MillerRabin.RISCV64.Search.sieve`), which only FFDH's
-candidate uses on RISC-V, is proven here (`Sieve`): `smallMod_ok`, `s0 := `
-the number in the `w` words at `o` (`a7`) modulo `d` (in `s1`, from 2 to
-`2^62`), from the top bit: `r := 2 r + b`, less `d` when that is not below it
-(`modStep_ok`, by `sltu`'s mask: `sub_sel`); `sieve_ok`, `hBad` stays zero
-exactly when it was and no number of `ds` divides the candidate, `hBad`
-the only word written.
+The remainder (`Impl.MillerRabin.RISCV64.Search.smallMod`), which only
+FFDH's candidate uses on RISC-V, is proven here (`SmallMod`): `smallMod_ok`,
+`s0 := ` the number in the `w` words at `o` (`a7`) modulo `d` (in `s1`, from
+2 to `2^62`), from the top bit: `r := 2 r + b`, less `d` when that is not
+below it (`modStep_ok`, by `sltu`'s mask: `sub_sel`).
+
+## RSA's trial division
+
+`trialSieve_ok`, the count of entries for p's width in `hTrialN`, the
+table's address (`lla`), RSA's loop (`Trial.loop_ok`), and its flag or'ed
+into `hBad`: clear exactly when no entry of the first `trialN bits` divides
+the value in array 0; `sieved_shape_iff`, the congruence, q's parity and the
+trial divisions of p and q pass exactly when the sieved specification's
+shape checks do (the table's first 53 entries are `primeShape`'s odd primes).
 -/
 
 @[expose] public section
 
-/-! ## The bit-serial remainder and the sieve -/
+/-! ## The bit-serial remainder -/
 
-namespace VG.Proof.Ffdh.RISCV64.Sieve
+namespace VG.Proof.Ffdh.RISCV64.SmallMod
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.MillerRabin.RISCV64.Search
 open VG.Proof.Bignum.RISCV64
@@ -208,15 +213,6 @@ theorem smallMod_ok {s : State} {B : Addr} {Z o w d : Nat} (hs : Scr s B Z) (h7 
   · rw [k2.gpr (by decide), kv.gpr (by decide), u3]
   · rw [b4, kv.gpr (by decide), ku.gpr (by decide)]
 
-theorem flag_eq {r : Nat} (hr : r < 2 ^ 64) :
-    (if BitVec.ofNat 64 r < BitVec.ofInt 64 1 then (1 : BitVec 64) else 0) = 0#64 ↔ r ≠ 0 := by
-  have : (BitVec.ofNat 64 r < BitVec.ofInt 64 1) ↔ r = 0 := by
-    rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr, show (BitVec.ofInt 64 1).toNat = 1 from rfl]
-    omega
-  by_cases h : r = 0
-  · simp only [this.mpr h, ↓reduceIte]; simp [h]
-  · simp only [show ¬ BitVec.ofNat 64 r < BitVec.ofInt 64 1 from fun e => h (this.mp e), ↓reduceIte]; simp [h]
-
 /-- `hBad` stored over `m`. -/
 theorem bad_post {m : Mem} {B : Addr} {t : State} {v : BitVec 64} {P : Prop}
     (tm : t.mem = m.writeW (B + BitVec.ofNat 64 200) v) (hv : v = 0#64 ↔ P) :
@@ -226,74 +222,7 @@ theorem bad_post {m : Mem} {B : Addr} {t : State} {v : BitVec 64} {P : Prop}
   · rw [tm]
     exact VG.Proof.Ffdh.RISCV64.ParameterCandidate.frm_writeW (a := 200) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩ (by decide)
 
-/-- The registers a trial division writes. -/
-def trRegs : List Reg := .t2 :: .a4 :: .s1 :: smRegs
-
-theorem trial_ok {s : State} {B : Addr} {Z o w x d : Nat} (hs : Scr s B Z) (h7 : s.gpr .a7 = off B o)
-    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : wv s.mem B o w = x) (hw1 : 1 ≤ w)
-    (hw : w < 2 ^ 31) (hZ : o + 8 * w ≤ Z) (ho : o % 8 = 0) (hd2 : 2 ≤ d) (hd : d < 2 ^ 11) {P : Prop}
-    (h4 : s.gpr .a4 = 0#64 ↔ P) :
-    WP isa (trial d) s fun t => ((t.gpr .a4 = 0#64 ↔ P ∧ x % d ≠ 0) ∧ t.mem = s.mem) ∧ Keep trRegs s t := by
-  unfold trial
-  refine WP.seq (WP.mono (WP.keep [.s1] (Q := fun v => v.gpr .s1 = BitVec.ofNat 64 d ∧ v.mem = s.mem) ?_
-    (by rfl) (by rfl)) fun v ⟨⟨v1, vm⟩, kv⟩ => ?_)
-  · brun [exec_li (show imm12 (d : Int) by unfold imm12; omega)]
-    exact BitVec.ofInt_natCast 64 d
-  refine WP.seq (WP.mono (smallMod_ok (hs.congr kv.2.2) ((kv.gpr (by decide)).trans h7)
-    ((kv.gpr (by decide)).trans ht0) v1 hw1 hw hZ ho hd2 (by omega)) fun t' ⟨⟨t0, tm'⟩, kt'⟩ => ?_)
-  rw [vm, hx] at t0
-  have k := kv.trans kt'
-  have e4 : t'.gpr .a4 = s.gpr .a4 := k.gpr (by decide)
-  refine WP.mono (WP.keep [.t2, .a4] (Q := fun t => t.gpr .a4 = t'.gpr .a4 |||
-      (if BitVec.ofNat 64 (x % d) < BitVec.ofInt 64 1 then (1 : BitVec 64) else 0) ∧ t.mem = t'.mem)
-      (by brun [t0, exec_li (show imm12 1 by decide)]) (by rfl) (by rfl))
-    fun t ⟨⟨t4, tm⟩, kt⟩ => ⟨⟨?_, by rw [tm, tm', vm]⟩, (k.trans kt).mono (by decide)⟩
-  rw [t4, BitVec.or_eq_zero_iff, e4, h4, flag_eq (by have := Nat.mod_lt x (show 0 < d by omega); omega)]
-
-theorem trials_ok {B : Addr} {Z o w x : Nat} (hw1 : 1 ≤ w) (hw : w < 2 ^ 31) (hZ : o + 8 * w ≤ Z) (ho : o % 8 = 0)
-    (hZ8 : 208 ≤ Z) :
-    ∀ (ds : List Nat), (∀ d ∈ ds, 2 ≤ d ∧ d < 2 ^ 11) → ∀ {u : State} {P : Prop}, Scr u B Z →
-      u.gpr .s6 = B → u.gpr .a7 = off B o → u.gpr .t0 = BitVec.ofNat 64 w → wv u.mem B o w = x →
-      (u.gpr .a4 = 0#64 ↔ P) →
-      WP isa (ds.foldr (fun d c => .seq (trial d) c) (.block [sth .a4 hBad])) u fun t =>
-        ((word t.mem B (8 * hBad) = 0#64 ↔ P ∧ ∀ d ∈ ds, x % d ≠ 0) ∧ Frm B [(8 * hBad, 8)] u.mem t.mem) ∧
-          Keep trRegs u t
-  | [], _, u, P, hu, u6, _, _, _, h4 => by
-    refine WP.mono (WP.keep [] (Q := fun t => t.mem = u.mem.writeW (B + BitVec.ofNat 64 200) (u.gpr .a4)) ?_
-      (by rfl) (by rfl)) fun t ⟨tm, kt⟩ => ⟨bad_post tm ?_, kt.mono (by decide)⟩
-    · simp only [List.foldr_nil, sth, hBad]
-      brun [u6, hu.st (d := 200) (n := 8) (by omega), hu.al8 (d := 200) (by omega) (by decide)]
-    · simp only [List.not_mem_nil, false_imp_iff, implies_true, and_true]; exact h4
-  | d :: ds, hds, u, P, hu, u6, u7, ut0, ux, h4 => by
-    have hd := hds d List.mem_cons_self
-    refine WP.seq (WP.mono (trial_ok hu u7 ut0 ux hw1 hw hZ ho hd.1 hd.2 h4) fun t' ⟨⟨t4, tm'⟩, kt'⟩ => ?_)
-    refine WP.mono (trials_ok (x := x) hw1 hw hZ ho hZ8 ds (fun d' hd' => hds d' (List.mem_cons_of_mem _ hd'))
-      (hu.congr kt'.2.2) ((kt'.gpr (by decide)).trans u6) ((kt'.gpr (by decide)).trans u7)
-      ((kt'.gpr (by decide)).trans ut0) (by rw [tm']; exact ux) t4)
-      fun t ⟨⟨tb, tf⟩, kt⟩ => ⟨⟨?_, by rw [← tm']; exact tf⟩, (kt'.trans kt).mono (by decide)⟩
-    rw [tb, List.forall_mem_cons]
-    exact ⟨fun ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩, fun ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩⟩
-
-theorem oddPrimes256_bounds : ∀ d ∈ oddPrimes256, 2 ≤ d ∧ d < 2 ^ 11 := by decide
-
-theorem sieve_ok {s : State} {B : Addr} {Z o w x : Nat} (ds : List Nat) (hds : ∀ d ∈ ds, 2 ≤ d ∧ d < 2 ^ 11)
-    (hs : Scr s B Z) (h6 : s.gpr .s6 = B) (h7 : s.gpr .a7 = off B o)
-    (ht0 : s.gpr .t0 = BitVec.ofNat 64 w) (hx : wv s.mem B o w = x) (hw1 : 1 ≤ w)
-    (hw : w < 2 ^ 31) (hZ : o + 8 * w ≤ Z) (ho : o % 8 = 0) (hZ8 : 208 ≤ Z) :
-    WP isa (sieve ds) s fun t =>
-      ((word t.mem B (8 * hBad) = 0#64 ↔ word s.mem B (8 * hBad) = 0#64 ∧ ∀ d ∈ ds, x % d ≠ 0) ∧
-        Frm B [(8 * hBad, 8)] s.mem t.mem) ∧ Keep trRegs s t := by
-  unfold sieve
-  refine WP.seq (WP.mono (WP.keep [.a4] (Q := fun u => u.gpr .a4 = word s.mem B (8 * hBad) ∧ u.mem = s.mem)
-    (by simp only [ldh, hBad, word, VG.Proof.Bignum.off]
-        brun [h6, hs.ld (d := 200) (n := 8) (by omega), hs.al8 (d := 200) (by omega) (by decide)]) (by rfl) (by rfl))
-    fun u ⟨⟨u4, um⟩, ku⟩ => ?_)
-  refine WP.mono (trials_ok hw1 hw hZ ho hZ8 ds hds (hs.congr ku.2.2) ((ku.gpr (by decide)).trans h6)
-    ((ku.gpr (by decide)).trans h7) ((ku.gpr (by decide)).trans ht0) (by rw [um]; exact hx)
-    (P := word s.mem B (8 * hBad) = 0#64) (by rw [u4])) fun t ⟨⟨tb, tf⟩, kt⟩ =>
-      ⟨⟨tb, by rw [← um]; exact tf⟩, (ku.trans kt).mono (by decide)⟩
-
-end VG.Proof.Ffdh.RISCV64.Sieve
+end VG.Proof.Ffdh.RISCV64.SmallMod
 
 namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
@@ -304,7 +233,7 @@ open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_zero_ofNat)
 open VG.Impl.MillerRabin.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (shl3_ofNat)
-open VG.Proof.Ffdh.RISCV64.Sieve (smallMod_ok smRegs bad_post sieve_ok trRegs)
+open VG.Proof.Ffdh.RISCV64.SmallMod (smallMod_ok smRegs bad_post)
 open VG.Impl.Bignum.RISCV64.Precompute (loadN)
 
 theorem slot_zero (w : Nat) : slot w 0 = 256 := by simp [slot, hdrBytes]
@@ -617,49 +546,6 @@ theorem halveQ_ok {p : PP} {s : State} {w x : Nat} (hs : St p s) (h7 : s.gpr .a7
         ⟨_, List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩ (by omega_arith)) _
       ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by decide, by decide⟩ (by omega_arith)
 
-/-! ## The shape checks -/
-
-theorem oddPrimes_eq : oddPrimes256 = (List.range 53).map VG.Impl.RsaKeyGen.tabEntry := by
-  unfold VG.Impl.RsaKeyGen.tabEntry VG.Impl.RsaKeyGen.slots
-  rw [VG.Impl.RsaKeyGen.primes.lit_eq]
-  decide +kernel
-
-theorem noDiv_iff (x : Nat) :
-    (∀ d ∈ oddPrimes256, x % d ≠ 0) ↔ ((List.range 53).any fun i => x % VG.Impl.RsaKeyGen.tabEntry i == 0) = false := by
-  rw [oddPrimes_eq, List.any_eq_false]
-  simp only [List.mem_map, List.mem_range, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, beq_iff_eq]
-
-theorem shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg : g = 2 ∨ g = 5) :
-    (goodRes g (Spec.Ffdh.candidateOf bits x) ∧ (∀ d ∈ oddPrimes256, Spec.Ffdh.candidateOf bits x % d ≠ 0) ∧
-        Spec.Ffdh.candidateOf bits x / 2 % 2 = 1 ∧ ∀ d ∈ oddPrimes256, Spec.Ffdh.candidateOf bits x / 2 % d ≠ 0) ↔
-      (Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits x) &&
-        Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits x) &&
-        Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits x - 1) / 2)) = true := by
-  obtain ⟨ho, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
-  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x).1
-  obtain ⟨hql, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) ho hl hu
-  generalize Spec.Ffdh.candidateOf bits x = c at ho hl hu hbl hql ⊢
-  have hq : (c - 1) / 2 = c / 2 := by omega_arith
-  have big : 8161 < c := Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
-    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 1)) hl)
-  have bigq : 8161 < c / 2 := by
-    rw [← hq]
-    exact Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
-      (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 2)) hql)
-  have hgen : Spec.Ffdh.generationShape bits g c = true ↔ goodRes g c := by
-    unfold Spec.Ffdh.generationShape goodRes
-    rcases hg with rfl | rfl <;> simp [hb1, hb2, hbl]
-  have hp := VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve big ho
-  rw [hq]
-  simp only [Bool.and_eq_true, hgen, hp, Bool.not_eq_eq_eq_not, Bool.not_true, ← noDiv_iff c]
-  by_cases hqo : c / 2 % 2 = 1
-  · rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve bigq hqo]
-    simp only [Bool.not_eq_eq_eq_not, Bool.not_true, ← noDiv_iff (c / 2), hqo, true_and, and_assoc]
-  · have hf : Spec.Ffdh.primeShape (c / 2) = false := by
-      unfold Spec.Ffdh.primeShape; simp [hqo]
-    rw [hf]
-    simp [hqo]
-
 /-! ## Through the shape checks -/
 
 /-- `Ph` survives a change of memory that keeps the header but `hBad`. -/
@@ -803,25 +689,6 @@ theorem MB.badLoad {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB 
   exact ⟨⟨st, ph, hU, by rw [tm]; exact h.n, by rw [tm]; exact h.bad,
     h.tab.step sy (rs := []) (by rw [tm]; exact Frm.refl _ _ _) (by simp) k.2.1⟩, t5⟩
 
-/-- A sieve of array 0. -/
-theorem MB.sieve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
-    WP isa VG.Impl.Ffdh.RISCV64.ParameterCandidate.sieve s (MB p T x (B ∧ ∀ d ∈ oddPrimes256, x % d ≠ 0)) := by
-  have hb1 := h.st.dims.b1
-  have hb2 := h.st.dims.b2
-  have hdn := h.st.dims.n
-  have hLe : p.L = (p.bits + 7) / 8 := rfl
-  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
-  have hZe : p.Z = 8 * p.n := rfl
-  have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
-  have hZw : slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z := by rw [hsl]; omega_arith
-  refine WP.mono_syms (WP.rdwr (sieve_ok oddPrimes256 VG.Proof.Ffdh.RISCV64.Sieve.oddPrimes256_bounds
-    h.st.scr h.st.s6 h.ph.a7 h.ph.t0 h.n (by omega_arith) (by omega_arith) hZw (by rw [hsl]) (by omega_arith)))
-    fun t ⟨⟨⟨hb, f⟩, k⟩, _, _, tsp⟩ sy => ?_
-  obtain ⟨st, ph, hU⟩ := shapeStep h.st h.ph h.u f (fun r hr => .inl (List.mem_singleton.mp hr)) k tsp
-  refine ⟨st, ph, hU, ?_, hb.trans (and_congr h.bad Iff.rfl), h.tab.step sy f (fun r hr => by
-    rw [List.mem_singleton.mp hr]; dsimp only; first | (simp only [hBad]; omega_arith) | omega_arith) k.2.1⟩
-  rw [f.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr, hsl]; exact .inr (by decide)) (by omega_arith)]; exact h.n
-
 /-- q from p. -/
 theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p T x B s) :
     WP isa halveQ s (MB p T (x / 2) (B ∧ x / 2 % 2 = 1)) := by
@@ -843,5 +710,228 @@ theorem MB.halve {p : PP} {T : Addr} {x : Nat} {B : Prop} {s : State} (h : MB p 
   exact ⟨st, ph, hU, hn, hb.trans (and_congr h.bad Iff.rfl), h.tab.step sy f (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> dsimp only <;> first | (simp only [hBad]; omega_arith) | omega_arith) k.2.1⟩
+
+end VG.Proof.Ffdh.RISCV64.ParameterCandidate
+
+namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
+
+open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
+open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
+open VG.Impl.MillerRabin.RISCV64.Search
+open VG.Impl.RsaKeyGen (TrialTable32.symbol TrialTable32.entry)
+
+/-! ## The entries tried -/
+
+/-- The entries of RSA's table trial division uses for a candidate of
+`bits` bits: 512, or 1024 above 1024 bits. -/
+def trialN (bits : Nat) : Nat := if (bits + 63) / 64 ≤ 16 then 512 else 1024
+
+/-- Trial division by them is `obviouslyComposite` for `bits`. -/
+theorem trialN_spec {bits c : Nat} (large : 8161 < c) :
+    VG.Proof.RsaKeyGen.trialPrefix c (trialN bits) = Spec.RsaKeyGen.obviouslyComposite bits c := by
+  unfold trialN
+  rw [VG.Proof.RsaKeyGen.trialPrefix_spec large]
+  unfold Spec.RsaKeyGen.obviouslyComposite Spec.RsaKeyGen.trialPrimes
+  have : (1024 < 64 * ((bits + 63) / 64)) = (1024 < bits) := propext (by omega)
+  simp only [this]
+
+/-- Trial division by the entries clears the sieve of the odd primes below
+256, the table's first 53. -/
+theorem trial_sieve {bits c : Nat} (h : VG.Proof.RsaKeyGen.trialPrefix c (trialN bits) = false) :
+    ((List.range 53).any fun i => c % VG.Impl.RsaKeyGen.tabEntry i == 0) = false := by
+  have hn : 53 ≤ trialN bits := by unfold trialN; split <;> decide
+  refine List.any_eq_false.mpr fun i hi hd => ?_
+  have hit := VG.Proof.RsaKeyGen.trialPrefix_hit (c := c) (Nat.lt_of_lt_of_le (List.mem_range.mp hi) hn)
+    (by simp only [VG.Proof.RsaKeyGen.entryDivides, beq_iff_eq.mp hd, decide_true])
+  rw [h] at hit
+  exact Bool.false_ne_true hit
+
+/-- The congruence, q's parity and the trial divisions of p and q pass
+exactly when the sieved specification's shape checks do. -/
+theorem sieved_shape_iff {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg : g = 2 ∨ g = 5) :
+    (goodRes g (Spec.Ffdh.candidateOf bits x) ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x) (trialN bits) = false ∧
+        Spec.Ffdh.candidateOf bits x / 2 % 2 = 1 ∧
+        VG.Proof.RsaKeyGen.trialPrefix (Spec.Ffdh.candidateOf bits x / 2) (trialN bits) = false) ↔
+      (Spec.Ffdh.generationShape bits g (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape (Spec.Ffdh.candidateOf bits x) &&
+        Spec.Ffdh.primeShape ((Spec.Ffdh.candidateOf bits x - 1) / 2) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits (Spec.Ffdh.candidateOf bits x) &&
+        !Spec.RsaKeyGen.obviouslyComposite bits ((Spec.Ffdh.candidateOf bits x - 1) / 2)) = true := by
+  obtain ⟨ho, hl, hu⟩ := VG.Proof.Ffdh.ParameterCandidate.candidate_shape (bits := bits) (by omega_arith) x
+  have hbl := (VG.Proof.Ffdh.ParameterCandidate.candidate_bitLength (bits := bits) (by omega_arith) x).1
+  obtain ⟨hql, _⟩ := VG.Proof.Ffdh.ParameterCandidate.half_shape (by omega_arith) ho hl hu
+  generalize Spec.Ffdh.candidateOf bits x = c at ho hl hu hbl hql ⊢
+  have hq : (c - 1) / 2 = c / 2 := by omega_arith
+  have big : 8161 < c := Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
+    (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 1)) hl)
+  have bigq : 8161 < c / 2 := by
+    rw [← hq]
+    exact Nat.lt_of_lt_of_le (by decide : 8161 < 2 ^ 13)
+      (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega_arith : 13 ≤ bits - 2)) hql)
+  have hgen : Spec.Ffdh.generationShape bits g c = true ↔ goodRes g c := by
+    unfold Spec.Ffdh.generationShape goodRes
+    rcases hg with rfl | rfl <;> simp [hb1, hb2, hbl]
+  rw [hq]
+  simp only [Bool.and_eq_true, hgen, Bool.not_eq_true', ← trialN_spec big, ← trialN_spec bigq]
+  constructor
+  · rintro ⟨a, b, d, e⟩
+    refine ⟨⟨⟨⟨a, ?_⟩, ?_⟩, b⟩, e⟩
+    · rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve big ho, trial_sieve b]; rfl
+    · rw [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve bigq d, trial_sieve e]; rfl
+  · rintro ⟨⟨⟨⟨a, -⟩, hs⟩, b⟩, e⟩
+    refine ⟨a, b, ?_, e⟩
+    unfold Spec.Ffdh.primeShape at hs
+    simp only [Bool.and_eq_true, beq_iff_eq] at hs
+    exact hs.1.2
+
+/-! ## Trial division of array 0 -/
+
+/-- The count of entries, `1024 − 512 [bits ≤ 1024]`. -/
+theorem trialCount_eq {bits : Nat} (hb : bits ≤ 8192) :
+    BitVec.ofNat 64 1024 - (BitVec.ofNat 64 bits - BitVec.ofNat 64 1025) >>> 63 <<< 9 =
+      BitVec.ofNat 64 (trialN bits) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+    Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, trialN]
+  split <;> omega
+
+/-- `MB` survives a change of header words `hBad` and `hTrialN` and of
+registers but `a7`, `t0`, `s5` and `s6`, with `hBad` then zero iff `B'`. -/
+theorem MB.step {p : PP} {T : Addr} {x : Nat} {B B' : Prop} {s t : State} {regs : List Reg} (h : MB p T x B s)
+    (hf : Frm p.B [(208, 8), (200, 8)] s.mem t.mem) (k : Keep regs s t) (ksp : t.sp = s.sp)
+    (h7 : Reg.a7 ∉ regs) (h0 : Reg.t0 ∉ regs) (h5 : Reg.s5 ∉ regs) (h6 : Reg.s6 ∉ regs)
+    (hb : word t.mem p.B (8 * hBad) = 0#64 ↔ B') (sy : t.syms = s.syms) : MB p T x B' t := by
+  have hdn := h.st.dims.n
+  have hb2 := h.st.dims.b2
+  have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
+  have hLe : p.L = (p.bits + 7) / 8 := rfl
+  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
+  have hZe : p.Z = 8 * p.n := rfl
+  have st := h.st.step (Frm.toMut hf fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact InMut.hdr (i := 26) (by decide)
+    · exact InMut.hdr (i := 25) (by decide)) k ksp h6
+  have ew : ∀ d, d + 8 ≤ 200 ∨ (216 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d := fun d hd =>
+    hf.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+  have hp := h.ph
+  refine ⟨st, ⟨(k.gpr h7).trans hp.a7, (k.gpr h0).trans hp.t0, (k.gpr h5).trans hp.s5,
+    (ew 248 (by decide)).trans hp.mbW, (ew 216 (by decide)).trans hp.kW, (ew 48 (by decide)).trans hp.wW,
+    (ew 224 (by decide)).trans hp.strideW, fun j hj => (ew _ (by omega_arith)).trans (hp.arrW j hj),
+    (ew 168 (by decide)).trans hp.checksW, hp.k1, hp.k2, (ew 192 (by decide)).trans hp.topW⟩,
+    (ew 152 (by decide)).trans h.u, ?_, hb, h.tab.step sy hf (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) k.2.1⟩
+  rw [hf.wv_eq (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> rw [hsl] <;> exact .inr (by decide)) (by rw [hsl]; omega_arith)]
+  exact h.n
+
+/-- The count of entries into `hTrialN`. -/
+theorem MB.count {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : MB p T x B s) :
+    WP isa (.block [ldh .t3 hBits, .addi .t3 .t3 (-1025), .shift .srl .d .t3 .t3 63, .shift .sll .d .t3 .t3 9,
+      .li .t4 1024, .sub .t3 .t4 .t3, sth .t3 hTrialN]) s fun u =>
+      MB p T x B u ∧ u.mem.readW (p.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (trialN p.bits) := by
+  have hb2 := h.st.dims.b2
+  refine WP.mono_syms (WP.rdwr (WP.keep [.t3, .t4] (Q := fun u =>
+      u.mem = s.mem.writeW (p.B + BitVec.ofNat 64 208) (BitVec.ofNat 64 (trialN p.bits)))
+    (by simp only [ldh, sth, hBits, hTrialN]
+        brun [h.st.s6, h.st.ld (d := 40) (by decide), h.st.al (d := 40) (by decide) (by decide),
+          h.st.st (d := 208) (by decide), h.st.al (d := 208) (by decide) (by decide), h.st.args.bits',
+          exec_li (show imm12 1024 by decide), trialCount_eq hb2])
+    (by rfl) (by rfl))) fun u ⟨⟨um, ku⟩, _, _, usp⟩ syu => ⟨?_, by rw [um, Mem.readW_writeW_self64]⟩
+  have fu : Frm p.B [(208, 8)] s.mem u.mem := by
+    rw [um]; exact frm_writeW (a := 208) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩
+      (by decide)
+  exact h.step (fu.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp) ku usp
+    (by decide) (by decide) (by decide) (by decide) (by
+      rw [show word u.mem p.B (8 * hBad) = word s.mem p.B (8 * hBad) by
+        rw [um]; exact rw_off _ _ _ (by decide) (by decide) (by decide)]
+      exact h.bad) syu
+
+/-- The table's address and the count. -/
+theorem MB.trialA {p : PP} {x : Nat} {B : Prop} {T : Addr} {u : State} (h : MB p T x B u)
+    (h208 : u.mem.readW (p.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (trialN p.bits)) :
+    WP isa (.block [.lla .s9 TrialTable32.symbol, ldh .s10 hTrialN]) u fun v =>
+      ((v.gpr .s9 = T ∧ v.gpr .s10 = BitVec.ofNat 64 (trialN p.bits) ∧ v.mem = u.mem) ∧
+        Keep [.s9, .s10] u v) ∧ v.sp = u.sp := by
+  refine WP.rdwr (WP.keep [.s9, .s10] ?_ (by rfl) (by rfl)) |>.mono fun v ⟨a, _, _, b⟩ => ⟨a, b⟩
+  refine Steps.WP.cons exec_lla ?_
+  simp only [ldh, hTrialN]
+  brun [h.st.s6, h.st.ld (d := 208) (by decide), h.st.al (d := 208) (by decide) (by decide), h208, h.tab.sym]
+
+/-- What RSA's loop needs, once the table's address and the count are in
+`s9` and `s10`. -/
+theorem MB.loopArgs {p : PP} {x : Nat} {B : Prop} {T : Addr} {u v : State} (h : MB p T x B u)
+    (vm : v.mem = u.mem) (kv : Keep [.s9, .s10] u v) :
+    Scr v p.B p.Z ∧ v.gpr .a7 = off p.B (slot (wOf p.bits) 0) ∧ v.gpr .t0 = BitVec.ofNat 64 (wOf p.bits) ∧
+      VG.Proof.Mont.val32 v.mem p.B (slot (wOf p.bits) 0) (2 * wOf p.bits) = x ∧ 1 ≤ wOf p.bits ∧
+      wOf p.bits < 2 ^ 31 ∧ slot (wOf p.bits) 0 + 8 * wOf p.bits ≤ p.Z ∧ slot (wOf p.bits) 0 % 4 = 0 ∧
+      1 ≤ trialN p.bits ∧ trialN p.bits ≤ 1024 ∧
+      VG.Proof.RsaKeyGen.RISCV64.Trial.Tab v T (trialN p.bits) := by
+  have hb1 := h.st.dims.b1
+  have hb2 := h.st.dims.b2
+  have hdn := h.st.dims.n
+  have hLe : p.L = (p.bits + 7) / 8 := rfl
+  have hsl : slot (wOf p.bits) 0 = 256 := slot_zero _
+  have hwe : wOf p.bits = (p.bits + 63) / 64 := rfl
+  have hZe : p.Z = 8 * p.n := rfl
+  have hN : 1 ≤ trialN p.bits ∧ trialN p.bits ≤ 1024 := by unfold trialN; split <;> decide
+  have hfit := h.tab.fit
+  have hal := h.tab.al
+  refine ⟨h.st.scr.congr kv.2.2, (kv.gpr (by decide)).trans h.ph.a7, (kv.gpr (by decide)).trans h.ph.t0,
+    by rw [vm, ← VG.Proof.Mont.wordsVal_eq_val32, Pre.wordsVal_eq_wv]; exact h.n, by omega_arith, by omega_arith,
+    by rw [hsl]; omega_arith, by rw [hsl], hN.1, hN.2, fun i hi => ⟨by rw [vm]; exact h.tab.tab i (by omega_arith),
+      ⟨_, by rw [kv.2.1]; exact List.mem_append_left _ h.tab.rd, ?_⟩, ?_⟩⟩
+  · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · have e8 : (T + BitVec.ofNat 64 (8 * i)).toNat = T.toNat + 8 * i := by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega_arith)]
+      exact Nat.mod_eq_of_lt (by omega_arith)
+    rw [e8]; omega_arith
+
+/-- The loop's flag or'ed into `hBad`. -/
+theorem MB.orBad {p : PP} {x : Nat} {B : Prop} {T : Addr} {u w : State} {n : Nat} (h : MB p T x B u)
+    (w4 : w.gpr .a4 = BitVec.ofNat 64 (if VG.Proof.RsaKeyGen.trialPrefix x n then 1 else 0))
+    (wm : w.mem = u.mem) (kw : Keep (([.s9, .s10] : List Reg) ++ VG.Proof.RsaKeyGen.RISCV64.Trial.entryRegs) u w)
+    (wsp : w.sp = u.sp) (syw : w.syms = u.syms) :
+    WP isa (.block [ldh .t3 hBad, .logic .or .t3 .t3 .a4, sth .t3 hBad]) w
+      (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false)) := by
+  have l200 : InRegions (w.rd ++ w.wr) (p.B + BitVec.ofNat 64 200) 8 := by
+    rw [kw.2.1, kw.2.2]; exact h.st.ld (d := 200) (by decide)
+  have s200 : InRegions w.wr (p.B + BitVec.ofNat 64 200) 8 := by rw [kw.2.2]; exact h.st.st (d := 200) (by decide)
+  have a200 := h.st.al (d := 200) (by decide) (by decide)
+  have w6 : w.gpr .s6 = p.B := (kw.gpr (by decide)).trans h.st.s6
+  have hold : w.mem.readW (p.B + BitVec.ofNat 64 200) 64 = word u.mem p.B 200 := by rw [wm]
+  refine WP.mono_syms (WP.rdwr (WP.keep [.t3] (Q := fun t => t.mem = w.mem.writeW (p.B + BitVec.ofNat 64 200)
+      (word u.mem p.B 200 ||| w.gpr .a4))
+    (by simp only [ldh, sth, hBad]; brun [w6, l200, s200, a200, hold]) (by rfl) (by rfl)))
+    fun t ⟨⟨tm, kt⟩, _, _, tsp⟩ syt => ?_
+  have fst : Frm p.B [(208, 8), (200, 8)] u.mem t.mem := by
+    rw [tm, wm]
+    exact frm_writeW (Frm.refl _ _ _) _ ⟨(200, 8), by simp, by decide, by decide⟩ (by decide)
+  have hbad : word t.mem p.B (8 * hBad) = 0#64 ↔ B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false := by
+    show t.mem.readW (p.B + BitVec.ofNat 64 200) 64 = 0#64 ↔ _
+    rw [tm, Mem.readW_writeW_self64, BitVec.or_eq_zero_iff, w4, ← h.bad]
+    refine and_congr Iff.rfl ?_
+    cases VG.Proof.RsaKeyGen.trialPrefix x n <;> decide
+  exact h.step (regs := ([.s9, .s10] ++ VG.Proof.RsaKeyGen.RISCV64.Trial.entryRegs) ++ [.t3]) fst
+    ((kw.trans kt).mono (by decide)) (tsp.trans wsp) (by decide) (by decide) (by decide) (by decide) hbad
+    (syt.trans syw)
+
+/-- Trial division of array 0: `hBad |=` the flag of one of the first
+`trialN bits` entries dividing it. -/
+theorem trialSieve_ok {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : MB p T x B s) :
+    WP isa trialSieve s (MB p T x (B ∧ VG.Proof.RsaKeyGen.trialPrefix x (trialN p.bits) = false)) := by
+  unfold trialSieve VG.Impl.RsaKeyGen.RISCV64.Trial.trial
+  refine WP.seq (WP.mono h.count fun u ⟨hu, h208⟩ => ?_)
+  refine WP.seq (WP.seq (WP.mono_syms (hu.trialA h208) fun v ⟨⟨⟨v9, v10, vm⟩, kv⟩, vsp⟩ syv => ?_))
+  obtain ⟨vs, v7, v0, vc, w1, w2, hZ, ho, n1, n2, htab⟩ := hu.loopArgs vm kv
+  refine WP.mono_syms (WP.rdwr (VG.Proof.RsaKeyGen.RISCV64.Trial.loop_ok vs v7 v0 vc w1 w2 hZ ho n1 n2 v9 htab
+    v10)) fun w ⟨⟨⟨w4, wm⟩, kw⟩, _, _, wsp⟩ syw => ?_
+  exact hu.orBad w4 (wm.trans vm) ((kv.trans kw).mono (by decide)) (wsp.trans vsp) (syw.trans syv)
 
 end VG.Proof.Ffdh.RISCV64.ParameterCandidate

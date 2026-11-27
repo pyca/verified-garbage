@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptCorrect
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Front
-public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptImplies
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Derive.CT
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.CT
@@ -21,7 +19,6 @@ public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.RISCV64.Derive.Correct
-import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubCorrect
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
@@ -29,11 +26,10 @@ import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.ContextRows
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Li
--- separate module: the constant-time proof, apart from the correctness proof's chain of modules
+import VerifiedGarbage.Proof.Dsa.RISCV64.Ctx
 
 /-!
-# `vg_ffdh_generate_key_cached` on RISC-V: constant time, and verified
+# `vg_ffdh_generate_key_cached` on RISC-V: constant time
 
 The public data `GData`: `vg_ffdh_derive_public`'s (`Derive.DD`), whose
 range bit is that of the cut scalar (`cutC`, which the status reveals,
@@ -60,8 +56,8 @@ open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
 
 /-- Whether the cut scalar is within its bound. -/
 def cutC (x : XD) (R : Addr) (bits : Nat) (m : Mem) : Bool :=
-  decide (0 < Spec.Rsa.os2ip (cut (Spec.Rsa.bytesAt m R x.k) (x.k - (bits + 7) / 8) (tbOf bits)) ∧
-    Spec.Rsa.os2ip (cut (Spec.Rsa.bytesAt m R x.k) (x.k - (bits + 7) / 8) (tbOf bits)) < bnd m x.D x.k x.L x.p)
+  decide (0 < Spec.Rsa.os2ip (cut (Spec.Rsa.bytesAt m R x.k) (x.k - (bits + 7) / 8) (ScalarWidth.mask bits)) ∧
+    Spec.Rsa.os2ip (cut (Spec.Rsa.bytesAt m R x.k) (x.k - (bits + 7) / 8) (ScalarWidth.mask bits)) < bnd m x.D x.k x.L x.p)
 
 /-- The public data of a run. -/
 structure GData where
@@ -371,7 +367,7 @@ theorem TG1 {g : GData} {s : State} (h : KRB g s) : WP isa (.block headBlock) s 
       ⟨r8, WP.mono (WP.rdwr h8) fun t ⟨op, rt, wt, _⟩ => ⟨op.s6, ?_⟩⟩⟩⟩
   obtain ⟨m, am, om⟩ := op.mem
   refine WP.mono (WP.keep [.a0, .t2] (Q := fun u => u.gpr .a0 = BitVec.ofNat 64 3 - (t.gpr .a0 <<< 1) ∧
-    u.mem = t.mem) (by unfold Derive.status; brun [fin64_exec_li_lit (show 3 < 2048 by decide)]) (by rfl) (by rfl))
+    u.mem = t.mem) (by unfold Derive.status; brun [Proof.Dsa.RISCV64.exec_li_lit (show 3 < 2048 by decide)]) (by rfl) (by rfl))
     fun u ⟨⟨ua, um⟩, ku⟩ => q5_of hc hx ?_ ?_ ((ku.gpr (by decide)).trans op.s6) ?_
       ⟨m, ar1.trans am, by rw [um]; exact om⟩
   · rw [ku.2.1, rt, rr8, rr7, r2, k1.2.1]
@@ -469,7 +465,7 @@ theorem cutC_eq {s : State} (h : cgContract.pre s) :
   have hL' : (s.gpr .a5).toNat = 2 * (s.gpr .a6).toNat ∨ (s.gpr .a5).toNat = 3 * (s.gpr .a6).toNat := hL
   have hgb := ContextRows.genBits_facts hdv
   have hsc : Spec.Rsa.os2ip (cut (Spec.Rsa.bytesAt s.mem (s.gpr .a7) (cgx s).k)
-      ((cgx s).k - (cgBits s + 7) / 8) (tbOf (cgBits s))) = cgScalar s := by
+      ((cgx s).k - (cgBits s + 7) / 8) (ScalarWidth.mask (cgBits s))) = cgScalar s := by
     rw [scalarC_value (k := (cgx s).k) (bits := cgBits s) (VG.Proof.Bignum.bytesAt_length _ _ _) hgb.1 hgb.2]
     show _ = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .a7) (stackArg s 0).toNat) % 2 ^ cgBits s
     rw [hrl]
@@ -512,9 +508,5 @@ theorem cgOf_eq {s t : State} (hs : cgContract.pre s) (ht : cgContract.pre t) (h
 theorem cg_ct : ConstantTime isa cgContract.pre cgContract.pub Generate.code :=
   RelCT.constantTime (cg_rel.mono (fun s _ ⟨hs, ht, hp⟩ =>
     ⟨cgOf s, ⟨hs, rfl⟩, ⟨ht, (cgOf_eq hs ht hp).symm⟩, hp.1⟩) fun _ _ h => h)
-
-/-- `vg_ffdh_generate_key_cached`. -/
-theorem cg_verified : Verified target Generate.code (Proof.Ffdh.cachedGenerateKeyContract abi) :=
-  Verified.of_correct cg_correct cg_ct cg_implies
 
 end VG.Proof.Ffdh.RISCV64.Cached
