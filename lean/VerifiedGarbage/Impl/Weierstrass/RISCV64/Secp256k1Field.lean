@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Rows
 public import VerifiedGarbage.Spec.Secp256k1
 
 /-!
@@ -21,7 +22,8 @@ for the words of `p = 2²⁵⁶ - c`, `c = 2³² + 977`:
   and the mask itself for the other three.
 
 The product, the final selection, the entry and everything else are `Gen4`'s
-(P-256's).
+(P-256's), but the multiplication for aligned offsets (`mulFnA`) is by rows, in
+registers (`Impl/Weierstrass/RISCV64/Rows.lean`), with a reduction of its own.
 -/
 
 @[expose] public section
@@ -88,8 +90,88 @@ def addFn : Prog isa := fn (.block addCore)
 /-- `vg_secp256k1_sub_mod_p`. -/
 def subFn : Prog isa := fn (.block subCore)
 
+/-! ## The multiplication for aligned offsets, by rows in registers
+
+`Rows`' product or square, then `redTail`, Montgomery's reduction in one pass
+for a modulus `2²⁵⁶ - c`: the quotient `q` of all four rounds is a chain of
+`q' c + C = w + 2⁶⁴ C'` (`qStep`: a word `q'` in `w`'s place and a carry `C`),
+so that `q c` is the product's low half plus `2²⁵⁶ h`, with `h` the last carry.
+The product plus `q p` is then `2²⁵⁶` times its high half `+ q - h`. The sum `S`
+of the high half and `q` (`sumStep`) gives both `S - h` and, its reduction,
+`S + (c - h) - 2²⁵⁶`, chosen by a mask. -/
+
+/-- The registers, and where in the own working space those kept and the product are. -/
+def lay : Rows.Lay where
+  k := 4
+  VL := [.t0, .a7, .a5, .a6]
+  AL := [.a0, .a1, .a2, .a4]
+  LO := [.t6, .t1, .s7]
+  HI := [.s8]
+  KR := [.t1, .s7, .s8]
+  sv := 1792
+  pp := 1856
+
+/-- A word of the quotient in place of `w`, with the carry `t3` in and out, for `m'` in `t5` and `c` in `s8`. -/
+def qStep (w : Reg) : List Instr :=
+  [.sltu .t6 w .t3, .sub w w .t3, .mul w w .t5, .mulhu .t3 w .s8, .add .t3 .t3 .t6]
+
+/-- `v + 2⁶⁴ t4 := v + a + t4`. -/
+def sumStep (v a : Reg) : List Instr :=
+  [.add v v a, .sltu .t6 v a, .add v v .t4, .sltu .t4 v .t4, .add .t4 .t4 .t6]
+
+/-- The word `a`, if the mask `t4` is all ones, or `v`, into `[t2 + 8 j]`. -/
+def selStep (j : Nat) (a v : Reg) : List Instr :=
+  [.logic .xor a a v, .logic .and a a .t4, .logic .xor a a v, .store .d a .t2 (8 * j)]
+
+/-- The quotient in `a0`–`a2`, `a4` and `h` in `t3`. -/
+def quots : List Instr :=
+  [.mul .a0 .a0 .t5, .mulhu .t3 .a0 .s8] ++ (qStep .a1 ++ (qStep .a2 ++ qStep .a4))
+
+/-- The high half plus the quotient, its carry in `t4`. -/
+def sums : List Instr :=
+  [.add .t0 .t0 .a0, .sltu .t4 .t0 .a0] ++ (sumStep .a7 .a1 ++ (sumStep .a5 .a2 ++ sumStep .a6 .a4))
+
+/-- `S + (c - h)` in `a0`–`a2`, `a4`, its carry in `t6`, and `S - h` in place of `S`. -/
+def cands : List Instr :=
+  [.sub .s8 .s8 .t3] ++ ([.add .a0 .t0 .s8, .sltu .t6 .a0 .s8] ++ ([.add .a1 .a7 .t6, .sltu .t6 .a1 .t6] ++
+    ([.add .a2 .a5 .t6, .sltu .t6 .a2 .t6] ++ ([.add .a4 .a6 .t6, .sltu .t6 .a4 .t6] ++
+    ([.sltu .t5 .t0 .t3, .sub .t0 .t0 .t3] ++ ([.sltu .t3 .a7 .t5, .sub .a7 .a7 .t5] ++
+    ([.sltu .t5 .a5 .t3, .sub .a5 .a5 .t3] ++ ([.sub .a6 .a6 .t5] : List Instr))))))))
+
+/-- The mask, and the selection. -/
+def sels : List Instr :=
+  [.logic .or .t4 .t4 .t6, .li .t6 0, .sub .t4 .t6 .t4] ++
+    (selStep 0 .a0 .t0 ++ (selStep 1 .a1 .a7 ++ (selStep 2 .a2 .a5 ++ selStep 3 .a4 .a6)))
+
+/-- The product's words. -/
+def loads : List Instr :=
+  [.load .d .a0 .a3 1856, .load .d .a1 .a3 1864, .load .d .a2 .a3 1872, .load .d .a4 .a3 1880,
+    .load .d .t0 .a3 1888, .load .d .a7 .a3 1896, .load .d .a5 .a3 1904, .load .d .a6 .a3 1912]
+
+/-- The product reduced, into `[t2]`. -/
+def redTail : List Instr :=
+  loads ++ (li64 .t5 .t6 (BitVec.ofNat 64 (Gen4.negInv Spec.Secp256k1.p)) ++ (li64 .s8 .t6 (BitVec.ofNat 64 c) ++
+    (quots ++ (sums ++ (cands ++ sels)))))
+
+/-- The order of the code, found by timing orders on T-Head's C910. -/
+def order : Rows.Order where
+  mul := [
+    0, 2, 0, 0, 0, 1, 1, 2, 4, 2, 1, 0, 0, 0, 0, 0, 1, 5, 0, 0, 4, 0, 0, 0, 1, 13, 6, 0, 18, 0, 0, 17, 0, 21, 9, 0,
+    14, 0, 0, 6, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 4, 4, 16, 0, 0, 15, 0, 0, 1, 12, 1, 0, 0, 0, 12, 1, 12, 1, 0, 0,
+    0, 0, 0, 11, 6, 0, 1, 0, 0, 0, 0, 5, 5, 1, 16, 0, 0, 3, 0, 0, 1, 0, 10, 0, 0, 13, 1, 19, 0, 0, 1, 4, 0, 15, 0, 0,
+    6, 2, 0, 4, 9, 0, 0, 0, 0, 0, 0, 0, 2]
+  sqr := [
+    0, 1, 0, 3, 2, 0, 2, 37, 1, 1, 1, 0, 0, 7, 1, 0, 0, 5, 2, 2, 0, 5, 0, 0, 10, 0, 33, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,
+    2, 1, 0, 0, 7, 2, 0, 0, 0, 0, 0, 2, 2, 2, 2, 8, 2, 1, 0, 5, 0, 0, 2, 0, 10, 1, 0, 0, 0, 4, 5, 5, 0, 2, 3, 3, 0,
+    7, 2, 0, 1, 4, 0, 0, 1, 1, 1, 0, 6, 0, 6, 0, 5, 5, 0, 0, 0, 0, 1, 0, 0, 5, 0, 0, 3, 3, 0, 0, 1, 0, 8, 6, 0, 6, 0,
+    0, 2, 3, 0, 0, 1, 7, 7, 1, 1, 1, 1, 1, 2, 2, 0, 1, 1, 0, 0, 2]
+  tail := [
+    0, 7, 7, 3, 7, 7, 6, 7, 6, 11, 1, 4, 4, 5, 4, 4, 1, 0, 2, 0, 1, 0, 15, 0, 0, 13, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0,
+    7, 0, 0, 0, 0, 0, 11, 0, 18, 0, 9, 0, 0, 2, 0, 0, 0, 0, 9, 0, 0, 0, 6, 0, 12, 0, 4, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0,
+    3, 0, 2, 0, 0, 2, 0, 4]
+
 /-- `vg_secp256k1_mul_mod_p`, for aligned offsets. -/
-def mulFnA : Prog isa := fnA mulCore
+def mulFnA : Prog isa := fnA (Rows.fastWith lay redTail order)
 
 /-- `vg_secp256k1_add_mod_p`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block addCore)
