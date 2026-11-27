@@ -75,12 +75,18 @@ def leave : List Instr :=
   [.ldr .x .x19 .x21 632, .ldr .x .x20 .x21 640, .ldr .x .x26 .x21 648,
    .addImm .x .x0 .x21 448, .addImm .x .x1 .x21 64]
 
+/-- The five-block kernel shared by the AEAD paths. The prologue has
+already saved its caller's link before this call. -/
+def chunkCall (sve : Bool) : Prog isa :=
+  .call ("vg_chachapoly_short5" ++ if sve then "_sve2" else "")
+    (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve)
+
 /-- Saves the registers, moves the arguments, and computes the keystream of
 counters 0 to 4 and the Poly1305 state for the one-time key; the kernel's
 vector rounds use SVE2's XAR if `sve`. -/
 def prologue (sve : Bool) : Prog isa :=
   .seq (.block (save ++ moves ++ initState0 ++ zero ++ enter))
-  (.seq (.seq (VG.Impl.ChaCha20.AArch64.Mixed5.chunk sve) (.block leave))
+  (.seq (.seq (chunkCall sve) (.block leave))
     (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init))
 
 /-- XORs `x11` (nonzero) blocks of 16 bytes at `x9` with those at `x10` into
