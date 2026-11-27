@@ -59,7 +59,7 @@ theorem checkBlock_zImm (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (taint.step τ (Instr.zImm i)).bind _ = (taint.step τ i).bind _
+    refine (VG.Taint.checkBlock_cons (A := taint) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taint) τ i is).symm)
     exact congr (congrArg Option.bind
       ((taint_step τ _).trans ((step_zImm τ i).trans (taint_step τ i).symm))) (funext ih)
 

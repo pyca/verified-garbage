@@ -57,7 +57,7 @@ theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (taint.step τ i.eraseOff).bind _ = (taint.step τ i).bind _
+    refine (VG.Taint.checkBlock_cons (A := taint) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taint) τ i is).symm)
     exact congr (congrArg Option.bind
       ((taint_step _ _).trans ((step_eraseOff τ i).trans (taint_step _ _).symm))) (funext ih)
 
@@ -96,7 +96,7 @@ theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (taint.step τ i.eraseOff).bind _ = (taint.step τ i).bind _
+    refine (VG.Taint.checkBlock_cons (A := taint) τ _ _).trans (Eq.trans ?_ (VG.Taint.checkBlock_cons (A := taint) τ i is).symm)
     exact congr (congrArg Option.bind
       ((taint_step _ _).trans ((step_eraseOff τ i).trans (taint_step _ _).symm))) (funext ih)
 

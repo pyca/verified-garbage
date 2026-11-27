@@ -111,10 +111,13 @@ def checkBlockC : A.T → List M.Instr → Option A.T
 
 /-- The analysis of a block. The kernel evaluates this for every instruction
 checked, so it is a `List.rec`, which the kernel evaluates faster than
-structural recursion (compiled to `brecOn`). Lean's compiler does not compile
-`List.rec`: compiled code (`hint`) runs `checkBlockC`. -/
+structural recursion (compiled to `brecOn`), and an `Option.rec`, which is
+three unfoldings less at every instruction than `Option.bind`
+(`checkBlock_cons`). Lean's compiler does not compile recursors: compiled code
+(`hint`) runs `checkBlockC`. -/
 @[implemented_by checkBlockC] def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
-  List.rec (motive := fun _ => A.T → Option A.T) some (fun i _ ih τ => (A.step τ i).bind ih) is τ
+  List.rec (motive := fun _ => A.T → Option A.T) some
+    (fun i _ ih τ => Option.rec (motive := fun _ => Option A.T) none ih (A.step τ i)) is τ
 
 /-- The fallback interval, also used by summary and batch checks. Every hint
 requires the kernel to evaluate the analysis and compare it with the hint.
@@ -198,6 +201,12 @@ def hintOf (τ : A.T) (c : Prog M) : Hint A.T := hintOfSize A chunk τ c
 
 variable {A}
 
+/-- `checkBlock`'s step, as `Option.bind`. -/
+theorem checkBlock_cons (τ : A.T) (i : M.Instr) (is : List M.Instr) :
+    A.checkBlock τ (i :: is) = (A.step τ i).bind (A.checkBlock · is) := by
+  show Option.rec (motive := fun _ => Option A.T) none (A.checkBlock · is) (A.step τ i) = _
+  cases A.step τ i <;> rfl
+
 theorem checkBlock_sound {is : List M.Instr} {τ τ' : A.T} {s₁ s₂ s₁' s₂' : M.State}
     {t₁ t₂ : List Leak} (h : A.checkBlock τ is = some τ') (ha : A.Agree τ s₁ s₂)
     (e₁ : execBlock M is s₁ = some (s₁', t₁)) (e₂ : execBlock M is s₂ = some (s₂', t₂)) :
@@ -208,7 +217,7 @@ theorem checkBlock_sound {is : List M.Instr} {τ τ' : A.T} {s₁ s₂ s₁' s�
     simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at e₁ e₂
     obtain ⟨rfl, rfl⟩ := e₁; obtain ⟨rfl, rfl⟩ := e₂; subst h; exact ⟨rfl, ha⟩
   | cons i is ih =>
-    simp only [checkBlock, Option.bind_eq_some_iff] at h
+    rw [checkBlock_cons, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, hs, hr⟩ := h
     simp only [execBlock] at e₁ e₂
     split at e₁ <;> rename_i h₁ <;> [cases e₁; skip]

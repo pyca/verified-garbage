@@ -305,11 +305,11 @@ theorem checkBlock_frame [hm : Frame A] {is : List M.Instr} {F Φ τ σ τ' : A.
     subst h; exact ⟨σ, rfl, hle, hΦ⟩
   | cons i is ih =>
     simp only [List.all_cons, Bool.and_eq_true] at hk
-    simp only [checkBlock, Option.bind_eq_some_iff] at h
+    rw [checkBlock_cons, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, hs, hr⟩ := h
     obtain ⟨σ₁, hs', hle'⟩ := hm.step i hle hs
     obtain ⟨σ', h', hle'', hΦ'⟩ := ih hr hk.2 hle' (hm.step_keeps i hk.1 hΦF hΦ hs')
-    exact ⟨σ', by simp only [checkBlock, Option.bind_eq_some_iff]; exact ⟨σ₁, hs', h'⟩, hle'', hΦ'⟩
+    exact ⟨σ', by rw [checkBlock_cons, Option.bind_eq_some_iff]; exact ⟨σ₁, hs', h'⟩, hle'', hΦ'⟩
 
 theorem checkChunks_frame [hm : Frame A] {chunkSize : Nat} {ms : List A.T} {is : List M.Instr} {F Φ τ σ τ' : A.T}
     (h : A.checkChunks chunkSize τ is ms = some τ') (hk : is.all (Frame.keeps (A := A) F) = true)

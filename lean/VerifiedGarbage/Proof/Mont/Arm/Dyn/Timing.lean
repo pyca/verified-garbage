@@ -216,8 +216,7 @@ theorem checkBlock_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.In
   induction a generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    change (A.step τ i).bind (fun t => A.checkBlock t (is ++ b)) =
-      ((A.step τ i).bind (fun t => A.checkBlock t is)).bind (A.checkBlock · b)
+    rw [List.cons_append, VG.Taint.checkBlock_cons, VG.Taint.checkBlock_cons]
     rw [Option.bind_assoc]
     simp only [ih]
 
