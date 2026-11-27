@@ -23,53 +23,32 @@ vg_sm4_modes_prepare_decrypt:
 	sd s9, 72(t0)
 	sd s10, 80(t0)
 	sd s11, 88(t0)
-	lui t0, 4080
+	lui t0, 0
 	addiw t0, t0, 255
 	slli t0, t0, 32
 	lui t1, 4080
-	addiw t1, t1, 255
+	addiw t1, t1, 0
 	add t0, t0, t1
 	sd t0, 320(a5)
-	lui t0, 1044496
-	addiw t0, t0, -255
-	slli t0, t0, 32
-	lui t1, 1044496
-	addiw t1, t1, -256
-	add t0, t0, t1
-	sd t0, 328(a5)
-	lui t0, 16
-	addiw t0, t0, -1
-	slli t0, t0, 32
-	lui t1, 16
-	addiw t1, t1, -1
-	add t0, t0, t1
-	sd t0, 336(a5)
-	lui t0, 0
-	addiw t0, t0, 1
-	slli t0, t0, 32
-	lui t1, 0
-	addiw t1, t1, -1
-	add t0, t0, t1
-	sd t0, 344(a5)
 	lui t0, 16
 	addiw t0, t0, 1
 	slli t0, t0, 32
 	lui t1, 16
 	addiw t1, t1, 1
 	add t0, t0, t1
-	sd t0, 352(a5)
+	sd t0, 328(a5)
 	lui t0, 0
 	addiw t0, t0, 1
 	slli t0, t0, 32
-	lui t1, 1048560
-	addiw t1, t1, 0
+	lui t1, 0
+	addiw t1, t1, -1
 	add t0, t0, t1
 	sd t0, 360(a5)
 	lui t0, 16
-	addiw t0, t0, -256
+	addiw t0, t0, -1
 	slli t0, t0, 32
 	lui t1, 16
-	addiw t1, t1, -256
+	addiw t1, t1, -1
 	add t0, t0, t1
 	sd t0, 368(a5)
 	lui t0, 4080
@@ -133,30 +112,17 @@ vg_sm4_modes_prepare_decrypt:
 	addi s8, zero, 16
 24:
 	ld t1, 0(a0)
-	ld a6, 344(a5)
-	and t1, t1, a6
-	ld t3, 336(a5)
-	srli a7, t1, 48
-	slli t0, t1, 16
-	xor t0, t0, a7
-	xor t1, t1, t0
-	and t1, t1, t3
-	ld t4, 320(a5)
-	and t5, t4, t3
-	srli a7, t3, 16
-	slli t2, t3, 48
-	xor t2, t2, a7
-	and t4, t4, t2
-	srli a7, t1, 16
-	slli t0, t1, 48
-	xor t0, t0, a7
-	and t0, t0, t4
-	srli a7, t1, 40
-	slli t1, t1, 24
-	xor t1, t1, a7
-	and t1, t1, t5
-	xor t1, t1, t0
-	ld t6, 352(a5)
+	ld t2, 360(a5)
+	and t1, t1, t2
+	ld t2, 320(a5)
+	slli t0, t1, 24
+	slli t3, t1, 48
+	xor t0, t0, t1
+	srli t4, t1, 24
+	and t0, t0, t2
+	xor t3, t3, t4
+	xor t1, t0, t3
+	ld t6, 328(a5)
 	and s0, t1, t6
 	srli s1, t1, 1
 	and s1, s1, t6
@@ -172,22 +138,16 @@ vg_sm4_modes_prepare_decrypt:
 	and s6, s6, t6
 	srli s7, t1, 7
 	and s7, s7, t6
-	slli t0, s0, 16
-	sub s0, t0, s0
-	slli t0, s1, 16
-	sub s1, t0, s1
-	slli t0, s2, 16
-	sub s2, t0, s2
-	slli t0, s3, 16
-	sub s3, t0, s3
-	slli t0, s4, 16
-	sub s4, t0, s4
-	slli t0, s5, 16
-	sub s5, t0, s5
-	slli t0, s6, 16
-	sub s6, t0, s6
-	slli t0, s7, 16
-	sub s7, t0, s7
+	lui t0, 16
+	addiw t0, t0, -1
+	mul s0, s0, t0
+	mul s1, s1, t0
+	mul s2, s2, t0
+	mul s3, s3, t0
+	mul s4, s4, t0
+	mul s5, s5, t0
+	mul s6, s6, t0
+	mul s7, s7, t0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)
@@ -199,28 +159,15 @@ vg_sm4_modes_prepare_decrypt:
 	addi a3, a3, -64
 	ld t1, 0(a0)
 	srli t1, t1, 32
-	ld t3, 336(a5)
-	srli a7, t1, 48
-	slli t0, t1, 16
-	xor t0, t0, a7
-	xor t1, t1, t0
-	and t1, t1, t3
-	ld t4, 320(a5)
-	and t5, t4, t3
-	srli a7, t3, 16
-	slli t2, t3, 48
-	xor t2, t2, a7
-	and t4, t4, t2
-	srli a7, t1, 16
-	slli t0, t1, 48
-	xor t0, t0, a7
-	and t0, t0, t4
-	srli a7, t1, 40
-	slli t1, t1, 24
-	xor t1, t1, a7
-	and t1, t1, t5
-	xor t1, t1, t0
-	ld t6, 352(a5)
+	ld t2, 320(a5)
+	slli t0, t1, 24
+	slli t3, t1, 48
+	xor t0, t0, t1
+	srli t4, t1, 24
+	and t0, t0, t2
+	xor t3, t3, t4
+	xor t1, t0, t3
+	ld t6, 328(a5)
 	and s0, t1, t6
 	srli s1, t1, 1
 	and s1, s1, t6
@@ -236,22 +183,16 @@ vg_sm4_modes_prepare_decrypt:
 	and s6, s6, t6
 	srli s7, t1, 7
 	and s7, s7, t6
-	slli t0, s0, 16
-	sub s0, t0, s0
-	slli t0, s1, 16
-	sub s1, t0, s1
-	slli t0, s2, 16
-	sub s2, t0, s2
-	slli t0, s3, 16
-	sub s3, t0, s3
-	slli t0, s4, 16
-	sub s4, t0, s4
-	slli t0, s5, 16
-	sub s5, t0, s5
-	slli t0, s6, 16
-	sub s6, t0, s6
-	slli t0, s7, 16
-	sub s7, t0, s7
+	lui t0, 16
+	addiw t0, t0, -1
+	mul s0, s0, t0
+	mul s1, s1, t0
+	mul s2, s2, t0
+	mul s3, s3, t0
+	mul s4, s4, t0
+	mul s5, s5, t0
+	mul s6, s6, t0
+	mul s7, s7, t0
 	sd s0, 0(a3)
 	sd s1, 8(a3)
 	sd s2, 16(a3)

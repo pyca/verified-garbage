@@ -756,13 +756,13 @@ open VG.Proof.Sm4 (WordRel readW64_bit getLsbD_scheduleAt)
 /-! ## The fill of a round key's planes
 
 A plane has its bits at `16 i` (`keyBit`), and `keyFill` fills each
-16-bit group with its bit: `(x ⋘ 16) - x` is `x · 0xFFFF`, which, with no
+16-bit group with its bit: `x · 0xFFFF`, which, with no
 carries between the groups, copies bit `16 i` to bits `16 i … 16 i + 15`.
 `getLsbD_fill` proves it for the sixteen such words, by evaluation, and
 `keyFill_ok` runs the code. -/
 
 /-- What `keyFill` makes of a plane. -/
-def fill (x : BitVec 64) : BitVec 64 := (x <<< 16) - x
+def fill (x : BitVec 64) : BitVec 64 := x * 0xFFFF
 
 /-- The word with bits `b₀ … b₃` at `0`, `16`, `32` and `48`. -/
 def sparse (b₀ b₁ b₂ b₃ : Bool) : BitVec 64 :=
@@ -791,36 +791,38 @@ theorem getLsbD_fill {x : BitVec 64} (hx : ∀ p < 64, p % 16 ≠ 0 → x.getLsb
   rw [hs]
   exact getLsbD_fill_sparse _ _ _ _ p hp
 
-/-- `r := ` its fill, through `t0`. -/
-theorem fillOne_ok (s : State) {r : Reg} (hr : r ≠ t0) :
-    ∃ s', runBlock isa [VG.Impl.Aes.RISCV64.shlI t0 r 16, .sub r t0 r] s = some s' ∧ s'.gpr r = fill (s.gpr r) ∧
-      (∀ r', r' ≠ r → r' ≠ t0 → s'.gpr r' = s.gpr r') ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  let s₁ := s.write t0 (s.gpr r <<< 16)
-  refine ⟨s₁.write r (s₁.gpr t0 - s₁.gpr r),
-    by simp only [VG.Impl.Aes.RISCV64.shlI, runBlock_cons, exec_shift_d (show 16 < 64 by decide), runStep_some]; rfl,
-    ?_, fun r' h1 h2 => ?_, rfl, rfl, rfl⟩
-  · simp only [s₁]
-    rw [RegUpd.gpr_write_self, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne _ _ hr]; rfl
-  · simp only [s₁]
-    rw [RegUpd.gpr_write_of_ne _ _ h1, RegUpd.gpr_write_of_ne _ _ h2]
-
-/-- The registers `rs`, each to its fill. -/
-theorem fillList_ok : ∀ (rs : List Reg), rs.Nodup → t0 ∉ rs → ∀ s : State,
-    ∃ s', runBlock isa (rs.flatMap fun r => [VG.Impl.Aes.RISCV64.shlI t0 r 16, .sub r t0 r]) s = some s' ∧
-      (∀ r ∈ rs, s'.gpr r = fill (s.gpr r)) ∧ (∀ r, r ∉ rs → r ≠ t0 → s'.gpr r = s.gpr r) ∧
+/-- The registers `rs`, each to its fill, with the factor in `t0`. -/
+theorem fillList_ok : ∀ (rs : List Reg), rs.Nodup → t0 ∉ rs → ∀ s : State, s.gpr t0 = 0xFFFF →
+    ∃ s', runBlock isa (rs.map fun r => Instr.mul r r t0) s = some s' ∧
+      (∀ r ∈ rs, s'.gpr r = fill (s.gpr r)) ∧ (∀ r, r ∉ rs → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
-  | [], _, _, s => ⟨s, rfl, by simp, fun _ _ _ => rfl, rfl, rfl, rfl⟩
-  | r :: rs, hn, ht, s => by
+  | [], _, _, s, _ => ⟨s, rfl, by simp, fun _ _ => rfl, rfl, rfl, rfl⟩
+  | r :: rs, hn, ht, s, h0 => by
     obtain hr : r ≠ t0 := fun h => ht (h ▸ List.mem_cons_self)
     obtain hn' := List.nodup_cons.mp hn
-    obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := fillOne_ok s hr
+    let s₁ := s.write r (s.gpr r * s.gpr t0)
+    obtain v₁ : s₁.gpr r = fill (s.gpr r) := by
+      simp only [s₁]; rw [RegUpd.gpr_write_self, h0, fill]
+    obtain o₁ : ∀ r', r' ≠ r → s₁.gpr r' = s.gpr r' := fun r' h => RegUpd.gpr_write_of_ne _ _ h
     obtain ⟨s₂, e₂, v₂, o₂, m₂, rd₂, wr₂⟩ := fillList_ok rs hn'.2 (fun h => ht (List.mem_cons_of_mem _ h)) s₁
-    refine ⟨s₂, by rw [List.flatMap_cons, Interleave.runBlock_append, e₁, Option.bind_some, e₂], fun r' hr' => ?_,
-      fun r' h1 h2 => ?_, by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+      ((o₁ t0 hr.symm).trans h0)
+    refine ⟨s₂, by rw [List.map_cons, runBlock_cons, exec_mul, runStep_some, e₂], fun r' hr' => ?_,
+      fun r' h => ?_, m₂, rd₂, wr₂⟩
     · rcases List.mem_cons.mp hr' with rfl | h
-      · rw [o₂ _ hn'.1 hr, v₁]
-      · rw [v₂ r' h, o₁ r' (fun e => hn'.1 (e ▸ h)) (fun e => ht (e ▸ List.mem_cons_of_mem _ h))]
-    · rw [o₂ r' (fun h => h1 (List.mem_cons_of_mem _ h)) h2, o₁ r' (fun h => h1 (h ▸ List.mem_cons_self)) h2]
+      · rw [o₂ _ hn'.1, v₁]
+      · rw [v₂ r' h, o₁ r' (fun e => hn'.1 (e ▸ h))]
+    · rw [o₂ r' (fun h' => h (List.mem_cons_of_mem _ h')), o₁ r' (fun e => h (e ▸ List.mem_cons_self))]
+
+/-- The factor. -/
+theorem factor_ok (s : State) :
+    ∃ s', runBlock isa [.lui t0 16, .addiw t0 t0 (-1)] s = some s' ∧ s'.gpr t0 = 0xFFFF ∧
+      (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  let s₁ := s.write t0 (sext32 ((16 : BitVec 20) ++ (0 : BitVec 12)))
+  refine ⟨s₁.write t0 (sext32 ((s₁.gpr t0).setWidth 32 + BitVec.ofInt 32 (-1))),
+    by rw [runBlock_cons, exec_lui, runStep_some, runBlock_cons, exec_addiw (by decide), runStep_some,
+      runBlock_nil], ?_, fun r h => ?_, rfl, rfl, rfl⟩
+  · simp only [s₁]; rw [RegUpd.gpr_write_self, RegUpd.gpr_write_self]; decide
+  · simp only [s₁]; rw [RegUpd.gpr_write_of_ne _ _ h, RegUpd.gpr_write_of_ne _ _ h]
 
 /-- `keyFill`: each plane to its fill. -/
 theorem keyFill_ok (s : State) :
@@ -829,12 +831,17 @@ theorem keyFill_ok (s : State) :
       (∀ r, (∀ j < 8, r ≠ q j) → r ≠ t0 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hq : (List.range 8).map q = [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7] := rfl
+  have hne : ∀ j < 8, q j ≠ t0 := by decide
+  obtain ⟨s₁, e₁, h0, o₁, m₁, rd₁, wr₁⟩ := factor_ok s
   obtain ⟨s', e', v', o', m', rd', wr'⟩ := fillList_ok ((List.range 8).map q) (by rw [hq]; decide)
-    (by rw [hq]; decide) s
-  refine ⟨s', by rw [VG.Impl.Sm4.RISCV64.keyFill]; rw [List.flatMap_map] at e'; exact e', fun j hj =>
-    v' _ (List.mem_map_of_mem (List.mem_range.mpr hj)), fun r hr h0 => o' r (fun h => ?_) h0, m', rd', wr'⟩
-  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp h
-  exact hr j (List.mem_range.mp hj) rfl
+    (by rw [hq]; decide) s₁ h0
+  refine ⟨s', ?_, fun j hj => ?_, fun r hr h0 => ?_, m'.trans m₁, rd'.trans rd₁, wr'.trans wr₁⟩
+  · rw [VG.Impl.Sm4.RISCV64.keyFill, Interleave.runBlock_append, e₁, Option.bind_some]
+    rw [List.map_map] at e'; exact e'
+  · rw [v' _ (List.mem_map_of_mem (List.mem_range.mpr hj)), o₁ _ (hne j hj)]
+  · rw [o' r (fun h => ?_), o₁ r h0]
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp h
+    exact hr j (List.mem_range.mp hj) rfl
 
 /-- Round key `2 m + h`, half `h` of the 64-bit word `x`. -/
 def rkWord (x : BitVec 64) (h : Nat) : Spec.Sm4.Word := (x >>> (32 * h)).setWidth 32
