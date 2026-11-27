@@ -135,7 +135,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     var_succ t _ (show 5 < 7 by omega_arith), var_succ t _ (show 6 < 7 by omega_arith)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha256.RISCV64.round, bsig, li32, List.cons_append, List.nil_append]
+  simp only [Impl.Sha256.RISCV64.round, bsig, bsigShifts, bsigXors, bsigFold, li32, List.cons_append, List.nil_append]
   generalize var t 0 = a at *
   generalize var t 1 = b at *
   generalize var t 2 = c at *
