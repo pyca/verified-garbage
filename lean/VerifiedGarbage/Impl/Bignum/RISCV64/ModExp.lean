@@ -141,15 +141,17 @@ def digit : List Instr :=
   [.load .b .t6 .s9 0, .shift .srl .d .t2 .s10 2, .logicImm .and .t2 .t2 1, .shift .sll .d .s0 .t2 2,
     .shiftReg .srl .d .t6 .t6 .s0, .logicImm .and .t6 .t6 15, .logicImm .xor .t2 .t2 1, .add .s9 .s9 .t2]
 
+/-- `A := A E R'⁻¹ mod m` for array 5's number `E`. -/
+def mulE : Prog isa := .seq (unpackFrom atE) mulOp57
+
 /-- A window: four squares, then `A := A T_d`. -/
 def window57 : Prog isa :=
   .seq (.loop (.seq sqrOp57 (.block [.addi .s10 .s10 (-1), .logicImm .and .t2 .s10 3])) (.nonzero .t2))
-    (.seq (.block digit) (.seq (WinSelect.winSelect 5 8) (.seq (unpackFrom atE) mulOp57)))
+    (.seq (.block digit) (.seq (WinSelect.winSelect 5 8) mulE))
 
 /-- Out of Montgomery form: `A R'⁻¹` (at most `m`) into array 6, then reduced, by `R² mod m` and 1, into array 4. -/
 def exit57 : Prog isa :=
-  .seq one (.seq (copy 5 7) (.seq (unpackFrom atE) (.seq mulOp57 (.seq pack (.seq one
-    (.seq (montOp 6 6 1) (montOp 4 7 6)))))))
+  .seq one (.seq (copy 5 7) (.seq mulE (.seq pack (.seq one (.seq (montOp 6 6 1) (montOp 4 7 6))))))
 
 /-- `powWin` in radix `2⁵⁷`, for `w = 8 q` with `2 ≤ q ≤ 6`. -/
 def powWin57 : Prog isa :=

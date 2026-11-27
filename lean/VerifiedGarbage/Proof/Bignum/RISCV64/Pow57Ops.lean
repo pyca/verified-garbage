@@ -1705,6 +1705,16 @@ theorem red_out {a b N R o W : Nat} (ha : a < 2 * N) (hb : b < 2 * N) (hR : 4 * 
   rw [show 2 * N * (2 * N) = N * (4 * N) by grind] at l
   exact Nat.lt_of_mul_lt_mul_left (a := R) (by rw [e, show R * (2 * N) = 2 * (R * N) by grind]; omega_using [l, l1, l2])
 
+theorem red_one {a b N R o W : Nat} (ha : a < 2 * N) (hR : 4 * N ≤ R) (hW : W < R) (e : R * o = a * b + W * N) (hb : b ≤ 1) :
+    o ≤ N := by
+  obtain l := Nat.mul_le_mul_left a hb
+  rw [Nat.mul_one] at l
+  obtain l2 := Nat.mul_le_mul_right N (show W + 1 ≤ R from hW)
+  rw [Nat.succ_mul] at l2
+  refine Nat.le_of_lt_succ (Nat.lt_of_mul_lt_mul_left (a := R) ?_)
+  rw [e, Nat.mul_succ]
+  omega_using [l, l2, ha, hR]
+
 /-- The modulus of an operation. -/
 structure Mod57 (s : State) (B : Addr) (q d0 N : Nat) : Prop where
   mod : ModIn s B q (oM q d0) N
@@ -1723,7 +1733,7 @@ theorem finish57_ok {s₀ s : State} {B : Addr} {Z q d0 N a b : Nat} (h₀ : Sp 
     (hA : AIn s₀.mem B q (oM q d0) a) (ha : a < 2 * N) (hb : b < 2 * N)
     (lT : Lim s.mem B (oT q (oM q d0)) (18 * q) L57) (eV : lv s.mem B (oT q (oM q d0)) (18 * q) = a * b) :
     WP isa (.seq reduce57 (.block leave)) s fun t => (Sp t B Z q d0 ∧ t.gpr .t0 = BitVec.ofNat 64 (8 * q) ∧ Mod57 t B q d0 N ∧
-      OutAT B q (oM q d0) s₀.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * b % N) ∧
+      OutAT B q (oM q d0) s₀.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * b % N ∧ (b ≤ 1 → o ≤ N)) ∧
         Keep opRegs s₀ t := by
   obtain q2 := h₀.q2
   obtain R4 := hm.four q2
@@ -1750,7 +1760,7 @@ theorem finish57_ok {s₀ s : State} {B : Addr} {Z q d0 N a b : Nat} (h₀ : Sp 
     · exact hr hm
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
       rcases hm with rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact h7 rfl | exact h5 rfl | exact hr (by decide)
-  refine ⟨⟨h₀.of K' (by decide) (by decide), t0, ⟨?_, hm.pos, hm.lt⟩, ?_, o, by rw [tm]; exact hA', red_out ha hb R4 hW e, ?_⟩, K'⟩
+  refine ⟨⟨h₀.of K' (by decide) (by decide), t0, ⟨?_, hm.pos, hm.lt⟩, ?_, o, by rw [tm]; exact hA', red_out ha hb R4 hW e, ?_, red_one ha R4 hW e⟩, K'⟩
   · exact ⟨by rw [tm]; exact mu.val, by rw [tm]; exact mu.lim, by rw [tm]; exact mu.pad, by
       rw [tm, kt.gpr (by decide)]; exact mu.inv⟩
   · rw [tm]; exact (outT out).trans ou
@@ -1783,7 +1793,7 @@ theorem AIn.out {m m' : Mem} {B : Addr} {q dM a o n Z : Nat} (h : AIn m B q dM a
 theorem sqrOp57_ok {s : State} {B : Addr} {Z q d0 N a : Nat} (h : Sp s B Z q d0) (hm : Mod57 s B q d0 N)
     (hA : AIn s.mem B q (oM q d0) a) (ha : a < 2 * N) :
     WP isa sqrOp57 s fun t => (Sp t B Z q d0 ∧ t.gpr .t0 = BitVec.ofNat 64 (8 * q) ∧ Mod57 t B q d0 N ∧
-      OutAT B q (oM q d0) s.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * a % N) ∧
+      OutAT B q (oM q d0) s.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * a % N ∧ (a ≤ 1 → o ≤ N)) ∧
         Keep opRegs s t := by
   have hn := h.scr.nowrap
   unfold sqrOp57
@@ -1814,7 +1824,7 @@ theorem mulOp57_ok {s : State} {B : Addr} {Z q d0 N a e : Nat} (h : Sp s B Z q d
     (hA : AIn s.mem B q (oM q d0) a) (ha : a < 2 * N) (lE : Lim s.mem B (oE q (oM q d0)) (9 * q) L57)
     (eE : lv s.mem B (oE q (oM q d0)) (9 * q) = e) (he : e < 2 * N) :
     WP isa mulOp57 s fun t => (Sp t B Z q d0 ∧ t.gpr .t0 = BitVec.ofNat 64 (8 * q) ∧ Mod57 t B q d0 N ∧
-      OutAT B q (oM q d0) s.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * e % N) ∧
+      OutAT B q (oM q d0) s.mem t.mem ∧ ∃ o, AIn t.mem B q (oM q d0) o ∧ o < 2 * N ∧ o * 2 ^ (513 * q) % N = a * e % N ∧ (e ≤ 1 → o ≤ N)) ∧
         Keep opRegs s t := by
   have hn := h.scr.nowrap
   unfold mulOp57
