@@ -190,6 +190,8 @@ def rtaintCT : VG.TaintCT isa where
   pop _ _ := none
   pop_sound _ hs := nomatch hs
 
+kernel_fn VG.TaintCT.check rtaintCT
+
 namespace RTaintCT
 
 /-- Code proven constant time under its contract, whose analysis

@@ -358,4 +358,6 @@ def frameTaint : VG.Taint isa where
   pop := FrameTaint.pop
   pop_sound := FrameTaint.pop_sound
 
+kernel_fn VG.Taint.check frameTaint
+
 end VG.RISCV64

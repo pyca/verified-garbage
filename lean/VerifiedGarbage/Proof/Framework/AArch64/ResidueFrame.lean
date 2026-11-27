@@ -519,6 +519,8 @@ def rtaintF (W : Nat) : VG.TaintCT isa where
   pop := popF
   pop_sound ha hs e₁ e₂ _ := popF_sound ha hs e₁ e₂
 
+kernel_fn fun (W : Nat) => VG.TaintCT.check (rtaintF W)
+
 namespace RTaintF
 
 end VG.AArch64.RTaintF

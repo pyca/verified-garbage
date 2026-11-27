@@ -470,4 +470,6 @@ the kernel's check several times faster. Nothing about `w` needs to be sound:
 a hint it weakens too much only makes the check fail. -/
 elab "taint_decide_weak " w:term : tactic => taintDecide "taint_decide_weak" (some w)
 
+kernel_fn @Code.allInstrs, @Code.noCalls, @Code.noFrames, @Code.fdepth
+
 end VG

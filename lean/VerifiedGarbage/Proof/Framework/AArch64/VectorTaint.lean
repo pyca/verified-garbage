@@ -276,6 +276,8 @@ def taint : VG.Taint isa where
       cases e₁; cases e₂
       exact ⟨ht.1, ht.2, h.2⟩
 
+kernel_fn VG.Taint.check taint
+
 /-- The step of `taint` is `step`, for the proofs about it: the kernel
 evaluates `stepK`. -/
 theorem taint_step (τ : T) (i : Instr) : taint.step τ i = step τ i :=

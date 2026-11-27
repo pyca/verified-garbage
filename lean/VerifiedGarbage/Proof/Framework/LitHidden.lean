@@ -125,7 +125,7 @@ meta def taintDecideLit (chunkSize : Expr) : TacticM Unit := do
     | throwError "taint_decide_lit: the goal is not an equation about `Taint.check A τ c h`"
   let c := chk.getArg! 3
   if ← hiddenCode c then rwCodeLit c
-  evalTactic (← `(tactic| decide +kernel))
+  evalTactic (← `(tactic| (kernel_rw; decide +kernel)))
 
 /-- `lit_decide_lit`: `lit_decide` for a check of code that `rw_lit` cannot
 see (the functions of a variant), which it states of the code's literal, as

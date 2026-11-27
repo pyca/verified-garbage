@@ -226,8 +226,12 @@ end Taint
 /-- `taint`, with `umaal` making the registers it writes secret. -/
 def taintU : VG.Taint isa := { taint with step := Taint.stepKeepU, step_sound := Taint.stepKeepU_sound }
 
+kernel_fn VG.Taint.check taintU
+
 /-- `taintSym L`, with `umaal` making the registers it writes secret. -/
 def taintSymU (L : List String) : VG.Taint isa :=
   { taintSym L with step := Taint.stepKeepSU L, step_sound := Taint.stepKeepSU_sound }
+
+kernel_fn fun (L : List String) => VG.Taint.check (taintSymU L)
 
 end VG.Arm

@@ -464,7 +464,8 @@ lemmas and tactics to use; read it before writing a proof:
   `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). A check
   that a family of functions all need is one declaration for the family, where
   they share code that is not a literal, or run the same code from the same
-  taint (`taint_decide_ct_all`). An
+  taint (`taint_decide_ct_all`). A check that walks code is declared for the
+  kernel, after its definition, with `kernel_fn`. An
   analysis's step gives a state that is evaluated, whose fields it does
   not change are the terms they were (`Taint.forceT`, `keepBases`), but a
   numeral wider than 64 bits it changed, left as a term (the kernel hashes

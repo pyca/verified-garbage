@@ -2101,6 +2101,8 @@ def taint : VG.Taint isa where
   pop _ _ := none
   pop_sound _ h := by cases h
 
+kernel_fn VG.Taint.check taint
+
 /-- `taint`'s step is `stepKM`'s (`stepKeepM_eq`). -/
 theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.stepKM τ i :=
   congrFun (congrFun Taint.stepKeepM_eq τ) i

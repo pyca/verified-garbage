@@ -160,4 +160,6 @@ instance : VG.Taint.Frame sseTaint :=
     push_keeps := taintFrameOfTaint.push_keeps
     pop_keeps := taintFrameOfTaint.pop_keeps }
 
+kernel_fn VG.Taint.checkSum sseTaint, VG.Taint.checkSumLe sseTaint, VG.Taint.keepsSum sseTaint
+
 end VG.X86

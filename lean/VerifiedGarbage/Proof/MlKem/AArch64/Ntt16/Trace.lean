@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+public import VerifiedGarbage.Proof.Framework.Lit
+public meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
@@ -247,6 +249,8 @@ def step (D : Dir) (T : List (List Nat)) (a : St) : Instr → Option St
 def run (D : Dir) (T : List (List Nat)) : List Instr → St → Option St
   | [], a => some a
   | i :: is, a => (step D T a i).bind fun b => run D T is b
+
+kernel_fn run
 
 theorem run_append {D : Dir} {T : List (List Nat)} : ∀ {is js : List Instr} {a b c : St},
     run D T is a = some b → run D T js b = some c → run D T (is ++ js) a = some c

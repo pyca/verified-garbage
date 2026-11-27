@@ -86,6 +86,8 @@ def rtaintMx : VG.Taint isa where
     obtain ⟨a, b⟩ := rtaint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, by rw [pop_mxcsr e₁, pop_mxcsr e₂, h.2]⟩
 
+kernel_fn VG.Taint.check rtaintMx
+
 namespace RScrub
 
 open VG.X86_64.Taint VG.X86_64.RTaint VG.X86_64.Scrub VG.Impl.Scrub.X86_64

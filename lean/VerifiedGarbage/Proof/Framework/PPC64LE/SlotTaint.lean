@@ -1326,6 +1326,8 @@ def slotTaint : VG.Taint isa where
   pop _ _ := none
   pop_sound _ h := by cases h
 
+kernel_fn VG.Taint.check slotTaint
+
 /-- `slotTaint`'s step is `SlotTaint.step`'s (`stepKeep_eq`). -/
 theorem slotTaint_step (τ : SlotTaint.T) (i : Instr) : slotTaint.step τ i = SlotTaint.step τ i :=
   congrFun (congrFun SlotTaint.stepKeep_eq τ) i

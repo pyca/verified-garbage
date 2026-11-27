@@ -323,6 +323,8 @@ def taint : VG.Taint isa where
   pop := Taint.pop
   pop_sound := Taint.pop_sound
 
+kernel_fn VG.Taint.check taint
+
 /-- `taint`'s step is `Taint.step`'s (`stepK_eq`). -/
 theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.step τ i :=
   congrFun (congrFun Taint.stepK_eq τ) i

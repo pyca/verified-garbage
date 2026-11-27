@@ -917,6 +917,8 @@ def taintS : VG.Taint isa where
   pop _ _ := none
   pop_sound _ h := by cases h
 
+kernel_fn VG.Taint.check taintS
+
 /-- `taintS`'s step is `stepKD`'s (`stepKeep_eq`). -/
 theorem taintS_step (τ : Taint.T) (i : Instr) : taintS.step τ i = Taint.stepKD τ i :=
   congrFun (congrFun Taint.stepKeep_eq τ) i
@@ -987,6 +989,8 @@ instance : VG.Taint.LeFrame taintS where
   ret_keeps _ _ hΦ hs := by cases hs; exact hΦ
   push_keeps _ _ _ _ hs := by cases hs
   pop_keeps _ _ _ _ hs := by cases hs
+
+kernel_fn VG.Taint.checkSum taintS, VG.Taint.checkSumLe taintS, VG.Taint.keepsSum taintS
 
 instance : VG.Taint.CodeEq isa := ⟨@VG.Taint.codeBeq Instr Cond _ _⟩
 

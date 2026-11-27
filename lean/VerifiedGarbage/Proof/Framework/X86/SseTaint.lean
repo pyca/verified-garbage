@@ -244,4 +244,6 @@ def sseTaint : VG.Taint isa := { taint with
   step := SseTaint.stepKeep
   step_sound := SseTaint.stepKeep_sound }
 
+kernel_fn VG.Taint.check sseTaint
+
 end VG.X86

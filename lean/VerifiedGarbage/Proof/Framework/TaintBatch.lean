@@ -92,7 +92,7 @@ elab "taint_decide_all" : tactic => do
   let conj := uniq.pop.foldr (fun t acc => mkAnd t acc) last
   let m ← gs.head!.withContext do mkFreshExprSyntheticOpaqueMVar conj
   setGoals [m.mvarId!]
-  evalTactic (← `(tactic| rw_lit))
+  evalTactic (← `(tactic| (rw_lit; kernel_rw)))
   -- `decide +kernel`, with the instance built conjunct by conjunct
   -- (instance synthesis gives up on a long conjunction).
   let g ← getMainGoal

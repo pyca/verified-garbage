@@ -181,6 +181,8 @@ instance : LeFrame taint where
   push_keeps i _ _ hΦ hs := Taint.push_keeps i hΦ hs
   pop_keeps i hk hΦF hΦ hs := Taint.pop_keeps i hk hΦF hΦ hs
 
+kernel_fn VG.Taint.checkSum taint, VG.Taint.checkSumLe taint, VG.Taint.keepsSum taint
+
 open VG.Taint in
 /-- The analysis of `taintSym L` is `taint`'s, but for the addresses of the
 statics of `L`, which it makes public: monotone, with the meet as frames. -/
@@ -220,6 +222,12 @@ instance (L : List String) : LeFrame (taintSym L) where
   push_keeps i _ _ hΦ hs := Taint.push_keeps i hΦ hs
   pop_keeps i hk hΦF hΦ hs := Taint.pop_keeps i hk hΦF hΦ hs
 
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.keepsSum (taintSym L)
+
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
 end RISCV64
 
 /-- Equality of RISC-V code, for summaries of code that is not a call. -/

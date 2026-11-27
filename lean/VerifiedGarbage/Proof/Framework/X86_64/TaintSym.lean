@@ -97,6 +97,8 @@ def taintSym (L : List String) : VG.Taint isa where
   pop := taintS.pop
   pop_sound _ h := by cases h
 
+kernel_fn fun (L : List String) => VG.Taint.check (taintSym L)
+
 open VG.Taint in
 instance (L : List String) : LeFrame (taintSym L) where
   le_trans := LeFrame.le_trans (A := taintS)
@@ -129,4 +131,10 @@ instance (L : List String) : LeFrame (taintSym L) where
   push_keeps _ _ _ _ hs := by cases hs
   pop_keeps _ _ _ _ hs := by cases hs
 
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.keepsSum (taintSym L)
+
+kernel_fn fun (L : List String) => VG.Taint.checkSum (taintSym L)
+kernel_fn fun (L : List String) => VG.Taint.checkSumLe (taintSym L)
 end VG.X86_64

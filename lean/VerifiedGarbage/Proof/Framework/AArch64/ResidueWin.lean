@@ -1544,6 +1544,8 @@ def rtaintG (W : Nat) : VG.TaintCT isa where
   pop τ i := forceO (popG τ i)
   pop_sound ha hs e₁ e₂ _ := popG_sound ha ((forceO_eq _).symm.trans hs) e₁ e₂
 
+kernel_fn fun (W : Nat) => VG.TaintCT.check (rtaintG W)
+
 namespace RTaintG
 
 open VG.AArch64 VG.AArch64.Residue VG.AArch64.MemEffect VG.AArch64.RTaintF VG.AArch64.Scrub

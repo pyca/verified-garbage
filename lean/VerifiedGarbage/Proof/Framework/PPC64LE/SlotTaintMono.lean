@@ -310,4 +310,6 @@ instance : VG.Taint.Frame slotTaint where
   push_keeps _ _ _ h _ := h
   pop_keeps _ _ _ h _ := h
 
+kernel_fn VG.Taint.checkSum slotTaint, VG.Taint.checkSumLe slotTaint, VG.Taint.keepsSum slotTaint
+
 end VG.PPC64LE

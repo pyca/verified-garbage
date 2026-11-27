@@ -129,6 +129,8 @@ def taintSym (L : List String) : VG.Taint isa where
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
 
+kernel_fn fun (L : List String) => VG.Taint.check (taintSym L)
+
 /-- `taintSym L`'s step is `Taint.stepS L`'s (`stepSK_eq`). -/
 theorem taintSym_step (L : List String) (τ : Taint.T) (i : Instr) :
     (taintSym L).step τ i = Taint.stepS L τ i :=

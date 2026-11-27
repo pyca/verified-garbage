@@ -128,4 +128,6 @@ def taintSym (L : List String) : VG.Taint isa where
     obtain ⟨a, b⟩ := sseTaint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
 
+kernel_fn fun (L : List String) => VG.Taint.check (taintSym L)
+
 end VG.X86

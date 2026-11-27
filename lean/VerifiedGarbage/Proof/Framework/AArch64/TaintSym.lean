@@ -120,6 +120,8 @@ def taintS (L : List String) : VG.Taint isa where
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
 
+kernel_fn fun (L : List String) => VG.Taint.check (taintS L)
+
 /-- The step of `taintS L` is `Taint.stepS L`, for the proofs about it: the
 kernel evaluates `Taint.stepSK L`. -/
 theorem taintS_step (L : List String) (τ : Taint.T) (i : Instr) :
