@@ -992,11 +992,14 @@ theorem mulRows_ok {s : State} {B : Addr} {Z q dM a : Nat} (h : In s B Z q dM) (
 
 /-! ## The square: the cross products -/
 
+/-- The extra of column `c` in block `b`'s head. -/
+def sqE (b c : Nat) : Nat :=
+  (if c = 6 * b + 1 then 1 else 0) + (if c = 6 * b + 2 then 2 else 0) + (if c = 6 * b + 4 then 1 else 0)
+
 /-- How many limbs the first `b` blocks of rows add at most to column `c` of a square of `n` limbs. -/
 def sqB (n : Nat) : Nat → Nat → Nat
   | 0, _ => 0
-  | b + 1, c => sqB n b c + (((if c = 6 * b + 1 then 1 else 0) + (if c = 6 * b + 2 then 2 else 0) +
-      (if c = 6 * b + 4 then 1 else 0)) + if 6 * b + 3 ≤ c ∧ c < n + 3 * b + 3 then 6 else 0)
+  | b + 1, c => sqB n b c + (sqE b c + if 6 * b + 3 ≤ c ∧ c < n + 3 * b + 3 then 6 else 0)
 
 theorem sqB_mono (n c b k : Nat) : sqB n b c ≤ sqB n (b + k) c := by
   induction k with
@@ -1013,10 +1016,6 @@ theorem sqB_le {q b c : Nat} (hq : q ≤ 6) (hb : b ≤ 3 * q) (hc : c < 18 * q)
 
 /-- A bound of column `c` after `b` blocks. -/
 abbrev sqF (n b c : Nat) : Nat := sqB n b c * L57 + b * 2 ^ 10
-
-/-- The extra of column `c` in block `b`'s head. -/
-abbrev sqE (b c : Nat) : Nat :=
-  (if c = 6 * b + 1 then 1 else 0) + (if c = 6 * b + 2 then 2 else 0) + (if c = 6 * b + 4 then 1 else 0)
 
 /-- The squares of the `k` words at `d`. -/
 def dg (m : Mem) (B : Addr) (d : Nat) : Nat → Nat
@@ -1181,5 +1180,245 @@ theorem sqrHead_ok {s : State} {B : Addr} {Z q dM b g : Nat} (h : In s B Z q dM)
   · rw [toNat_add_lt (by rw [lo01]; omega_using [g1, u1, hg, hL]), lo01]
   · rw [toNat_add_lt (by rw [n1, lo02]; omega_using [g2, w1, u2, hg, hL]), n1, lo02, Nat.add_assoc]
   · rw [toNat_add_lt (by rw [hi12]; omega_using [g4, w3, hg, hL]), hi12]
+
+theorem lv_write' {m : Mem} {B : Addr} {d j n δ : Nat} {v : BitVec 64} (e : v.toNat = (word m B (d + 8 * j)).toNat + δ)
+    (hj : j < n) (hd : d + 8 * n ≤ 2 ^ 64) :
+    lv (m.writeW (off B (d + 8 * j)) v) B d n = lv m B d n + 2 ^ (57 * j) * δ := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le (show j + 1 ≤ n from hj)
+  exact lv_write e hd
+
+theorem sqr_head_val {m m' : Mem} {B : Addr} {d j n : Nat} {v₁ v₂ v₄ : BitVec 64} {δ₁ δ₂ δ₄ : Nat}
+    (hm : m' = ((m.writeW (off B (d + 8 * j + 8)) v₁).writeW (off B (d + 8 * j + 16)) v₂).writeW (off B (d + 8 * j + 32)) v₄)
+    (e₁ : v₁.toNat = (word m B (d + 8 * j + 8)).toNat + δ₁) (e₂ : v₂.toNat = (word m B (d + 8 * j + 16)).toNat + δ₂)
+    (e₄ : v₄.toNat = (word m B (d + 8 * j + 32)).toNat + δ₄) (hj : j + 5 ≤ n) (hd : d + 8 * n ≤ 2 ^ 64) :
+    lv m' B d n = lv m B d n + 2 ^ (57 * j) * (2 ^ 57 * δ₁ + 2 ^ 114 * δ₂ + 2 ^ 228 * δ₄) := by
+  rw [show d + 8 * j + 8 = d + 8 * (j + 1) by omega_using []] at hm e₁
+  rw [show d + 8 * j + 16 = d + 8 * (j + 2) by omega_using []] at hm e₂
+  rw [show d + 8 * j + 32 = d + 8 * (j + 4) by omega_using []] at hm e₄
+  rw [hm, lv_write' (δ := δ₄) (by
+      rw [wd_ne _ B _ (by omega_using []) (by omega_using [hj, hd]) (by omega_using [hj, hd]),
+        wd_ne _ B _ (by omega_using []) (by omega_using [hj, hd]) (by omega_using [hj, hd]), e₄]) (by omega_using [hj]) hd,
+    lv_write' (δ := δ₂) (by
+      rw [wd_ne _ B _ (by omega_using []) (by omega_using [hj, hd]) (by omega_using [hj, hd]), e₂]) (by omega_using [hj]) hd,
+    lv_write' e₁ (by omega_using [hj]) hd, show 57 * (j + 1) = 57 * j + 57 by omega_using [],
+    show 57 * (j + 2) = 57 * j + 114 by omega_using [], show 57 * (j + 4) = 57 * j + 228 by omega_using [], Nat.pow_add,
+    Nat.pow_add, Nat.pow_add, Nat.mul_assoc, Nat.mul_assoc, Nat.mul_assoc, Nat.mul_add, Nat.mul_add]
+  omega_using []
+
+theorem sqr_step {V V₁ V₂ D S S' P x₀ x₁ x₂ a : Nat}
+    (e : 2 * V + D + P * (S * S) = a * a) (eS : S = x₀ + 2 ^ 57 * x₁ + 2 ^ 114 * x₂ + 2 ^ 171 * S')
+    (e₁ : V₁ = V + P * (2 ^ 57 * (x₀ * x₁ % 2 ^ 57) + 2 ^ 114 * (x₀ * x₁ / 2 ^ 57 + x₀ * x₂ % 2 ^ 57) + 2 ^ 228 * (x₁ * x₂ / 2 ^ 57)))
+    (e₂ : V₂ = V₁ + P * 2 ^ 171 * (x₀ * x₂ / 2 ^ 57 + x₁ * x₂ % 2 ^ 57 + (x₀ + 2 ^ 57 * x₁ + 2 ^ 114 * x₂) * S')) :
+    2 * V₂ + (D + P * (x₀ * x₀ + 2 ^ 114 * (x₁ * x₁) + 2 ^ 228 * (x₂ * x₂))) + P * 2 ^ 342 * (S' * S') = a * a := by
+  obtain d₁ := Nat.div_add_mod (x₀ * x₁) (2 ^ 57)
+  obtain d₂ := Nat.div_add_mod (x₀ * x₂) (2 ^ 57)
+  obtain d₃ := Nat.div_add_mod (x₁ * x₂) (2 ^ 57)
+  obtain e₃ : V₂ = V + P * (2 ^ 57 * (x₀ * x₁) + 2 ^ 114 * (x₀ * x₂) + 2 ^ 171 * (x₁ * x₂) +
+      2 ^ 171 * ((x₀ + 2 ^ 57 * x₁ + 2 ^ 114 * x₂) * S')) := by
+    rw [e₂, e₁, Nat.mul_assoc, Nat.add_assoc, ← Nat.mul_add]
+    refine congrArg (V + P * ·) ?_
+    omega_using [d₁, d₂, d₃]
+  rw [← e, e₃, eS]
+  clear e₁ e₂ e₃ d₁ d₂ d₃ e eS
+  grind
+
+/-- After `b` blocks of the cross products of `A`, from `s₀`. -/
+structure SqrI (s₀ s : State) (B : Addr) (Z q dM a b : Nat) : Prop where
+  ctx : In s B Z q dM
+  t4 : s.gpr .t4 = BitVec.ofNat 64 (24 * b)
+  out : Outside B (oT q dM) (144 * q) s₀.mem s.mem
+  val : 2 * lv s.mem B (oT q dM) (18 * q) + dg s₀.mem B (oA q dM) (3 * b) +
+    2 ^ (342 * b) * (lv s₀.mem B (oA q dM + 24 * b) (9 * q - 3 * b) * lv s₀.mem B (oA q dM + 24 * b) (9 * q - 3 * b)) = a * a
+  lim : LimF s.mem B (oT q dM) (18 * q) (sqF (9 * q) b)
+  keep : Keep opRegs s₀ s
+
+theorem sqrNext_ok {s : State} {B : Addr} {Z q dM b : Nat} (h : In s B Z q dM) (ha0 : s.gpr .a0 = off B (oT q dM + 72 * q + 24 * b)) :
+    WP isa (.block sqrNext) s fun t => (t.gpr .t2 = BitVec.ofNat 64 (72 * q) ∧ t.gpr .t4 = BitVec.ofNat 64 (24 * b) ∧ t.mem = s.mem) ∧
+      Keep [.t2, .t4] s t := by
+  unfold sqrNext
+  rw [WP.block_append_iff]
+  refine WP.mono (limbs_ok h) fun u ⟨⟨x2, um⟩, ku⟩ => ?_
+  obtain r : WP isa (.block [.sub .t4 .a0 .s5, .sub .t4 .t4 .t2]) u fun t => (t.gpr .t4 = BitVec.ofNat 64 (24 * b) ∧ t.mem = u.mem) ∧
+      Keep [.t4] u t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [x2, (ku.gpr (r := .a0) (by decide)).trans ha0, (ku.gpr (r := .s5) (by decide)).trans h.s5,
+      sub_off B (show oT q dM ≤ oT q dM + 72 * q + 24 * b by omega_using [])]
+    rw [show oT q dM + 72 * q + 24 * b - oT q dM = 24 * b + 72 * q by omega_using [], BitVec.ofNat_add, BitVec.add_sub_cancel]
+  exact WP.mono r fun t ⟨⟨t4, tm⟩, k⟩ => ⟨⟨(k.gpr (by decide)).trans x2, t4, tm.trans um⟩, (ku.trans k).mono (by decide)⟩
+
+theorem ofNat_inj {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) : BitVec.ofNat 64 a = BitVec.ofNat 64 b ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => by rw [h]⟩
+  obtain e := congrArg BitVec.toNat h
+  rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at e
+
+/-- The bounds after the head of block `b`. -/
+abbrev sqG (n b c : Nat) : Nat := (sqB n b c + sqE b c) * L57 + b * 2 ^ 10
+
+theorem sqG_e (n b c e : Nat) (h : sqE b c = e) : sqG n b c = sqF n b c + e * L57 := by
+  unfold sqG sqF
+  rw [h, Nat.add_mul]
+  omega_using []
+
+theorem sqG_le (n b c : Nat) : sqF n b c ≤ sqG n b c := by
+  rw [sqG_e n b c _ rfl]
+  exact Nat.le_add_right _ _
+
+theorem sqG_F (n b c : Nat) : sqG n b c ≤ sqF n (b + 1) c := by
+  unfold sqG sqF
+  rw [sqB, ← Nat.add_assoc (sqB n b c)]
+  exact Nat.add_le_add (Nat.mul_le_mul_right _ (Nat.le_add_right _ _)) (Nat.mul_le_mul_right _ (Nat.le_succ _))
+
+theorem sqG_in {n b c : Nat} (h : 6 * b + 3 ≤ c ∧ c < n + 3 * b + 3) : sqG n b c + rowMax = sqF n (b + 1) c := by
+  unfold sqG sqF
+  rw [sqB, ite_eq_left h, ← Nat.add_assoc (sqB n b c), Nat.add_mul (sqB n b c + sqE b c) 6, Nat.add_mul b 1]
+  unfold rowMax
+  omega_using []
+
+theorem sqE_1 (b : Nat) : sqE b (6 * b + 1) = 1 := by
+  unfold sqE
+  rw [ite_eq_left rfl, ite_eq_right (by omega_using []), ite_eq_right (by omega_using [])]
+
+theorem sqE_2 (b : Nat) : sqE b (6 * b + 2) = 2 := by
+  unfold sqE
+  rw [ite_eq_right (by omega_using []), ite_eq_left rfl, ite_eq_right (by omega_using [])]
+
+theorem sqE_4 (b : Nat) : sqE b (6 * b + 4) = 1 := by
+  unfold sqE
+  rw [ite_eq_right (by omega_using []), ite_eq_right (by omega_using []), ite_eq_left rfl]
+
+theorem sqF_le {q b c : Nat} (hq : q ≤ 6) (hb : b ≤ 3 * q) (hc : c < 18 * q) : sqF (9 * q) b c ≤ 60 * L57 + 18 * 2 ^ 10 :=
+  Nat.add_le_add (Nat.mul_le_mul_right _ (sqB_le hq hb hc)) (Nat.mul_le_mul_right _ (by omega_using [hq, hb]))
+
+theorem sqrRows_ok {s : State} {B : Addr} {Z q dM a : Nat} (h : In s B Z q dM) (hA : AIn s.mem B q dM a)
+    (lT : Lim s.mem B (oT q dM) (18 * q) 0) :
+    WP isa sqrRows s fun t => SqrI s t B Z q dM a (3 * q) := by
+  obtain q1 := h.q1
+  obtain q6 := h.q6
+  obtain fit := h.fit
+  obtain dM8 := h.dM8
+  have hn := h.scr.nowrap
+  obtain hL : L57 = 2 ^ 57 - 1 := rfl
+  unfold sqrRows
+  obtain r0 : WP isa (.block [.li .t4 0]) s fun t => (t.gpr .t4 = 0#64 ∧ t.mem = s.mem) ∧ Keep [.t4] s t := by
+    refine WP.keep _ ?_ (by rfl) (by rfl)
+    brun [exec_li]
+  refine WP.seq (WP.mono r0 fun s₁ ⟨⟨t4, m1⟩, k1⟩ => ?_)
+  refine ptr_loop (n := 3 * q) (by omega_using [q1]) (fun b t => SqrI s t B Z q dM a b) (fun b hb t ht => ?_)
+    ⟨h.of k1 (by decide) (by decide), t4, by rw [m1]; exact Outside.refl _ _ _ _, by
+      rw [m1, lv_zero lT]
+      simp only [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, Nat.pow_zero, Nat.one_mul, dg, Nat.zero_add, hA.val],
+      by
+        rw [m1]
+        exact fun i hi => Nat.le_trans (lT i hi) (Nat.zero_le _), k1.mono (by decide)⟩
+  obtain tA : ∀ {d k : Nat}, d + 8 * k ≤ oT q dM → lv t.mem B d k = lv s.mem B d k := fun {d k} hd =>
+    ht.out.lv (by omega_using [hd]) (by unfold oT at hd; omega_using [hn, fit, hd])
+  obtain tw : ∀ {d : Nat}, d + 8 ≤ oT q dM → word t.mem B d = word s.mem B d := fun {d} hd =>
+    ht.out.word (by omega_using [hd]) (by unfold oT at hd; omega_using [hn, fit, hd])
+  obtain bT : oT q dM + 8 * (18 * q) ≤ 2 ^ 64 := by unfold oT; omega_using [hn, fit]
+  refine WP.seq (WP.mono (sqrHead_ok (g := 60 * L57 + 18 * 2 ^ 10) ht.ctx ht.t4 hb
+    (ht.out.lim (by unfold oA oT; omega_using []) (by unfold oA; omega_using [hn, fit]) hA.lim)
+    (fun i hi => Nat.le_trans (ht.lim i hi) (sqF_le q6 (by omega_using [hb]) hi)) (by omega_using [hL])) fun u ⟨hu, ku⟩ => ?_)
+  obtain ⟨v₁, v₂, v₄, um, e₁, e₂, e₄⟩ := hu.mem
+  rw [show oT q dM + 48 * b = oT q dM + 8 * (6 * b) by omega_using []] at um e₁ e₂ e₄
+  obtain hV₁ := sqr_head_val um e₁ e₂ e₄ (show 6 * b + 5 ≤ 18 * q by omega_using [hb]) bT
+  rw [show 57 * (6 * b) = 342 * b by omega_using []] at hV₁
+  -- The head writes only `T`.
+  obtain ou : Outside B (oT q dM) (144 * q) t.mem u.mem := by
+    rw [um]
+    exact (((writeW_outside _ B _ (by omega_using [bT, hb])).mono (by omega_using []) (by omega_using [hb])).trans
+      ((writeW_outside _ B _ (by omega_using [bT, hb])).mono (by omega_using []) (by omega_using [hb]))).trans
+      ((writeW_outside _ B _ (by omega_using [bT, hb])).mono (by omega_using []) (by omega_using [hb]))
+  obtain l01 := lo57_le (u.gpr .s2) (u.gpr .s3)
+  obtain h01 := hi57_le hu.mult.x0 hu.mult.x1
+  obtain l02 := lo57_le (u.gpr .s2) (u.gpr .s4)
+  obtain h12 := hi57_le hu.mult.x1 hu.mult.x2
+  obtain h02 := hi57_le hu.mult.x0 hu.mult.x2
+  obtain l12 := lo57_le (u.gpr .s3) (u.gpr .s4)
+  obtain limG : LimF u.mem B (oT q dM) (18 * q) (sqG (9 * q) b) := by
+    rw [show oT q dM + 8 * (6 * b) + 8 = oT q dM + 8 * (6 * b + 1) by omega_using []] at um e₁
+    rw [show oT q dM + 8 * (6 * b) + 16 = oT q dM + 8 * (6 * b + 2) by omega_using []] at um e₂
+    rw [show oT q dM + 8 * (6 * b) + 32 = oT q dM + 8 * (6 * b + 4) by omega_using []] at um e₄
+    obtain f1 := ht.lim (6 * b + 1) (by omega_using [hb])
+    obtain f2 := ht.lim (6 * b + 2) (by omega_using [hb])
+    obtain f4 := ht.lim (6 * b + 4) (by omega_using [hb])
+    rw [um]
+    refine lim_write (f := sqG (9 * q) b) (lim_write (f := sqG (9 * q) b) (lim_write ht.lim ?_ (fun i _ _ => sqG_le _ _ _)
+      (by omega_using [bT, hb]) bT) ?_ (fun i _ _ => Nat.le_refl _) (by omega_using [bT, hb]) bT) ?_ (fun i _ _ => Nat.le_refl _)
+      (by omega_using [bT, hb]) bT
+    · rw [e₁, sqG_e _ _ _ _ (sqE_1 b), Nat.one_mul]; exact Nat.add_le_add f1 l01
+    · rw [e₂, sqG_e _ _ _ _ (sqE_2 b), Nat.two_mul]; exact Nat.add_le_add f2 (Nat.add_le_add h01 l02)
+    · rw [e₄, sqG_e _ _ _ _ (sqE_4 b), Nat.one_mul]; exact Nat.add_le_add f4 h12
+  refine WP.seq (WP.mono (rect_ok (e := .s5) (.inr rfl) (k := 3 * q - b) (f := fun i => sqG (9 * q) b (6 * b + 3 + i))
+    (dT := oT q dM + 48 * b + 24) (dY := oA q dM + 24 * b + 24) (ht.ctx.scr.congr ku.2.2) hu.a0 hu.a1
+    (by rw [ku.gpr (by decide), ht.ctx.s5, show oT q dM = oA q dM + 24 * b + 24 + 24 * (3 * q - b) by unfold oA oT; omega_using [hb]])
+    (by omega_using [hb]) (by unfold oT; omega_using [fit, hb]) (by unfold oA; omega_using [fit, hb]) (by unfold oT; omega_using [dM8])
+    (by unfold oA; omega_using [dM8]) (by unfold oA oT; omega_using [hb]) hu.mult (by rw [hu.t5]; decide) (by rw [hu.t6]; decide) ?_ ?_
+    (by rw [hu.h]; omega_using [h02, l12]) (fun i hi => ?_))
+    fun v hv => ?_)
+  · refine fun i hi => ?_
+    obtain p := pad_lim hA.lim (by rw [show oA q dM + 8 * (9 * q) = oA q dM + 72 * q by omega_using []]; exact hA.pad) (3 * b + 3 + i)
+      (by omega_using [hi, hb])
+    rw [ou.word (by unfold oA oT; omega_using [hi, hb]) (by unfold oA; omega_using [hn, fit, hi, hb]),
+      tw (by unfold oA oT; omega_using [hi, hb]), show oA q dM + 24 * b + 24 + 8 * i = oA q dM + 8 * (3 * b + 3 + i) by omega_using []]
+    exact p
+  · intro i hi
+    rw [show oT q dM + 48 * b + 24 + 8 * i = oT q dM + 8 * (6 * b + 3 + i) by omega_using []]
+    exact limG _ (by omega_using [hi, hb])
+  · obtain c : sqG (9 * q) b (6 * b + 3 + i) + rowMax ≤ 60 * L57 + 18 * 2 ^ 10 := by
+      rw [sqG_in ⟨by omega_using [], by omega_using [hi, hb]⟩]
+      exact sqF_le q6 (by omega_using [hb]) (by omega_using [hi, hb])
+    rw [Nat.add_assoc]
+    exact Nat.lt_of_le_of_lt c (by omega_using [hL])
+  obtain kv := ku.trans hv.keep
+  obtain cv := ht.ctx.of kv (by decide) (by decide)
+  refine WP.mono (sqrNext_ok (b := b + 1) cv (by
+    rw [hv.a0, show oT q dM + 48 * b + 24 + 24 * (3 * q - b) = oT q dM + 72 * q + 24 * (b + 1) by omega_using [hb]]))
+    fun w ⟨⟨w2, w4, wm⟩, kw⟩ => ?_
+  obtain ov : Outside B (oT q dM + 8 * (6 * b + 3)) (8 * (9 * q - 3 * b)) u.mem w.mem := by
+    rw [wm]; exact hv.out.mono (by omega_using []) (by omega_using [hb])
+  obtain ov' : Outside B (oT q dM) (144 * q) u.mem w.mem := ov.mono (by omega_using []) (by omega_using [hb])
+  obtain kt := kv.trans kw
+  -- The limbs of `A`.
+  obtain uA : ∀ {d k : Nat}, d + 8 * k ≤ oT q dM → lv u.mem B d k = lv s.mem B d k := fun {d k} hd => by
+    rw [ou.lv (by omega_using [hd]) (by unfold oT at hd; omega_using [hn, fit, hd]), tA hd]
+  obtain x0 : u.gpr .s2 = word s.mem B (oA q dM + 24 * b) := by rw [hu.x0, tw (by unfold oA oT; omega_using [hb])]
+  obtain x1 : u.gpr .s3 = word s.mem B (oA q dM + 24 * b + 8) := by rw [hu.x1, tw (by unfold oA oT; omega_using [hb])]
+  obtain x2 : u.gpr .s4 = word s.mem B (oA q dM + 24 * b + 16) := by rw [hu.x2, tw (by unfold oA oT; omega_using [hb])]
+  obtain zc : cVal v = 0 := hv.zero (by omega_using [hb]) (by
+    rw [show oA q dM + 24 * b + 24 + 24 * (3 * q - b - 1) = oA q dM + 72 * q by omega_using [hb], uA (by unfold oA oT; omega_using [])]
+    exact hA.pad)
+  obtain eY : lv u.mem B (oA q dM + 24 * b + 24) (3 * (3 * q - b)) = lv s.mem B (oA q dM + 24 * (b + 1)) (9 * q - 3 * (b + 1)) := by
+    rw [uA (by unfold oA oT; omega_using [hb]), show 3 * (3 * q - b) = 9 * q - 3 * (b + 1) + 3 by omega_using [hb], lv_append,
+      show oA q dM + 24 * b + 24 + 8 * (9 * q - 3 * (b + 1)) = oA q dM + 72 * q by omega_using [hb], hA.pad, Nat.mul_zero,
+      Nat.add_zero, show oA q dM + 24 * b + 24 = oA q dM + 24 * (b + 1) by omega_using []]
+  obtain ev := hv.val
+  obtain c0 : cVal u = (u.gpr .s7).toNat := by
+    unfold cVal
+    rw [hu.t5, hu.t6]
+    simp only [BitVec.toNat_ofNat, Nat.zero_mod, Nat.mul_zero, Nat.add_zero]
+  rw [zc, Nat.mul_zero, Nat.add_zero, eY, c0, hu.h, show 3 * (3 * q - b) = 9 * q - 3 * b by omega_using [hb],
+    show oT q dM + 48 * b + 24 = oT q dM + 8 * (6 * b + 3) by omega_using [], ← wm,
+    Nat.add_assoc (lv u.mem B (oT q dM + 8 * (6 * b + 3)) _)] at ev
+  obtain spl : 18 * q = 6 * b + 3 + (9 * q - 3 * b) + (9 * q - 3 * (b + 1)) := by omega_using [hb]
+  obtain bd : oT q dM + 8 * (6 * b + 3 + (9 * q - 3 * b) + (9 * q - 3 * (b + 1))) ≤ 2 ^ 64 := by rw [← spl]; exact bT
+  obtain hV₂ := lv_seg ov ev bd
+  rw [← spl, show 57 * (6 * b + 3) = 342 * b + 171 by omega_using [], Nat.pow_add] at hV₂
+  obtain eS : lv s.mem B (oA q dM + 24 * b) (9 * q - 3 * b) = (u.gpr .s2).toNat + 2 ^ 57 * (u.gpr .s3).toNat + 2 ^ 114 * (u.gpr .s4).toNat +
+      2 ^ 171 * lv s.mem B (oA q dM + 24 * (b + 1)) (9 * q - 3 * (b + 1)) := by
+    rw [show 9 * q - 3 * b = 3 + (9 * q - 3 * (b + 1)) by omega_using [hb], lv_split3, lv_three, x0, x1, x2,
+      show oA q dM + 24 * b + 24 = oA q dM + 24 * (b + 1) by omega_using []]
+  refine ⟨⟨cv.of kw (by decide) (by decide), w4, (ht.out.trans ou).trans ov', ?_, ?_, Keep.trans' ht.keep (kt.mono (by decide))⟩, ?_⟩
+  · rw [show 3 * (b + 1) = 3 * b + 3 from rfl, dg_three, show oA q dM + 8 * (3 * b) = oA q dM + 24 * b by omega_using [],
+      ← x0, ← x1, ← x2, show 114 * (3 * b) = 342 * b by omega_using [], show 342 * (b + 1) = 342 * b + 342 by omega_using [], Nat.pow_add]
+    exact sqr_step ht.val eS hV₁ hV₂
+  · rw [spl] at limG ⊢
+    refine lim_seg ov limG ?_ (fun c => sqG_F _ _ _) bd
+    obtain l := hv.lim
+    rw [← wm, show 3 * (3 * q - b) = 9 * q - 3 * b by omega_using [hb], show oT q dM + 48 * b + 24 = oT q dM + 8 * (6 * b + 3) by omega_using []] at l
+    intro i hi
+    exact Nat.le_trans (l i hi) (Nat.le_of_eq (sqG_in (n := 9 * q) (b := b) (c := 6 * b + 3 + i)
+      ⟨by omega_using [], by omega_using [hi, hb]⟩))
+  · rw [w4, w2, ofNat_inj (by omega_using [hb, q6]) (by omega_using [q6])]
+    omega_using []
 
 end VG.Proof.Bignum.RISCV64.Pow57
