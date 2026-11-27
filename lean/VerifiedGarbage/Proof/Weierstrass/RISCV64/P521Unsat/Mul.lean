@@ -4,6 +4,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Unsat.Basic
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.RISCV64.Sched
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -321,7 +322,7 @@ theorem core_spec :
   refine WP.ite (s.gpr .t4 == s.gpr .t5) rfl (fun he => ?_) (fun _ => ?_)
   · have hAB : A = B := by rw [← hC.a, ← hC.b']; exact beq_iff_eq.mp he
     subst hAB
-    exact WP.mono (sqC_ok hC hA) post
-  · exact WP.mono (mulC_ok hC hA hB) post
+    exact WP.mono (WP.sched (sqC_ok hC hA)) post
+  · exact WP.mono (WP.sched (mulC_ok hC hA hB)) post
 
 end VG.Proof.Weierstrass.RISCV64.P521Unsat
