@@ -14,7 +14,7 @@ public import VerifiedGarbage.Spec.Sm4.Ofb
 public import VerifiedGarbage.Spec.Sm4.OfbFinal
 public import VerifiedGarbage.Spec.Sm4.Ctr
 public import VerifiedGarbage.Spec.Sm4.CtrFinal
-public import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+import VerifiedGarbage.Proof.Sm4.X86.KeyCall
 public import VerifiedGarbage.Proof.Sm4.X86.Verified
 public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
@@ -47,7 +47,7 @@ meta import VerifiedGarbage.Spec.Sm4.Ofb
 meta import VerifiedGarbage.Spec.Sm4.OfbFinal
 meta import VerifiedGarbage.Spec.Sm4.Ctr
 meta import VerifiedGarbage.Spec.Sm4.CtrFinal
-meta import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.KeyCall
 meta import VerifiedGarbage.Proof.Sm4.X86.Verified
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
@@ -75,9 +75,8 @@ public meta import VerifiedGarbage.Proof.Framework.TaintCTAll
 Key expansion and SM4's ECB, CBC, CFB128, OFB and CTR functions, and the
 final pieces of CFB128, OFB and CTR, run with their working space in a frame
 on the stack, wiped before they return (`withStackScratchWiped`). Key
-expansion calls nothing in its frame: as emitted
-(`Impl.Sm4.X86.Fn.expandKey`) it then clears the registers alone
-(`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
+expansion calls its shared schedule, then clears its four-word stack header
+and caller-saved registers. As emitted (`Impl.Sm4.X86.Fn`), each of
 the others then zeroes, of the stack its contract reserves below `esp`,
 only the 10 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
 it may leave different in two runs (the header of its frame and the frames
@@ -147,11 +146,13 @@ theorem ctrFinalOut (stack : Nat) :
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.expandKey (Spec.Sm4.expandKeyContract X86.abi 1448) 0 :=
-  verifiedScrubbedWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64) (n := 179)
-    (post := Proof.Sm4.expandKeyPost X86.abi.ptrBits) (bytes := 1448) (words := 358)
-    Proof.Sm4.X86.expandKey_verified (by decide) (by decide) (by lit_decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Sm4.expandKeyPost_local _) (Proof.Sm4.expandKeyPostOut_local _) Proof.Sm4.X86.expandKeyFrameSat_pre rfl
+  verifiedScrubbedSel (api := Spec.Sm4.expandKeyApi) (W := 1448)
+    { code := Impl.Sm4.X86.expandKeyClean
+      verified := Proof.Sm4.X86.KeyCall.clean_verified }
+    []
+    (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.expandKeyPostOut_local _))
+    (by decide) (by taint_decide_ct_all)
+
 
 /-- The residue analyses of the functions' code, in one kernel evaluation
 (`taint_decide_ct_all`), which analyses the code they share once. -/

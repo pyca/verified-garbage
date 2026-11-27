@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # The SM4 key schedule on x86 (32-bit)
@@ -60,5 +61,22 @@ def expandKey : Prog isa :=
   .seq (.block (saveRegs 2 ++ [.mov .eax (.mem (argOp 1)), st nSlot .eax] ++ ckTable ++ loadKey ++ toBs ++
       kpAt tableSlot))
     (.seq (.loop (.block keyBody) .ne) (.block restoreRegs))
+
+/-- Call the shared key schedule with its scratch buffer in the existing
+1448-byte stack budget. The return address occupies the old unused word;
+the arguments and buffer have the same addresses at callee entry. -/
+def expandKeyFramed : Prog isa :=
+  .frame (.alloc 1444)
+    (.seq (.block [
+      .mov .eax (.mem ⟨.esp, 1448⟩), .store ⟨.esp, 0⟩ .eax,
+      .mov .eax (.mem ⟨.esp, 1452⟩), .store ⟨.esp, 4⟩ .eax,
+      .mov .eax (.reg .esp), .alu .add .eax (.imm 12), .store ⟨.esp, 8⟩ .eax])
+      (.seq (.call "vg_sm4_expand_key_shared" expandKey)
+        (.block (Impl.StackScratch.X86.wipe 12 358)))) (.free 1444)
+
+/-- Clear the call header with the zero SIMD register left by the scratch wipe. -/
+def expandKeyClean : Prog isa :=
+  .seq expandKeyFramed
+    (.frame (.alloc 1448) (.block [.movdquStore ⟨.esp, 0⟩ .xmm0]) (.free 1448))
 
 end VG.Impl.Sm4.X86

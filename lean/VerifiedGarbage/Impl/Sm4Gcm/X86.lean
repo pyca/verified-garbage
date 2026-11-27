@@ -61,7 +61,7 @@ called as an internal function of its own, `vg_sm4_expand_key_core`, rather
 than as `vg_sm4_expand_key`, which also clears the registers and the stack
 it leaves (`Impl.Sm4.X86.Fn.expandKey`). -/
 def keyFn : Fn :=
-  ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey⟩
+  ⟨"vg_sm4_expand_key_core", Impl.Sm4.X86.expandKeyFramed⟩
 
 /-! ## Calls -/
 

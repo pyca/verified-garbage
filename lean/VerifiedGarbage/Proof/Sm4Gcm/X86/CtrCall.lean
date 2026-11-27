@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Verified
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
-import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+import VerifiedGarbage.Proof.Sm4.X86.KeyCall
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 
 /-! ### `Sm4Gcm.X86.Callee`, which this module and modules that import it used -/
@@ -420,9 +420,9 @@ structure KeyImpl where
 
 theorem key_ok (s : State) (h : keyK.pre s) :
     ∃ t s', Exec isa keyFn.code s t s' ∧ abiPreserved s s' ∧ keyK.post s s' :=
-  Proof.Sm4.X86.expandKey_framed.1 s h
+  Proof.Sm4.X86.KeyCall.framed_verified.1 s h
 
-theorem key_ctK : ConstantTime isa keyK.pre keyK.pub keyFn.code := Proof.Sm4.X86.expandKey_framed.2.1
+theorem key_ctK : ConstantTime isa keyK.pre keyK.pub keyFn.code := Proof.Sm4.X86.KeyCall.framed_verified.2.1
 
 theorem key_calleeOk : calleeOk keyFn.code = true := by unfold keyFn; lit_decide
 

@@ -27,7 +27,7 @@ open VG.Impl.Scrub.RISCV64 (scrubAll scrubSel)
 /-- `Spec.Sm4.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
   scrubSel 0 []
-    (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey)
+    (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKeyCalled)
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
