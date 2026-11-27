@@ -904,15 +904,33 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
 236:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
 	bnez t5, 236b
 	addi s1, zero, 0
@@ -1328,15 +1346,33 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
 255:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
 	bnez t5, 255b
 	addi s1, zero, 0
@@ -1752,15 +1788,33 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
 274:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
 	bnez t5, 274b
 	addi s1, zero, 0
@@ -2176,15 +2230,33 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
 293:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
 	bnez t5, 293b
 	addi s1, zero, 0
@@ -2192,80 +2264,171 @@ vg_miller_rabin_round:
 	addi a3, s1, -1
 	or s6, s6, a3
 	srli s11, s7, 60
-	addi a1, zero, 0
+	addi t6, s11, 0
+	slli s4, t6, 60
+	srai s4, s4, 63
+	andi t5, t6, 7
+	addi t4, zero, 1
+	sll t4, t4, t5
+	slli a0, t4, 63
+	srai a0, a0, 63
+	slli a1, t4, 62
+	srai a1, a1, 63
+	slli a2, t4, 61
+	srai a2, a2, 63
+	slli a3, t4, 60
+	srai a3, a3, 63
+	slli a4, t4, 59
+	srai a4, a4, 63
+	slli a5, t4, 58
+	srai a5, a5, 63
+	slli a6, t4, 57
+	srai a6, a6, 63
+	slli t2, t4, 56
+	srai t2, t2, 63
+	addi t3, a7, 0
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	add t3, t3, s5
+	addi t4, a7, 0
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	add t4, t4, s5
+	addi t5, t0, 1
+	srli t5, t5, 1
 294:
-	xor t2, a1, s11
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, a1, 11
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-295:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
+	ld s0, 0(t3)
+	and s0, s0, a0
+	ld s1, 8(t3)
+	and s1, s1, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s1, s1, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s0, s0, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s1, s1, t6
+	add t3, t3, s5
+	ld s2, 0(t3)
+	and s2, s2, a0
+	ld s3, 8(t3)
+	and s3, s3, a0
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a1
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a1
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a2
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a3
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a3
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a4
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a4
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a5
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a5
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, a6
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, a6
+	or s3, s3, t6
+	add t3, t3, s5
+	ld t6, 0(t3)
+	and t6, t6, t2
+	or s2, s2, t6
+	ld t6, 8(t3)
+	and t6, t6, t2
+	or s3, s3, t6
+	add t3, t3, s5
+	xor s2, s2, s0
+	and s2, s2, s4
+	xor s0, s0, s2
+	xor s3, s3, s1
 	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
+	xor s1, s1, s3
+	sd s0, 0(t4)
+	sd s1, 8(t4)
+	addi t4, t4, 16
+	slli t6, s5, 4
+	sub t3, t3, t6
+	addi t3, t3, 16
 	addi t5, t5, -1
-	bnez t5, 295b
-	addi a1, a1, 1
-	xor t2, a1, s11
-	addi t2, t2, -1
-	srli t2, t2, 63
-	addi t3, zero, 0
-	sub s4, t3, t2
-	addi t2, a1, 11
-	mul t2, t2, s5
-	add a5, t2, a7
-	addi a6, a7, 0
-	add a6, a6, s5
-	add a6, a6, s5
-	add a6, a6, s5
-	addi a2, a7, 0
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	add a2, a2, s5
-	addi t3, a5, 0
-	addi t4, a6, 0
-	addi a0, a2, 0
-	addi t5, t0, 0
-296:
-	ld s2, 0(t4)
-	ld s3, 0(t3)
-	xor s3, s3, s2
-	and s3, s3, s4
-	xor s3, s3, s2
-	sd s3, 0(a0)
-	addi t3, t3, 8
-	addi t4, t4, 8
-	addi a0, a0, 8
-	addi t5, t5, -1
-	bnez t5, 296b
-	addi a1, a1, 1
-	addi t2, a1, -16
-	bnez t2, 294b
+	bnez t5, 294b
 	addi a2, a7, 0
 	add a2, a2, s5
 	add a2, a2, s5
@@ -2298,12 +2461,12 @@ vg_miller_rabin_round:
 	addi t5, t0, 1
 	addi s0, zero, 0
 	addi a0, a7, 0
-297:
+295:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 297b
-298:
+	bnez t5, 295b
+296:
 	ld t6, 0(a3)
 	addi a3, a3, 8
 	ld s3, 0(a4)
@@ -2326,8 +2489,8 @@ vg_miller_rabin_round:
 	addi t4, a4, 0
 	addi t5, t0, -1
 	andi t5, t5, 3
-	beqz t5, 299f
-2101:
+	beqz t5, 297f
+299:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2352,14 +2515,14 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2101b
-	j 2100f
-299:
-2100:
+	bnez t5, 299b
+	j 298f
+297:
+298:
 	addi t5, t0, -1
 	srli t5, t5, 2
-	beqz t5, 2102f
-2104:
+	beqz t5, 2100f
+2102:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2444,10 +2607,10 @@ vg_miller_rabin_round:
 	addi t4, t4, 32
 	addi a0, a0, 32
 	addi t5, t5, -1
-	bnez t5, 2104b
-	j 2103f
-2102:
-2103:
+	bnez t5, 2102b
+	j 2101f
+2100:
+2101:
 	ld s2, 8(t3)
 	add s0, s0, s2
 	sltu s4, s0, s2
@@ -2460,7 +2623,7 @@ vg_miller_rabin_round:
 	sub a0, a0, s2
 	addi a0, a0, 8
 	addi a1, a1, -1
-	bnez a1, 298b
+	bnez a1, 296b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	add a6, a5, s2
@@ -2471,7 +2634,7 @@ vg_miller_rabin_round:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2105:
+2103:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -2484,7 +2647,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2105b
+	bnez t5, 2103b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -2493,7 +2656,7 @@ vg_miller_rabin_round:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2106:
+2104:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2504,7 +2667,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2106b
+	bnez t5, 2104b
 	addi t3, a7, 0
 	add t3, t3, s5
 	add t3, t3, s5
@@ -2523,17 +2686,35 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
-2107:
+2105:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
-	bnez t5, 2107b
+	bnez t5, 2105b
 	addi s1, zero, 0
 	sltu s1, s1, s0
 	addi a3, s1, -1
@@ -2554,17 +2735,35 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
-2108:
+2106:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
-	bnez t5, 2108b
+	bnez t5, 2106b
 	addi s1, zero, 0
 	sltu s1, s1, s0
 	addi a4, s1, -1
@@ -2607,15 +2806,15 @@ vg_miller_rabin_round:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2109:
+2107:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2109b
+	bnez t5, 2107b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2110:
+2108:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -2624,8 +2823,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2111f
-2113:
+	beqz t5, 2109f
+2111:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2717,12 +2916,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2113b
-	j 2112f
-2111:
-2112:
-	beqz t6, 2114f
-2116:
+	bnez t5, 2111b
+	j 2110f
+2109:
+2110:
+	beqz t6, 2112f
+2114:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2737,21 +2936,21 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2116b
-	j 2115f
-2114:
-2115:
+	bnez t6, 2114b
+	j 2113f
+2112:
+2113:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2110b
+	bnez a1, 2108b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2117:
+2115:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -2776,7 +2975,7 @@ vg_miller_rabin_round:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2117b
+	bnez t5, 2115b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -2784,7 +2983,7 @@ vg_miller_rabin_round:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2118:
+2116:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -2793,8 +2992,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2119f
-2121:
+	beqz t5, 2117f
+2119:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2886,12 +3085,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2121b
-	j 2120f
-2119:
-2120:
-	beqz t6, 2122f
-2124:
+	bnez t5, 2119b
+	j 2118f
+2117:
+2118:
+	beqz t6, 2120f
+2122:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -2906,10 +3105,10 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2124b
-	j 2123f
-2122:
-2123:
+	bnez t6, 2122b
+	j 2121f
+2120:
+2121:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -2921,7 +3120,7 @@ vg_miller_rabin_round:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2118b
+	bnez t2, 2116b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -2935,7 +3134,7 @@ vg_miller_rabin_round:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2125:
+2123:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -2948,7 +3147,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2125b
+	bnez t5, 2123b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -2957,7 +3156,7 @@ vg_miller_rabin_round:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2126:
+2124:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -2968,7 +3167,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2126b
+	bnez t5, 2124b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi t3, a7, 0
@@ -2989,17 +3188,35 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
-2127:
+2125:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
-	bnez t5, 2127b
+	bnez t5, 2125b
 	addi s1, zero, 0
 	sltu s1, s1, s0
 	addi a3, s1, -1
@@ -3073,15 +3290,15 @@ vg_miller_rabin_round:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2128:
+2126:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2128b
+	bnez t5, 2126b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2129:
+2127:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3090,8 +3307,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2130f
-2132:
+	beqz t5, 2128f
+2130:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3183,12 +3400,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2132b
-	j 2131f
-2130:
-2131:
-	beqz t6, 2133f
-2135:
+	bnez t5, 2130b
+	j 2129f
+2128:
+2129:
+	beqz t6, 2131f
+2133:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3203,21 +3420,21 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2135b
-	j 2134f
-2133:
-2134:
+	bnez t6, 2133b
+	j 2132f
+2131:
+2132:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2129b
+	bnez a1, 2127b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2136:
+2134:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3242,7 +3459,7 @@ vg_miller_rabin_round:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2136b
+	bnez t5, 2134b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3250,7 +3467,7 @@ vg_miller_rabin_round:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2137:
+2135:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3259,8 +3476,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2138f
-2140:
+	beqz t5, 2136f
+2138:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3352,12 +3569,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2140b
-	j 2139f
-2138:
-2139:
-	beqz t6, 2141f
-2143:
+	bnez t5, 2138b
+	j 2137f
+2136:
+2137:
+	beqz t6, 2139f
+2141:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3372,10 +3589,10 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2143b
-	j 2142f
-2141:
-2142:
+	bnez t6, 2141b
+	j 2140f
+2139:
+2140:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -3387,7 +3604,7 @@ vg_miller_rabin_round:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2137b
+	bnez t2, 2135b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -3401,7 +3618,7 @@ vg_miller_rabin_round:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2144:
+2142:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3414,7 +3631,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2144b
+	bnez t5, 2142b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -3423,7 +3640,7 @@ vg_miller_rabin_round:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2145:
+2143:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -3434,7 +3651,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2145b
+	bnez t5, 2143b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi t3, a7, 0
@@ -3455,17 +3672,35 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
-2146:
+2144:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
-	bnez t5, 2146b
+	bnez t5, 2144b
 	addi s1, zero, 0
 	sltu s1, s1, s0
 	addi a3, s1, -1
@@ -3539,15 +3774,15 @@ vg_miller_rabin_round:
 	add t5, t0, t0
 	addi t5, t5, 2
 	addi s0, zero, 0
-2147:
+2145:
 	sd s0, 0(t3)
 	addi t3, t3, 8
 	addi t5, t5, -1
-	bnez t5, 2147b
+	bnez t5, 2145b
 	addi t3, a3, 0
 	addi a1, t0, -1
 	addi t2, a5, 8
-2148:
+2146:
 	ld s0, 0(t3)
 	addi s1, zero, 0
 	addi a0, t3, 8
@@ -3556,8 +3791,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2149f
-2151:
+	beqz t5, 2147f
+2149:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3649,12 +3884,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2151b
-	j 2150f
-2149:
-2150:
-	beqz t6, 2152f
-2154:
+	bnez t5, 2149b
+	j 2148f
+2147:
+2148:
+	beqz t6, 2150f
+2152:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3669,21 +3904,21 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2154b
-	j 2153f
-2152:
-2153:
+	bnez t6, 2152b
+	j 2151f
+2150:
+2151:
 	sd s1, 0(t4)
 	addi t3, t3, 8
 	addi t2, t2, 16
 	addi a1, a1, -1
-	bnez a1, 2148b
+	bnez a1, 2146b
 	addi t3, a5, 0
 	addi a0, a3, 0
 	addi t5, t0, 0
 	addi t2, zero, 0
 	addi s1, zero, 0
-2155:
+2153:
 	ld s2, 0(t3)
 	ld s3, 8(t3)
 	srli s4, s2, 63
@@ -3708,7 +3943,7 @@ vg_miller_rabin_round:
 	addi t3, t3, 16
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2155b
+	bnez t5, 2153b
 	addi t3, a5, 0
 	addi t2, t0, 0
 	addi a1, zero, 0
@@ -3716,7 +3951,7 @@ vg_miller_rabin_round:
 	addi s2, s2, 16
 	slli s2, s2, 1
 	sub a0, a5, s2
-2156:
+2154:
 	ld s0, 0(t3)
 	mul s0, s0, t1
 	addi s1, zero, 0
@@ -3725,8 +3960,8 @@ vg_miller_rabin_round:
 	andi t6, t5, 7
 	srli t5, t5, 3
 	ld a7, 0(a0)
-	beqz t5, 2157f
-2159:
+	beqz t5, 2155f
+2157:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3818,12 +4053,12 @@ vg_miller_rabin_round:
 	addi t4, t4, 64
 	addi a0, a0, 64
 	addi t5, t5, -1
-	bnez t5, 2159b
-	j 2158f
-2157:
-2158:
-	beqz t6, 2160f
-2162:
+	bnez t5, 2157b
+	j 2156f
+2155:
+2156:
+	beqz t6, 2158f
+2160:
 	ld s4, 0(t4)
 	mul s3, s0, a7
 	mulhu s2, s0, a7
@@ -3838,10 +4073,10 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t6, t6, -1
-	bnez t6, 2162b
-	j 2161f
-2160:
-2161:
+	bnez t6, 2160b
+	j 2159f
+2158:
+2159:
 	ld s2, 0(t4)
 	add s1, s1, s2
 	sltu s3, s1, s2
@@ -3853,7 +4088,7 @@ vg_miller_rabin_round:
 	addi t2, t2, -1
 	slli s2, t0, 3
 	sub a0, a0, s2
-	bnez t2, 2156b
+	bnez t2, 2154b
 	slli s2, t0, 3
 	addi s2, s2, 16
 	slli s2, s2, 1
@@ -3867,7 +4102,7 @@ vg_miller_rabin_round:
 	addi a0, a7, 0
 	addi t5, t0, 0
 	addi s4, zero, 0
-2163:
+2161:
 	ld s2, 0(t3)
 	ld s3, 0(a0)
 	sltu s0, s2, s3
@@ -3880,7 +4115,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2163b
+	bnez t5, 2161b
 	ld s2, 0(t3)
 	sltu s0, s2, s4
 	addi s1, zero, 0
@@ -3889,7 +4124,7 @@ vg_miller_rabin_round:
 	addi t4, a6, 0
 	addi a0, a2, 0
 	addi t5, t0, 0
-2164:
+2162:
 	ld s2, 0(t4)
 	ld s3, 0(t3)
 	xor s3, s3, s2
@@ -3900,7 +4135,7 @@ vg_miller_rabin_round:
 	addi t4, t4, 8
 	addi a0, a0, 8
 	addi t5, t5, -1
-	bnez t5, 2164b
+	bnez t5, 2162b
 	slli t3, t0, 3
 	sub a5, a5, t3
 	addi t3, a7, 0
@@ -3921,17 +4156,35 @@ vg_miller_rabin_round:
 	add t4, t4, s5
 	add t4, t4, s5
 	add t4, t4, s5
-	addi t5, t0, 0
+	addi t5, t0, 3
+	srli t5, t5, 2
+	addi s3, t0, -1
+	andi s3, s3, 3
+	addi s3, s3, 1
+	slli s3, s3, 3
 	addi s0, zero, 0
-2165:
+2163:
 	ld s1, 0(t3)
 	ld s2, 0(t4)
 	xor s1, s1, s2
 	or s0, s0, s1
-	addi t3, t3, 8
-	addi t4, t4, 8
+	ld s1, 8(t3)
+	ld s2, 8(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 16(t3)
+	ld s2, 16(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	ld s1, 24(t3)
+	ld s2, 24(t4)
+	xor s1, s1, s2
+	or s0, s0, s1
+	add t3, t3, s3
+	add t4, t4, s3
+	addi s3, zero, 32
 	addi t5, t5, -1
-	bnez t5, 2165b
+	bnez t5, 2163b
 	addi s1, zero, 0
 	sltu s1, s1, s0
 	addi a3, s1, -1
