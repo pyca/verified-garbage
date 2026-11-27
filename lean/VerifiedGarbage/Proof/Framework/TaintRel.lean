@@ -283,8 +283,7 @@ def findRSum (n : String) (τ : A.T) : List (RSum M A.T) → Nat → Option (Nat
 
 /-- `hint`, with the first summary that applies at each call (by its name). -/
 def hintR (S : List (RSum M A.T)) (chunkSize : Nat) : A.T → Prog M → Option (A.T × RHint A.T)
-  | τ, .block is => (A.checkBlock τ is).map fun τ' =>
-    (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
+  | τ, .block is => (blockHint A chunkSize τ is is.length).map fun (τ', ms) => (τ', .block ms chunkSize)
   | τ, .seq c₁ c₂ =>
     (hintR S chunkSize τ c₁).bind fun (τ₁, h₁) => (hintR S chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
   | τ, .ite _ t e =>
@@ -323,9 +322,9 @@ meta def taintDecideRelAt (chunkSize : Expr) : TacticM Unit := do
   let args := chk.getAppArgs
   let (m, a, S, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!, args[5]!)
   let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
-  let hint := mkApp6 (mkConst ``Taint.hintROf) m a S chunkSize τ c
+  let hint := mkApp6 (mkConst ``Taint.hintROf) (← Taint.compiled m) a S chunkSize τ c
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.RHint.toExprNS) tT instT hint)
+  let hv ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.RHint.toExprNS) tT instT hint)
   if h.isMVar then h.mvarId!.assign hv
   evalTactic (← `(tactic| lit_decide))
 

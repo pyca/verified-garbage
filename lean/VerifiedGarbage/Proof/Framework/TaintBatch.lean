@@ -65,14 +65,13 @@ elab "taint_decide_all" : tactic => do
       if seen.contains hm then continue
       seen := seen.insert hm
       let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
-      let hty := mkApp (mkConst ``Taint.Hint) tT
-      let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-      let hint := mkApp4 (mkConst ``Taint.hintOf) m a τ c
+      let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
+      let hint := mkApp4 (mkConst ``Taint.hintOf) (← Taint.compiled m) a τ c
       holes := holes.push hm
-      vals := vals.push (mkApp3 (mkConst ``ToExpr.toExpr [0]) hty inst hint)
+      vals := vals.push (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT inst hint)
   unless holes.isEmpty do
     let lst ← mkListLit (mkConst ``Expr) vals.toList
-    let hvs ← unsafe evalExpr (List Expr) (mkApp (mkConst ``List [0]) (mkConst ``Expr)) lst
+    let hvs ← unsafe VG.Lit.evalOnce (List Expr) (mkApp (mkConst ``List [0]) (mkConst ``Expr)) lst
     for (hm, hv) in holes.zip hvs.toArray do
       hm.assign hv
   -- The goals, from one kernel evaluation of their conjunction (the hints,

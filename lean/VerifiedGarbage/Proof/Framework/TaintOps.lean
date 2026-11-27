@@ -670,7 +670,7 @@ applies. -/
 def hintOpsA (S : List (Op M A.T)) (same : Prog M → Prog M → Bool) (wk : A.T → A.T → Option A.T) :
     List A.T → A.T → Prog M → Option (A.T × SHint A.T)
   | _, τ, .block is => sumOr (findOpCode A same (.block is) τ S 0) fun _ =>
-    (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunk τ is is.length))
+    (blockHint A chunk τ is is.length).map fun (τ', ms) => (τ', .block ms)
   | anc, τ, .seq c₁ c₂ => sumOr (findOpCode A same (.seq c₁ c₂) τ S 0) fun _ =>
     (hintOpsA S same wk anc τ c₁).bind fun (τ₁, h₁) =>
       let anc' := τ :: anc
@@ -752,12 +752,12 @@ meta def hintOf (who : String) (M A S τ c : Expr) : MetaM (Expr × Expr) := do
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) T')
   let wk ← try
       let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
-      pure (mkApp3 (mkConst ``Taint.wkFrame) M A fr)
+      pure (mkApp3 (mkConst ``Taint.wkFrame) (← Taint.compiled M) A fr)
     catch _ =>
       let T := mkApp2 (mkConst ``Taint.T) M A
       pure (.lam `a T (.lam `b T (← mkAppOptM ``Option.none #[T]) .default) .default)
-  let e := mkAppN (mkConst ``Taint.hintOpsExpr) #[M, A, instT, S, ← sameFn M, wk, τ, c]
-  let ph ← unsafe evalExpr Expr (mkConst ``Expr) e
+  let e := mkAppN (mkConst ``Taint.hintOpsExpr) #[← Taint.compiled M, A, instT, S, ← sameFn M, wk, τ, c]
+  let ph ← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr) e
   unless ph.isAppOfArity ``Prod.mk 4 do throwError "{who}: unexpected {ph}"
   return (ph.getArg! 2, ph.getArg! 3)
 

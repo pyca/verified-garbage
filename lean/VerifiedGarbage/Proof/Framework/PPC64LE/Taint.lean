@@ -23,6 +23,9 @@ not analysed by this domain.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.PPC64LE.isaC : VG.ISA := VG.PPC64LE.isa
+
 namespace VG.PPC64LE.Taint
 
 deriving instance Lean.ToExpr for Reg

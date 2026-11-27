@@ -58,10 +58,10 @@ private meta def assignHintCT (g : MVarId) (chunkSize : Expr) : TacticM Unit := 
   let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   unless h.isMVar do return
   let tT ← whnfD (mkApp2 (mkConst ``TaintCT.T) m a)
-  let hint := mkApp5 (mkConst ``TaintCT.hintOfSize) m a chunkSize τ c
+  let hint := mkApp5 (mkConst ``TaintCT.hintOfSize) (← Taint.compiled m) a chunkSize τ c
   let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
   h.mvarId!.assign
-    (← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint))
+    (← unsafe VG.Lit.evalOnce Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint))
 
 open Lean Meta Elab Tactic in
 /-- Proves the goals together: the hints, and then one kernel evaluation of

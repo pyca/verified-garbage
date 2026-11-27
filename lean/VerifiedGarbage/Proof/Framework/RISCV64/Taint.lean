@@ -19,6 +19,9 @@ unknown values in `ra` and `t0`–`t6`, which become secret.
 
 @[expose] public section
 
+/-- `isa`, for the compiler to leave by name (`Taint.compiled`). -/
+@[noinline] def VG.RISCV64.isaC : VG.ISA := VG.RISCV64.isa
+
 namespace VG.RISCV64.Taint
 
 deriving instance Lean.ToExpr for Reg
