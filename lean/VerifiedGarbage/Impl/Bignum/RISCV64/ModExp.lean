@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.PublicChecked
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontSqr
+public import VerifiedGarbage.Impl.Bignum.RISCV64.Pow57
 
 /-!
 # Modular exponentiation by a secret exponent on RISC-V: four-bit windows
@@ -115,11 +116,54 @@ def powWin : Prog isa :=
 /-- `t0 := w`, from the arrays' size `s5 = 8 (w + 2)`. -/
 def wOfSize : List Instr := [.shift .srl .d .t0 .s5 3, .addi .t0 .t0 (-2)]
 
+/-! ## In radix `2⁵⁷` -/
+
+open Pow57
+
+/-- `2^q` in array 7, for `w = 8 q`. -/
+def pow2q : Prog isa :=
+  .seq one (.block (base .t3 7 ++ [.shift .srl .d .t2 .t0 3, .li .s0 1, .shiftReg .sll .d .s0 .s0 .t2,
+    .store .d .s0 .t3 0]))
+
+/-- The table `T_j = x^j R' mod m`, for `R' = 2^(64 w + q)`. -/
+def table57 : Prog isa :=
+  .seq pow2q (.seq (montOp 8 7 1) (.seq (montOp 4 4 1) (.seq (copy 6 8) (.seq (.block [.li .s7 1])
+    (.loop (.seq (montOp 6 6 4) (.seq toEntry (.block [.addi .s7 .s7 1, .addi .t2 .s7 (-16)]))) (.nonzero .t2))))))
+
+/-- `M := m` and `A := T_0`. -/
+def init57 : Prog isa :=
+  .seq (.block pads) (.seq (copy 5 0) (.seq (unpackFrom atM) (.seq (copy 5 8) (unpackFrom atA))))
+
+/-- The window's digit into `a1`, and the exponent's pointer moved after a byte's second one: `s10` is four times
+the windows left. -/
+def digit : List Instr :=
+  [.load .b .a1 .s9 0, .logicImm .and .t2 .s10 4, .shiftReg .srl .d .a1 .a1 .t2, .logicImm .and .a1 .a1 15,
+    .shift .srl .d .t2 .t2 2, .logicImm .xor .t2 .t2 1, .add .s9 .s9 .t2]
+
+/-- A window: four squares, then `A := A T_d`. -/
+def window57 : Prog isa :=
+  .seq (.loop (.seq sqrOp57 (.block [.addi .s10 .s10 (-1), .logicImm .and .t2 .s10 3])) (.nonzero .t2))
+    (.seq (.block digit) (.seq select (.seq (unpackFrom atE) mulOp57)))
+
+/-- Out of Montgomery form: `A R'⁻¹` (at most `m`) into array 6, then reduced, by `R² mod m` and 1, into array 4. -/
+def exit57 : Prog isa :=
+  .seq one (.seq (copy 5 7) (.seq (unpackFrom atE) (.seq mulOp57 (.seq pack (.seq one
+    (.seq (montOp 6 6 1) (montOp 4 7 6)))))))
+
+/-- `powWin` in radix `2⁵⁷`, for `w = 8 q` with `2 ≤ q ≤ 6`. -/
+def powWin57 : Prog isa :=
+  .seq table57 (.seq init57 (.seq (.block [.shift .sll .d .s10 .s10 3]) (.seq (.loop window57 (.nonzero .s10)) exit57)))
+
+/-- `t2 := 0` if `powWin57` may be used: `w = 8 q`, `16 ≤ w ≤ 48` and fewer than `2³²` bytes of exponent. -/
+def may57 : List Instr :=
+  [.logicImm .and .t2 .t0 7, .addi .t3 .t0 (-16), .li .t4 33, .sltu .t3 .t3 .t4, .logicImm .xor .t3 .t3 1,
+    .logic .or .t2 .t2 .t3, .shift .srl .d .t3 .s10 32, .logic .or .t2 .t2 .t3]
+
 /-- `powWin` as the function `name`, which a call enters with `ra` and
 `t0`–`t6` changed: it computes `w` (`wOfSize`) and `-m⁻¹ mod 2⁶⁴` (`minv`)
 again. The caller's `ra` is lost, as with any call. -/
 def powWinCall (name : String) : Prog isa :=
-  .call name (.seq (.block (wOfSize ++ minv)) powWin)
+  .call name (.seq (.block (wOfSize ++ minv ++ may57)) (.ite (.zero .t2) powWin57 powWin))
 
 /-- `powWin` as the function `vg_bignum_pow_win`, which DSA and RSA's CRT
 call. -/
