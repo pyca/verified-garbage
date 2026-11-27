@@ -54,19 +54,20 @@ def copySchedule : Prog isa :=
   .seq (.block ([movR .t1 .a0] ++ slotAddr .t2 tailSlot ++ [.li .t3 128]))
     (.seq (copyAny .t4 .t1 .t2 .t3) (.block (slotAddr .a0 tailSlot)))
 
-/-- `n` pairs of round keys, from the word at `a0`, to the entries at `kr`,
-which `st` moves to the next entry after each. -/
-def keyPairs (st : Instr) : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (.block (keyOne 0 ++ [st] ++ keyOne 1 ++ [st, .addi .a0 .a0 8])) (keyPairs st n)
+/-- Sixteen pairs share one body. `s8` is unused by `keyOne` and is already
+saved and restored by each caller's prologue and epilogue. -/
+def keyPairs (st : Instr) : Prog isa :=
+  .seq (.block [.li .s8 16])
+    (.loop (.block (keyOne 0 ++ [st] ++ keyOne 1 ++
+      [st, .addi .a0 .a0 8, .addi .s8 .s8 (-1)])) (.nonzero .s8))
 
 /-- Encryption's table: round keys `2 m` and `2 m + 1`, from the word at
 `a0`, to entries `2 m` and `2 m + 1`. -/
-def encKeys : Prog isa := .seq (.block (slotAddr kr tableSlot)) (keyPairs (.addi kr kr 64) 16)
+def encKeys : Prog isa := .seq (.block (slotAddr kr tableSlot)) (keyPairs (.addi kr kr 64))
 
 /-- Decryption's table: round keys `2 m` and `2 m + 1` to entries `31 - 2 m`
 and `30 - 2 m`. -/
-def decKeys : Prog isa := .seq (.block (slotAddr kr (tableSlot + 8 * 31))) (keyPairs (.addi kr kr (-64)) 16)
+def decKeys : Prog isa := .seq (.block (slotAddr kr (tableSlot + 8 * 31))) (keyPairs (.addi kr kr (-64)))
 
 /-- The schedule's copy, the table, then `a0 := ` its end. -/
 def keys (dir : Dir) : Prog isa :=

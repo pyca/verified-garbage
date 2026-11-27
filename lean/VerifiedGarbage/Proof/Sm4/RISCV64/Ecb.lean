@@ -11,12 +11,15 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.CopyFast
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Round
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Ecb
+meta import VerifiedGarbage.Impl.Sm4.RISCV64.Ecb
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 
 /-! ### `Sm4.RISCV64.Prologue`, which this module and modules that import it used -/
 
@@ -1193,13 +1196,60 @@ theorem entOf_entOf (dir : Dir) {e : Nat} (he : e < 32) : entOf dir (entOf dir e
 /-- The round keys in the order the rounds use them. -/
 def dirKeys (dir : Dir) (sch : Spec.Sm4.Schedule) (e : Nat) : Spec.Sm4.Word := sch.getD (entOf dir e) 0
 
-theorem keyPairs_wp (dir : Dir) {s₀ : State} {b : Addr} :
-    ∀ n m, m + n = 16 → ∀ s, KInv s₀ b dir m s →
-      WP isa (keyPairs (krStep dir) n) s (KInv s₀ b dir 16)
-  | 0, m, h, s, hi => WP.block_nil (by rw [show m = 16 by omega_arith] at hi; exact hi)
-  | n + 1, m, h, s, hi => by
-    obtain ⟨s', e', hi'⟩ := keyIter_ok dir (by omega_arith) hi
-    exact WP.seq (WP.of_runBlock ⟨s', e', keyPairs_wp dir n (m + 1) (by omega_arith) s' hi'⟩)
+private theorem KInv.counter {s₀ s u : State} {b : Addr} {dir : Dir} {m : Nat}
+    (h : KInv s₀ b dir m s) (hm : u.mem = s.mem)
+    (hg : ∀ r, r ≠ .s8 → u.gpr r = s.gpr r)
+    (hr : u.rd = s.rd) (hw : u.wr = s.wr) : KInv s₀ b dir m u := by
+  refine ⟨h.pre.congr (hg _ (by decide)) hw,
+    (hg _ (by decide)).trans h.rsi, (hg _ (by decide)).trans h.rdi,
+    ?_, ?_, hm ▸ h.frame, fun r h1 h2 h3 => ?_, hr.trans h.rd, hw.trans h.wr⟩
+  · intro i hi; rw [hm]; exact h.ent i hi
+  · intro kv hk
+    show u.mem.readW (wordAddr (u.gpr sb) kv.1) 64 = kv.2
+    rw [hm, hg _ (by decide)]; exact h.masks kv hk
+  · rw [hg r (fun e => h1 (e ▸ (by decide : Reg.s8 ∈ sboxWrites))), h.regs r h1 h2 h3]
+
+private theorem keyIter_counter (dir : Dir) {s s' : State}
+    (h : runBlock isa (keyOne 0 ++ ([krStep dir] : List Instr) ++ keyOne 1 ++
+      ([krStep dir, .addi .a0 .a0 8] : List Instr)) s = some s') :
+    s'.gpr .s8 = s.gpr .s8 := by
+  obtain ⟨t, u, he, rfl⟩ := (WP.of_runBlock ⟨s', h, rfl⟩ :
+    WP isa (.block (keyOne 0 ++ [krStep dir] ++ keyOne 1 ++ [krStep dir, .addi .a0 .a0 8]))
+      s (fun u => u = s'))
+  apply VG.RISCV64.Exec.gpr_callFree (h := he) (hn := rfl)
+  cases dir <;> lit_decide
+
+private theorem keyPairs_wp (dir : Dir) {s₀ s : State} {b : Addr}
+    (hi : KInv s₀ b dir 0 s) :
+    WP isa (keyPairs (krStep dir)) s (KInv s₀ b dir 16) := by
+  unfold keyPairs
+  let u := s.write .s8 (BitVec.ofInt 64 16)
+  have hu : KInv s₀ b dir 0 u := hi.counter rfl
+    (fun r hr => RegUpd.gpr_write_of_ne _ _ hr) rfl rfl
+  refine WP.seq (WP.of_runBlock ⟨u, by
+    simp only [runBlock_cons, exec_li (show imm12 16 by decide), runStep_some, runBlock_nil]
+    rfl, ?_⟩)
+  let Inv := fun (n : Nat) (t : State) => ∃ m, m + n = 16 ∧ 0 < n ∧ KInv s₀ b dir m t ∧ t.gpr .s8 = BitVec.ofNat 64 n
+  refine WP.loop (M := isa) Inv (fun n t ht => ?_) 16 u ⟨0, rfl, by decide, hu, RegUpd.gpr_write_self ..⟩
+  obtain ⟨m, hmn, hn, hki, hc⟩ := ht
+  obtain ⟨v, ev, hv⟩ := keyIter_ok dir (by omega) hki
+  obtain ⟨w, ew, rw', ow, mw, rdw, wrw⟩ := addI_ok v .s8 .s8 (imm := -1) (by decide)
+  have hw : KInv s₀ b dir (m + 1) w := hv.counter mw ow rdw wrw
+  have cw : w.gpr .s8 = BitVec.ofNat 64 (n - 1) := by
+    rw [rw', keyIter_counter dir ev, hc,
+      show BitVec.ofInt 64 (-1) = -BitVec.ofNat 64 1 from by decide,
+      ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by omega)]
+  refine WP.of_runBlock ⟨w, ?_, ?_⟩
+  · rw [show (keyOne 0 ++ [krStep dir] ++ keyOne 1 ++
+      [krStep dir, .addi .a0 .a0 8, .addi .s8 .s8 (-1)]) =
+      (keyOne 0 ++ [krStep dir] ++ keyOne 1 ++ [krStep dir, .addi .a0 .a0 8]) ++
+        [.addi .s8 .s8 (-1)] by simp only [List.append_assoc, List.cons_append, List.nil_append],
+      Interleave.runBlock_append, ev, Option.bind_some, ew]
+  · by_cases h : n = 1
+    · exact .inl ⟨(Steps.eval_nonzero_ofNat w .s8 (by omega) cw).trans (by simp [h]),
+        by rw [show m + 1 = 16 by omega] at hw; exact hw⟩
+    · exact .inr ⟨(Steps.eval_nonzero_ofNat w .s8 (by omega) cw).trans (by simp [show n - 1 ≠ 0 by omega]),
+        n - 1, by omega, m + 1, by omega, by omega, hw, cw⟩
 
 /-! ## The schedule's copy and the whole table -/
 
@@ -1318,7 +1368,7 @@ theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k
     (hsch : Spec.Sm4.scheduleAt u.mem (srcOf b) = Spec.Sm4.scheduleAt s₀.mem sched)
     (hf : Frame [⟨srcOf b, 128⟩] s₀.mem u.mem)
     (hregs : ∀ r, r ∉ sboxWrites → r ≠ .a0 → u.gpr r = s₀.gpr r) (hrd : u.rd = s₀.rd) (hwr : u.wr = s₀.wr) :
-    WP isa (.seq (.seq (.block (slotAddr kr k)) (keyPairs (krStep dir) 16))
+    WP isa (.seq (.seq (.block (slotAddr kr k)) (keyPairs (krStep dir)))
       (.block (slotAddr .a0 tableEnd))) u (KeysPost s₀ b sched dir) := by
   have hfit := hp.fit
   rw [slots_eq] at hfit
@@ -1330,7 +1380,7 @@ theorem keysGen_wp (dir : Dir) (k : Nat) (hk : 8 * k = rsiAt dir 0) (hse : 8 * k
       fun r _ h2 _ => by rw [o₁ r h2], rd₁, wr₁⟩
     show s₁.mem.readW (wordAddr (s₁.gpr sb) kv.1) 64 = kv.2
     rw [m₁, o₁ _ (by decide)]; exact hm kv hkv
-  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.mono (keyPairs_wp dir 16 0 rfl s₁ hinv) fun s h => ?_⟩))
+  refine WP.seq (WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.mono (keyPairs_wp dir hinv) fun s h => ?_⟩))
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := slotAddr_ok s .a0 tableEnd
   obtain hb₃ : s₃.gpr sb = b := by rw [o₃ _ (by decide), h.pre.base]
   refine WP.of_runBlock ⟨s₃, e₃, hp.congr (by rw [hb₃, hp.base]) (by rw [rd₃, h.rd])
