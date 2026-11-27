@@ -58,14 +58,6 @@ call {vg_pbkdf2_hmac_sha256_core}
 pub(crate) mod vg_pbkdf2_hmac_sha256_core;
 
 #[rustfmt::skip]
-#[path = "internal/vg_salsa20_8.rs"]
-pub(crate) mod vg_salsa20_8;
-
-#[rustfmt::skip]
-#[path = "internal/vg_salsa20_8_bytes.rs"]
-pub(crate) mod vg_salsa20_8_bytes;
-
-#[rustfmt::skip]
 #[path = "internal/vg_scrypt_blockmix.rs"]
 pub(crate) mod vg_scrypt_blockmix;
 
