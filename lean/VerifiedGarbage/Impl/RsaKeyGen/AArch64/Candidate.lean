@@ -172,13 +172,26 @@ def tabStore (i : Nat) : List Instr :=
 /-- The table, at `x9`. -/
 def tabWrite : List Instr := (List.range 256).flatMap tabStore
 
+/-- The unrolled table writer, shared by RSA, DSA and FFDH. The leaf only
+writes `x3`; `x4` saves the return address across its call. -/
+def tabWriteShared : Prog isa :=
+  .seq (.block [mov .x4 .x30])
+    (.seq (.call "vg_prime_table_write" (.block tabWrite)) (.block [mov .x30 .x4]))
+
+/-- The trial division's counts and masks, after the table is written. -/
+def trialInit : List Instr :=
+  [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0,
+    movi .x7 0, .subImm .x .x8 .x7 1]
+
+/-- The table at `aTab` and the trial division's initial counts. -/
+def trialHead : Prog isa :=
+  .seq (.block (ws ++ base aTab .x9)) (.seq tabWriteShared (.block trialInit))
+
 /-- The table at `aTab`, then for each of its first `128` words (`256` for
 `w > 16`, counted in `x10`, read through `x9`) its four entries; `x1` not
 zero if one divides `c`. -/
 def trial : List (Prog isa) := [
-  .block (ws ++ base aTab .x9 ++ tabWrite ++
-    [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0,
-      movi .x7 0, .subImm .x .x8 .x7 1]),
+  trialHead,
   .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++
       trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) (.nonzero .x .x10)]
 
