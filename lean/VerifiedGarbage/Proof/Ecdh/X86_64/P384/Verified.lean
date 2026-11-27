@@ -34,6 +34,9 @@ meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+
 /-!
 # ECDH over P-384 on x86-64: `Verified`
 
@@ -85,6 +88,11 @@ theorem mulQJP384_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P
   mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleIn_dblOk_inl
     (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3 c.hot) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
 
+/-- The shared leaf's inlining is the original in-place doubling. -/
+theorem exchangeP384_inline : exchangeP384.inline =
+    (Impl.Ecdh.X86_64.Cfg.exchangeJA p384
+      (Impl.Weierstrass.X86_64.doubleIn p384.MH p384.rcbSlots)).inline := by kernel_rfl
+
 theorem ecdh_inlineOk : exchangeP384.InlineOk = true := by lit_decide
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
@@ -92,6 +100,8 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64
     ∃ t s', Exec isa exchangeP384.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p384_ok hI) hL
     (mulQJP384_ok (p384_ok hI) rfl rfl hL hO) (mulQJA_w (p384_ok hI)) (pre_of hs)
+  have he : Exec isa exchangeP384.inline s t s' := by
+    rw [exchangeP384_inline]; exact he
   have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk
   have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
