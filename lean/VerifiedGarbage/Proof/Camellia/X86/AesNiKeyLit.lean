@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # Camellia's key schedule by the AES S-box on x86 (32-bit): the code as a literal
 
 The code of the key schedule whose rounds are `aesenclast`s, as a literal
-(`materialize_flat_code`), which the checks of the whole function
+(`materialize_code`), which the checks of the whole function
 (`taint_decide`, `lit_decide`) read rather than build the code again.
 -/
 
@@ -24,6 +24,6 @@ The code of the key schedule whose rounds are `aesenclast`s, as a literal
 
 namespace VG.Proof.Camellia.X86.AesNiKey
 
-materialize_flat_code expandKeyCode := Impl.Camellia.X86.AesNiKey.expandKey
+materialize_code expandKeyCode := Impl.Camellia.X86.AesNiKey.expandKey
 
 end VG.Proof.Camellia.X86.AesNiKey

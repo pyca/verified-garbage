@@ -19,7 +19,6 @@ The code of the key expansion and of ECB in both directions as literals (`materi
 `Proof/Framework/Lit.lean`), which the checks of the whole functions
 (`taint_decide`, `lit_decide`) read rather than build the code again in
 each of them.
-Not flattened (`materialize_flat_code`): its unfolding measured slower here.
 -/
 
 @[expose] public section

@@ -69,15 +69,15 @@ private theorem sboxLoad.lit_eq :
   rw [e]
   exact sboxPacked.lit_eq
 
-materialize_flat_code serialExpandKeyCode := Impl.Sm4.AArch64.Serial.expandKey
-materialize_flat_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt
-materialize_flat_code ecbAnyCode := Impl.Sm4.AArch64.ecbAny
-materialize_flat_code prepareKeysCode := Impl.Sm4.AArch64.prepareKeys
-materialize_flat_code cryptPreparedCode := Impl.Sm4.AArch64.cryptPrepared
-materialize_flat_code ctrCode := Impl.Sm4.AArch64.ctr
+materialize_code serialExpandKeyCode := Impl.Sm4.AArch64.Serial.expandKey
+materialize_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
+materialize_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt
+materialize_code ecbAnyCode := Impl.Sm4.AArch64.ecbAny
+materialize_code prepareKeysCode := Impl.Sm4.AArch64.prepareKeys
+materialize_code cryptPreparedCode := Impl.Sm4.AArch64.cryptPrepared
+materialize_code ctrCode := Impl.Sm4.AArch64.ctr
 materialize_value serialTable := Impl.Sm4.AArch64.Serial.preparedTable
 materialize_code cbcEncryptChainedCode := Impl.Sm4.AArch64.cbcEncryptChained
-materialize_flat_code cbcDecryptChainedCode := Impl.Sm4.AArch64.cbcDecryptChained
+materialize_code cbcDecryptChainedCode := Impl.Sm4.AArch64.cbcDecryptChained
 
 end VG.Proof.Sm4.AArch64

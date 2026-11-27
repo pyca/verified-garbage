@@ -18,6 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Sm4.X86
 
-materialize_flat_code ctrCode := Impl.Sm4.X86.ctr
+materialize_code ctrCode := Impl.Sm4.X86.ctr
 
 end VG.Proof.Sm4.X86

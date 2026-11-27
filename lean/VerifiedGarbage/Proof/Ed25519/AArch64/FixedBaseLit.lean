@@ -19,7 +19,7 @@ made of them too, shares them.
 
 namespace VG
 
-materialize_flat_code Impl.Ed25519.AArch64.scalarBase
-materialize_flat_code Impl.Ed25519.AArch64.scalarReduce
+materialize_code Impl.Ed25519.AArch64.scalarBase
+materialize_code Impl.Ed25519.AArch64.scalarReduce
 
 end VG

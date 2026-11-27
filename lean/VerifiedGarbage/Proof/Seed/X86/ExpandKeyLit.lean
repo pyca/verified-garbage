@@ -18,6 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 namespace VG.Proof.Seed.X86
 
-materialize_flat_code expandKeyCode := Impl.Seed.X86.expandKey
+materialize_code expandKeyCode := Impl.Seed.X86.expandKey
 
 end VG.Proof.Seed.X86

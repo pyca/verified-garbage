@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # SM4-CBC on x86 (32-bit): the code as literals
 
 The code of CBC encryption and decryption as literals
-(`materialize_flat_code`), which the checks of the whole functions
+(`materialize_code`), which the checks of the whole functions
 (`taint_decide`, `lit_decide`) read rather than build the code again.
 -/
 
@@ -24,7 +24,7 @@ The code of CBC encryption and decryption as literals
 
 namespace VG.Proof.Sm4.X86
 
-materialize_flat_code cbcEncryptChainedCode := Impl.Sm4.X86.cbcEncryptChained
-materialize_flat_code cbcDecryptChainedCode := Impl.Sm4.X86.cbcDecryptChained
+materialize_code cbcEncryptChainedCode := Impl.Sm4.X86.cbcEncryptChained
+materialize_code cbcDecryptChainedCode := Impl.Sm4.X86.cbcDecryptChained
 
 end VG.Proof.Sm4.X86

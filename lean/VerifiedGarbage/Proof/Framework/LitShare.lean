@@ -71,9 +71,7 @@ meta def materializeShared (N : Name) (code : Expr) : MetaM Unit := do
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }
   -- `code = N.lit` by evaluation, of `code` with the literals it reaches if any.
-  let prf ← match ← Lit.unfoldToLits N code with
-    | some (_, prf) => pure prf
-    | none => pure (mkApp2 (mkConst ``Eq.refl [1]) ty code)
+  let prf ← Lit.litProof N ty code
   addDecl <| .thmDecl {
     name := N ++ `lit_eq, levelParams := [], type := mkApp3 (mkConst ``Eq [1]) ty code (mkConst (N ++ `lit))
     value := ShareCommon.shareCommon' prf }

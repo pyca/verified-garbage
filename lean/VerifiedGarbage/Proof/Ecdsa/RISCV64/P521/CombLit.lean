@@ -24,7 +24,7 @@ namespace VG
 
 -- The entry's selection is appends nested to the left (`CombU.select`,
 -- `scanWord`, `groups` and `tree`): flattened, the kernel checks it in less time.
-materialize_flat_code Impl.Ecdsa.RISCV64.CombU.mulGP521
+materialize_code Impl.Ecdsa.RISCV64.CombU.mulGP521
 
 /-- `vg_p521_mul_g`'s code has no frame, which its callers' calls need. -/
 theorem Impl.Ecdsa.RISCV64.CombU.mulGP521_noFrames : Impl.Ecdsa.RISCV64.CombU.mulGP521.noFrames = true := by

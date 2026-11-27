@@ -22,6 +22,6 @@ of code that contains it in another taint domain): the literal
 
 namespace VG
 
-materialize_flat_code Impl.Sha512.RISCV64.compress
+materialize_code Impl.Sha512.RISCV64.compress
 
 end VG

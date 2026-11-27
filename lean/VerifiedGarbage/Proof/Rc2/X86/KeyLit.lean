@@ -45,6 +45,6 @@ noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
 theorem piLookup.lit_eq : piLookup = piLookup.lit :=
   Eq.trans (b := piLookupLit) (by rw [piLookup, piLookupLit, piWord_eq_lit]) piLookupLit.lit_eq
 
-materialize_flat_code expandKey
+materialize_code expandKey
 
 end VG.Impl.Rc2.X86

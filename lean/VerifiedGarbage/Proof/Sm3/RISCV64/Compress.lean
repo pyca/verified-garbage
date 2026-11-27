@@ -1105,9 +1105,9 @@ def satState : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 80⟩]
 
-/-! The code as a literal (`materialize_flat_code`): the summary below and its frame, and the
+/-! The code as a literal (`materialize_code`): the summary below and its frame, and the
 checks of the modules that import this one, read it rather than build the unrolled rounds again. -/
-materialize_flat_code Impl.Sm3.RISCV64.compress
+materialize_code Impl.Sm3.RISCV64.compress
 
 /-! The constant-time analysis of the compression function from its arguments, done once for
 every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public

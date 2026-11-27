@@ -18,8 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG
 
-materialize_flat_code Impl.CmacTripleDes.AArch64.init
-materialize_flat_code Impl.CmacTripleDes.AArch64.update
-materialize_flat_code Impl.CmacTripleDes.AArch64.finalize
+materialize_code Impl.CmacTripleDes.AArch64.init
+materialize_code Impl.CmacTripleDes.AArch64.update
+materialize_code Impl.CmacTripleDes.AArch64.finalize
 
 end VG

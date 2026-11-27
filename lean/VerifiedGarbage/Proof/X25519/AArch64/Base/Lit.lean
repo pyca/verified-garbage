@@ -14,6 +14,6 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG
 
-materialize_flat_code Impl.X25519.AArch64.Base.x25519Base
+materialize_code Impl.X25519.AArch64.Base.x25519Base
 
 end VG

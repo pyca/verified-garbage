@@ -23,6 +23,6 @@ function (`taint_decide_sum`, `lit_decide`) evaluate.
 
 namespace VG.Proof.Sm4.AArch64
 
-materialize_flat_code ctr32Code := Impl.Sm4.AArch64.ctr32
+materialize_code ctr32Code := Impl.Sm4.AArch64.ctr32
 
 end VG.Proof.Sm4.AArch64
