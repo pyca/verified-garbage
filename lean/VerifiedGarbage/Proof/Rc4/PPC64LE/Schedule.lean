@@ -155,7 +155,7 @@ theorem top0 (X : BitVec 128) : vdword X 0 >>> 56 = (vbyte X 0).setWidth 64 := b
   · simp [h, show ¬ 56 + i < 64 by omega_using [h]]
 
 theorem xor7_mod (x : Byte) : (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by
-  have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide
+  have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide +kernel
   exact this x
 
 theorem ctl0 (x : BitVec 64) : (x <<< 56).extractLsb' (8 * (7 - 0)) 8 = x.setWidth 8 := by
@@ -394,7 +394,7 @@ theorem laneRot (b : Byte) :
 
 /-- The vector's rotation: `(16 - index / 16) mod 16`. -/
 theorem vecRot (b : Byte) : (((0#64 - b.setWidth 64 >>> 4) <<< 60) >>> 60).toNat = (16 - b.toNat / 16) % 16 := by
-  have : ∀ b : Byte, (((0#64 - b.setWidth 64 >>> 4) <<< 60) >>> 60).toNat = (16 - b.toNat / 16) % 16 := by decide
+  have : ∀ b : Byte, (((0#64 - b.setWidth 64 >>> 4) <<< 60) >>> 60).toNat = (16 - b.toNat / 16) % 16 := by decide +kernel
   exact this b
 
 theorem rot_back {p : Nat} (hp : p < 16) : (16 - (16 - p) % 16) % 16 = p := by omega_using [hp]

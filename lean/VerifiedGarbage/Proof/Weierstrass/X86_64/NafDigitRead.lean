@@ -18,7 +18,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
 def nafMagnitude (b : BitVec 8) : Nat := if b.toNat<128 then b.toNat else 256-b.toNat
 
-private theorem nafRead_zero : ∀ b : BitVec 8, (b.setWidth 64==0)=decide (b=0) := by decide
+private theorem nafRead_zero : ∀ b : BitVec 8, (b.setWidth 64==0)=decide (b=0) := by decide +kernel
 
 theorem nafRead_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat} {b : BitVec 8}
     (hs : Scr s base size) (hj : K.bits+j<size)
@@ -54,7 +54,7 @@ theorem nafAbs_ok (s : State) {b : BitVec 8} (hb : s.gpr .r8=b.setWidth 64) :
     Option.map_some,Option.bind_some,RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,hb,
     ite_true,ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun r hr => ?_,rfl,rfl,rfl⟩
-  · have h : ∀ b : BitVec 8, (256 : BitVec 64)-b.setWidth 64=BitVec.ofNat 64 (256-b.toNat) := by decide
+  · have h : ∀ b : BitVec 8, (256 : BitVec 64)-b.setWidth 64=BitVec.ofNat 64 (256-b.toNat) := by decide +kernel
     exact h b
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_setReg,RegUpd.gpr_arithFlags,hr.1,hr.2,ite_false]

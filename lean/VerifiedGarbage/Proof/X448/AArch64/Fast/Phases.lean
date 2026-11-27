@@ -554,7 +554,7 @@ theorem prep_ok {s : State} {base : Addr} (hs : Scr s base) {a₁ b₁ a₂ b₂
 abbrev tgtU (p : Nat) : Nat := if p < 8 then p + 8 else 16 + (p - 8)
 
 theorem prods_pos_lt : ∀ p ∈ prods, p.pos < 15 := by decide
-theorem prods_hit : ∀ q < 15, ∃ p ∈ prods, p.pos = q := by decide
+theorem prods_hit : ∀ q < 15, ∃ p ∈ prods, p.pos = q := by decide +kernel
 
 theorem half_offsets (h : Nat) (hh : h < 3) :
     (∀ i < 4, (aHalf h + 16 * i) % 16 = 0 ∧ aHalf h + 16 * i + 16 ≤ 8192) ∧

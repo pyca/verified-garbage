@@ -238,7 +238,7 @@ theorem top1 (X : BitVec 128) : (vdword X 0 <<< 8) >>> 56 = (vbyte X 1).setWidth
   · simp [h, show ¬ 56 + i < 64 by omega_using [h]]
 
 theorem xor7_mod (x : Byte) : (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by
-  have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide
+  have : ∀ x : Byte, (x ^^^ 7#8).toNat % 32 = (x.toNat % 32) ^^^ 7 := by decide +kernel
   exact this x
 
 theorem ctl0 (x : BitVec 64) : (x <<< 56).extractLsb' (8 * (7 - 0)) 8 = x.setWidth 8 := by

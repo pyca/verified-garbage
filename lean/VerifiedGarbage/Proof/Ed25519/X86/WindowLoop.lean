@@ -582,7 +582,7 @@ theorem and1_beq {i : Nat} (hi : i < 2 ^ 32) :
 
 private theorem nibble_fact : ∀ b : BitVec 8,
     b.setWidth 32 >>> 4 = BitVec.ofNat 32 (b.toNat / 16) ∧
-    b.setWidth 32 &&& 15 = BitVec.ofNat 32 (b.toNat % 16) := by decide
+    b.setWidth 32 &&& 15 = BitVec.ofNat 32 (b.toNat % 16) := by decide +kernel
 
 /-- The address of a nibble's byte: the input's pointer plus half the nibble's index. -/
 theorem nibbleAddr_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)

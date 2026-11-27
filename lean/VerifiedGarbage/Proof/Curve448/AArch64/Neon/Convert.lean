@@ -140,7 +140,7 @@ open VG.Proof.X448.AArch64 (Scr off ofs Outside word limbs)
 def split (f₁ f₂ : Nat → Nat) (i c : Nat) : Nat :=
   if c = 0 then f₁ i % 2 ^ 28 else if c = 1 then f₂ i % 2 ^ 28 else if c = 2 then f₁ i / 2 ^ 28 else f₂ i / 2 ^ 28
 
-theorem V_ne : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := by decide
+theorem V_ne : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := by decide +kernel
 
 /-! ## Lanes of the conversion's operations -/
 

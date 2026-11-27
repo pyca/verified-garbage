@@ -155,7 +155,7 @@ def slotInv : List Nat :=
    49, 18, 29, 11, 63, 52, 6, 26, 37, 40, 33, 47, 61, 45, 43, 21, 23, 58, 17, 10, 51, 25, 36, 32, 60, 20,
    57, 16, 50, 31, 19, 15, 30, 14, 13, 12]
 
-theorem slotInv_slot : ∀ t < 64, slotInv.getD (slot t) 0 = t := by decide
+theorem slotInv_slot : ∀ t < 64, slotInv.getD (slot t) 0 = t := by decide +kernel
 
 theorem slot_inj {a b : Nat} (ha : a < 64) (hb : b < 64) (h : slot a = slot b) : a = b := by
   rw [← slotInv_slot a ha, ← slotInv_slot b hb, h]

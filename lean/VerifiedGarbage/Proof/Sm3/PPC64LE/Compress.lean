@@ -202,7 +202,7 @@ theorem round_nodup (t : Nat) :
     ([var t 0, var t 1, var t 2, var t 3, var t 4, var t 5, var t 6, var t 7, T0, T1, T2, T3] ++
       pubRegs).Nodup := by
   simp only [var]
-  have := Nat.mod_lt t (show 4 > 0 by decide)
+  have := Nat.mod_lt t (show 4 > 0 by decide +kernel)
   generalize t % 4 = c at *
   revert this; revert c; decide
 

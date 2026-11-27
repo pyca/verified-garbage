@@ -54,7 +54,7 @@ def Pairs (s : State) (A B : Spec.Sha3.State) : Prop := ∀ i < 25, s.v (vreg i)
 theorem pair_contains (p : Addr) {i : Nat} (hi : i < 25) : (pairR p).Contains (wordAddr p i) 16 :=
   Offset.contains_base p (by omega) (by omega)
 
-theorem vreg_inj : ∀ i < 32, ∀ j < 32, vreg i = vreg j ↔ i = j := by decide
+theorem vreg_inj : ∀ i < 32, ∀ j < 32, vreg i = vreg j ↔ i = j := by decide +kernel
 
 theorem pair_xor (a b c d : BitVec 64) : ofVDwords a b ^^^ ofVDwords c d = ofVDwords (a ^^^ c) (b ^^^ d) := by
   apply vec64_ext

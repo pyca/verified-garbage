@@ -149,7 +149,7 @@ theorem Agree.foldl {f : ER} {L : EL} (h : Agree f L) :
 def varsL : EL := (List.range 24).map fun k => (List.range 4).map fun j => .var (16 * (k / 4) + 4 * (k % 4) + j)
 
 theorem agree_vars : Agree vars varsL :=
-  ⟨by decide, by decide⟩
+  ⟨by decide +kernel, by decide +kernel⟩
 
 def equal (L : EL) (g : ER) : Bool := (List.finRange 24).all fun k =>
   (List.finRange 4).all fun j => E.beq (look L j k) (g j k)

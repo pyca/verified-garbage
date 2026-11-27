@@ -102,7 +102,7 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
 
 theorem bp_tbl_len : Impl.BrainpoolP384r1.comb7.length = 55 := by decide
 
-theorem bp_tbl_lenH : ∀ j < 55, (Impl.BrainpoolP384r1.comb7.getD j []).length = 64 := by decide
+theorem bp_tbl_lenH : ∀ j < 55, (Impl.BrainpoolP384r1.comb7.getD j []).length = 64 := by decide +kernel
 
 /-- `bpW` has `55 · 64 · 12` words. -/
 theorem bpW_length : bpW.length = 42240 :=

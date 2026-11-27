@@ -511,7 +511,7 @@ def groupValues (v : Vector (BitVec 128) 8) (z : Nat → Int) : List (Fin 8 × F
   | (i,j)::ps => groupValues (pairValues v i j z) z ps
 
 theorem group_subset (i j : Fin 8) : groupClobs i j⊆groupRegs := by
-  exact (show ∀i j:Fin 8,groupClobs i j⊆groupRegs by decide) i j
+  exact (show ∀i j:Fin 8,groupClobs i j⊆groupRegs by decide +kernel) i j
 
 theorem groupRun_ok (ps : List (Fin 8 × Fin 8)) (hn : ∀p∈ps,p.1≠p.2)
     {s : State} {rest : List Instr} {Q : State → Prop} {v : Values} {z : Nat → Int}

@@ -146,7 +146,7 @@ def ohVal (x : BitVec 32) : BitVec 32 :=
 /-- `ohVal` of the index `32 a + b`: the 256 indices, as two ranges that
 `decide` evaluates. -/
 theorem ohVal_split : ∀ a < 8, ∀ b < 32,
-    ohVal (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ ((32 * a + b) / 8)) := by decide
+    ohVal (BitVec.ofNat 32 (32 * a + b)) = BitVec.ofNat 32 (2 ^ ((32 * a + b) / 8)) := by decide +kernel
 
 theorem ohVal_ofNat : ∀ n < 256, ohVal (BitVec.ofNat 32 n) = BitVec.ofNat 32 (2 ^ (n / 8)) := fun n h => by
   have := ohVal_split (n / 32) (by omega_using [h]) (n % 32) (Nat.mod_lt _ (by decide))

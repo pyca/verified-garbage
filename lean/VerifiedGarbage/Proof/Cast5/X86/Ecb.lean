@@ -77,7 +77,7 @@ def bitLane (idx : Nat → BitVec 32) (b k : Nat) : BitVec 32 := sel (decide ((i
 theorem bitVal {x : BitVec 32} (hx : x.toNat < 256) {b : Nat} (hb : b < 2) :
     (x <<< (31 - b) >>> 31 + 0xFFFFFFFF) ^^^ 0xFFFFFFFF = sel (decide (x.toNat / 2 ^ b % 2 = 1)) := by
   have h : ∀ y : Byte, ∀ b < 2, (y.setWidth 32 <<< (31 - b) >>> 31 + 0xFFFFFFFF) ^^^ 0xFFFFFFFF =
-      sel (decide (y.toNat / 2 ^ b % 2 = 1)) := by decide
+      sel (decide (y.toNat / 2 ^ b % 2 = 1)) := by decide +kernel
   have e : (x.setWidth 8).toNat = x.toNat := by rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt hx
   have e' : (x.setWidth 8).setWidth 32 = x := by
     apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_setWidth, e]; exact Nat.mod_eq_of_lt x.isLt

@@ -146,7 +146,7 @@ theorem cvOff_lt : ∀ i < 128, cvOff i + 8 ≤ 1024 ∧ cvOff i % 8 = 0 := by d
 
 theorem cvOff_in : ∀ i < 128, ∀ c < 4, ∀ k < 4,
     (1024 + 256 * c + 64 * k ≤ 1024 + cvOff i ∧ 1024 + cvOff i < 1024 + 256 * c + 64 * k + 64 ↔
-      i % 16 / 4 = c ∧ i / 32 = k) := by decide
+      i % 16 / 4 = c ∧ i / 32 = k) := by decide +kernel
 
 theorem cvOff_q : ∀ i < 128, (1024 + cvOff i - (1024 + 256 * (i % 16 / 4) + 64 * (i / 32))) / 8 = cvQ i := by
   decide
