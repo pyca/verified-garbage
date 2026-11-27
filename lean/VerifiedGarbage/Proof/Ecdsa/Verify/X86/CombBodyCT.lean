@@ -95,7 +95,7 @@ theorem vPoints_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
 
 /-- The taint checks of the stages of P-256's verification. -/
 theorem p256VerifyCT : VerifyStagesCT p256Comb :=
-  ⟨vFront_rel, vMid_rel.mono (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial),
+  ⟨vFront_rel, vMid_rel.mono (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge24 _)) (fun _ _ _ => trivial),
     vFinal_rel.mono (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)⟩
 
 end VG.Proof.Ecdsa.Verify.X86

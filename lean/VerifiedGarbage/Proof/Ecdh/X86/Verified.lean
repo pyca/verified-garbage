@@ -164,7 +164,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [32, 8192], argLen := 20, argBases := [(4, 0), (16, 1)],
-    room := 20 }
+    room := 24 }
 
 theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -172,7 +172,7 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   rw [hn4] at ho
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn4], by simpa [hp.wr, hn4] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (by decide : 20 ≤ p256.stk) hp.sp_lo, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (by decide : 24 ≤ p256.stk) hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth, hn4] <;> omega_using [hsc, ho]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -184,7 +184,7 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    have hsub := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := 20) (n := 20) (b := p256.stk)
+    have hsub := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := 24) (n := 24) (b := p256.stk)
       (m := p256.stk) (by decide) (by decide)
     rintro r (rfl | rfl)
     · exact hp.stk_out.sub_left hsub
@@ -220,7 +220,7 @@ every call. -/
 def τCall : VG.X86.Taint.T :=
   { regs := ⟨215⟩, flags := false, lens := [16, 32, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
-    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 24 }
 
 taint_summary mulSum : sseTaint τCall
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p256p.k Impl.Weierstrass.Mont.p256p.m)

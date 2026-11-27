@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
 import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+import VerifiedGarbage.Proof.Ecdsa.X86.CallWs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
@@ -140,7 +143,48 @@ theorem powW_pwW {P : PowCfg} (h : powWx P c.wk = slW c [ACC, PT, TMP] ++ wkW c)
   · exact ⟨w, List.mem_append_left _ hw, Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨w, List.mem_append_right _ (List.mem_cons_of_mem _ hw), Nat.le_refl _, Nat.le_refl _⟩
 
+/-- The original inversion body uses only the final multiplication's call frame. -/
+theorem inv_stackUse (P : InvCfg) : stackUse P.inv = 20 := by
+  simp only [InvCfg.inv, InvCfg.batch, Inv.wordSteps, InvCfg.finish, Mont.mulCall,
+    Mont.callOp, stackUse, Mont.mulFn_stackUse]
+  rfl
+
+/-- Share an inversion without changing its arithmetic contract or the caller's stack budget. -/
+theorem invCall_ok {p : Nat} [NeZero p] (sound : InvSound p) {P : InvCfg} {name : String}
+    (L : InvLay P size) (hp : 2 < p) (hR : UnitMod p (2 ^ 256))
+    {base : Addr} {s : State} (hs : Scr s base size)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r)
+    (hsp24 : 24 ≤ (s.gpr .esp).toNat) (hsp : NoSp P.inv)
+    (hM : ModOkW P.M size p s.mem base) (hB : val32 s.mem base P.base 8 < p) (ok : InvOk P p) :
+    WP isa (.call name P.inv) s fun z => Keeps powClob s z ∧
+      Unch base (invW P) s.mem z.mem ∧ val32 z.mem base P.out 8 < p ∧
+      toM p (2 ^ 256) (val32 z.mem base P.out 8) =
+        toM p (2 ^ 256) (val32 s.mem base P.base 8) ^ (p - 2) := by
+  obtain ⟨hs', -, -, U₀, -, -⟩ := callEntry_ws hs hst hsp24
+  have hn : base.toNat + size ≤ 2 ^ 64 := Nat.le_trans hs.nowrap (by decide)
+  have hM' := hM.unch U₀ (fun w hw => by
+    rw [List.mem_singleton.mp hw]
+    exact Or.inl (by have := hM.mo; omega_using [this])) hn
+  have e : val32 s.callEntry.mem base P.base 8 = val32 s.mem base P.base 8 := by
+    change val32 s.callEntry.mem base P.base (2 * 4) = val32 s.mem base P.base (2 * 4)
+    rw [← wordsVal_eq_val32, ← wordsVal_eq_val32]
+    exact U₀.wordsVal (fun w hw => by
+      rw [List.mem_singleton.mp hw]; exact Or.inl (by have := L.base_bound; omega_using [this]))
+      (by have := L.base_bound; omega_using [this, hn])
+  refine WP.callWs hs hst hsp24 ⟨hsp, by rw [inv_stackUse]⟩
+    (WP.mono (sound L hp hR hs' hM' (e ▸ hB) ok) fun u ⟨K, U, lt, v⟩ => ?_)
+  refine ⟨K.mono (by decide), ?_, lt, ?_⟩
+  · rw [RegUpd.mem_setReg]
+    refine Unch.cover (U₀.trans U) fun w hw => ?_
+    rcases List.mem_append.mp hw with hw | hw
+    · rw [List.mem_singleton.mp hw]
+      exact ⟨Mont.outW, by simp [invW], Nat.le_refl _, Nat.le_refl _⟩
+    · exact ⟨w, hw, Nat.le_refl _, Nat.le_refl _⟩
+  · simpa only [RegUpd.mem_setReg, e] using v
+
 theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r)
+    (hsp24 : 24 ≤ (s.gpr .esp).toNat) (hsp : NoSp c.pPow)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
     (hO : wordsVal s.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p)
     (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
@@ -155,9 +199,13 @@ theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   · rename_i hfast
     have h4 := hfast.1
     obtain ⟨sound, ok⟩ := hc.inv_p hfast
-    have H := sound (invLay_of hc h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl
+    have H := invCall_ok (name := c.SP.fn "inv") sound (invLay_of hc h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl
       (base := RZ) (Or.inl rfl) c.C.p) (by have := hc.p_ge; omega_using [this])
-      (by simpa only [h4] using hR) hs hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
+      (by simpa only [h4] using hR) hs hst hsp24 (by
+        intro i hi
+        apply hsp i
+        rw [Cfg.pPow, ite_eq_left hfast]
+        exact hi) hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
     refine WP.mono H fun z ⟨K, U, lt, v⟩ => ⟨K.mono (by decide), Unch.cover U (invW_pwW h4 rfl), ?_, ?_⟩
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using lt
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using v
@@ -165,6 +213,8 @@ theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       fun z ⟨K, U, lt, v⟩ => ⟨K.mono (by decide), Unch.cover U (powW_pwW (powWxP_eq c)), lt, v⟩
 
 theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r)
+    (hsp24 : 24 ≤ (s.gpr .esp).toNat) (hsp : NoSp c.nPow)
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
     (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
     (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0)
@@ -179,9 +229,13 @@ theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   · rename_i hfast
     have h4 := hfast.1
     obtain ⟨sound, ok⟩ := hc.inv_n hfast
-    have H := sound (invLay_of hc h4 (M := c.MN') rfl (jm := MN) rfl (Or.inr rfl) rfl
+    have H := invCall_ok (name := c.SN.fn "inv") sound (invLay_of hc h4 (M := c.MN') rfl (jm := MN) rfl (Or.inr rfl) rfl
       (base := KM) (Or.inr rfl) c.C.n) (by have := hc.n_ge; omega_using [this])
-      (by simpa only [h4] using hR) hs hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
+      (by simpa only [h4] using hR) hs hst hsp24 (by
+        intro i hi
+        apply hsp i
+        rw [Cfg.nPow, ite_eq_left hfast]
+        exact hi) hM (by simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using hB) ok
     refine WP.mono H fun z ⟨K, U, lt, v⟩ => ⟨K.mono (by decide), Unch.cover U (invW_pwW h4 rfl), ?_, ?_⟩
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using lt
     · simpa only [h4, wordsVal_eq_val32, InvCfg.ofMod] using v

@@ -487,8 +487,8 @@ theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
     (fun _ _ h => vKeepScratchAgree hp hq h.2.1.keep h.2.2.keep he ha) (fun _ _ _ => trivial)
   have mid' := mid.wp (F₁ := Mid c s₀ (ptr s₀ 3))
     (F₂ := Mid c t₀ (ptr t₀ 3)) (fun _ _ h =>
-      ⟨mid_ok hc h.2.1 H.scalars H.nPow H.uv (fun _ h => WP.block_nil h),
-        mid_ok hc h.2.2 H.scalars H.nPow H.uv (fun _ h => WP.block_nil h)⟩)
+      ⟨mid_ok hc h.2.1 hp.stk_wr H.scalars H.nPow H.uv (fun _ h => WP.block_nil h),
+        mid_ok hc h.2.2 hq.stk_wr H.scalars H.nPow H.uv (fun _ h => WP.block_nil h)⟩)
   have pts := hPts.mono
     (P' := fun s t => True ∧ Mid c s₀ (ptr s₀ 3) s ∧ Mid c t₀ (ptr t₀ 3) t)
     (fun _ _ h => h.2) (fun _ _ _ => trivial)

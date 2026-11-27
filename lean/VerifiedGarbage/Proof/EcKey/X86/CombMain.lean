@@ -331,7 +331,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   obtain H := PkSp.of hsp
   rw [publicKey_eq']
-  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC hcomb S₁ H.ladder H.pPow fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC hcomb S₁ hp.stk_wr H.ladder H.pPow fun s₂ S₂ => WP.block_nil ?_)
   obtain h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega_arith
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag H.ops
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (pkArgs_disj hp)

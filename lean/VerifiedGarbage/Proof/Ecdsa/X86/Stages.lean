@@ -63,6 +63,19 @@ theorem Keep.withSp {s₀ : State} {base : Addr} {s : State} (hK : Keep c s₀ b
   WP.mono (WP.spFrame hsp (by rw [hK.esp]; exact hK.sp_lo) h) fun s' ⟨q, f⟩ =>
     q (hK.whole.trans (by rw [hK.wr, hK.esp] at f; exact f))
 
+/-- The existing caller stack budget includes an internal call and its 20-byte body. -/
+theorem Keep.sp24 {s₀ s : State} {base : Addr} (K : Keep c s₀ base s) :
+    24 ≤ (s.gpr .esp).toNat := by
+  rw [K.esp]; exact Nat.le_trans (Cfg.stk_ge24 c) K.sp_lo
+
+theorem Keep.stack24 {s₀ s : State} {base : Addr} (K : Keep c s₀ base s)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) :
+    ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r := by
+  intro r hr
+  rw [K.wr] at hr
+  rw [K.esp]
+  exact (hst r hr).sub_left (below_le_sub (Cfg.stk_ge24 c) K.sp_lo)
+
 /-- The argument holding the working space, for the ladder's calls of the
 point functions, after code that changed memory only where the stages may. -/
 theorem Keep.ladArg {s₀ s : State} (K : Keep c s₀ (ptr s₀ A.sc) s) (hp : SetupPre c A s₀)

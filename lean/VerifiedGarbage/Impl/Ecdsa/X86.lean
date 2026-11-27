@@ -266,10 +266,10 @@ def invP : InvCfg := InvCfg.ofMod c.MP' c.SP (c.sl ACC) (c.sl RZ) (invAt c.n) c.
 def invN : InvCfg := InvCfg.ofMod c.MN' c.SN (c.sl ACC) (c.sl KM) (invAt c.n) c.C.n
 
 /-- Batched divsteps invert 256-bit field elements. -/
-def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invP.inv else powField c.powP c.SP c.C.p
+def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then .call (c.SP.fn "inv") c.invP.inv else powField c.powP c.SP c.C.p
 
 /-- Batched divsteps invert 256-bit scalars. -/
-def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invN.inv else powScalar c.powN c.SN c.C.n
+def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then .call (c.SN.fn "inv") c.invN.inv else powScalar c.powN c.SN c.C.n
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]
