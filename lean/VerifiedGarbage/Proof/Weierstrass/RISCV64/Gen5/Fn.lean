@@ -1446,10 +1446,27 @@ theorem mulW_fnW (W : Addr) (o : Nat) {m m' : Mem} (h : Frame (mulW W o) m m') :
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
     · exact ⟨_, List.mem_cons_self .., Offset.sub W (by omega_using []) (by omega_using [])⟩
 
+/-- `CoreOk` for operands and a result below the own working space, any of
+which the operation may write. -/
+def CoreOkA (core : Prog isa) (pre : Nat → Nat → Prop) (res : Nat → Nat → Nat → Prop) : Prop :=
+  ∀ {W : Addr} {s : State} {a bb o : Nat}, WsAt W s → s.gpr .t4 = W + BitVec.ofNat 64 a →
+    s.gpr .t5 = W + BitVec.ofNat 64 bb → s.gpr .t2 = W + BitVec.ofNat 64 o → a % 8 = 0 → bb % 8 = 0 →
+    o % 8 = 0 → a + 40 ≤ 3776 → bb + 40 ≤ 3776 → o + 40 ≤ 3776 →
+    pre (d5 s.mem (W + BitVec.ofNat 64 a)) (d5 s.mem (W + BitVec.ofNat 64 bb)) →
+    WP isa core s fun s' =>
+      res (d5 s.mem (W + BitVec.ofNat 64 a)) (d5 s.mem (W + BitVec.ofNat 64 bb)) (d5 s'.mem (W + BitVec.ofNat 64 o)) ∧
+      Frame (fnW W o) s.mem s'.mem ∧ (∀ r, r ∉ clobM → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp
+
+theorem CoreOk.toA {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop} (h : CoreOk core pre res) :
+    CoreOkA core pre res := fun hw h4 h5 h2 ha8 hb8 ho8 ha hb ho hp =>
+  WP.mono (h hw h4 h5 h2 ha8 hb8 ho8 (by omega_using [ha]) (by omega_using [hb]) (by omega_using [ho])
+    (.inl (by omega_using [hb])) hp) fun _ ⟨v, f, r⟩ => ⟨v, mulW_fnW _ _ f, r⟩
+
 /-- `fnA core`, from the working space at `W` and offsets below its own
 working space that are zero-extended multiples of 8 (P-256's `ptrsA`). -/
 theorem fnA_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat → Nat → Prop}
-    (hcore : CoreOk core pre res) {W : Addr} {s : State} (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
+    (hcore : CoreOkA core pre res) {W : Addr} {s : State} (h0 : s.gpr .a0 = W) (hal : W.toNat % 8 = 0)
     (hwr : (⟨W, 8192⟩ : Region) ∈ s.wr) (hfit : W.toNat + 8192 ≤ 2 ^ 64)
     (ho : lo s .a1 + 40 ≤ 3776) (ha : lo s .a2 + 40 ≤ 3776) (hb : lo s .a3 + 40 ≤ 3776)
     (h1 : (s.gpr .a1).toNat < 2 ^ 32 ∧ (s.gpr .a1).toNat % 8 = 0)
@@ -1472,10 +1489,10 @@ theorem fnA_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat
   obtain al : ∀ r, (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0 → lo s r % 8 = 0 := fun r hr => by
     rw [show lo s r = VG.Proof.Weierstrass.RISCV64.P256Field.lo s r from rfl,
       VG.Proof.Weierstrass.RISCV64.P256Field.lo_eq hr.1]; exact hr.2
-  refine WP.mono (hcore hw1 p4 p5 p2 (al _ h2) (al _ h3) (al _ h1) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [ho])
-    (.inl (by omega_using [hb])) (by rw [m1]; exact hpre)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ =>
+  refine WP.mono (hcore hw1 p4 p5 p2 (al _ h2) (al _ h3) (al _ h1) ha hb ho
+    (by rw [m1]; exact hpre)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ =>
       ⟨by rw [← m1]; exact v2, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [← m1]; exact mulW_fnW W _ f2
+  · rw [← m1]; exact f2
   · intro r hr
     rw [g2 r (fun h => hr (subM r h)), r1.gpr r (fun h => hr (sub1 r h))]
   · rw [rd2, r1.rd]

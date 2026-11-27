@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.P384Field
 public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Gen4
+public import VerifiedGarbage.Impl.Weierstrass.RISCV64.Rows
 public import VerifiedGarbage.Impl.Words.RISCV64.Word64
 public import VerifiedGarbage.Impl.Words.RISCV64.Wide
 
@@ -30,10 +31,8 @@ built by `li64` where they are used.
 * The difference: P-384's `subWith`, with `m`'s words under the mask of the
   borrow (`subKs`).
 
-For aligned offsets (`mulFnA`), the multiplication builds most of the
-reduction's constants once rather than in each round (`mulCoreR`): the
-quotient constant and `m`'s words 0–4 in `s6`–`s11`, which it keeps in its
-own working space and loads back.
+For aligned offsets (`mulFnA`), the multiplication is by rows, in registers
+(`Impl/Weierstrass/RISCV64/Rows.lean`).
 
 The functions are otherwise as P-384's: constant time, caller-saved
 registers only (but `s6`–`s11`, as they were on return), and writes only to
@@ -117,57 +116,54 @@ def addFn : Prog isa := fn (.block (addCore m))
 /-- The function subtracting modulo `m`. -/
 def subFn : Prog isa := fn (.block (subCore m))
 
-/-! ## The multiplication for aligned offsets, with the modulus in registers
+/-! ## The multiplication for aligned offsets, by rows in registers -/
 
-`mulCoreR` is `mulCore` with its reduction (`reduceR`) reading the quotient
-constant from `s6` and `m`'s words 0–4 from `s7`–`s11` (`MR`), which it
-builds once (`constsR`) rather than in each round (word 5 still by `li64`,
-as no seventh callee-saved register is free in every caller): it keeps
-`s6`–`s11` in the copy `MA`, free once the product is at `ACC`, and loads
-them back after the rounds. -/
+/-- The registers, and where in the own working space those kept and the product are. -/
+def lay : Rows.Lay where
+  k := 6
+  VL := [.t0, .t1, .a7, .s7, .s8, .s9]
+  AL := [.a0, .a1, .a2, .a4, .a5, .a6]
+  LO := [.t6, .s6, .s10]
+  HI := [.s11]
+  KR := [.s6, .s7, .s8, .s9, .s10, .s11, .t1]
+  sv := 1664
+  pp := 1760
 
-/-- The register of `m`'s word `j < 5`. -/
-def MR (j : Nat) : Reg := [.s7, .s8, .s9, .s10, .s11].getD j .s7
-
-/-- The registers of the constants: `s6`, then `MR 0`–`MR 4`. -/
-def KR : List Reg := [.s6, .s7, .s8, .s9, .s10, .s11]
-
-/-- `s6`–`s11` to `[a3 + MA]`. -/
-def saveM : List Instr := (List.range 6).flatMap fun j => [.store .d (KR.getD j .s6) .a3 (MA + 8 * j)]
-
-/-- `s6`–`s11` from `[a3 + MA]`. -/
-def restoreM : List Instr := (List.range 6).flatMap fun j => [.load .d (KR.getD j .s6) .a3 (MA + 8 * j)]
-
-/-- The quotient constant to `s6`, `m`'s words 0–4 to `s7`–`s11`. -/
-def constsR : List Instr :=
-  li64 .s6 .a5 (BitVec.ofNat 64 (negInv m)) ++ (List.range 5).flatMap fun j => li64 (MR j) .a5 (wordOf m j)
-
-/-- `qword` with the constants in registers. -/
-def qwordR (i : Nat) : List Instr :=
-  [.mul (gw i) (gw i) .s6, .mulhu .a4 (gw i) (MR 0), .li .a5 0, .sltu .a5 .a5 (gw i), .add .a4 .a4 .a5]
-
-/-- `mac` with `m`'s word `j` in `MR j`. -/
-def macR (i j : Nat) : List Instr :=
-  mulWide .a5 .a6 (gw i) (MR j) ++
-  [.add .a5 .a5 .a4, .sltu .a7 .a5 .a4, .add .a6 .a6 .a7,
-    .add (gw (i + j)) (gw (i + j)) .a5, .sltu .a7 (gw (i + j)) .a5, .add .a4 .a6 .a7]
-
-/-- `round` with the constants in registers but word 5. -/
-def roundR (i : Nat) : List Instr :=
-  qwordR i ++ macR i 1 ++ macR i 2 ++ macR i 3 ++ macR i 4 ++ mac m i 5 ++
-    [.load .d (gw i) .a3 (ACC + 8 * (i + 6))] ++ top (gw i)
-
-/-- `reduce` with the constants in registers: `s6`–`s11` kept, the
-constants, the rounds, the top word, and `s6`–`s11` back. -/
-def reduceR : List Instr :=
-  saveM ++ (constsR m ++ ((List.range 6).map (fun j => .load .d (gw j) .a3 (ACC + 8 * j)) ++ [.li .a2 0] ++
-    (List.range 6).flatMap (roundR m) ++ [.addi .a4 .a0 0] ++ restoreM))
-
-/-- `[t2] = [t4] [t5] R⁻¹ mod m`, with the constants in registers. -/
-def mulCoreR : Prog isa := mulWith (reduceR m) (sumWith (sumKs m))
+/-- The order of the code, found by timing orders on T-Head's C910. -/
+def order : Rows.Order where
+  mul := [
+    0, 1, 2, 2, 0, 0, 0, 2, 1, 2, 1, 8, 1, 1, 10, 1, 2, 1, 11, 1, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 4, 0, 0, 0, 1,
+    2, 12, 5, 2, 17, 40, 11, 0, 10, 0, 0, 13, 0, 0, 11, 0, 1, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 11, 0, 11, 0, 0, 0, 8, 1,
+    0, 0, 0, 0, 0, 0, 0, 5, 1, 4, 5, 23, 46, 0, 0, 0, 0, 11, 4, 1, 0, 16, 9, 15, 0, 0, 0, 6, 0, 0, 0, 0, 0, 2, 0, 0,
+    7, 8, 0, 0, 2, 0, 0, 0, 7, 2, 0, 6, 0, 5, 1, 0, 0, 0, 0, 5, 1, 25, 4, 0, 4, 0, 0, 12, 0, 0, 0, 17, 2, 0, 36, 15,
+    0, 0, 0, 5, 1, 0, 0, 0, 1, 0, 1, 8, 0, 0, 0, 0, 5, 1, 0, 0, 2, 6, 0, 6, 0, 5, 0, 0, 0, 0, 0, 5, 1, 4, 0, 0, 3,
+    21, 0, 2, 42, 0, 0, 9, 0, 16, 16, 0, 1, 0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 8, 0, 0, 0, 2, 11, 5, 5, 0, 9, 0, 0, 0, 2,
+    0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 13, 0, 1, 18, 12, 18, 1, 0, 0, 0, 1, 7, 1, 0, 0, 30, 0, 0, 0, 28, 11, 0, 1,
+    10, 0, 0, 2, 0, 6, 2, 18, 9, 0, 16, 0, 8, 0, 0, 2, 5, 10, 0, 0, 0, 0, 0, 1, 4]
+  sqr := [
+    1, 0, 0, 4, 0, 8, 0, 2, 0, 2, 1, 12, 0, 6, 0, 0, 1, 0, 0, 10, 10, 0, 22, 1, 1, 0, 0, 0, 0, 23, 0, 16, 16, 0, 7,
+    1, 0, 17, 17, 1, 1, 0, 19, 0, 0, 0, 0, 1, 14, 0, 0, 0, 2, 0, 0, 8, 0, 0, 0, 6, 6, 24, 1, 0, 0, 0, 11, 0, 3, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 6, 31, 6, 0, 31, 1, 0, 0, 0, 2, 0, 0, 11, 0, 2, 0, 0, 19, 0, 39, 0, 1, 0, 3, 0, 0, 1,
+    0, 0, 0, 0, 2, 16, 0, 0, 1, 0, 0, 1, 1, 18, 0, 0, 0, 0, 5, 5, 0, 0, 0, 2, 0, 1, 1, 1, 4, 0, 2, 0, 20, 1, 0, 8, 0,
+    16, 0, 6, 0, 0, 4, 4, 0, 0, 0, 7, 1, 0, 5, 0, 0, 3, 2, 0, 0, 18, 7, 0, 6, 0, 0, 0, 3, 3, 3, 0, 1, 1, 0, 0, 3, 0,
+    1, 21, 1, 0, 0, 0, 7, 16, 0, 0, 5, 0, 0, 2, 2, 0, 0, 0, 0, 0, 4, 4, 0, 2, 0, 20, 0, 0, 0, 6, 15, 0, 5, 0, 4, 0,
+    0, 2, 2, 0, 6, 1, 1, 0, 2, 0, 1, 1, 0, 7, 0, 0, 5, 0, 4, 0, 0, 1, 1, 1, 0, 0, 0, 2]
+  tail := [
+    0, 17, 34, 0, 16, 1, 0, 36, 0, 37, 34, 0, 13, 12, 0, 11, 2, 10, 27, 22, 2, 22, 6, 20, 20, 20, 25, 0, 2, 0, 20,
+    20, 0, 2, 16, 6, 0, 0, 6, 6, 0, 11, 9, 3, 9, 9, 0, 9, 0, 0, 6, 2, 0, 0, 3, 0, 2, 5, 2, 2, 2, 0, 1, 1, 0, 5, 0, 0,
+    0, 3, 8, 0, 28, 0, 0, 0, 11, 0, 4, 0, 0, 0, 7, 0, 6, 0, 1, 0, 0, 32, 0, 0, 0, 30, 0, 2, 0, 0, 26, 0, 0, 15, 8, 0,
+    0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 0, 0, 0, 10, 0, 30, 1, 0, 0, 0, 2, 5, 0, 4, 0, 0, 6, 0, 0, 5, 1, 4, 34, 0,
+    0, 33, 0, 2, 0, 0, 0, 0, 0, 26, 10, 0, 0, 14, 0, 2, 0, 0, 11, 0, 0, 9, 0, 0, 0, 0, 1, 0, 0, 0, 0, 9, 30, 1, 0, 0,
+    0, 0, 5, 0, 0, 8, 0, 2, 0, 0, 1, 4, 35, 0, 3, 0, 0, 0, 4, 1, 0, 0, 0, 10, 25, 16, 0, 0, 3, 0, 0, 12, 0, 0, 0, 15,
+    0, 0, 0, 6, 0, 1, 0, 0, 0, 0, 9, 30, 1, 0, 0, 0, 0, 1, 0, 0, 2, 7, 2, 7, 0, 2, 0, 0, 0, 0, 32, 1, 0, 0, 0, 29, 0,
+    1, 0, 0, 0, 0, 14, 2, 0, 0, 0, 3, 10, 0, 0, 0, 0, 12, 0, 5, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 1, 0, 0, 2, 7, 20,
+    0, 0, 0, 5, 0, 0, 0, 0, 32, 1, 32, 0, 1, 0, 0, 0, 0, 26, 0, 16, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
+    0, 0, 10, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 6, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4, 0, 0, 18, 0, 0, 0, 10, 0, 0, 8, 0, 0,
+    1, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 4, 0, 3, 0, 0, 4, 0, 0, 0, 0, 9, 0, 0, 14, 0, 16, 0, 0, 0, 10, 0, 2,
+    10, 0, 0, 0, 1, 4, 1, 0, 0, 4, 0, 0, 0, 1]
 
 /-- The function multiplying modulo `m`, for aligned offsets. -/
-def mulFnA : Prog isa := fnA (mulCoreR m)
+def mulFnA : Prog isa := fnA (Rows.fast lay m order)
 
 /-- The function adding modulo `m`, for aligned offsets. -/
 def addFnA : Prog isa := fnA (.block (addCore m))
