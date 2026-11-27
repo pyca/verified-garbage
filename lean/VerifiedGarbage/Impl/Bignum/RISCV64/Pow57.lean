@@ -2,6 +2,25 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.RISCV64.MontMul
 
+/-!
+# Montgomery arithmetic in radix `2⁵⁷` on RISC-V
+
+For a modulus `m` of `w = 8 q` words, `2 ≤ q ≤ 6`: numbers of `n = 9 q` limbs of 57 bits, one in a word, whose
+products are added up without carries. For limbs `x` and `y`, `mulhu (2⁷ x) y` is `⌊x y / 2⁵⁷⌋`, and for a column's
+products, with `L` the sum of their low words and `H` of these, `L - 2⁵⁷ H` is the sum of their low 57 bits: a
+column adds it and the `H` of the column below to its word of `T`. A column takes less than `2⁶⁴` in all, up to
+`n = 54`.
+
+Three rows are done at once, three columns at a time, with the last two limbs of `y` in registers (`rect`). The
+Montgomery radix is `R' = 2^(57 n) = 2^(64 w + q) ≥ 4 m`, so that operands below `2 m` give results below `2 m`
+with no subtraction.
+
+The working space is arrays 2 to 7: `M` (`m`) and `A` (the running power), each `n` limbs and three zeros, `T`
+(`2 n` words) and `E` (the multiplier, `n` limbs). `enter` points `a7` at `A` and `s5` at `T`, from which the rest
+follows; `leave` puts them back. `T` overlaps array 5, from which `E` is unpacked before `T` is used. `t1` is
+`-m⁻¹ mod 2⁶⁴` throughout. Every loop and address depends on `w` alone.
+-/
+
 @[expose] public section
 
 namespace VG.Impl.Bignum.RISCV64.Pow57
@@ -152,6 +171,7 @@ def diagStep57 : List Instr :=
     .store .d .a5 .a0 0, .add .a4 .a4 .s1, .add .a4 .a4 .t5, .logic .and .a5 .a4 .t6,
     .shift .srl .d .t5 .a4 57, .store .d .a5 .a0 8]
 
+/-- `T := 2 T + Σ aᵢ² 2^(114 i)`, normalised. -/
 def diag57 : Prog isa :=
   .seq (.block (mask57 ++ ([.li .t5 0, .addi .a0 .s5 0] : List Instr) ++ limbs ++ [.addi .a1 .a7 0, .add .t3 .a7 .t2]))
     (.loop (.block (diagStep57 ++ ([.addi .a0 .a0 16, .addi .a1 .a1 8] : List Instr))) (.ne .a1 .t3))
@@ -183,7 +203,7 @@ def atA : List Instr := atM ++ [.add .t4 .t4 .t2, .addi .t4 .t4 24]
 /-- `t4 := E`. -/
 def atE : List Instr := atA ++ [.add .t4 .t4 .t2, .addi .t4 .t4 24, .add .t4 .t4 .t2, .add .t4 .t4 .t2]
 
-/-- The padding after `M` and after `A`, from `t2`, `t4` as `unpackFrom atM` leaves them… -/
+/-- The padding after `M` and after `A`. -/
 def pads : List Instr :=
   [.add .t4 .a7 .s5, .add .t4 .t4 .s5, .shift .srl .d .t2 .s5 3, .add .t2 .t2 .s5, .addi .t2 .t2 (-18), .li .s0 0,
     .add .t4 .t4 .t2, .store .d .s0 .t4 0, .store .d .s0 .t4 8, .store .d .s0 .t4 16, .add .t4 .t4 .t2,

@@ -3,7 +3,7 @@ module
 -- separate module: the windowed exponentiation, the largest of the CRT's proofs, apart from `CrtR2`, which `recombineP`'s proof imports too
 public import VerifiedGarbage.Proof.Bignum.RISCV64.PubPower
 public import VerifiedGarbage.Proof.Bignum.RISCV64.MontSqr
-public import VerifiedGarbage.Proof.Bignum.RISCV64.Pow57Conv
+public import VerifiedGarbage.Proof.Bignum.RISCV64.Pow57
 public import VerifiedGarbage.Proof.Bignum.RISCV64.WinSelect
 public import VerifiedGarbage.Impl.Bignum.RISCV64.ModExp
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
@@ -27,7 +27,8 @@ PPC64LE (`Proof/Bignum/PPC64LE/{WinBase,WinTable,WinSel,WinPow}.lean`): the
 table `T_j = x^j R mod m` (`table_ok`), the masked scan of the whole table
 (`select_ok`), a window of four squares (`sqrTail`) and a multiplication
 (`window_ok`), a byte's two windows (`byteWin_ok`), and the power
-`x^d mod m` in array 4.
+`x^d mod m` in array 4. `powWin57_ok`: the same for `powWin57`, in radix
+`2⁵⁷`, and `powWinCall_ok` the function, which chooses between the two.
 -/
 
 @[expose] public section

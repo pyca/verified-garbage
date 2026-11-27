@@ -24,6 +24,10 @@ Each byte of the exponent is two windows: four Montgomery squares of `a`,
 then `a := a T_d` for the window's digit `d`, `T_d` selected by a masked scan
 of the whole table, so that no address and no branch depends on `d`.
 
+For `w = 8 q`, `2 ≤ q ≤ 6` (moduli of 1024 to 3072 bits), `powWin57` is used
+instead, with the windows' arithmetic in radix `2⁵⁷` (`Pow57.lean`) and the
+table as above, but of `x^j 2^(64 w + q) mod m`.
+
 `powWinFn` is `powWin` as the function `vg_bignum_pow_win`, which its
 callers share (`powWinCall`).
 
@@ -164,7 +168,7 @@ def may57 : List Instr :=
 
 /-- `powWin` as the function `name`, which a call enters with `ra` and
 `t0`–`t6` changed: it computes `w` (`wOfSize`) and `-m⁻¹ mod 2⁶⁴` (`minv`)
-again. The caller's `ra` is lost, as with any call. -/
+again, and uses `powWin57` where it may. The caller's `ra` is lost, as with any call. -/
 def powWinCall (name : String) : Prog isa :=
   .call name (.seq (.block (wOfSize ++ minv ++ may57)) (.ite (.zero .t2) powWin57 powWin))
 
