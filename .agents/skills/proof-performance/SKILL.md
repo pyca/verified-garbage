@@ -523,6 +523,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   the constant its quotation resolved it to, as a term, an operator or a `simp`
   lemma (a lemma's full name in a macro's `simp only [...]` took a
   millisecond): a macro needs no `plain_simp_names` for it.
+  A name the source writes is looked up once there, not two to four times, and the
+  projections of a local declaration (`h.foo`) not among the constants.
+* **Operators:** `Proof/Framework/FastOps.lean`, which `GetElem` imports, elaborates
+  `x + 5 < 2 ^ 64` between operands of one type (or of `Nat` and `Int`) without
+  looking for an instance for each numeral, which Lean does before and after it knows its
+  type: an operand whose type is not known when it is elaborated (`fun x => x < 5`) and
+  operands of other types leave the expression to Lean, ten times slower.
 * **Failing unfolding:** `rfl`, `trivial`, `congr 1`, `exact` and `simpa` on
   goals about symbolic memory or hash values can unfold definitions (down
   to `BitVec` internals) for seconds before failing or succeeding. Close

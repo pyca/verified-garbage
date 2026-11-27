@@ -3,19 +3,21 @@ module
 public meta import Lean.Elab.Tactic.Simp
 
 /-!
-# Names that macros write are not looked up
+# Names are looked up once
 
 Untrusted: this only changes how the elaborator finds what a name means, not
 what it means.
 
-A quotation resolves the names in it to constants where it is written, and the
-elaborator takes that constant for a name a macro writes; but first it asks
-whether a local declaration has that name, and on the way whether the name and
-each prefix of it is a constant in each enclosing namespace and each opened
-one, public or private. In a module with a dozen of them that takes 40 µs for
+To find what a name means the elaborator asks whether the name, and
+each prefix of it, is a constant in each enclosing namespace and each opened
+one, public or private: in a module with a dozen of them that takes 40 µs for
 the `Eq` of `=`, 115 µs for the `HAdd.hAdd` of `+`, 80 µs for the constructor
 of `⟨…⟩`, half a millisecond for a lemma's full name in a macro's
-`simp only [...]`, and twice that, since `simp` looks up its arguments twice.
+`simp only [...]`. It does so twice for every name (the first time to decide whether a
+local declaration may have the name), twice that for a lemma of a `simp`, which
+looks up its arguments twice, and three times for one of a `rw`; also for the projections of a
+local declaration, `h.foo`, though a local declaration comes before any constant; and also for a
+name that a macro writes, which its quotation has resolved to a constant where it is written.
 
 Here, in the modules of `VerifiedGarbage.Proof` (and nowhere else: registrations
 and contracts are elaborated by Lean's own rules alone):
@@ -25,12 +27,18 @@ and contracts are elaborated by Lean's own rules alone):
   has (`constIdent`), which the elaborator resolves to the same constant at
   once, unless a local declaration might have the name (`namesLocal`): the head
   of an application, a term, and a lemma of a `simp` (here in any module);
+* a name of the source there, or a lemma of a `rw`, that no local declaration has becomes such an
+  identifier too, with the constant that Lean's own rules find; and `h.foo`, with `h` a
+  local declaration, the projection `foo` of it (`ofSource?`);
 * the macros of the operators (`+`, `=`, `≤`, `∧`, `∈`, …) write such an
-  identifier, in the same syntax as Lean's. (Not `^`, whose macro `PowLit` adds to:
-  a macro here would come before it.)
+  identifier, in the same syntax as Lean's.
 
-Names that the source writes are not touched. Whatever is not of these forms is
-left to Lean's own elaborators and macros (`throwUnsupportedSyntax`).
+Whatever is not of these forms is left to Lean's own elaborators and macros
+(`throwUnsupportedSyntax`).
+
+For the same reason a numeral of a type that is not known yet (an operand of an operator) does not
+look for an instance that it cannot find, and one of type `Nat` or `BitVec w` for the one it
+always finds (`elabNumFast`).
 -/
 
 public meta section
@@ -76,17 +84,124 @@ def ofScoped? (lctx : LocalContext) (stx : Syntax) : Option Syntax :=
 
 /-! ### Terms -/
 
+/-- Lean's own elaborator of `stx`. -/
+def elabBuiltin : TermElab := fun stx expectedType? => do
+  let some e := (termElabAttribute.getEntries (← getEnv) stx.getKind).getLast? | throwUnsupportedSyntax
+  e.value stx expectedType?
+
+/-- Whether an auxiliary declaration (one that is being defined) might have the name `n`, or a prefix
+of it: they are found by a part of their names, which has a component of theirs in it. -/
+def namesAux (lctx : LocalContext) (n : Name) : Bool :=
+  lctx.decls.any fun
+    | some d => d.isAuxDecl &&
+      (d.userName.hasMacroScopes || (n.components.any fun c => d.userName.components.contains c))
+    | none => false
+
+/-- The number of components of `n` after its longest prefix that is a local declaration's name. -/
+def localPrefix? (lctx : LocalContext) (n : Name) : Option Nat :=
+  go n 0
+where
+  go : Name → Nat → Option Nat
+    | m@(.str p _), k => if (lctx.findFromUserName? m).isSome then some k else go p (k + 1)
+    | _, _ => none
+
+/-- The projections `fields` of `e`. -/
+def projections (info : SourceInfo) (e : Syntax) (fields : List Syntax) : Syntax :=
+  fields.foldl (init := e) fun e f => .node info ``Lean.Parser.Term.proj #[e, mkAtom ".", f]
+
+/-- An identifier `stx` of the source, with what Lean finds it to mean written out: a constant or
+a local declaration, and the projections of it. None for the name of a local declaration, which Lean
+finds at once, and for what is left to Lean: a name that a declaration being defined might have,
+one of a constant that is only generated when it is used, and what Lean does not find. -/
+def ofSource? (stx : Syntax) : TermElabM (Option Syntax) := do
+  let .ident info _ n [] := stx | return none
+  unless n matches .str .. do return none
+  if n.hasMacroScopes then return none
+  let lctx ← getLCtx
+  match localPrefix? lctx n with
+  | some 0 => return none
+  | some k =>
+    if namesAux lctx n then return none
+    let hd :: fields := stx.identComponents (nFields? := some k) | return none
+    return projections info hd fields
+  | none =>
+    if namesAux lctx n then return none
+    let cs ← resolveGlobalName n
+    let env ← getEnv
+    unless cs.all fun (c, _) => env.contains c do return none
+    let (c, projs) :: rest := cs | return none
+    if cs.all (·.2.isEmpty) then
+      return some <| .ident info (c.toString false).toRawSubstring (.num .anonymous 0) (cs.map fun (c, _) => .decl c [])
+    unless rest.isEmpty do return none
+    let hd :: fields := stx.identComponents (nFields? := some projs.length) | return none
+    return projections info (constIdent hd.getHeadInfo c) fields
+
+/-- `ofScoped?` or `ofSource?`. -/
+def ofIdent? (stx : Syntax) : TermElabM (Option Syntax) := do
+  match ofScoped? (← getLCtx) stx with
+  | some s => return some s
+  | none => ofSource? stx
+
+/-- The head of an application, with the identifier in it as `ofIdent?` gives it. -/
+partial def ofHead? (stx : Syntax) : TermElabM (Option Syntax) := do
+  match stx with
+  | .ident .. => ofIdent? stx
+  | .node _ k _ =>
+    if k == ``Lean.Parser.Term.proj || k == ``Lean.Parser.Term.explicitUniv then
+      return (← ofHead? stx[0]).map (stx.setArg 0 ·)
+    else if k == ``Lean.Parser.Term.explicit then
+      return (← ofHead? stx[1]).map (stx.setArg 1 ·)
+    else return none
+  | _ => return none
+
 @[term_elab Lean.Parser.Term.app]
 def elabAppFast : TermElab := fun stx expectedType? => do
   unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
-  let some f := ofScoped? (← getLCtx) stx[0] | throwUnsupportedSyntax
-  elabTerm (stx.setArg 0 f) expectedType?
+  let some f ← ofHead? stx[0] | throwUnsupportedSyntax
+  elabBuiltin (stx.setArg 0 f) expectedType?
 
 @[term_elab ident]
 def elabIdentFast : TermElab := fun stx expectedType? => do
   unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
-  let some f := ofScoped? (← getLCtx) stx | throwUnsupportedSyntax
-  elabTerm f expectedType?
+  let some f ← ofIdent? stx | throwUnsupportedSyntax
+  elabBuiltin f expectedType?
+
+@[term_elab Lean.Parser.Term.proj]
+def elabProjFast : TermElab := fun stx expectedType? => do
+  unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
+  let some f ← ofHead? stx | throwUnsupportedSyntax
+  elabBuiltin f expectedType?
+
+@[term_elab Lean.Parser.Term.explicit]
+def elabExplicitFast : TermElab := fun stx expectedType? => do
+  unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
+  let some f ← ofHead? stx | throwUnsupportedSyntax
+  elabBuiltin f expectedType?
+
+/-! ### Numerals -/
+
+/-- A numeral of type `Nat` or `BitVec w`, with the instance Lean finds for it; one of a type that is
+not known yet, without looking for an instance, which is found when it is. -/
+@[term_elab num]
+def elabNumFast : TermElab := fun stx expectedType? => do
+  unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
+  let some val := stx.isNatLit? | throwUnsupportedSyntax
+  let n := mkRawNatLit val
+  let type ← match expectedType? with
+    | some t => instantiateMVars t
+    | none => mkFreshTypeMVar .synthetic
+  match type with
+  | .const ``Nat _ => return mkApp3 (.const ``OfNat.ofNat [0]) type n (.app (.const ``instOfNatNat []) n)
+  | .app (.const ``BitVec _) w =>
+    return mkApp3 (.const ``OfNat.ofNat [0]) type n (mkApp2 (.const ``BitVec.instOfNat []) w n)
+  | .mvar _ =>
+    let u ← getDecLevel type
+    let m ← mkFreshExprMVar (mkApp2 (.const ``OfNat [u]) type n) .synthetic
+    registerSyntheticMVarWithCurrRef m.mvarId! (.typeClass none)
+    let r := mkApp3 (.const ``OfNat.ofNat [u]) type n m
+    registerMVarErrorImplicitArgInfo m.mvarId! stx r
+    return r
+  | _ => throwUnsupportedSyntax
 
 /-! ### Operators -/
 
@@ -121,6 +236,13 @@ private def binrel := infixOp ``Lean.Parser.Term.binrel "binrel%"
 @[macro «term_>_»] def mGt : Macro := binrel ``GT.gt
 @[macro «term_==_»] def mBeq : Macro := infixOp ``Lean.Parser.Term.binrel_no_prop "binrel_no_prop%" ``BEq.beq
 
+/-- `x ^ y`; a numeral `y` as `(y : Nat)`, as `PowLit` has it. -/
+@[macro «term_^_»] def mPow : Macro := fun stx => do
+  let info ← infoInProof
+  let y := stx[2]
+  let y ← if y.isOfKind numLitKind then `(($(⟨y⟩) : $(⟨constIdent info ``Nat⟩))) else pure ⟨y⟩
+  return .node info ``Lean.Parser.Term.rightact #[.atom info "rightact%", constIdent info ``HPow.hPow, stx[0], y]
+
 /-- The constant `c` applied to `args`. -/
 private def mkApp (info : SourceInfo) (c : Name) (args : Array Syntax) : Syntax :=
   .node info ``Lean.Parser.Term.app #[constIdent info c, .node info nullKind args]
@@ -151,37 +273,55 @@ open Tactic
 
 /-- The argument `arg` of a `simp` with its name, if it is one, as a name the elaborator finds at
 once. -/
-def simpArg (lctx : LocalContext) (arg : Syntax) : Option Syntax :=
+def simpArg (arg : Syntax) : TermElabM (Option Syntax) := do
   if arg.isOfKind ``Lean.Parser.Tactic.simpLemma then
-    (ofScoped? lctx arg[2]).map fun t => arg.setArg 2 t
-  else none
+    if arg[2].isIdent then
+      if let some t := ofScoped? (← getLCtx) arg[2] then return some (arg.setArg 2 t)
+      if isProof (← getEnv).mainModule then
+        if let some t ← ofSource? arg[2] then return some (arg.setArg 2 t)
+  return none
 
 /-- `stx` with the arguments of the `simp` it is as `simpArg` gives them; none if it has no such
 argument. -/
-partial def simpArgs? (lctx : LocalContext) (stx : Syntax) : Option Syntax :=
+partial def simpArgs? (stx : Syntax) : TermElabM (Option Syntax) := do
   match stx with
   | .node info k args =>
-    if k == ``Lean.Parser.Tactic.simpLemma then simpArg lctx stx else Id.run do
+    if k == ``Lean.Parser.Tactic.simpLemma then simpArg stx else
     let mut out := args
     let mut changed := false
     for h : i in [0:args.size] do
       let a := args[i]
       if a matches .node .. then
         if a.isOfKind ``Lean.Parser.Tactic.location || a.isOfKind ``Lean.Parser.Tactic.optConfig then continue
-        if let some a' := simpArgs? lctx a then
+        if let some a' ← simpArgs? a then
           out := out.set! i a'
           changed := true
     return if changed then some (.node info k out) else none
-  | _ => none
+  | _ => return none
 
-/-- `stx` (a `simp`, `dsimp` or `simp_all`), if a macro wrote names of its lemmas, with their constants
-for them. -/
+/-- `stx` (a `simp`, `dsimp` or `simp_all`), with the constants that the names of its lemmas are. -/
 private def simpNames : Tactic := fun stx => do
-  let some stx ← withMainContext do return simpArgs? (← getLCtx) stx | throwUnsupportedSyntax
+  let some stx ← withMainContext do simpArgs? stx | throwUnsupportedSyntax
   evalTactic stx
 
 @[tactic Lean.Parser.Tactic.simp] def evalSimpNames : Tactic := simpNames
 @[tactic Lean.Parser.Tactic.dsimp] def evalDSimpNames : Tactic := simpNames
 @[tactic Lean.Parser.Tactic.simpAll] def evalSimpAllNames : Tactic := simpNames
+
+/-! ### `rw` -/
+
+/-- A `rewrite` with the constants that the names of its lemmas are. -/
+@[tactic Lean.Parser.Tactic.rewriteSeq] def evalRwNames : Tactic := fun stx => do
+  unless isProof (← getEnv).mainModule do throwUnsupportedSyntax
+  let mut rules := stx[2][1]
+  let mut changed := false
+  for i in [0:rules.getNumArgs] do
+    let r := rules[i]
+    if r.isOfKind ``Lean.Parser.Tactic.rwRule && r[1].isIdent then
+      if let some t ← withMainContext (ofIdent? r[1]) then
+        rules := rules.setArg i (r.setArg 1 t)
+        changed := true
+  unless changed do throwUnsupportedSyntax
+  evalTactic (stx.setArg 2 (stx[2].setArg 1 rules))
 
 end VG.FastNames

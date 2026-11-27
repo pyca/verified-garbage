@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Omega
 public meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.FastNames
 public meta import VerifiedGarbage.Proof.Framework.FastNames
+public import VerifiedGarbage.Proof.Framework.FastOps
+public meta import VerifiedGarbage.Proof.Framework.FastOps
 
 /-!
 # Index bounds without rewriting every hypothesis
@@ -30,7 +32,7 @@ rules here are tried before them, in this order:
 
 If they fail, core's rules run as before.
 
-`FastNames` is imported for the modules that import this one.
+`FastNames` and `FastOps` are imported for the modules that import this one.
 -/
 
 public meta section
