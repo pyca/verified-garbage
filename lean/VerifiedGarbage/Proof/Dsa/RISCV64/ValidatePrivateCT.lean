@@ -581,7 +581,9 @@ theorem Kv_rel : RelCT isa (Two ΦKv) RKv fun _ _ => True := by
 theorem R3v_rel : RelCT isa (Two ΦR3v) R3v fun _ _ => True := by
   refine chain_start (chain_cons runR3v (m := 2) (by decide)
     (two_taint _ (pinsL rfl (pinsR3_0 onR3v)) (by taint_decide)) ?_)
-  refine chain_cons runR3v (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3v)) (by taint_decide)) ?_
+  refine chain_cons runR3v (m := 9) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3v)) (by taint_decide)) ?_
+  refine chain_cons runR3v (m := 17) (by decide) (relL rfl rfl (relR3_9 onR3v)) ?_
+  refine chain_cons runR3v (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_17 onR3v)) (by taint_decide)) ?_
   refine chain_cons runR3v (m := 45) (by decide) (two_taint _ (pinsL rfl (pinsR3_18 onR3v)) (by taint_decide)) ?_
   refine chain_cons runR3v (m := 46) (by decide) (rel_ite_at hFR3gv (zeroL rfl (zeroEg onR3v))
     (eo_rel runEgv fun _ _ h => semEg onR3v ⟨atL rfl h.1, h.2⟩) nil_rel) ?_

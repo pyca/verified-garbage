@@ -194,6 +194,28 @@ theorem stQ3 {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : SB v 
     fun _ ⟨B', mw⟩ => WP.seq (WP.mono (rrQ_QB B' hq hqo) fun t ⟨⟨I, qb⟩, _⟩ =>
       hc t I (mw.body (qb.body B'.base.ok)))))
 
+/-- Before `minv` and `rr`. -/
+theorem pre_B39 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) {v : VD} {u : State}
+    (h : At Φ FB 39 v u) : RrPre u v.L.Q 1600 v.L.wq v.q :=
+  at_sem (M := fun v u => RrPre u v.L.Q 1600 v.L.wq v.q) (fun _ _ h => WP.of_flat (c := .seq ranges (.block keepMask)) rfl
+    (by
+      obtain ⟨hq, hqo, -⟩ := (hsem _ _ h).vals
+      exact WP.seq (WP.mono (ranges_SB (hsem _ _ h)) fun _ ⟨B, a4⟩ => WP.mono (keepMask_QB B a4)
+        fun _ ⟨B', _⟩ => ⟨B'.qs.inq.env, B'.q0, hq, hqo⟩))) h
+
+theorem relB39 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    RelCT isa (VG.Proof.Bignum.RISCV64.Pre.Two (At Φ FB 39)) (seg FB 39 47) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.Q) (Z := fun _ => 1600) (w := fun v => v.L.wq) (N := fun v => v.q) rfl
+    fun _ _ h => pre_B39 hsem h
+
+theorem pinsB47 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
+    Pins (At Φ FB 47) [.s6, .s11, .ra, .a7, .s5, .t0] :=
+  pins_at_fix (fun v => fixB v ++ envQ v) (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := .seq ranges (.seq (.block keepMask) rrQ)) rfl (by
+      obtain ⟨hq, hqo, -⟩ := (hsem _ _ h).vals
+      exact WP.seq (WP.mono (ranges_SB (hsem _ _ h)) fun _ ⟨B, a4⟩ => WP.seq (WP.mono (keepMask_QB B a4)
+        fun _ ⟨B', _⟩ => WP.mono (rrQ_QB B' hq hqo) fun _ ⟨⟨I, _⟩, _⟩ => fix_QB I.1)))
+
 theorem pinsB50 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u) :
     Pins (At Φ FB 50) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.ql)])

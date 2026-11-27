@@ -32,7 +32,8 @@ spaces (`setupQ`, `setupP`) and runs `body`. Its levels are verification's
 (`CTBase.lean`) up to the sizes' branch: their lists start with the same
 programs, so their cuts' registers are verification's (`at_mono`,
 `pins_mono`). The sizes' passing side `XR` is one level: cut at 0, 2 (after
-`enterQ; ptrQ`) and 11 (after `enterP; ptrP`), then `body`'s levels from 26
+`enterQ; ptrQ`), 11 (after `enterP; ptrP`)
+and 18 (before `minv` and `rr`), then `body`'s levels from 26
 (`body_rel'`), whose phase `SB` holds since the precondition makes the key
 valid (`kv_of`).
 -/
@@ -169,6 +170,13 @@ theorem pinsRp_11 : Pins (At ΦRp FRp 11) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .
         exact WP.mono (ptrP_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
           ((B1.keepM k' m').fixB.app (fix_envP (ip.keep k'))).app ⟨a7, a8, trivial⟩))
 
+/-- `minv` and `rr`, in the P space. -/
+theorem relRp_18 : RelCT isa (Two (At ΦRp FRp 18)) (seg FRp 18 26) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.S) (Z := fun v => v.L.qOff) (w := fun v => v.L.wp) (N := fun v => v.p) rfl
+    fun _ _ h => at_sem (M := fun v u => RrPre u v.L.S v.L.qOff v.L.wp v.p) (fun _ _ h => WP.of_flat
+      (c := .seq setupQ (.seq (.block enterP) (.seq (.block ptrP) (loadArr 0)))) rfl
+      (WP.seq (WP.mono (setupQ_P1 (onR0 _ _ (toR0 h)) (kvR h).1) fun _ hs => loadP_SR3 hs))) h
+
 theorem semBp {v : VD} {u : State} (h : At ΦRp FRp 26 v u) : SB v u :=
   at_sem (M := SB) (fun _ _ h' => WP.of_flat (c := .seq setupQ setupP) rfl
     (WP.seq (WP.mono (setupQ_P1 (onR0 _ _ (toR0 h')) (kvR h').1) fun _ hs =>
@@ -192,7 +200,8 @@ theorem rel_flat {P : State → State → Prop} {c : Prog isa} (h : RelCT isa P 
 theorem XR_rel : RelCT isa (Two ΦRp) XR fun _ _ => True := by
   refine chain_start (chain_cons runRp (m := 2) (by decide) (two_taint _ pinsRp_0 (by taint_decide)) ?_)
   refine chain_cons runRp (m := 11) (by decide) (two_taint _ pinsRp_2 (by taint_decide)) ?_
-  refine chain_cons runRp (m := 26) (by decide) (two_taint _ pinsRp_11 (by taint_decide)) ?_
+  refine chain_cons runRp (m := 18) (by decide) (two_taint _ pinsRp_11 (by taint_decide)) ?_
+  refine chain_cons runRp (m := 26) (by decide) relRp_18 ?_
   rw [drop26]
   exact rel_flat (body_rel' runBp fun _ _ h => semBp h)
 

@@ -216,7 +216,9 @@ include hbody
 theorem R3d_rel : RelCT isa (Two ΦR3d) R3d fun _ _ => True := by
   refine chain_start (chain_cons runR3d (m := 2) (by decide)
     (two_taint _ (pinsL rfl (pinsR3_0 onR3d)) (by taint_decide)) ?_)
-  refine chain_cons runR3d (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3d)) (by taint_decide)) ?_
+  refine chain_cons runR3d (m := 9) (by decide) (two_taint _ (pinsL rfl (pinsR3_2 onR3d)) (by taint_decide)) ?_
+  refine chain_cons runR3d (m := 17) (by decide) (relL rfl rfl (relR3_9 onR3d)) ?_
+  refine chain_cons runR3d (m := 18) (by decide) (two_taint _ (pinsL rfl (pinsR3_17 onR3d)) (by taint_decide)) ?_
   refine chain_cons runR3d (m := 45) (by decide) (two_taint _ (pinsL rfl (pinsR3_18 onR3d)) (by taint_decide)) ?_
   refine chain_cons runR3d (m := 46) (by decide) (rel_ite_at hFR3gd (zeroL rfl (zeroEg onR3d))
     (eo_rel runEgd fun _ _ h => semEg onR3d ⟨atL rfl h.1, h.2⟩) nil_rel) ?_

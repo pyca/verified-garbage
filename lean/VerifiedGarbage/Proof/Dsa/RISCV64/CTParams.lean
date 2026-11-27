@@ -77,7 +77,8 @@ Each level's list, with its cuts (the indices of `At`) and its branches
   pointer (`rel_ptr`), the branch on p's or q's oddness at 1 (`R1`, `R2`);
 * `R2`: cuts at 0, 2 (after `enterQ; ptrQ`) and 10 (after `getP s10`), the
   branch on `p mod q` at 23 (`R3`);
-* `R3`: cuts at 0, 2 (after `enterP; ptrP`) and 18 (after `ptrG`), the branch
+* `R3`: cuts at 0, 2 (after `enterP; ptrP`), 9 and 17 (around `minv` and `rr`)
+  and 18 (after `ptrG`), the branch
   on g's range at 45 (level `elemOrder`, cut at 0 and 3, after its `ptrQ`), and
   on g's check at 46 (`RK`);
 * `RK`: cuts at 0 and 1 (after `ptrY`), the branch on y's range at 28
@@ -86,6 +87,10 @@ Each level's list, with its cuts (the indices of `At`) and its branches
   header's words (1, 9, 50, 53, 63, 104, 106, 108, 154, 157, 161, 171, 215,
   225, 288, 291, 297). `scalarLen`'s and `scalar`'s branches are on registers
   those cuts fix, which the taint analysis checks.
+
+`minv` and `rr` are a level of their own (`rrQ_rel`), as `rr` branches on the
+modulus's top word, which the public data fix; `body` is cut at 39 and 47
+around them.
 
 Between the cuts the registers fixed are always `S`, the key and the
 signature (`fixB`), the working space's registers (`envP`, `envQ`) and those
@@ -100,6 +105,7 @@ open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Proof.Mont VG.Proof.Bignum.RISCV64
 open VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Dsa.RISCV64 VG.Proof.Dsa.RISCV64
 open VG.Proof.Bignum.RISCV64.Pre (Two Pins two_post two_taint)
 open VG.Proof.Dsa (significant)
+open VG.Proof.Bignum (slot)
 
 variable {α : Type}
 
@@ -222,6 +228,97 @@ theorem fail_rel {Ψ : α → State → Prop} : RelCT isa (Two Ψ) (.block [.li 
 
 theorem nil_rel {P : State → State → Prop} : RelCT isa P (.block []) fun _ _ => True :=
   RelCT.block_nil fun _ _ _ => trivial
+
+/-! ## `R² mod m` -/
+
+/-- What `rrQ` (`minv`, then `rr`) needs: the arrays, and an odd modulus `N ≥ 2` in array 0. -/
+structure RrPre (s : State) (B : Addr) (Z w N : Nat) : Prop where
+  env : Env s B Z w
+  n : wordsVal s.mem B (slot w 0) w = N
+  two : 2 ≤ N
+  odd : N % 2 = 1
+
+abbrev FRr : List (Prog isa) := Code.flat Verify.rrQ
+
+/-- After `minv`. -/
+theorem minv_RrPre {s : State} {B : Addr} {Z w N : Nat} (h : RrPre s B Z w N) :
+    WP isa (.block Precompute.minv) s fun t => (RrPre t B Z w N ∧
+      ((word t.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0) ∧ Keep [.s0, .s1, .s2, .s3, .t1] s t := by
+  have hw := h.env.w2
+  have e0 := Lay.slot_eq w 0; have e28 := Lay.slot_eq w 28
+  have hZ := h.env.hZ
+  refine WP.mono (minv_ok h.env.hs h.env.a7 (slot_al _ _) (by omega_using [e0, e28, hZ, hw])
+    (by rw [wordsVal_mod_two _ _ _ (w := w) (by omega_using [hw]), h.n]; exact h.odd)) fun t ⟨⟨i, m⟩, k⟩ =>
+      ⟨⟨⟨h.env.keep k, by rw [m]; exact h.n, h.two, h.odd⟩, by rw [m]; exact i⟩, k⟩
+
+/-- At the branch of `rr`: the top word in `s0`. -/
+theorem midRr {s : State} {B : Addr} {Z w N : Nat} (h : RrPre s B Z w N) {c : Prog isa} {Q : State → Prop}
+    (hc : ∀ t, RrPre t B Z w N → Bases t B w → t.gpr .s0 = word t.mem B (slot w 0 + 8 * (w - 1)) →
+      ((word t.mem B (slot w 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0 → WP isa c t Q) :
+    WP isa (.seq (.block Precompute.minv) (.seq (.block (PublicChecked.base .a2 1))
+      (.seq (.block (PublicChecked.base .a5 2)) (.seq (.block (PublicChecked.base .a6 3))
+        (.seq (.block rrTop) c))))) s Q :=
+  WP.seq (WP.mono (minv_RrPre h) fun _ ⟨⟨h₁, i₁⟩, _⟩ => rrTop_ok h₁.env fun t E hB a0 m k =>
+    hc t ⟨E, by rw [m]; exact h₁.n, h₁.two, h₁.odd⟩ hB (by rw [m]; exact a0) (by rw [m, k.gpr (by decide)]; exact i₁))
+
+section Rr
+
+variable {Φ : α → State → Prop} {B : α → Addr} {Z w N : α → Nat}
+
+theorem runRr (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) :
+    ∀ a s, Φ a s → WP isa (Code.seqL FRr) s fun _ => True := fun a s h =>
+  WP.of_flat (c := Verify.rrQ) rfl (WP.seq (WP.mono (minv_RrPre (hΦ a s h)) fun _ ⟨⟨h₁, i₁⟩, _⟩ =>
+    WP.mono (rr_ok h₁.env (by rw [h₁.n]; exact h₁.two) (by rw [h₁.n]; exact h₁.odd) i₁) fun _ _ => trivial))
+
+/-- The registers `rr`'s branch needs public. -/
+abbrev rrFix (B : Addr) (w : Nat) : List (Reg × BitVec 64) :=
+  [(.a7, off B (slot w 0)), (.s5, BitVec.ofNat 64 (8 * (w + 2))), (.t0, BitVec.ofNat 64 w)]
+
+theorem fix_Rr {s : State} {B : Addr} {Z w N : Nat} (h : RrPre s B Z w N) : Fix (rrFix B w) s :=
+  ⟨h.env.a7, h.env.s5, h.env.t0, trivial⟩
+
+theorem pinsRr_0 (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) : Pins (At Φ FRr 0) [.a7, .s5, .t0] :=
+  pins_at_fix (fun a => rrFix (B a) (w a)) (fun _ => rfl) fun a s h => ⟨[], _, .block rfl, fix_Rr (hΦ a s h)⟩
+
+theorem pinsRr_5 (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) :
+    Pins (At Φ FRr 5) [.a7, .s5, .t0, .a2, .a5, .a6] :=
+  pins_at_fix (fun a => rrFix (B a) (w a) ++ [(.a2, off (B a) (slot (w a) 1)), (.a5, off (B a) (slot (w a) 2)),
+      (.a6, off (B a) (slot (w a) 3))]) (fun _ => rfl) fun a s h =>
+    midRr (c := .block []) (hΦ a s h) fun _ h₁ hB _ _ => ⟨[], _, .block rfl, (fix_Rr h₁).app ⟨hB.a2, hB.a5, hB.a6, trivial⟩⟩
+
+theorem zeroRr (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) :
+    ∀ a s₁ s₂, At Φ FRr 5 a s₁ → At Φ FRr 5 a s₂ → (s₁.gpr .s0 == 0) = (s₂.gpr .s0 == 0) :=
+  zero_at (fun a => N a / 2 ^ (64 * (w a - 1)) = 0) fun a s h =>
+    midRr (c := .block []) (hΦ a s h) fun t h₁ _ a0 _ => ⟨[], _, .block rfl, by
+      have hw := h₁.env.w2
+      show t.gpr .s0 = 0 ↔ _
+      rw [a0, ← h₁.n, ← VG.Proof.Bignum.RISCV64.Pre.topW_eq (by omega_using [hw])]
+      exact ⟨fun e => by rw [VG.Proof.Bignum.RISCV64.topW, e]; rfl, fun e => BitVec.eq_of_toNat_eq e⟩⟩
+
+theorem pinsRr_6 (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) : Pins (At Φ FRr 6) [.a7, .s5, .t0] :=
+  pins_at_fix (fun a => rrFix (B a) (w a)) (fun _ => rfl) fun a s h =>
+    midRr (c := .seq (.ite (.zero .s0) rrDbl rrHi) (.block [])) (hΦ a s h) fun _ h₁ hB a0 i =>
+      WP.seq (WP.mono (rrIte_ok h₁.env hB (by rw [h₁.n]; exact h₁.two) (by rw [h₁.n]; exact h₁.odd) i a0)
+        fun _ ⟨_, k⟩ => ⟨[], _, .block rfl, (k.gpr (r := .a7) (by decide)).trans h₁.env.a7, (k.gpr (r := .s5) (by decide)).trans h₁.env.s5,
+          (k.gpr (r := .t0) (by decide)).trans h₁.env.t0, trivial⟩)
+
+/-- `minv` and `rr`, for a modulus the public data fix. -/
+theorem rrQ_rel (hΦ : ∀ a s, Φ a s → RrPre s (B a) (Z a) (w a) (N a)) :
+    RelCT isa (Two Φ) Verify.rrQ fun _ _ => True := by
+  refine chain_start (chain_cons (runRr hΦ) (m := 5) (by decide) (two_taint _ (pinsRr_0 hΦ) (by taint_decide)) ?_)
+  refine chain_cons (runRr hΦ) (m := 6) (by decide) (rel_ite_at rfl (zeroRr hΦ)
+    (two_taint _ (pins_mono (pinsRr_5 hΦ) fun _ _ h => h.1) (by taint_decide))
+    (two_taint _ (pins_mono (pinsRr_5 hΦ) fun _ _ h => h.1) (by taint_decide))) ?_
+  exact two_taint _ (pinsRr_6 hΦ) (by taint_decide)
+
+/-- `minv` and `rr` at a cut. -/
+theorem rrQ_at {Ψ : α → State → Prop} {F : List (Prog isa)} {n m : Nat} (hF : seg F n m = Code.seqL FRr)
+    (hΨ : ∀ a s, At Ψ F n a s → RrPre s (B a) (Z a) (w a) (N a)) :
+    RelCT isa (Two (At Ψ F n)) (seg F n m) fun _ _ => True := by
+  rw [hF]
+  exact fun _ _ _ _ _ _ hp e₁ e₂ => rrQ_rel hΨ _ _ _ _ _ _ hp (exec_flat.mpr e₁) (exec_flat.mpr e₂)
+
+end Rr
 
 /-! ## The public data -/
 
@@ -971,6 +1068,29 @@ theorem setupP_SR3 {v : VD} {s : State} (h : SR3 v s) :
   exact ⟨B.body k hb, ip, by rw [p0, B.p], ptop, inv, by rw [p24, B.p], by rw [pb.arrQ B.ok]; exact q0,
     by rw [pb.qtop B.ok]; exact qtop, by rw [Lens, hb.word (by decide)]; exact l⟩
 
+/-- `setupP` up to `minv`: p in the P space's array 0. -/
+theorem loadP_SR3 {v : VD} {s : State} (h : SR3 v s) :
+    WP isa (.seq (.block enterP) (.seq (.block ptrP) (loadArr 0))) s fun t =>
+      RrPre t v.L.S v.L.qOff v.L.wp v.p := by
+  obtain ⟨⟨⟨B, _, hsz⟩, hpo, _⟩, _⟩ := h
+  have bd := VG.Proof.Dsa.supported_bounds hsz
+  have hL := B.ok
+  have hw := hL.wp_ge
+  have hw8 := hL.wp_eq
+  have hbuf := hL.buf_end
+  have hk := B.hk.take (k := 2 * v.L.pl + v.L.ql) (by have := B.kn; omega_using [this])
+  refine WP.seq (WP.mono (enterP_ok hL B.scr B.regs) fun s₁ ⟨⟨p1, m1⟩, k1⟩ => ?_)
+  refine WP.seq (WP.mono (ptrP_ok (B.keepM k1 m1).scr hL (B.keepM k1 m1).regs) fun s₂ ⟨⟨a7, a8, m2⟩, k2⟩ => ?_)
+  refine WP.mono (loadArr_ok (p1.env.keep k2) (j := 0) (N := v.key) (by decide)
+    (by rw [a7]; exact (BitVec.add_zero _).symm) a8 (by omega_using [hw, hw8]) (by omega_using [hw8])
+    (fun i hi => by rw [(k1.trans k2).2.1, (k1.trans k2).2.2]; exact hk.rd i (by omega_using [hi]))
+    (fun i hi x hx => hk.sep i (by omega_arith) x (by simp only [Lay.bOff] at hbuf; omega_arith)))
+    fun t ⟨⟨v0, _, _, a10⟩, k3⟩ => ⟨⟨B.scr.p hL |>.congr ((k1.trans k2).trans k3).2.2, a10,
+      ((k2.trans k3).gpr (by decide)).trans p1.env.s5, ((k2.trans k3).gpr (by decide)).trans p1.env.t0, p1.env.w2,
+      p1.env.w48, p1.env.hZ⟩, ?_, by omega_using [bd], hpo⟩
+  rw [v0, m2, m1]
+  exact B.p
+
 section R3
 
 variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
@@ -1006,6 +1126,17 @@ section R3
 
 variable {Φ : VD → State → Prop} (hΦ : ∀ v u, Φ v u → SR3 v u)
 include hΦ
+
+/-- After `setupP`, before `ptrG`. -/
+theorem pinsR3_17 : Pins (At Φ FR3 17) [.s6, .s11, .ra, .a7, .s5, .t0] :=
+  pins_at_fix (fun v => fixB v ++ envP v) (fun _ => rfl) fun _ _ h =>
+    WP.of_flat (c := setupP) rfl ((setupP_SR3 (hΦ _ _ h)).mono fun _ ⟨c, _⟩ => fix_CK c)
+
+/-- `minv` and `rr`, in the P space. -/
+theorem relR3_9 : RelCT isa (Two (At Φ FR3 9)) (seg FR3 9 17) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.S) (Z := fun v => v.L.qOff) (w := fun v => v.L.wp) (N := fun v => v.p) rfl
+    fun _ _ h => at_sem (fun _ _ h => WP.of_flat (c := .seq (.block enterP) (.seq (.block ptrP) (loadArr 0))) rfl
+      (loadP_SR3 (hΦ _ _ h))) h
 
 theorem pinsR3_18 : Pins (At Φ FR3 18) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl)])

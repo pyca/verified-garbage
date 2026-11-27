@@ -196,7 +196,7 @@ theorem setupP_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (hs : ScrL 
     rw [wordsVal_mod_two _ _ _ (w := L.wp) (by omega_using [hw]), v0']; exact hpo
   refine WP.seq (WP.mono (minv_ok e3.hs e3.a7 (slot_al _ _) (by omega_using [hq0, e0]) hodd) fun s₄ ⟨⟨i4, m4⟩, k4⟩ => ?_)
   obtain e4 := e3.keep k4
-  refine WP.mono (rr_ok e4 (by rw [m4, v0']; exact hp)) fun t ⟨⟨r1, r24, o5⟩, k5⟩ => ?_
+  refine WP.mono (rr_ok e4 (by rw [m4, v0']; exact hp) (by rw [m4, v0']; exact hpo) (by rw [m4]; exact i4)) fun t ⟨⟨r1, r24, o5⟩, k5⟩ => ?_
   rw [m4, v0'] at r1 r24
   rw [m4] at o5
   obtain e5 := e4.keep k5

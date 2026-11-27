@@ -431,7 +431,7 @@ theorem rrQ_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s L ke
     rw [wordsVal_mod_two _ _ _ (w := L.wq) (by omega_using [hwq])]; exact hqo
   refine WP.seq (WP.mono (minv_ok e.hs e.a7 (slot_al _ _) (by omega_using [e0]) hodd) fun s₁ ⟨⟨i1, m1⟩, k1⟩ => ?_)
   obtain e1' := e.keep k1
-  refine WP.mono (rr_ok e1' (by rw [m1]; exact hq)) fun t ⟨⟨r1, r24, o⟩, kt⟩ => ?_
+  refine WP.mono (rr_ok e1' (by rw [m1]; exact hq) (by rw [m1]; exact hqo) (by rw [m1]; exact i1)) fun t ⟨⟨r1, r24, o⟩, kt⟩ => ?_
   rw [m1] at r1 r24 o
   obtain qa : QArr L s.mem t.mem := QArr.of o (by omega_using []) (by omega_using [e1, e28])
   refine ⟨⟨h.step (k1.trans kt) (qa.body hL), ?_, r1, r24, qa⟩, k1.trans kt⟩

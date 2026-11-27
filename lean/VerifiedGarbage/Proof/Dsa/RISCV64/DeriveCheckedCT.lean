@@ -31,7 +31,8 @@ spaces (`setupQ`, `setupP`) and runs `Derive.body`, else `zeroOut`, then
 derivation's (`DeriveCT.lean`) up to the sizes' branch: their lists start
 with the same programs (`atL`, `pinsL`, `zeroL`). The sizes' passing side
 `XRdc` is one level, as prevalidated verification's (`PrevalidatedCT.lean`):
-cut at 0, 2 (after `enterQ; ptrQ`) and 11 (after `enterP; ptrP`), then
+cut at 0, 2 (after `enterQ; ptrQ`), 11 (after `enterP; ptrP`)
+and 18 (before `minv` and `rr`), then
 `body`'s levels from 26 (`body_relD`), whose phase `DB` holds since the
 precondition makes the domain valid (`kd_of`).
 -/
@@ -154,6 +155,13 @@ theorem pinsRdc_11 : Pins (At ΦRdc FRdc 11) [.s6, .s11, .ra, .a7, .s5, .t0, .s7
         exact WP.mono (ptrP_ok B1.scr B1.ok B1.regs) fun _ ⟨⟨a7, a8, m'⟩, k'⟩ =>
           ((B1.keepM k' m').fixB.app (fix_envP (ip.keep k'))).app ⟨a7, a8, trivial⟩))
 
+/-- `minv` and `rr`, in the P space. -/
+theorem relRdc_18 : RelCT isa (Two (At ΦRdc FRdc 18)) (seg FRdc 18 26) fun _ _ => True :=
+  rrQ_at (B := fun v => v.L.S) (Z := fun v => v.L.qOff) (w := fun v => v.L.wp) (N := fun v => v.p) rfl
+    fun _ _ h => at_sem (M := fun v u => RrPre u v.L.S v.L.qOff v.L.wp v.p) (fun _ _ h => WP.of_flat
+      (c := .seq setupQ (.seq (.block enterP) (.seq (.block ptrP) (loadArr 0)))) rfl
+      (WP.seq (WP.mono (setupQ_P1 (onRdc _ _ h) (kdcR h).1) fun _ hs => loadP_SR3 hs))) h
+
 theorem semBdc {v : VD} {u : State} (h : At ΦRdc FRdc 26 v u) : DB v u :=
   ⟨at_sem (M := SD) (fun _ _ h' => WP.of_flat (c := .seq setupQ setupP) rfl
     (WP.seq (WP.mono (setupQ_P1 (onRdc _ _ h') (kdcR h').1) fun _ hs =>
@@ -173,7 +181,8 @@ theorem runBdc : ∀ v s, At ΦRdc FRdc 26 v s → WP isa (Code.seqL FBd) s fun 
 theorem XRdc_rel : RelCT isa (Two ΦRdc) XRdc fun _ _ => True := by
   refine chain_start (chain_cons runRdc (m := 2) (by decide) (two_taint _ pinsRdc_0 (by taint_decide)) ?_)
   refine chain_cons runRdc (m := 11) (by decide) (two_taint _ pinsRdc_2 (by taint_decide)) ?_
-  refine chain_cons runRdc (m := 26) (by decide) (two_taint _ pinsRdc_11 (by taint_decide)) ?_
+  refine chain_cons runRdc (m := 18) (by decide) (two_taint _ pinsRdc_11 (by taint_decide)) ?_
+  refine chain_cons runRdc (m := 26) (by decide) relRdc_18 ?_
   rw [drop26dc]
   exact rel_flat (body_relD runBdc fun _ _ h => semBdc h)
 

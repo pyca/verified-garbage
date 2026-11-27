@@ -61,7 +61,9 @@ theorem body_rel' {Φ : VD → State → Prop} (runB : ∀ v s, Φ v s → WP is
     (hsem : ∀ v u, Φ v u → SB v u) : RelCT isa (Two Φ) Verify.body fun _ _ => True := by
   refine chain_start (chain_cons runB (m := 1) (by decide) (two_taint _ (pinsB0 hsem) (by taint_decide)) ?_)
   refine chain_cons runB (m := 9) (by decide) (two_taint _ (pinsB1 hsem) (by taint_decide)) ?_
-  refine chain_cons runB (m := 50) (by decide) (two_taint _ (pinsB9 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 39) (by decide) (two_taint _ (pinsB9 hsem) (by taint_decide)) ?_
+  refine chain_cons runB (m := 47) (by decide) (relB39 hsem) ?_
+  refine chain_cons runB (m := 50) (by decide) (two_taint _ (pinsB47 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 53) (by decide) (two_taint _ (pinsB50 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 63) (by decide) (two_taint _ (pinsB53 hsem) (by taint_decide)) ?_
   refine chain_cons runB (m := 66) (by decide) (two_taint _ (pinsB63 hsem) (by taint_decide)) ?_

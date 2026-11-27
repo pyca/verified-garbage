@@ -293,10 +293,10 @@ def zeroTop4 : List Instr :=
   VG.Impl.Bignum.RISCV64.PublicChecked.base .t3 5 ++ [.addi .t3 .t3 (-16), .li .s0 0, .store .d .s0 .t3 0]
 
 /-- p into array 0 of the P space, `−p⁻¹ mod 2⁶⁴` into `t1`, `R² mod p` into
-arrays 1 and 24 (`rr`). -/
+arrays 1 and 24 (`rrAny`). -/
 def powA (pLen : Nat) : Prog isa := seqs [
   .block (enterP pLen ++ [scr .s7 sPBE, .li .s8 pLen]), VG.Impl.Dsa.RISCV64.loadArr 0,
-  .block VG.Impl.Bignum.RISCV64.Precompute.minv, VG.Impl.Dsa.RISCV64.rr]
+  .block VG.Impl.Bignum.RISCV64.Precompute.minv, VG.Impl.Dsa.RISCV64.rrAny]
 
 /-- `h` (at `s7`, `s8` octets) into array 4, its power over `sE` (a call of
 `vg_bignum_pow_win`; `ra` waits in the frame), array 4's word `w` zeroed, and
@@ -307,7 +307,7 @@ def powC (pLen qLen : Nat) : Prog isa := seqs [
   .block zeroTop4, VG.Impl.Dsa.RISCV64.elemRange]
 
 /-- `[4] := h^((p−1)/q) mod p` for `h` at `fH`: p into array 0, `−p⁻¹ mod 2⁶⁴`
-into `t1`, `R² mod p` into arrays 1 and 24 (`rr`), `h` into array 4, then
+into `t1`, `R² mod p` into arrays 1 and 24 (`rrAny`), `h` into array 4, then
 the power over `sE`, array 4's word `w` zeroed; `a0 := 0` exactly when `1 < [4] < p`. -/
 def power (pLen qLen : Nat) : Prog isa := seqs [powA pLen, .block [ld .s7 fH, .li .s8 pLen], powC pLen qLen]
 
